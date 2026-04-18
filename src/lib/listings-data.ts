@@ -600,3 +600,53 @@ export async function fetchApprovedListingCountsByVehicleModel(
   }
   return map;
 }
+
+export type SitemapListingRow = {
+  listingNumber: string;
+  lastModified: Date | undefined;
+};
+
+/** Onaylı ilanlar — SEO site haritası (sayfalı, yalnız numara + tarih). */
+export async function fetchApprovedListingsForSitemap(
+  supabase: SupabaseClient
+): Promise<SitemapListingRow[]> {
+  const pageSize = 1000;
+  let from = 0;
+  const out: SitemapListingRow[] = [];
+
+  for (;;) {
+    const { data, error } = await supabase
+      .from("listings")
+      .select("listing_number,updated_at")
+      .eq("moderation_status", "approved")
+      .order("listing_number", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      console.warn("sitemap listings:", error.message);
+      break;
+    }
+
+    const rows = (data ?? []) as {
+      listing_number?: number | string;
+      updated_at?: string | null;
+    }[];
+
+    for (const row of rows) {
+      if (row.listing_number == null) continue;
+      const listingNumber = String(row.listing_number).trim();
+      if (!listingNumber) continue;
+      let lastModified: Date | undefined;
+      if (row.updated_at) {
+        const d = new Date(row.updated_at);
+        if (!Number.isNaN(d.getTime())) lastModified = d;
+      }
+      out.push({ listingNumber, lastModified });
+    }
+
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return out;
+}
