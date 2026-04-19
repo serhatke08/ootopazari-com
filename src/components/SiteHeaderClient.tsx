@@ -277,7 +277,7 @@ export function SiteHeaderClient({
                     </Link>
                     <Link
                       href="/profil"
-                      className={`${linkClass} whitespace-nowrap text-sm font-semibold`}
+                      className={`${linkClass} hidden whitespace-nowrap text-sm font-semibold md:inline`}
                       title={sessionEmail ?? undefined}
                     >
                       Hesabım
