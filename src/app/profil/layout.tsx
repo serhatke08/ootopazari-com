@@ -4,7 +4,9 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
+import { fetchFollowCounts } from "@/lib/profile-follows";
 import { fetchProfilePublic } from "@/lib/listings-data";
+import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { ProfilHeader } from "@/components/ProfilHeader";
 import { ProfilSubnav } from "@/components/ProfilSubnav";
@@ -21,7 +23,9 @@ function readNamesAndAvatar(user: User): {
   return {
     firstName: typeof m.first_name === "string" ? m.first_name.trim() || null : null,
     lastName: typeof m.last_name === "string" ? m.last_name.trim() || null : null,
-    avatarRaw: typeof m.avatar_url === "string" ? m.avatar_url.trim() || null : null,
+    avatarRaw: sanitizeUserAvatarUrl(
+      typeof m.avatar_url === "string" ? m.avatar_url.trim() || null : null
+    ),
   };
 }
 
@@ -61,9 +65,10 @@ export default async function ProfilLayout({
     redirect(`/giris?next=${encodeURIComponent("/profil")}`);
   }
 
-  const [profile, adminProfile] = await Promise.all([
+  const [profile, adminProfile, followCounts] = await Promise.all([
     user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
     user.id ? fetchAdminProfileByUserId(supabase, user.id) : Promise.resolve(null),
+    user.id ? fetchFollowCounts(supabase, user.id) : Promise.resolve({ followers: 0, following: 0 }),
   ]);
 
   const meta = readNamesAndAvatar(user);
@@ -79,19 +84,21 @@ export default async function ProfilLayout({
     lastName = parts.slice(1).join(" ") || null;
   }
 
-  const avatarFromProfile =
-    profile?.avatar_url != null ? String(profile.avatar_url).trim() : null;
+  const avatarFromProfile = sanitizeUserAvatarUrl(
+    profile?.avatar_url != null ? String(profile.avatar_url).trim() : null
+  );
   const avatarRaw = avatarFromProfile || meta.avatarRaw || null;
   const avatarSrc = avatarRaw ? resolveListingImageUrl(env, avatarRaw) : null;
   const hasAvatar = Boolean(avatarFromProfile || meta.avatarRaw);
 
-  const fallbackTitle =
-    [firstName, lastName].filter(Boolean).join(" ").trim() ||
+  const displayName =
     profileFull ||
-    user.email?.split("@")[0] ||
+    [firstName, lastName].filter(Boolean).join(" ").trim() ||
+    user.email?.split("@")[0]?.trim() ||
     "Profil";
 
   const initialsLabel = initials(firstName, lastName, user.email);
+  const publicProfileHref = `/kullanici/${encodeURIComponent(user.id)}`;
 
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
@@ -100,15 +107,18 @@ export default async function ProfilLayout({
       </h1>
 
       <ProfilHeader
+        displayName={displayName}
         firstName={firstName}
         lastName={lastName}
-        fallbackTitle={fallbackTitle}
         email={user.email}
         avatarSrc={avatarSrc}
         initialsLabel={initialsLabel}
         verifiedBadge={!!adminProfile}
         hasAvatar={hasAvatar}
         username={profile?.username != null ? String(profile.username) : null}
+        publicProfileHref={publicProfileHref}
+        followerCount={followCounts.followers}
+        followingCount={followCounts.following}
       />
 
       <ProfilSubnav />

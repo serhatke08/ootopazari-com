@@ -14,6 +14,7 @@ import {
   fetchProfilePublic,
 } from "@/lib/listings-data";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
+import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -46,7 +47,9 @@ export default async function KullaniciProfilPage({ params }: Props) {
 
   const displayName = publicDisplayNameWithAdmin(profile, adminProfile);
   const avatarRaw =
-    profile.avatar_url != null ? String(profile.avatar_url).trim() : "";
+    sanitizeUserAvatarUrl(
+      profile.avatar_url != null ? String(profile.avatar_url).trim() : null
+    ) ?? "";
   const avatarSrc = avatarRaw ? resolveListingImageUrl(env, avatarRaw) : null;
   const username =
     profile.username != null && String(profile.username).trim() !== ""

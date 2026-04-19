@@ -247,17 +247,12 @@ export function SiteHeaderClient({
 
           <Link
             href="/"
-            className="flex shrink-0 min-w-0 items-center"
+            className="flex shrink-0 min-w-0 items-center py-0.5"
             onClick={() => setDrawerOpen(false)}
           >
-            <Image
-              src="/Sure-v2.png"
-              alt="Oto Pazarı"
-              width={120}
-              height={44}
-              className="h-9 w-auto sm:h-10 md:h-11"
-              priority
-            />
+            <span className="truncate text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
+              Oto Pazarı
+            </span>
           </Link>
 
           <NavSearchForm />

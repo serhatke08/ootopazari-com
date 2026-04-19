@@ -5,6 +5,7 @@ import {
   type BayiApplicationMenuRow,
 } from "@/lib/bayi-applications";
 import { fetchCategories, fetchProfilePublic } from "@/lib/listings-data";
+import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { publicAvatarUrl } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { displayNameFromAuthUser } from "@/lib/user-display-name";
@@ -54,9 +55,11 @@ export async function SiteHeader() {
         const displayName = displayNameFromAuthUser(user, profile);
         let avatarUrl: string | null = null;
         const raw =
-          profile && typeof profile.avatar_url === "string"
-            ? profile.avatar_url.trim()
-            : "";
+          sanitizeUserAvatarUrl(
+            profile && typeof profile.avatar_url === "string"
+              ? profile.avatar_url.trim()
+              : null
+          ) ?? "";
         if (raw) {
           avatarUrl = /^https?:\/\//i.test(raw)
             ? raw

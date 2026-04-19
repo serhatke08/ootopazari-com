@@ -20,6 +20,7 @@ import { ListingCard } from "@/components/ListingCard";
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { TopCitySelect } from "@/components/TopCitySelect";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
+import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { publicAvatarUrl } from "@/lib/storage";
 
 const LIST_LIMIT = 24;
@@ -66,7 +67,10 @@ async function fetchOwnerMiniMap(
     const full = String((row as { full_name?: string }).full_name ?? "").trim();
     const un = String((row as { username?: string }).username ?? "").trim();
     const name = full || un || "Kullanıcı";
-    const raw = String((row as { avatar_url?: string }).avatar_url ?? "").trim();
+    const raw =
+      sanitizeUserAvatarUrl(
+        String((row as { avatar_url?: string }).avatar_url ?? "").trim()
+      ) ?? "";
     const avatarSrc = raw
       ? /^https?:\/\//i.test(raw)
         ? raw

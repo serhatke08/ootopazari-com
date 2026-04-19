@@ -21,6 +21,7 @@ import {
   otherParticipantId,
   profileDisplayName,
 } from "@/lib/messages";
+import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { publicAvatarUrl } from "@/lib/storage";
 
 type Props = { params: Promise<{ conversationId: string }> };
@@ -91,7 +92,9 @@ export default async function MesajConversationPage({ params }: Props) {
   const otherIsAdmin = adminMap.has(otherId);
   const otherName = profileDisplayName(otherProfile);
   const otherAvatarRaw =
-    otherProfile?.avatar_url != null ? String(otherProfile.avatar_url).trim() : "";
+    sanitizeUserAvatarUrl(
+      otherProfile?.avatar_url != null ? String(otherProfile.avatar_url).trim() : null
+    ) ?? "";
   const otherAvatarUrl = otherAvatarRaw
     ? /^https?:\/\//i.test(otherAvatarRaw)
       ? otherAvatarRaw

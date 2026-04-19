@@ -16,6 +16,7 @@ import {
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
+import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingImageGallery } from "@/components/ListingImageGallery";
@@ -341,7 +342,9 @@ export default async function IlanDetayPage({ params }: Props) {
     ? publicDisplayNameWithAdmin(seller, adminProfile)
     : null;
   const sellerAvatarRaw =
-    seller && typeof seller.avatar_url === "string" ? seller.avatar_url : "";
+    sanitizeUserAvatarUrl(
+      seller && typeof seller.avatar_url === "string" ? seller.avatar_url : null
+    ) ?? "";
   const sellerAvSrc = sellerAvatarRaw
     ? sellerAvatarRaw.startsWith("http")
       ? sellerAvatarRaw
