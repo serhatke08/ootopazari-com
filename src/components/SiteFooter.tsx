@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function SiteFooter() {
+export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
   return (
     <footer
       className="mt-auto border-t border-amber-400/80 bg-[#ffcc00] py-9 text-zinc-900"
@@ -57,12 +57,16 @@ export function SiteFooter() {
             <Link href="/profil" className="break-words font-semibold hover:underline">
               Hesabım
             </Link>
-            <Link href="/giris" className="break-words font-semibold hover:underline">
-              Giriş Yap
-            </Link>
-            <Link href="/kayit" className="break-words font-semibold hover:underline">
-              Kayıt Ol
-            </Link>
+            {loggedIn ? null : (
+              <>
+                <Link href="/giris" className="break-words font-semibold hover:underline">
+                  Giriş Yap
+                </Link>
+                <Link href="/kayit" className="break-words font-semibold hover:underline">
+                  Kayıt Ol
+                </Link>
+              </>
+            )}
           </div>
         </div>
 

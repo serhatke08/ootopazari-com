@@ -4,7 +4,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { tryGetSupabaseEnv } from "@/lib/env";
 import { getSiteOrigin } from "@/lib/site-url";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,11 +38,24 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let footerLoggedIn = false;
+  if (tryGetSupabaseEnv()) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      footerLoggedIn = !!user;
+    } catch {
+      footerLoggedIn = false;
+    }
+  }
+
   return (
     <html lang="tr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
@@ -70,7 +85,7 @@ export default function RootLayout({
         </Suspense>
         <div className="flex flex-1 flex-col pb-[calc(4.35rem+env(safe-area-inset-bottom,0px))] md:pb-0">
           <main className="flex flex-1 flex-col bg-white">{children}</main>
-          <SiteFooter />
+          <SiteFooter loggedIn={footerLoggedIn} />
         </div>
       </body>
     </html>
