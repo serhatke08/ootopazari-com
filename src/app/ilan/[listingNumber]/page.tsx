@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -16,6 +16,10 @@ import {
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
+import {
+  buildListingSeoPath,
+  extractListingNumberFromSeoParam,
+} from "@/lib/listing-seo";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
@@ -154,7 +158,8 @@ function stripDuplicateVehicleSpecLines(text: string): string {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { listingNumber } = await params;
+  const { listingNumber: listingParam } = await params;
+  const listingNumber = extractListingNumberFromSeoParam(listingParam) ?? listingParam;
   const env = tryGetSupabaseEnv();
   if (!env) {
     return { title: "İlan" };
@@ -191,7 +196,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : `${title}${city ? ` — ${city}` : ""}`;
   const imageRaw = typeof listing.image_url === "string" ? listing.image_url : null;
   const imageUrl = imageRaw ? resolveListingImageUrl(env, imageRaw) : null;
-  const canonicalPath = `/ilan/${encodeURIComponent(listingNumber)}`;
+  const canonicalPath =
+    buildListingSeoPath(
+      listing.listing_number != null ? String(listing.listing_number) : listingNumber,
+      typeof listing.title === "string" ? listing.title : title
+    ) ?? `/ilan/${encodeURIComponent(listingNumber)}`;
   return {
     title,
     description: desc,
@@ -253,7 +262,8 @@ function Field({
 }
 
 export default async function IlanDetayPage({ params }: Props) {
-  const { listingNumber } = await params;
+  const { listingNumber: listingParam } = await params;
+  const listingNumber = extractListingNumberFromSeoParam(listingParam) ?? listingParam;
   const env = tryGetSupabaseEnv();
   if (!env) {
     return (
@@ -279,6 +289,18 @@ export default async function IlanDetayPage({ params }: Props) {
   if (!detail) notFound();
 
   const { listing, access: detailAccess } = detail;
+  const expectedSeoPath = buildListingSeoPath(
+    listing.listing_number != null ? String(listing.listing_number) : listingNumber,
+    typeof listing.title === "string" ? listing.title : null
+  );
+  if (
+    expectedSeoPath &&
+    decodeURIComponent(expectedSeoPath.split("/ilan/")[1] ?? "") !==
+      decodeURIComponent(listingParam)
+  ) {
+    permanentRedirect(expectedSeoPath);
+  }
+
   const isSuspendedOwnerView = detailAccess === "suspended_owner";
   const isSuspendedAdminView = detailAccess === "suspended_admin";
   const isSuspendedDetailView = isSuspendedOwnerView || isSuspendedAdminView;

@@ -20,18 +20,28 @@ const GOOGLE_AVATAR_HOSTS = [
   "lh6.googleusercontent.com",
 ] as const;
 
+const SUPABASE_FALLBACK_HOSTS = [
+  "**.supabase.co",
+  "**.supabase.in",
+] as const;
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      ...(supabaseHost
-        ? [
-            {
-              protocol: "https" as const,
-              hostname: supabaseHost,
-              pathname: "/storage/v1/object/public/**",
-            },
-          ]
-        : []),
+      ...[...new Set([supabaseHost, ...SUPABASE_FALLBACK_HOSTS].filter(Boolean) as string[])].flatMap(
+        (hostname) => [
+          {
+            protocol: "https" as const,
+            hostname,
+            pathname: "/storage/v1/object/public/**",
+          },
+          {
+            protocol: "https" as const,
+            hostname,
+            pathname: "/storage/v1/object/sign/**",
+          },
+        ]
+      ),
       ...GOOGLE_AVATAR_HOSTS.map((hostname) => ({
         protocol: "https" as const,
         hostname,

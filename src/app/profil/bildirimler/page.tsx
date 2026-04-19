@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildListingSeoPath } from "@/lib/listing-seo";
 import { fetchUserNotifications } from "@/lib/user-notifications";
 import { NotificationsMarkControls } from "@/components/NotificationsMarkControls";
 
@@ -25,12 +26,17 @@ export default async function ProfilBildirimlerPage() {
   if (listingIds.length > 0) {
     const { data: listings } = await supabase
       .from("listings")
-      .select("id,listing_number")
+      .select("id,listing_number,title")
       .in("id", listingIds);
     for (const row of listings ?? []) {
-      const o = row as { id: string; listing_number: number | string | null };
-      if (o.listing_number != null) {
-        listingNumMap.set(o.id, String(o.listing_number));
+      const o = row as {
+        id: string;
+        listing_number: number | string | null;
+        title?: string | null;
+      };
+      const href = buildListingSeoPath(o.listing_number, o.title ?? null);
+      if (href) {
+        listingNumMap.set(o.id, href);
       }
     }
   }
@@ -80,7 +86,7 @@ export default async function ProfilBildirimlerPage() {
                     {n.listing_id ? (
                       listingNumMap.has(n.listing_id) ? (
                         <Link
-                          href={`/ilan/${listingNumMap.get(n.listing_id)}`}
+                          href={listingNumMap.get(n.listing_id) ?? "/ilanlar"}
                           className="font-medium text-zinc-800 underline hover:text-zinc-950"
                         >
                           İlana git

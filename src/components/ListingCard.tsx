@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { isListingSuspended, type ListingRow } from "@/lib/listings-data";
 import type { ListingPublicStats } from "@/lib/listing-stats";
 import type { SupabasePublicEnv } from "@/lib/env";
+import { isHeicLikeUrl } from "@/lib/image-format";
+import { buildListingSeoPath } from "@/lib/listing-seo";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { StatsBadges } from "@/components/StatsBadges";
@@ -60,9 +62,13 @@ export function ListingCard({
       : null);
 
   const num = listing.listing_number;
-  const href = num != null ? `/ilan/${String(num)}` : null;
+  const href = buildListingSeoPath(
+    num != null ? String(num) : null,
+    typeof listing.title === "string" ? listing.title : null
+  );
   const listingId = listing.id;
   const img = resolveListingImageUrl(env, listing.image_url);
+  const imgUnoptimized = isHeicLikeUrl(img);
   const price =
     listing.price != null
       ? new Intl.NumberFormat("tr-TR", {
@@ -97,6 +103,7 @@ export function ListingCard({
           src={img}
           alt={listing.title ?? "İlan görseli"}
           fill
+          unoptimized={imgUnoptimized}
           className={
             isHomeGrid
               ? "object-cover object-center transition duration-300 group-hover:opacity-[0.97]"

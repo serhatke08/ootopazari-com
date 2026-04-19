@@ -22,6 +22,7 @@ import {
   profileDisplayName,
 } from "@/lib/messages";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
+import { buildListingSeoPath } from "@/lib/listing-seo";
 import { publicAvatarUrl } from "@/lib/storage";
 
 type Props = { params: Promise<{ conversationId: string }> };
@@ -85,10 +86,10 @@ export default async function MesajConversationPage({ params }: Props) {
   const listing = listingMap.get(conv.listing_id);
   const listingTitle = listing?.title?.trim() || null;
   const num = listing?.listing_number;
-  const listingHref =
-    num !== null && num !== undefined
-      ? `/ilan/${encodeURIComponent(String(num))}`
-      : null;
+  const listingHref = buildListingSeoPath(
+    num != null ? String(num) : null,
+    listingTitle
+  );
   const otherProfile = profileMap.get(otherId) ?? null;
   const otherIsAdmin = adminMap.has(otherId);
   const otherName = profileDisplayName(otherProfile);
