@@ -10,10 +10,6 @@ export const revalidate = 3600;
 const staticPaths = [
   "/",
   "/ilanlar",
-  "/ilan-ver",
-  "/bayilik-basvuru",
-  "/giris",
-  "/kayit",
 ] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
@@ -21,10 +22,27 @@ import { HomeSidebar } from "@/components/HomeSidebar";
 import { TopCitySelect } from "@/components/TopCitySelect";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
+import { getSiteOrigin } from "@/lib/site-url";
 import { publicAvatarUrl } from "@/lib/storage";
 
 const LIST_LIMIT = 24;
 const PAGE_SIZE = 12;
+
+export const metadata: Metadata = {
+  title: "İkinci El ve Sıfır Araç İlanları",
+  description:
+    "Oto Pazarı'nda otomobil ilanlarını marka, model, şehir ve fiyat filtreleriyle keşfedin.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    description:
+      "Marka, model, şehir ve fiyat filtreleriyle araç ilanlarını keşfedin.",
+    url: "/",
+    type: "website",
+  },
+};
 
 function parseNum(s: string | undefined): number | undefined {
   if (s == null || s === "") return undefined;
@@ -86,10 +104,38 @@ export default async function AnaSayfa({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const siteOrigin = getSiteOrigin();
+  const seoJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        name: "Oto Pazarı",
+        url: siteOrigin,
+        logo: `${siteOrigin}/menu/pazar.png?v=20260413`,
+      },
+      {
+        "@type": "WebSite",
+        name: "Oto Pazarı",
+        url: siteOrigin,
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${siteOrigin}/?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
+      },
+    ],
+  };
+
   const env = tryGetSupabaseEnv();
   if (!env) {
     return (
       <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-12 sm:px-6">
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(seoJsonLd) }}
+        />
         <MissingEnv />
       </div>
     );
@@ -155,6 +201,11 @@ export default async function AnaSayfa({
 
     return (
       <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(seoJsonLd) }}
+        />
         <TopCitySelect cities={cities} />
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
           <aside className="hidden w-full shrink-0 lg:flex lg:h-[calc(100vh-5.5rem)] lg:min-h-0 lg:w-[min(240px,20vw)] lg:min-w-[200px] lg:max-w-[260px] lg:max-h-[calc(100vh-5.5rem)] lg:flex-col lg:overflow-hidden lg:self-start">
@@ -254,6 +305,11 @@ export default async function AnaSayfa({
 
   return (
     <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(seoJsonLd) }}
+      />
       <TopCitySelect cities={cities} />
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
         <aside className="hidden w-full shrink-0 lg:flex lg:h-[calc(100vh-5.5rem)] lg:min-h-0 lg:w-[min(240px,20vw)] lg:min-w-[200px] lg:max-w-[260px] lg:max-h-[calc(100vh-5.5rem)] lg:flex-col lg:overflow-hidden lg:self-start">

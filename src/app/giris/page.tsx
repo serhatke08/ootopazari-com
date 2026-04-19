@@ -1,8 +1,15 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { MissingEnv } from "@/components/MissingEnv";
 import { LoginForm } from "@/components/LoginForm";
+
+export const metadata: Metadata = {
+  title: "Giriş Yap",
+  description: "Hesabınıza giriş yapın.",
+  robots: { index: false, follow: false },
+};
 
 export default function GirisPage() {
   const env = tryGetSupabaseEnv();

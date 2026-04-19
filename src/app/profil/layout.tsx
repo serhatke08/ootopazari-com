@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import type { User } from "@supabase/supabase-js";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -10,6 +11,11 @@ import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { ProfilHeader } from "@/components/ProfilHeader";
 import { ProfilSubnav } from "@/components/ProfilSubnav";
+
+export const metadata: Metadata = {
+  title: "Profilim",
+  robots: { index: false, follow: false },
+};
 
 function readNamesAndAvatar(user: User): {
   firstName: string | null;

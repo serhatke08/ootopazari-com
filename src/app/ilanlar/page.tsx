@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 /** Eski /ilanlar bağlantıları ana sayfaya taşındı; sorgu korunur. */
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+};
+
 export default async function IlanlarLegacyRedirect({
   searchParams,
 }: {

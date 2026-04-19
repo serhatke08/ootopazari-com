@@ -1,9 +1,15 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { fetchCategories } from "@/lib/listings-data";
 import { CreateListingWizard } from "@/components/ilan-ver/CreateListingWizard";
+
+export const metadata: Metadata = {
+  title: "İlan Ver",
+  robots: { index: false, follow: false },
+};
 
 export default async function IlanVerPage() {
   const env = tryGetSupabaseEnv();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
@@ -11,6 +12,11 @@ import {
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { ListingCard } from "@/components/ListingCard";
+
+export const metadata: Metadata = {
+  title: "Favorilerim",
+  robots: { index: false, follow: false },
+};
 
 export default async function FavorilerPage() {
   const env = tryGetSupabaseEnv();

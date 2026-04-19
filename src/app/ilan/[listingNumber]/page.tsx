@@ -189,12 +189,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     typeof listing.description === "string"
       ? listing.description.slice(0, 155)
       : `${title}${city ? ` — ${city}` : ""}`;
+  const imageRaw = typeof listing.image_url === "string" ? listing.image_url : null;
+  const imageUrl = imageRaw ? resolveListingImageUrl(env, imageRaw) : null;
+  const canonicalPath = `/ilan/${encodeURIComponent(listingNumber)}`;
   return {
     title,
     description: desc,
+    alternates: {
+      canonical: canonicalPath,
+    },
     openGraph: {
       title,
       description: desc,
+      url: canonicalPath,
+      type: "article",
+      images: imageUrl
+        ? [
+            {
+              url: imageUrl,
+              alt: title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: imageUrl ? "summary_large_image" : "summary",
+      title,
+      description: desc,
+      images: imageUrl ? [imageUrl] : undefined,
     },
     robots:
       detail.access === "suspended_owner" || detail.access === "suspended_admin"

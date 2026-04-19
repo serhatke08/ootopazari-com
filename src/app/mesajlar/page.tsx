@@ -17,6 +17,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Mesajlar",
+  robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";

@@ -20,12 +20,60 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
+  applicationName: "Oto Pazarı",
   title: {
-    default: "Oto — İkinci el ve sıfır araç ilanları",
-    template: "%s — Oto",
+    default: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    template: "%s | Oto Pazarı",
   },
   description:
-    "Araç ilanları: otomobil, galeri, ekspertiz, parça, kiralama. Sahibinden tarzı ilan listesi.",
+    "Türkiye genelinde ikinci el ve sıfır araç ilanları. Otomobil, galeri, ekspertiz, parça ve kiralama kategorilerinde güvenilir ilanları keşfedin.",
+  keywords: [
+    "oto pazarı",
+    "araba ilanları",
+    "ikinci el araba",
+    "sıfır araç",
+    "otomobil",
+    "galeri",
+    "ekspertiz",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    url: "/",
+    siteName: "Oto Pazarı",
+    title: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    description:
+      "Türkiye genelinde ikinci el ve sıfır araç ilanları. Güvenilir satıcılardan ilanları filtreleyin, favorileyin ve mesajlaşın.",
+    images: [
+      {
+        url: "/menu/pazar.png?v=20260413",
+        width: 512,
+        height: 512,
+        alt: "Oto Pazarı",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    description:
+      "Türkiye genelinde ikinci el ve sıfır araç ilanlarını keşfedin.",
+    images: ["/menu/pazar.png?v=20260413"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   icons: {
     icon: [
       { url: "/menu/pazar.png?v=20260413", sizes: "32x32", type: "image/png" },

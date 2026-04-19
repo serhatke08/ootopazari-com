@@ -1,10 +1,16 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { BayiApplicationForm } from "@/components/BayiApplicationForm";
 import { fetchCities } from "@/lib/listings-data";
 import { DEALER_TYPE_META, type DealerType } from "@/lib/dealer-types";
+
+export const metadata: Metadata = {
+  title: "Bayilik Başvurusu",
+  robots: { index: false, follow: false },
+};
 
 type ApplicationRow = {
   id: string;

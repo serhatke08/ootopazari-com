@@ -1,8 +1,15 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { MissingEnv } from "@/components/MissingEnv";
 import { SignupForm } from "@/components/SignupForm";
+
+export const metadata: Metadata = {
+  title: "Kayıt Ol",
+  description: "Oto Pazarı'na yeni hesap oluşturun.",
+  robots: { index: false, follow: false },
+};
 
 export default function KayitPage() {
   const env = tryGetSupabaseEnv();

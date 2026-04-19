@@ -35,6 +35,7 @@ export async function generateMetadata({
   return {
     title: "Sohbet",
     description: `Konuşma ${conversationId.slice(0, 8)}…`,
+    robots: { index: false, follow: false },
   };
 }
 

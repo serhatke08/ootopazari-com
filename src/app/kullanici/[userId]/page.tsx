@@ -24,9 +24,46 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { userId } = await params;
+  const env = tryGetSupabaseEnv();
+  if (env) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const profile = await fetchProfilePublic(supabase, userId);
+      if (profile) {
+        const display = publicDisplayNameWithAdmin(profile, null);
+        const username =
+          profile.username != null && String(profile.username).trim() !== ""
+            ? String(profile.username).trim()
+            : null;
+        const title = username
+          ? `${display} (@${username})`
+          : `${display} - Kullanıcı Profili`;
+        const description = `${display} kullanıcısının yayındaki araç ilanlarını Oto Pazarı üzerinde inceleyin.`;
+        const canonicalPath = `/kullanici/${encodeURIComponent(userId)}`;
+        return {
+          title,
+          description,
+          alternates: {
+            canonical: canonicalPath,
+          },
+          openGraph: {
+            title,
+            description,
+            url: canonicalPath,
+            type: "profile",
+          },
+        };
+      }
+    } catch {
+      /* metadata fallback */
+    }
+  }
   return {
     title: "Kullanıcı Profili",
-    description: `Kullanıcı ${userId.slice(0, 8)}...`,
+    description: "Kullanıcının yayındaki ilanları.",
+    alternates: {
+      canonical: `/kullanici/${encodeURIComponent(userId)}`,
+    },
   };
 }
 
