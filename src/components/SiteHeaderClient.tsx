@@ -252,7 +252,7 @@ export function SiteHeaderClient({
           >
             <Image
               src="/Sure-v2.png"
-              alt="Oto TR"
+              alt="Oto Pazarı"
               width={120}
               height={44}
               className="h-9 w-auto sm:h-10 md:h-11"

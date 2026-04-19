@@ -11,7 +11,7 @@ export function SiteFooter() {
         <div className="mb-7 text-center">
           <Image
             src="/Sure.png"
-            alt="Oto-tr"
+            alt="Oto Pazarı"
             width={320}
             height={112}
             className="mx-auto h-auto w-[200px] sm:w-[240px] md:w-[280px]"
@@ -69,7 +69,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-6 border-t border-amber-700/30 pt-4 text-center text-xs font-medium text-zinc-800">
-          © {new Date().getFullYear()} Oto · Tüm hakları saklıdır.
+          © {new Date().getFullYear()} Oto Pazarı · Tüm hakları saklıdır.
         </div>
       </div>
     </footer>
