@@ -114,6 +114,7 @@ export function ProfilHeader({
   const [loading, setLoading] = useState(false);
   const [photoErr, setPhotoErr] = useState<string | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState(initialFirst ?? "");
   const [lastName, setLastName] = useState(initialLast ?? "");
@@ -160,6 +161,32 @@ export function ProfilHeader({
     setLastName(initialLast ?? "");
     setUsername(initialUsername ?? "");
   }
+
+  const shareProfile = useCallback(async () => {
+    setShareFeedback(null);
+    if (typeof window === "undefined") return;
+    const url = new URL(publicProfileHref, window.location.origin).href;
+    const title = `${displayName.trim() || "Profil"} — Oto Pazarı`;
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({ title, text: title, url });
+        setShareFeedback("Paylaşıldı.");
+        window.setTimeout(() => setShareFeedback(null), 2000);
+        return;
+      }
+    } catch (e: unknown) {
+      const name = e instanceof Error ? e.name : "";
+      if (name === "AbortError") return;
+      /* share başarısız → panoya düş */
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareFeedback("Profil bağlantısı panoya kopyalandı.");
+    } catch {
+      setShareFeedback("Kopyalanamadı; adresi elle seçip kopyalayın.");
+    }
+    window.setTimeout(() => setShareFeedback(null), 2800);
+  }, [publicProfileHref, displayName]);
 
   async function saveEdit() {
     setSaveErr(null);
@@ -433,17 +460,33 @@ export function ProfilHeader({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditing(true);
-                    setPhotoErr(null);
-                    setSaveErr(null);
-                  }}
-                  className="mt-1 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
-                >
-                  Profili düzenle
-                </button>
+                <div className="mt-1 flex w-full max-w-md flex-col items-stretch gap-2 sm:items-start">
+                  {shareFeedback ? (
+                    <p className="text-center text-xs font-medium text-emerald-900 sm:text-left">
+                      {shareFeedback}
+                    </p>
+                  ) : null}
+                  <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                    <button
+                      type="button"
+                      onClick={() => void shareProfile()}
+                      className="rounded-lg border-2 border-zinc-900 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50"
+                    >
+                      Profili paylaş
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditing(true);
+                        setPhotoErr(null);
+                        setSaveErr(null);
+                      }}
+                      className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
+                    >
+                      Profili düzenle
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="mx-auto flex w-full max-w-md flex-col gap-3 sm:mx-0">
