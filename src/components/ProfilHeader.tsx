@@ -433,13 +433,6 @@ export function ProfilHeader({
                   </div>
                 </div>
 
-                <div className="w-full max-w-md rounded-xl bg-zinc-50 px-3 py-2.5 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                    Giriş e-postası
-                  </p>
-                  <p className="mt-0.5 truncate text-sm text-zinc-800">{email ?? "—"}</p>
-                </div>
-
                 <button
                   type="button"
                   onClick={() => {
