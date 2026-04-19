@@ -16,48 +16,51 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 border-t border-amber-700/30 pt-6 text-sm sm:grid-cols-3">
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <p className="text-xs font-bold uppercase tracking-wide text-zinc-700">
+        <div className="grid grid-cols-3 gap-x-2 gap-y-5 border-t border-amber-700/30 pt-6 text-[11px] leading-snug sm:gap-x-6 sm:gap-y-6 sm:text-sm md:gap-x-10">
+          <div className="flex min-w-0 flex-col gap-1.5 text-left sm:gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-700 sm:text-xs">
               Hızlı İşlemler
             </p>
-            <Link href="/ilan-ver" className="font-semibold hover:underline">
+            <Link
+              href="/ilan-ver"
+              className="break-words font-semibold hover:underline"
+            >
               + İlan Ekle
             </Link>
-            <Link href="/favoriler" className="font-semibold hover:underline">
+            <Link href="/favoriler" className="break-words font-semibold hover:underline">
               Favoriler
             </Link>
-            <Link href="/mesajlar" className="font-semibold hover:underline">
+            <Link href="/mesajlar" className="break-words font-semibold hover:underline">
               Mesajlar
             </Link>
           </div>
 
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <p className="text-xs font-bold uppercase tracking-wide text-zinc-700">
+          <div className="flex min-w-0 flex-col gap-1.5 text-left sm:gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-700 sm:text-xs">
               Keşfet
             </p>
-            <Link href="/" className="font-semibold hover:underline">
+            <Link href="/" className="break-words font-semibold hover:underline">
               Ana Sayfa
             </Link>
-            <Link href="/ilanlar" className="font-semibold hover:underline">
+            <Link href="/ilanlar" className="break-words font-semibold hover:underline">
               Tüm İlanlar
             </Link>
-            <Link href="/ilan-ver" className="font-semibold hover:underline">
+            <Link href="/ilan-ver" className="break-words font-semibold hover:underline">
               Ücretsiz İlan Ver
             </Link>
           </div>
 
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <p className="text-xs font-bold uppercase tracking-wide text-zinc-700">
+          <div className="flex min-w-0 flex-col gap-1.5 text-left sm:gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-700 sm:text-xs">
               Hesap
             </p>
-            <Link href="/profil" className="font-semibold hover:underline">
+            <Link href="/profil" className="break-words font-semibold hover:underline">
               Hesabım
             </Link>
-            <Link href="/giris" className="font-semibold hover:underline">
+            <Link href="/giris" className="break-words font-semibold hover:underline">
               Giriş Yap
             </Link>
-            <Link href="/kayit" className="font-semibold hover:underline">
+            <Link href="/kayit" className="break-words font-semibold hover:underline">
               Kayıt Ol
             </Link>
           </div>
