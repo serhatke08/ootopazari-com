@@ -63,14 +63,7 @@ export default async function FavorilerPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
-      <h1 className="mb-2 text-2xl font-semibold tracking-tight">Favorilerim</h1>
-      <p className="mb-8 text-sm text-zinc-600 dark:text-zinc-400">
-        Kayıtlı favori ilanlarınız (
-        <code className="rounded bg-zinc-200 px-1 text-xs dark:bg-zinc-800">
-          user_favorites
-        </code>
-        ).
-      </p>
+      <h1 className="mb-8 text-2xl font-semibold tracking-tight">Favorilerim</h1>
 
       {listings.length === 0 ? (
         <p className="text-sm text-zinc-500">
