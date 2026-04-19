@@ -18,9 +18,9 @@ const linkClass =
   "text-zinc-900 hover:underline decoration-zinc-900/40 font-medium";
 
 const navSearchFormClass =
-  "flex min-w-0 flex-1 max-w-[min(100%,200px)] sm:max-w-[240px] md:max-w-[280px]";
+  "flex min-w-0 flex-1 max-w-[min(100%,300px)] sm:max-w-[300px] md:max-w-[340px]";
 const navSearchInputClass =
-  "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25 sm:px-2.5 sm:py-1.5";
+  "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25 sm:px-3 sm:py-1.5";
 
 function dealerBorderColor(label: string): string {
   const key = label.trim().toLocaleLowerCase("tr");
