@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export function SiteFooter() {
@@ -12,14 +11,7 @@ export function SiteFooter() {
           <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
             Oto Pazarı
           </h2>
-          <Image
-            src="/Sure.png"
-            alt=""
-            width={320}
-            height={112}
-            className="mx-auto mt-3 h-auto w-[200px] sm:mt-4 sm:w-[240px] md:w-[280px]"
-          />
-          <p className="mt-2 text-sm font-medium text-zinc-800">
+          <p className="mt-3 text-sm font-medium text-zinc-800 sm:mt-4">
             İlan ver, favorile, mesajlaş.
           </p>
         </div>
