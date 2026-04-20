@@ -39,22 +39,41 @@ export function SignupForm() {
   const [sentToEmail, setSentToEmail] = useState("");
 
   async function signUpWithGoogle() {
+    if (oauthLoading || loading) return;
     setError(null);
     setOauthLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
       const redirectTo = buildOAuthRedirectTo();
-      const { error: err } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+      const oauthOptions = {
+        provider: "google" as const,
         options: {
           redirectTo,
           queryParams: {
             prompt: "select_account",
           },
         },
-      });
+      };
+
+      let { data, error: err } = await supabase.auth.signInWithOAuth(oauthOptions);
+
+      const msg = String(err?.message ?? "").toLowerCase();
+      const staleToken =
+        msg.includes("refresh token") ||
+        msg.includes("invalid refresh") ||
+        msg.includes("jwt");
+
+      if (err && staleToken) {
+        await supabase.auth.signOut({ scope: "local" });
+        ({ data, error: err } = await supabase.auth.signInWithOAuth(oauthOptions));
+      }
+
       if (err) {
         setError(friendlyAuthError(err.message));
+        return;
+      }
+      if (data?.url && typeof window !== "undefined") {
+        window.location.assign(data.url);
       }
     } finally {
       setOauthLoading(false);
