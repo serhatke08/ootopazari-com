@@ -7,6 +7,15 @@ import { friendlyAuthError } from "@/lib/auth-errors";
 import { GoogleIcon } from "@/components/GoogleIcon";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+function buildOAuthRedirectTo(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const base = fromEnv && fromEnv !== "" ? fromEnv : window.location.origin;
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(base)
+    ? base
+    : `https://${base}`;
+  return new URL("/auth/callback", withProtocol).toString();
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,11 +38,11 @@ export function LoginForm() {
     setOauthLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectTo = buildOAuthRedirectTo();
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback`,
+          redirectTo,
           queryParams: {
             prompt: "select_account",
           },

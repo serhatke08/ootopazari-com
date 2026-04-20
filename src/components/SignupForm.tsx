@@ -10,6 +10,15 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 const inputClass =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder:text-zinc-400 shadow-sm transition-colors hover:border-zinc-400 hover:bg-white focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80";
 
+function buildOAuthRedirectTo(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const base = fromEnv && fromEnv !== "" ? fromEnv : window.location.origin;
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(base)
+    ? base
+    : `https://${base}`;
+  return new URL("/auth/callback", withProtocol).toString();
+}
+
 export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,11 +43,11 @@ export function SignupForm() {
     setOauthLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectTo = buildOAuthRedirectTo();
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback`,
+          redirectTo,
           queryParams: {
             prompt: "select_account",
           },
