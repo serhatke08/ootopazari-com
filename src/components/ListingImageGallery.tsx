@@ -3,7 +3,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { isHeicLikeUrl } from "@/lib/image-format";
 
 export function ListingImageGallery({
   images,
@@ -19,7 +18,6 @@ export function ListingImageGallery({
   const [lightbox, setLightbox] = useState(false);
   const list = images.filter(Boolean);
   const main = list[active] ?? list[0];
-  const mainUnoptimized = isHeicLikeUrl(main);
 
   const goPrev = useCallback(() => {
     setActive((a) => (a > 0 ? a - 1 : list.length - 1));
@@ -66,7 +64,7 @@ export function ListingImageGallery({
           src={main}
           alt={alt}
           fill
-          unoptimized={mainUnoptimized}
+          unoptimized
           className="pointer-events-none object-cover object-center"
           priority
           sizes="(max-width: 640px) 100vw, 60vw"
@@ -103,7 +101,7 @@ export function ListingImageGallery({
                 src={src}
                 alt=""
                 fill
-                unoptimized={isHeicLikeUrl(src)}
+                unoptimized
                 className="object-cover object-center"
                 sizes="112px"
               />
@@ -172,7 +170,7 @@ export function ListingImageGallery({
                 src={list[active]}
                 alt={alt}
                 fill
-                unoptimized={isHeicLikeUrl(list[active])}
+                unoptimized
                 className="object-contain object-center"
                 sizes="100vw"
                 priority

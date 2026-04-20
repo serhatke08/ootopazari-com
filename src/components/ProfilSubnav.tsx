@@ -12,6 +12,7 @@ const active = "border-zinc-900 text-zinc-900";
 export function ProfilSubnav() {
   const pathname = usePathname();
   const isIlanlarim = pathname.startsWith("/profil/ilanlarim");
+  const isAyarlar = pathname.startsWith("/profil/ayarlar");
 
   return (
     <nav
@@ -24,6 +25,12 @@ export function ProfilSubnav() {
           className={`${tabClass} ${isIlanlarim ? active : inactive}`}
         >
           İlanlarım
+        </Link>
+        <Link
+          href="/profil/ayarlar"
+          className={`${tabClass} ${isAyarlar ? active : inactive}`}
+        >
+          Ayarlar
         </Link>
       </div>
       <div className="pb-2">

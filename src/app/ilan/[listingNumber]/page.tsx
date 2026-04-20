@@ -6,7 +6,9 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import {
+  buildCategoryMap,
   buildCityMap,
+  fetchCategories,
   fetchCities,
   fetchListingForDetailPage,
   fetchProfilePublic,
@@ -280,11 +282,12 @@ export default async function IlanDetayPage({ params }: Props) {
   const viewerAdminProfile = viewer?.id
     ? await fetchAdminProfileByUserId(supabase, viewer.id)
     : null;
-  const [detail, cities] = await Promise.all([
+  const [detail, cities, categories] = await Promise.all([
     fetchListingForDetailPage(supabase, listingNumber, viewer?.id ?? null, {
       viewerIsAdmin: !!viewerAdminProfile,
     }),
     fetchCities(supabase),
+    fetchCategories(supabase),
   ]);
   if (!detail) notFound();
 
@@ -308,7 +311,23 @@ export default async function IlanDetayPage({ params }: Props) {
   const id = listing.id as string | undefined;
 
   const cityMap = buildCityMap(cities);
+  const categoryMap = buildCategoryMap(categories);
   const cityDisplayResolved = resolveListingCityDisplay(listing, cityMap);
+  const categoryName =
+    listing.category_id != null
+      ? categoryMap.get(String(listing.category_id))?.name ?? null
+      : null;
+  const categoryCode =
+    listing.category_id != null
+      ? categoryMap.get(String(listing.category_id))?.code ?? null
+      : null;
+  const categoryText = `${categoryName ?? ""} ${categoryCode ?? ""}`
+    .toLocaleLowerCase("tr")
+    .trim();
+  const isMotorcycle =
+    categoryText.includes("motosiklet") ||
+    categoryText.includes("motor");
+  const isCarLike = !isMotorcycle;
 
   const row = listing as Record<string, unknown>;
   const [statsMap, sessionFav] = id
@@ -578,6 +597,7 @@ export default async function IlanDetayPage({ params }: Props) {
               <Field label="İlan no" value="—" />
             )}
             <Field label="Şehir" value={cityDisplayResolved ?? "—"} />
+            <Field label="Kategori" value={categoryName ?? undefined} />
             <Field
               label="İlan tarihi"
               value={fmtListingDate(row.created_at) ?? "—"}
@@ -591,13 +611,21 @@ export default async function IlanDetayPage({ params }: Props) {
               value={fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))}
             />
             <Field label="Yakıt" value={listing.fuel_type as string} />
-            <Field label="Vites" value={listing.transmission_type as string} />
+            <Field
+              label={isMotorcycle ? "Şanzıman" : "Vites"}
+              value={listing.transmission_type as string}
+            />
             <Field
               label="Motor gücü"
               value={pick(row, ["engine_power", "motor_gucu", "motor_power"]) as string | undefined}
             />
-            <Field label="Renk" value={listing.color as string} />
-            <Field label="Kasa tipi" value={listing.body_type as string} />
+            <Field
+              label={isMotorcycle ? "Renk / Kaplama" : "Renk"}
+              value={listing.color as string}
+            />
+            {isCarLike ? (
+              <Field label="Kasa tipi" value={listing.body_type as string} />
+            ) : null}
             <Field
               label="Hasar"
               value={
@@ -622,7 +650,7 @@ export default async function IlanDetayPage({ params }: Props) {
               }
             />
             <Field
-              label="Araç durumu"
+              label={isMotorcycle ? "Motosiklet durumu" : "Araç durumu"}
               value={pick(row, [
                 "vehicle_condition",
                 "arac_durumu",
@@ -640,7 +668,7 @@ export default async function IlanDetayPage({ params }: Props) {
               }
             />
             <Field
-              label="Ekspertiz raporu"
+              label={isMotorcycle ? "Ekspertiz / kontrol raporu" : "Ekspertiz raporu"}
               value={
                 listing.has_expertise === true
                   ? "Var"
@@ -659,7 +687,9 @@ export default async function IlanDetayPage({ params }: Props) {
                     : undefined
               }
             />
-            <Field label="Çekiş" value={listing.drive_type as string} />
+            {isCarLike ? (
+              <Field label="Çekiş" value={listing.drive_type as string} />
+            ) : null}
             <Field
               label="Motor hacmi"
               value={pick(row, ["engine_capacity", "motor_hacmi"]) as string}
