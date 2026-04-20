@@ -23,9 +23,33 @@ export function SignupForm() {
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   /** Kayıt tamam; e-posta ile doğrulama bekleniyor */
   const [awaitingEmailConfirm, setAwaitingEmailConfirm] = useState(false);
   const [sentToEmail, setSentToEmail] = useState("");
+
+  async function signUpWithGoogle() {
+    setError(null);
+    setOauthLoading(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+      if (err) {
+        setError(friendlyAuthError(err.message));
+      }
+    } finally {
+      setOauthLoading(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -211,10 +235,30 @@ export function SignupForm() {
       ) : null}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || oauthLoading}
         className="rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60"
       >
         {loading ? "Kaydediliyor…" : "Kayıt ol"}
+      </button>
+      <div className="relative py-1">
+        <div className="h-px w-full bg-zinc-200" />
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-zinc-500">
+          veya
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => void signUpWithGoogle()}
+        disabled={loading || oauthLoading}
+        className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:opacity-60"
+      >
+        <span
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-zinc-700 ring-1 ring-zinc-300"
+          aria-hidden
+        >
+          G
+        </span>
+        {oauthLoading ? "Google yönlendiriliyor…" : "Google ile devam et"}
       </button>
       <p className="text-sm text-zinc-600">
         Zaten hesabınız var mı?{" "}
