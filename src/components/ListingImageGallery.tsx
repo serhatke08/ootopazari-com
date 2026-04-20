@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function ListingImageGallery({
   images,
@@ -16,6 +16,21 @@ export function ListingImageGallery({
 }) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{
+    dragging: boolean;
+    startX: number;
+    startY: number;
+    startPanX: number;
+    startPanY: number;
+  }>({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    startPanX: 0,
+    startPanY: 0,
+  });
   const list = images.filter(Boolean);
   const main = list[active] ?? list[0];
 
@@ -26,6 +41,36 @@ export function ListingImageGallery({
   const goNext = useCallback(() => {
     setActive((a) => (a < list.length - 1 ? a + 1 : 0));
   }, [list.length]);
+
+  const clampPan = useCallback((x: number, y: number, z: number) => {
+    if (z <= 1) return { x: 0, y: 0 };
+    const maxX = ((z - 1) * window.innerWidth) / 2;
+    const maxY = ((z - 1) * window.innerHeight) / 2;
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  }, []);
+
+  const setZoomSafely = useCallback(
+    (nextZoom: number) => {
+      const z = Math.max(1, Math.min(4, Number(nextZoom.toFixed(2))));
+      setZoom(z);
+      if (z <= 1) {
+        setPan({ x: 0, y: 0 });
+      } else {
+        setPan((p) => clampPan(p.x, p.y, z));
+      }
+    },
+    [clampPan]
+  );
+
+  const zoomIn = useCallback(() => setZoomSafely(zoom + 0.25), [zoom, setZoomSafely]);
+  const zoomOut = useCallback(() => setZoomSafely(zoom - 0.25), [zoom, setZoomSafely]);
+  const zoomReset = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
 
   useEffect(() => {
     if (!lightbox) return;
@@ -43,6 +88,58 @@ export function ListingImageGallery({
       document.body.style.overflow = prevOverflow;
     };
   }, [lightbox, list.length, goPrev, goNext]);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, [lightbox, active]);
+
+  const onLightboxWheel = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      if (e.deltaY < 0) setZoomSafely(zoom + 0.18);
+      else setZoomSafely(zoom - 0.18);
+    },
+    [zoom, setZoomSafely]
+  );
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (zoom <= 1) return;
+      dragRef.current.dragging = true;
+      dragRef.current.startX = e.clientX;
+      dragRef.current.startY = e.clientY;
+      dragRef.current.startPanX = pan.x;
+      dragRef.current.startPanY = pan.y;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [zoom, pan]
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragRef.current.dragging || zoom <= 1) return;
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      const next = clampPan(
+        dragRef.current.startPanX + dx,
+        dragRef.current.startPanY + dy,
+        zoom
+      );
+      setPan(next);
+    },
+    [zoom, clampPan]
+  );
+
+  const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    dragRef.current.dragging = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   if (!main) {
     return (
@@ -130,6 +227,42 @@ export function ListingImageGallery({
             ×
           </button>
 
+          <div className="absolute left-3 top-3 z-30 flex items-center gap-1.5 sm:left-4 sm:top-4">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-lg text-white transition hover:bg-white/25"
+              onClick={(e) => {
+                e.stopPropagation();
+                zoomOut();
+              }}
+              aria-label="Uzaklaştır"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="flex h-9 min-w-[3.25rem] items-center justify-center rounded-full bg-white/15 px-2 text-xs font-semibold text-white transition hover:bg-white/25"
+              onClick={(e) => {
+                e.stopPropagation();
+                zoomReset();
+              }}
+              aria-label="Yakınlaştırmayı sıfırla"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-lg text-white transition hover:bg-white/25"
+              onClick={(e) => {
+                e.stopPropagation();
+                zoomIn();
+              }}
+              aria-label="Yakınlaştır"
+            >
+              +
+            </button>
+          </div>
+
           {list.length > 1 ? (
             <>
               <button
@@ -163,15 +296,26 @@ export function ListingImageGallery({
 
           <div
             className="absolute inset-3 flex items-center justify-center sm:inset-4 sm:pt-2"
+            onWheel={onLightboxWheel}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative h-full min-h-0 w-full">
+            <div
+              className={`relative h-full min-h-0 w-full ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
+            >
               <Image
                 src={list[active]}
                 alt={alt}
                 fill
                 unoptimized
-                className="object-contain object-center"
+                className="object-contain object-center transition-transform duration-75 ease-out"
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: "center center",
+                }}
                 sizes="100vw"
                 priority
               />
