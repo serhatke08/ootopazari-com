@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import { GoogleIcon } from "@/components/GoogleIcon";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const inputClass =
@@ -250,13 +251,10 @@ export function SignupForm() {
         type="button"
         onClick={() => void signUpWithGoogle()}
         disabled={loading || oauthLoading}
-        className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-sm transition-colors hover:bg-zinc-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1a73e8] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1765cc] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#1a73e8]/50 disabled:opacity-60"
       >
-        <span
-          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-zinc-700 ring-1 ring-zinc-300"
-          aria-hidden
-        >
-          G
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white">
+          <GoogleIcon className="h-4 w-4" />
         </span>
         {oauthLoading ? "Google yönlendiriliyor…" : "Google ile devam et"}
       </button>
