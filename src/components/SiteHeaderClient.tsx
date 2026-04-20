@@ -28,7 +28,7 @@ function dealerBorderColor(label: string): string {
   if (key === "galeri") return "#5e17eb";
   if (key === "parça") return "#2e6417";
   if (key === "kiralama") return "#0081cc";
-  if (key === "bayilikler" || key === "bayilik") return "#111111";
+  if (key === "bayilikler" || key === "bayilik" || key === "pazar") return "#111111";
   return "#f59e0b";
 }
 

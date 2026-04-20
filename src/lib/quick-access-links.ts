@@ -6,7 +6,7 @@ export const QUICK_ACCESS_LINKS: {
 }[] = [
   {
     href: "/bayilik-basvuru",
-    label: "Bayilikler",
+    label: "Pazar",
     image: "/menu/pazar.png",
   },
   {

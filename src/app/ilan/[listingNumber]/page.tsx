@@ -741,44 +741,6 @@ export default async function IlanDetayPage({ params }: Props) {
         </p>
       </section>
 
-      {seller ? (
-        <section className="mt-10 rounded-xl border border-black/10 bg-white p-4">
-          <h2 className="mb-3 text-lg font-semibold text-black">Satıcı</h2>
-          <div className="flex items-start gap-4">
-            {sellerAvSrc ? (
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-black/5">
-                <Image
-                  src={sellerAvSrc}
-                  alt=""
-                  width={56}
-                  height={56}
-                  className="h-14 w-14 object-cover"
-                />
-              </div>
-            ) : (
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black/10 text-lg font-semibold text-black/55">
-                {(sellerDisplayName ?? "?").trim().slice(0, 1).toUpperCase() ||
-                  "?"}
-              </div>
-            )}
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <p className="font-medium">{sellerDisplayName}</p>
-                {adminProfile ? <AdminVerifiedBadge /> : null}
-              </div>
-              {seller.phone ? (
-                <p className="text-sm text-black/70">{String(seller.phone)}</p>
-              ) : null}
-              {canMessageSeller && id ? (
-                <StartConversationButton
-                  listingId={id}
-                  ownerUserId={sellerUserId}
-                />
-              ) : null}
-            </div>
-          </div>
-        </section>
-      ) : null}
     </article>
   );
 }
