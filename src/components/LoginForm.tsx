@@ -33,7 +33,7 @@ export function LoginForm() {
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          redirectTo: `${origin}/auth/callback`,
           queryParams: {
             prompt: "select_account",
           },
