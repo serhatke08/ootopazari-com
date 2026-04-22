@@ -108,7 +108,86 @@ export const fetchCategories = cache(async function fetchCategories(
   return (data ?? []) as CategoryRow[];
 });
 
+/** Türkiye satırını `countries` tablosundan bulur (iso/code alan adları projeden projeye değişebilir). */
+async function resolveTurkeyCountryId(
+  supabase: SupabaseClient
+): Promise<string | null> {
+  const envId = process.env.NEXT_PUBLIC_TURKEY_COUNTRY_ID?.trim();
+  if (envId) return envId;
+
+  const { data, error } = await supabase
+    .from("countries")
+    .select("id")
+    .or(
+      [
+        "iso_code.eq.TR",
+        "code.eq.TR",
+        "iso2.eq.TR",
+        "alpha_2.eq.TR",
+        "alpha2.eq.TR",
+      ].join(",")
+    )
+    .limit(1);
+
+  if (!error && data?.[0]?.id != null) return String(data[0].id);
+
+  const { data: byName, error: nameErr } = await supabase
+    .from("countries")
+    .select("id")
+    .or("name.ilike.%türkiye%,name.ilike.%turkiye%")
+    .limit(1)
+    .maybeSingle();
+
+  if (!nameErr && byName?.id != null) return String(byName.id);
+
+  return null;
+}
+
+/** `cities` ↔ `countries` ilişkisi üzerinden TR kodu ile filtre (country id çözülemezse). */
+async function fetchCitiesTurkeyViaJoin(
+  supabase: SupabaseClient
+): Promise<CityRow[] | null> {
+  const isoFields = ["iso_code", "code", "iso2", "alpha_2", "alpha2"] as const;
+  for (const field of isoFields) {
+    const { data, error } = await supabase
+      .from("cities")
+      .select(`id,name,country_id,countries!inner(${field})`)
+      .eq(`countries.${field}`, "TR")
+      .order("name", { ascending: true });
+    if (!error && data) {
+      return (data as CityRow[]).map((c) => ({
+        id: String(c.id),
+        name: c.name ?? null,
+        country_id: c.country_id != null ? String(c.country_id) : null,
+      }));
+    }
+  }
+  return null;
+}
+
 export async function fetchCities(supabase: SupabaseClient): Promise<CityRow[]> {
+  const turkeyId = await resolveTurkeyCountryId(supabase);
+
+  if (turkeyId) {
+    const { data, error } = await supabase
+      .from("cities")
+      .select("id,name,country_id")
+      .eq("country_id", turkeyId)
+      .order("name", { ascending: true });
+
+    if (!error) return (data ?? []) as CityRow[];
+    console.warn("cities (TR country_id):", error.message);
+  }
+
+  const viaJoin = await fetchCitiesTurkeyViaJoin(supabase);
+  if (viaJoin) return viaJoin;
+
+  if (!turkeyId) {
+    console.warn(
+      "fetchCities: Türkiye `countries` kaydı bulunamadı; şehirler filtrelenemedi. Gerekirse NEXT_PUBLIC_TURKEY_COUNTRY_ID ayarlayın."
+    );
+  }
+
   const { data, error } = await supabase
     .from("cities")
     .select("id,name,country_id")

@@ -33,6 +33,7 @@ import {
   computeListingBodyTypeFinal,
 } from "@/lib/listing-body-type-final";
 import { getSupabaseEnv } from "@/lib/env";
+import { fetchCities } from "@/lib/listings-data";
 import { publicListingImageUrl } from "@/lib/storage";
 import type { ExpertizDurum } from "@/lib/expertiz";
 import {
@@ -252,11 +253,8 @@ export function CreateListingWizard({
 
   useEffect(() => {
     void (async () => {
-      const { data, error } = await supabase
-        .from("cities")
-        .select("id,name")
-        .order("name", { ascending: true });
-      if (!error && data) setCities(data as { id: string; name: string | null }[]);
+      const rows = await fetchCities(supabase);
+      setCities(rows.map((c) => ({ id: c.id, name: c.name })));
     })();
   }, [supabase]);
 
