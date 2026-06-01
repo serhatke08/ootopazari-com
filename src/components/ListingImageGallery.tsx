@@ -162,7 +162,7 @@ export function ListingImageGallery({
       <div
         className={`relative w-full overflow-hidden rounded-lg bg-zinc-100 ${
           compact
-            ? "aspect-[4/3] max-h-[220px] sm:max-h-[260px] lg:max-h-[280px]"
+            ? "aspect-[4/3] w-full"
             : "aspect-[4/3] sm:aspect-[3/2]"
         }`}
       >
@@ -171,9 +171,11 @@ export function ListingImageGallery({
           alt={alt}
           fill
           unoptimized
-          className="pointer-events-none object-cover object-center"
+          className={`pointer-events-none object-center ${
+            compact ? "object-contain" : "object-cover"
+          }`}
           priority
-          sizes="(max-width: 640px) 100vw, 60vw"
+          sizes="(max-width: 1024px) 100vw, 33vw"
         />
         <button
           type="button"
