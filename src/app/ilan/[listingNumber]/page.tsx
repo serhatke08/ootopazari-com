@@ -39,6 +39,7 @@ import {
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import { SuspendListingButton } from "@/components/SuspendListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
+import { ListingMobileContactBar } from "@/components/ListingMobileContactBar";
 import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
@@ -378,13 +379,12 @@ export default async function IlanDetayPage({ params }: Props) {
   const stats = id ? statsMap.get(id) : undefined;
 
   const sellerUserId = listing.user_id ? String(listing.user_id) : "";
-  const canMessageSeller =
+  const showMessageButton =
     detailAccess === "public" &&
-    !!viewer?.id &&
     !!id &&
     !!sellerUserId &&
-    viewer.id !== sellerUserId &&
-    !!listing.contact_via_message;
+    !!listing.contact_via_message &&
+    (!viewer?.id || viewer.id !== sellerUserId);
 
   const [seller, adminProfile] = await Promise.all([
     sellerUserId ? fetchProfilePublic(supabase, sellerUserId) : Promise.resolve(null),
@@ -541,6 +541,8 @@ export default async function IlanDetayPage({ params }: Props) {
     listing.contact_via_phone === true &&
     detailAccess === "public";
 
+  const showMobileContactBar = showMessageButton || showPhone;
+
   const suspensionReason =
     listing.suspension_reason != null
       ? String(listing.suspension_reason).trim()
@@ -549,8 +551,10 @@ export default async function IlanDetayPage({ params }: Props) {
   return (
     <article
       className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-4 pb-12 pt-4 text-black sm:px-6 ${
-        isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""
-      }`}
+        showMobileContactBar
+          ? "max-md:pb-[calc(8.75rem+env(safe-area-inset-bottom,0px))]"
+          : "max-md:pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]"
+      } ${isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""}`}
     >
       {id && !isSuspendedDetailView ? (
         <ListingViewTracker listingId={id} />
@@ -800,8 +804,8 @@ export default async function IlanDetayPage({ params }: Props) {
           />
         </div>
 
-        <aside className="listing-detail-aside flex min-w-0 flex-col gap-3 max-md:mt-3">
-          {seller ? (
+        {seller ? (
+          <div className="listing-detail-seller min-w-0 max-md:mt-2">
             <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
                 Satıcı
@@ -845,18 +849,26 @@ export default async function IlanDetayPage({ params }: Props) {
                   />
                 </div>
               ) : null}
-              {canMessageSeller && id ? (
-                <StartConversationButton
-                  listingId={id}
-                  ownerUserId={sellerUserId}
-                />
-              ) : null}
-              {showPhone ? (
-                <ListingContactPhone phone={contactPhone} />
+              {showMessageButton && id ? (
+                <div className="listing-contact-actions mt-3 flex flex-col gap-3 max-md:hidden">
+                  <StartConversationButton
+                    listingId={id}
+                    ownerUserId={sellerUserId}
+                  />
+                  {showPhone ? (
+                    <ListingContactPhone phone={contactPhone} />
+                  ) : null}
+                </div>
+              ) : showPhone ? (
+                <div className="listing-contact-actions mt-3 max-md:hidden">
+                  <ListingContactPhone phone={contactPhone} />
+                </div>
               ) : null}
             </div>
-          ) : null}
+          </div>
+        ) : null}
 
+        <div className="listing-detail-location min-w-0 max-md:mt-3">
           <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
               Konum
@@ -867,8 +879,18 @@ export default async function IlanDetayPage({ params }: Props) {
               <Field label="Ülke" value={listing.country_name as string} />
             </dl>
           </div>
-        </aside>
+        </div>
       </div>
+
+      {showMobileContactBar && id ? (
+        <ListingMobileContactBar
+          listingId={id}
+          ownerUserId={sellerUserId}
+          showMessage={showMessageButton}
+          showPhone={showPhone}
+          phone={contactPhone}
+        />
+      ) : null}
 
       {expertizPanels ? (
         <section className="mt-10">

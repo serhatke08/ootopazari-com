@@ -32,7 +32,7 @@ body {
   }
 }
 
-/* İlan detay: tablet 2 sütun, masaüstü 3 sütun */
+/* İlan detay düzeni */
 .listing-detail-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -44,9 +44,67 @@ body {
   grid-column: 1 / -1;
 }
 
-@media (min-width: 48rem) {
+/* Mobil: galeri → satıcı → bilgiler → konum */
+@media (max-width: 47.999rem) {
+  .listing-detail-layout > .listing-detail-title {
+    order: 1;
+  }
+
+  .listing-detail-layout > .listing-detail-gallery {
+    order: 2;
+  }
+
+  .listing-detail-layout > .listing-detail-seller {
+    order: 3;
+  }
+
+  .listing-detail-layout > .listing-detail-tabs {
+    order: 4;
+  }
+
+  .listing-detail-layout > .listing-detail-location {
+    order: 5;
+  }
+}
+
+/* Tablet: sol galeri + satıcı (bitişik), sağ bilgiler + konum */
+@media (min-width: 48rem) and (max-width: 79.999rem) {
   .listing-detail-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.25rem;
+    row-gap: 0.5rem;
+  }
+
+  .listing-detail-layout > .listing-detail-gallery {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .listing-detail-layout > .listing-detail-seller {
+    grid-column: 1;
+    grid-row: 3;
+    margin-top: 0;
+  }
+
+  .listing-detail-layout > .listing-detail-tabs {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    margin-top: 0;
+    align-self: start;
+  }
+
+  .listing-detail-layout > .listing-detail-location {
+    grid-column: 2;
+    grid-row: 4;
+    margin-top: 0;
+  }
+}
+
+/* Masaüstü: 3 sütun */
+@media (min-width: 80rem) {
+  .listing-detail-layout {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 1rem;
     column-gap: 1.25rem;
   }
 
@@ -61,25 +119,15 @@ body {
     margin-top: 0;
   }
 
-  .listing-detail-layout > .listing-detail-aside {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-}
-
-@media (min-width: 80rem) {
-  .listing-detail-layout {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .listing-detail-layout > .listing-detail-aside {
+  .listing-detail-layout > .listing-detail-seller {
     grid-column: 3;
     grid-row: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    margin-top: 0;
+  }
+
+  .listing-detail-layout > .listing-detail-location {
+    grid-column: 3;
+    grid-row: 3;
+    margin-top: 0;
   }
 }

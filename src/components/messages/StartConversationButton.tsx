@@ -89,7 +89,7 @@ export function StartConversationButton({ listingId, ownerUserId }: Props) {
   }
 
   return (
-    <div className="mt-3 w-full">
+    <div className="w-full [&:not(:first-child)]:mt-3">
       <button
         type="button"
         onClick={handleClick}

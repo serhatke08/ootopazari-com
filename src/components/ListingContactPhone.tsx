@@ -21,7 +21,7 @@ export function ListingContactPhone({ phone }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`mt-3 ${primaryBtn}`}
+        className={primaryBtn}
       >
         <PhoneIcon />
         Ara
@@ -30,7 +30,7 @@ export function ListingContactPhone({ phone }: Props) {
   }
 
   return (
-    <div className="mt-3 space-y-2">
+    <div className="space-y-2">
       <a href={`tel:${tel}`} className={primaryBtn}>
         <PhoneIcon />
         Hemen ara
