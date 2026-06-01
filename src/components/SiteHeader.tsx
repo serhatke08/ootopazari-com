@@ -9,21 +9,6 @@ import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { publicAvatarUrl } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { displayNameFromAuthUser } from "@/lib/user-display-name";
-import { QUICK_ACCESS_LINKS } from "@/lib/quick-access-links";
-
-type DealerStory = {
-  id: string;
-  displayName: string;
-  imageUrl: string | null;
-  href: string;
-};
-
-const DEALER_STORIES: DealerStory[] = QUICK_ACCESS_LINKS.map((x) => ({
-  id: `${x.href}-${x.label}`,
-  displayName: x.label,
-  imageUrl: x.image ?? null,
-  href: x.href,
-}));
 
 export async function SiteHeader() {
   const env = tryGetSupabaseEnv();
@@ -32,7 +17,6 @@ export async function SiteHeader() {
   let dealerApplications: BayiApplicationMenuRow[] = [];
   let drawerProfile: { displayName: string; avatarUrl: string | null } | null =
     null;
-  const dealerStories: DealerStory[] = DEALER_STORIES;
 
   if (env) {
     try {
@@ -77,7 +61,6 @@ export async function SiteHeader() {
     <SiteHeaderClient
       categories={categories}
       dealerApplications={dealerApplications}
-      dealerStories={dealerStories}
       drawerProfile={drawerProfile}
       email={email}
       hasEnv={!!env}

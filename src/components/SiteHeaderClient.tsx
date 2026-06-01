@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -15,22 +14,12 @@ import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 
 const linkClass =
-  "text-zinc-900 hover:underline decoration-zinc-900/40 font-medium";
+  "text-zinc-900 hover:underline decoration-zinc-900/40 font-semibold";
 
 const navSearchFormClass =
-  "flex min-w-0 flex-1 max-w-[min(100%,300px)] sm:max-w-[300px] md:max-w-[340px]";
+  "hidden min-w-0 flex-1 max-w-[min(100%,360px)] sm:flex sm:max-w-[360px] md:max-w-[420px]";
 const navSearchInputClass =
   "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25 sm:px-3 sm:py-1.5";
-
-function dealerBorderColor(label: string): string {
-  const key = label.trim().toLocaleLowerCase("tr");
-  if (key === "ekspertiz") return "#a91414";
-  if (key === "galeri") return "#5e17eb";
-  if (key === "parça") return "#2e6417";
-  if (key === "kiralama") return "#0081cc";
-  if (key === "bayilikler" || key === "bayilik" || key === "pazar") return "#111111";
-  return "#f59e0b";
-}
 
 function BellIcon({ className }: { className?: string }) {
   return (
@@ -100,19 +89,12 @@ function NavSearchForm() {
 export function SiteHeaderClient({
   categories,
   dealerApplications,
-  dealerStories,
   drawerProfile,
   email,
   hasEnv,
 }: {
   categories: CategoryRow[];
   dealerApplications: BayiApplicationMenuRow[];
-  dealerStories: Array<{
-    id: string;
-    displayName: string;
-    imageUrl: string | null;
-    href: string;
-  }>;
   drawerProfile: { displayName: string; avatarUrl: string | null } | null;
   email: string | null;
   hasEnv: boolean;
@@ -238,46 +220,53 @@ export function SiteHeaderClient({
         unreadMessageCount={unreadMessageCount}
       />
 
-      <header className="relative z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm">
         <div className="mx-auto flex max-w-[1400px] flex-nowrap items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
           <HamburgerButton
             open={drawerOpen}
             onClick={() => setDrawerOpen((o) => !o)}
+            className="text-zinc-900 hover:bg-black/10 focus:ring-zinc-900/30"
           />
 
           <Link
             href="/"
-            className="flex shrink-0 min-w-0 items-center py-0.5"
+            className="flex shrink-0 min-w-0 items-center gap-2 py-0.5"
             onClick={() => setDrawerOpen(false)}
           >
-            <span className="truncate text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
-              Oto Pazarı
+            <span className="truncate text-lg font-extrabold tracking-tight sm:text-xl md:text-2xl">
+              <span className="text-zinc-900">Oto Pazarı</span>
             </span>
           </Link>
 
           <NavSearchForm />
 
-          <nav className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-sm sm:gap-x-3">
+          <nav className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-2 text-sm sm:gap-x-3">
             {hasEnv ? (
               <>
                 <Link
                   href="/ilan-ver"
-                  className={`${linkClass} hidden whitespace-nowrap md:inline font-semibold`}
+                  className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-3 py-2 text-sm font-extrabold text-[#ffcc00] hover:bg-zinc-800 sm:inline-flex sm:items-center sm:justify-center"
                 >
                   İlan ver
                 </Link>
                 {loggedIn ? (
                   <>
                     <Link
+                      href="/favoriler"
+                      className={`${linkClass} hidden whitespace-nowrap md:inline-flex`}
+                    >
+                      Favoriler
+                    </Link>
+                    <Link
                       href="/mesajlar"
-                      className={`${linkClass} hidden whitespace-nowrap text-sm font-semibold md:inline-flex md:items-center md:gap-1.5`}
+                      className={`${linkClass} hidden whitespace-nowrap md:inline-flex md:items-center md:gap-1.5`}
                     >
                       Mesajlar
                       <MessageUnreadBadge count={unreadMessageCount} />
                     </Link>
                     <Link
                       href="/profil"
-                      className={`${linkClass} hidden whitespace-nowrap text-sm font-semibold md:inline`}
+                      className={`${linkClass} hidden whitespace-nowrap md:inline`}
                       title={sessionEmail ?? undefined}
                     >
                       Hesabım
@@ -382,7 +371,10 @@ export function SiteHeaderClient({
                   </>
                 ) : (
                   <>
-                    <Link href="/giris" className={`${linkClass} whitespace-nowrap`}>
+                    <Link
+                      href="/giris"
+                      className={`${linkClass} whitespace-nowrap`}
+                    >
                       Giriş
                     </Link>
                     <Link
@@ -398,43 +390,6 @@ export function SiteHeaderClient({
           </nav>
         </div>
       </header>
-      {pathname === "/" && dealerStories.length > 0 ? (
-        <div className="border-b border-zinc-200 bg-white">
-          <div className="mx-auto max-w-[1400px] px-2 pb-2 pt-3 sm:px-4 sm:pt-3.5 md:px-6">
-            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {dealerStories.map((d) => (
-                <Link
-                  key={d.id}
-                  href={d.href}
-                  className="group flex w-[4.35rem] shrink-0 flex-col items-center gap-1"
-                >
-                  <span
-                    className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-[3px] bg-zinc-200 ring-offset-1 ring-offset-white transition group-hover:brightness-110"
-                    style={{ borderColor: dealerBorderColor(d.displayName) }}
-                  >
-                    {d.imageUrl ? (
-                      <Image
-                        src={d.imageUrl}
-                        alt=""
-                        fill
-                        className="h-full w-full scale-110 object-contain p-0.5"
-                        sizes="48px"
-                      />
-                    ) : (
-                      <span className="text-sm font-semibold text-zinc-700">
-                        {d.displayName.trim().slice(0, 1).toUpperCase() || "B"}
-                      </span>
-                    )}
-                  </span>
-                  <span className="w-full truncate text-center text-[10px] font-medium leading-tight text-zinc-700">
-                    {d.displayName}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       <MobileBottomNav
         loggedIn={loggedIn}

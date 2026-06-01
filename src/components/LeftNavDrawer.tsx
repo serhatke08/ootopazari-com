@@ -181,15 +181,22 @@ export function LeftNavDrawer({
 export function HamburgerButton({
   open,
   onClick,
+  className,
 }: {
   open: boolean;
   onClick: () => void;
+  className?: string;
 }) {
+  const base =
+    "-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md focus:outline-none focus:ring-2";
+  const theme =
+    className ??
+    "text-zinc-900 hover:bg-black/10 focus:ring-zinc-900/30";
   return (
     <button
       type="button"
       onClick={onClick}
-      className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-zinc-900 hover:bg-black/10 focus:outline-none focus:ring-2 focus:ring-zinc-900/30"
+      className={`${base} ${theme}`}
       aria-expanded={open}
       aria-controls="site-left-drawer"
       aria-label={open ? "Menüyü kapat" : "Menüyü aç"}
