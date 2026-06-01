@@ -30,6 +30,10 @@ body {
   .layout-with-mobile-nav {
     padding-bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
   }
+
+  .listing-mobile-contact-bar {
+    bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* İlan detay düzeni */
