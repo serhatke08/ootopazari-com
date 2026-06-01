@@ -160,6 +160,30 @@ function stripDuplicateVehicleSpecLines(text: string): string {
   return collapsed.join("\n").replace(/^\n+|\n+$/g, "");
 }
 
+const EQUIPMENT_DESC_LINE =
+  /^(Marka|Seri\/Model|Kasa\s+Tipi|Motor|Paket|Yakıt|Vites|Çekiş)\s*:/i;
+
+function extractEquipmentLines(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && EQUIPMENT_DESC_LINE.test(l));
+}
+
+function extractDescriptionBody(text: string): string {
+  const specLine =
+    /^(Araç\s+durumu|Garanti|Ağır\s+hasar|Plaka|Marka|Seri\/Model|Kasa\s+Tipi|Motor|Paket|Yakıt|Vites|Çekiş)\s*:/i;
+  const lines = text.split(/\r?\n/);
+  const kept = lines.filter((line) => {
+    const t = line.trim();
+    if (t === "") return true;
+    if (specLine.test(t)) return false;
+    if (/Yakıt:.*Vites:/i.test(t)) return false;
+    return true;
+  });
+  return stripDuplicateVehicleSpecLines(kept.join("\n")).trim();
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { listingNumber: listingParam } = await params;
   const listingNumber = extractListingNumberFromSeoParam(listingParam) ?? listingParam;
@@ -417,17 +441,74 @@ export default async function IlanDetayPage({ params }: Props) {
 
   const rawDesc =
     typeof listing.description === "string" ? listing.description : "";
-  const descStripped = rawDesc.trim()
-    ? stripDuplicateVehicleSpecLines(rawDesc)
-    : "";
-  const descriptionBlock =
+  const equipmentLines = rawDesc.trim() ? extractEquipmentLines(rawDesc) : [];
+  const descBody = rawDesc.trim() ? extractDescriptionBody(rawDesc) : "";
+  const descriptionTabContent =
     !rawDesc.trim() ? (
       <p className="text-sm text-black/55">Açıklama yok.</p>
-    ) : !descStripped.trim() ? null : (
+    ) : !descBody ? (
+      <p className="text-sm text-black/55">
+        Ayrı açıklama metni yok; teknik bilgiler Genel Bilgiler ve Donanım
+        sekmelerinde.
+      </p>
+    ) : (
       <p className="whitespace-pre-wrap text-sm leading-relaxed text-black">
-        {descStripped}
+        {descBody}
       </p>
     );
+
+  const motorNote = pick(row, ["engine_note", "motor_note"]) as string | undefined;
+  const paketNote = pick(row, ["package_note", "paket_note"]) as string | undefined;
+  const kasaNote = pick(row, ["body_note", "kasa_note"]) as string | undefined;
+
+  const equipmentTabContent =
+    equipmentLines.length > 0 ? (
+      <ul className="space-y-2 text-sm text-black">
+        {equipmentLines.map((line) => (
+          <li
+            key={line}
+            className="rounded-md border border-black/8 bg-black/[0.02] px-3 py-2"
+          >
+            {line}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <dl className="space-y-0">
+        <Field label="Kasa tipi" value={listing.body_type as string} />
+        <Field
+          label="Motor hacmi"
+          value={pick(row, ["engine_capacity", "motor_hacmi"]) as string}
+        />
+        <Field
+          label="Motor gücü"
+          value={
+            pick(row, ["engine_power", "motor_gucu", "motor_power"]) as string
+          }
+        />
+        <Field label="Çekiş" value={listing.drive_type as string} />
+        {kasaNote ? <Field label="Kasa notu" value={kasaNote} /> : null}
+        {motorNote ? <Field label="Motor notu" value={motorNote} /> : null}
+        {paketNote ? <Field label="Paket notu" value={paketNote} /> : null}
+        {!listing.body_type &&
+        !pick(row, ["engine_capacity", "motor_hacmi"]) &&
+        !listing.drive_type &&
+        !motorNote &&
+        !paketNote &&
+        !kasaNote ? (
+          <p className="py-2 text-sm text-black/55">Donanım bilgisi girilmemiş.</p>
+        ) : null}
+      </dl>
+    );
+
+  const contactPhone =
+    typeof listing.contact_phone === "string"
+      ? listing.contact_phone.trim()
+      : "";
+  const showPhone =
+    !!contactPhone &&
+    listing.contact_via_phone === true &&
+    detailAccess === "public";
 
   const suspensionReason =
     listing.suspension_reason != null
@@ -503,76 +584,40 @@ export default async function IlanDetayPage({ params }: Props) {
 
       <div className="space-y-4 sm:space-y-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:items-start sm:gap-x-4 lg:gap-x-5">
-        <div className="min-w-0 space-y-2">
-          <ListingImageGallery
-            images={galleryUrls}
-            alt="İlan görseli"
-            title={(listing.title as string) ?? "İlan"}
-            price={
-              listing.price != null
-                ? new Intl.NumberFormat("tr-TR", {
-                    style: "currency",
-                    currency: "TRY",
-                    maximumFractionDigits: 0,
-                  }).format(Number(listing.price))
-                : "Fiyat sorunuz"
-            }
-            overlay={
-              id && !isSuspendedDetailView ? (
-                <FavoriteHeart
-                  listingId={id}
-                  initialFavorited={sessionFav.favoriteIds.has(id)}
-                  loggedIn={!!sessionFav.user}
-                  variant="overlay"
-                />
-              ) : null
-            }
-          />
-          {seller ? (
-            <div className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2">
-              {sellerAvSrc ? (
-                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-black/5">
-                  <Image
-                    src={sellerAvSrc}
-                    alt=""
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 object-cover"
+        <div className="min-w-0 space-y-3">
+          <div className="space-y-1">
+            <h1 className="text-xl font-bold leading-tight text-black sm:text-2xl lg:text-3xl">
+              {(listing.title as string) ?? "İlan"}
+            </h1>
+            {listing.price != null ? (
+              <p className="text-lg font-bold text-black tabular-nums sm:text-xl lg:text-2xl">
+                {new Intl.NumberFormat("tr-TR", {
+                  style: "currency",
+                  currency: "TRY",
+                  maximumFractionDigits: 0,
+                }).format(Number(listing.price))}
+              </p>
+            ) : (
+              <p className="text-base text-black/70 sm:text-lg">Fiyat sorunuz</p>
+            )}
+          </div>
+          
+          <div className="lg:max-h-[min(42vh,360px)]">
+            <ListingImageGallery
+              images={galleryUrls}
+              alt="İlan görseli"
+              compact
+              overlay={
+                id && !isSuspendedDetailView ? (
+                  <FavoriteHeart
+                    listingId={id}
+                    initialFavorited={sessionFav.favoriteIds.has(id)}
+                    loggedIn={!!sessionFav.user}
+                    variant="overlay"
                   />
-                </div>
-              ) : (
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/10 text-sm font-semibold text-black/55"
-                  aria-hidden
-                >
-                  {(sellerDisplayName ?? "?").trim().slice(0, 1).toUpperCase() ||
-                    "?"}
-                </div>
-              )}
-              <div className="flex min-w-0 flex-1 items-center gap-1">
-                <p className="truncate text-sm font-semibold leading-tight text-black">
-                  {sellerDisplayName}
-                </p>
-                {adminProfile ? <AdminVerifiedBadge /> : null}
-              </div>
-            </div>
-          ) : null}
-
-          <div
-            className={
-              seller
-                ? "space-y-2 border-t border-black/10 pt-3 sm:border-t-0 sm:pt-0"
-                : "space-y-2"
-            }
-          >
-            {stats ? (
-              <StatsBadges
-                variant="inline"
-                views={stats.views}
-                favorites={stats.favorites}
-              />
-            ) : null}
-            {descriptionBlock}
+                ) : null
+              }
+            />
           </div>
         </div>
 
@@ -695,34 +740,84 @@ export default async function IlanDetayPage({ params }: Props) {
                 />
               </dl>
             }
-            descriptionContent={
-              descriptionBlock ? (
-                descriptionBlock
-              ) : (
-                <p className="text-sm text-black/55">Açıklama yok.</p>
-              )
-            }
-            equipmentContent={
-              <div className="space-y-3">
-                <div>
-                  <h3 className="mb-2 text-sm font-semibold text-black">
-                    Donanım Bilgileri
-                  </h3>
-                  <p className="text-xs text-black/55">
-                    Bu bölüm geliştirilme aşamasındadır. Donanım bilgileri yakında
-                    eklenecektir.
-                  </p>
-                </div>
-              </div>
-            }
+            descriptionContent={descriptionTabContent}
+            equipmentContent={equipmentTabContent}
           />
         </div>
 
-        <div className="hidden lg:block min-w-0">
-          <div className="rounded-xl border border-dashed border-black/20 bg-black/5 p-6 text-center">
-            <p className="text-sm text-black/40">Bu alan ileride kullanılacak</p>
+        <aside className="min-w-0 space-y-3 lg:sticky lg:top-20 lg:self-start">
+          {seller ? (
+            <div className="rounded-xl border border-black/10 bg-white p-3">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
+                Satıcı
+              </p>
+              <Link
+                href={`/kullanici/${sellerUserId}`}
+                className="flex items-center gap-2 rounded-lg transition hover:bg-black/[0.03]"
+              >
+                {sellerAvSrc ? (
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black/5">
+                    <Image
+                      src={sellerAvSrc}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="h-10 w-10 object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/10 text-sm font-semibold text-black/55"
+                    aria-hidden
+                  >
+                    {(sellerDisplayName ?? "?").trim().slice(0, 1).toUpperCase() ||
+                      "?"}
+                  </div>
+                )}
+                <div className="flex min-w-0 flex-1 items-center gap-1">
+                  <p className="truncate text-sm font-semibold text-black">
+                    {sellerDisplayName}
+                  </p>
+                  {adminProfile ? <AdminVerifiedBadge /> : null}
+                </div>
+              </Link>
+              {stats ? (
+                <div className="mt-3 border-t border-black/10 pt-3">
+                  <StatsBadges
+                    variant="inline"
+                    views={stats.views}
+                    favorites={stats.favorites}
+                  />
+                </div>
+              ) : null}
+              {canMessageSeller && id ? (
+                <StartConversationButton
+                  listingId={id}
+                  ownerUserId={sellerUserId}
+                />
+              ) : null}
+              {showPhone ? (
+                <a
+                  href={`tel:${contactPhone.replace(/\s/g, "")}`}
+                  className="mt-3 flex w-full items-center justify-center rounded-lg border border-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/[0.03]"
+                >
+                  {contactPhone}
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="rounded-xl border border-black/10 bg-white p-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
+              Konum
+            </p>
+            <dl className="text-sm text-black">
+              <Field label="Şehir" value={cityDisplayResolved ?? undefined} />
+              <Field label="İlçe" value={listing.district as string} />
+              <Field label="Ülke" value={listing.country_name as string} />
+            </dl>
           </div>
-        </div>
+        </aside>
         </div>
       </div>
 
@@ -747,26 +842,6 @@ export default async function IlanDetayPage({ params }: Props) {
           </details>
         </section>
       ) : null}
-
-      <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold text-black">
-          Konum ve iletişim
-        </h2>
-        <dl className="rounded-xl border border-black/10 bg-white px-4">
-          <Field label="Ülke" value={listing.country_name as string} />
-          <Field label="Şehir" value={cityDisplayResolved ?? undefined} />
-          <Field label="İlçe" value={listing.district as string} />
-          <Field label="Telefon" value={listing.contact_phone as string} />
-        </dl>
-        <p className="mt-2 text-xs text-black/55">
-          Mesaj veya telefon tercihleri:{" "}
-          {listing.contact_via_phone ? "Telefon " : ""}
-          {listing.contact_via_message ? "Uygulama içi mesaj " : ""}
-          {!listing.contact_via_phone && !listing.contact_via_message
-            ? "—"
-            : null}
-        </p>
-      </section>
 
     </article>
   );
