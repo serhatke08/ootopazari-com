@@ -641,8 +641,8 @@ export default async function IlanDetayPage({ params }: Props) {
           {(listing.title as string) ?? "İlan"}
         </h1>
 
-        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 md:items-start md:gap-x-5 lg:grid-cols-3 lg:gap-x-5">
-        <div className="min-w-0 md:col-start-1 md:row-start-1 lg:col-start-1">
+        <div className="grid grid-cols-1 items-start gap-4 min-[768px]:grid-cols-2 min-[768px]:gap-x-5 xl:grid-cols-3 xl:gap-x-5">
+        <div className="min-w-0 min-[768px]:col-start-1 min-[768px]:row-start-1 xl:col-start-1">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
             <ListingImageGallery
               images={galleryUrls}
@@ -662,7 +662,7 @@ export default async function IlanDetayPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="min-w-0 mt-3 md:col-start-2 md:row-start-1 md:mt-0 lg:col-start-2">
+        <div className="min-w-0 mt-3 min-[768px]:col-start-2 min-[768px]:row-start-1 min-[768px]:mt-0 xl:col-start-2">
           <ListingDetailTabs
             header={
               <div className="px-4 py-2.5">
@@ -801,7 +801,7 @@ export default async function IlanDetayPage({ params }: Props) {
           />
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-3 md:col-span-2 md:col-start-1 md:row-start-2 md:grid md:grid-cols-2 md:gap-4 lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:flex lg:flex-col lg:gap-3">
+        <aside className="flex min-w-0 flex-col gap-3 min-[768px]:col-span-2 min-[768px]:col-start-1 min-[768px]:row-start-2 min-[768px]:grid min-[768px]:grid-cols-2 min-[768px]:gap-4 xl:col-span-1 xl:col-start-3 xl:row-start-1 xl:flex xl:flex-col xl:gap-3">
           {seller ? (
             <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
