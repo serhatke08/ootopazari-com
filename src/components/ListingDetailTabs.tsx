@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { useIsClient } from "@/hooks/use-is-client";
 
 type Tab = "info" | "description" | "equipment";
 
@@ -37,41 +36,7 @@ function tabButtonClass(active: boolean) {
   }`;
 }
 
-function ListingDetailTabsStatic({
-  header,
-  infoContent,
-}: Pick<Props, "header" | "infoContent">) {
-  return (
-    <div className={SHELL_CLASS}>
-      {header ? (
-        <div className="shrink-0 border-b border-black/10">{header}</div>
-      ) : null}
-      <div
-        className={TAB_LIST_CLASS}
-        role="tablist"
-        aria-label="İlan detay sekmeleri"
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={tab.id === "info"}
-            disabled
-            className={tabButtonClass(tab.id === "info")}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div className={BODY_CLASS}>
-        <div>{infoContent}</div>
-      </div>
-    </div>
-  );
-}
-
-function ListingDetailTabsInteractive({
+export function ListingDetailTabs({
   header,
   infoContent,
   descriptionContent,
@@ -114,17 +79,4 @@ function ListingDetailTabsInteractive({
       </div>
     </div>
   );
-}
-
-export function ListingDetailTabs(props: Props) {
-  const isClient = useIsClient();
-  if (!isClient) {
-    return (
-      <ListingDetailTabsStatic
-        header={props.header}
-        infoContent={props.infoContent}
-      />
-    );
-  }
-  return <ListingDetailTabsInteractive {...props} />;
 }

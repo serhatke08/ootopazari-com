@@ -14,13 +14,15 @@ type GalleryProps = {
 };
 
 function galleryShellClass(compact: boolean) {
-  return `space-y-2 p-2 sm:p-3 ${compact ? "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" : ""}`;
+  return `space-y-2 p-2 sm:p-3 ${
+    compact ? "md:flex md:min-h-0 md:flex-1 md:flex-col" : ""
+  }`;
 }
 
 function mainFrameClass(compact: boolean) {
   return `relative w-full overflow-hidden rounded-lg bg-zinc-100 ${
     compact
-      ? "aspect-[4/3] w-full lg:min-h-0 lg:flex-1 lg:aspect-auto"
+      ? "aspect-[4/3] w-full md:min-h-0 md:flex-1 md:aspect-auto"
       : "aspect-[4/3] sm:aspect-[3/2]"
   }`;
 }
