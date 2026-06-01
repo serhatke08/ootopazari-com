@@ -170,6 +170,18 @@ function extractEquipmentLines(text: string): string[] {
     .filter((l) => l && EQUIPMENT_DESC_LINE.test(l));
 }
 
+function labelFromEquipmentLines(
+  lines: string[],
+  label: "Motor" | "Paket"
+): string | undefined {
+  const re = new RegExp(`^${label}\\s*:\\s*(.+)$`, "i");
+  for (const line of lines) {
+    const m = line.match(re);
+    if (m?.[1]?.trim()) return m[1].trim();
+  }
+  return undefined;
+}
+
 function extractDescriptionBody(text: string): string {
   const specLine =
     /^(Araç\s+durumu|Garanti|Ağır\s+hasar|Plaka|Marka|Seri\/Model|Kasa\s+Tipi|Motor|Paket|Yakıt|Vites|Çekiş)\s*:/i;
@@ -461,6 +473,23 @@ export default async function IlanDetayPage({ params }: Props) {
   const paketNote = pick(row, ["package_note", "paket_note"]) as string | undefined;
   const kasaNote = pick(row, ["body_note", "kasa_note"]) as string | undefined;
 
+  const motorDisplay =
+    motorNote?.trim() ||
+    labelFromEquipmentLines(equipmentLines, "Motor") ||
+    strCell(pick(row, ["engine_name", "motor_name", "engine_label"]));
+  const paketDisplay =
+    paketNote?.trim() ||
+    labelFromEquipmentLines(equipmentLines, "Paket") ||
+    strCell(pick(row, ["package_name", "paket_name", "package_label"]));
+
+  const vehicleBreadcrumb = [
+    brandName?.trim(),
+    modelDisplay?.trim(),
+    seriDisplay?.trim(),
+    motorDisplay,
+    paketDisplay,
+  ].filter((p): p is string => !!p);
+
   const equipmentTabContent =
     equipmentLines.length > 0 ? (
       <ul className="space-y-2 text-sm text-black">
@@ -562,17 +591,23 @@ export default async function IlanDetayPage({ params }: Props) {
           >
             ← Ana sayfaya dön
           </Link>
-          <span className="text-xs text-black/60">
-            İlan no:{" "}
-            {num != null ? (
-              <CopyListingNumber
-                text={`#${String(num)}`}
-                className="font-semibold text-blue-600 tabular-nums"
-              />
-            ) : (
-              "—"
-            )}
-          </span>
+          {vehicleBreadcrumb.length > 0 ? (
+            <nav
+              className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-black/70"
+              aria-label="Marka ve model"
+            >
+              {vehicleBreadcrumb.map((part, i) => (
+                <span key={`${part}-${i}`} className="inline-flex items-center">
+                  {i > 0 ? (
+                    <span className="mx-1.5 font-medium text-black/35" aria-hidden>
+                      &gt;
+                    </span>
+                  ) : null}
+                  <span className="font-medium text-black/85">{part}</span>
+                </span>
+              ))}
+            </nav>
+          ) : null}
         </div>
         {viewerAdminProfile && id && detailAccess === "public" ? (
           <SuspendListingButton
@@ -623,7 +658,6 @@ export default async function IlanDetayPage({ params }: Props) {
 
         <div className="min-w-0 lg:col-start-2">
           <ListingDetailTabs
-            fixedHeightOnDesktop
             infoContent={
               <dl className="px-3 py-1">
                 {num != null ? (

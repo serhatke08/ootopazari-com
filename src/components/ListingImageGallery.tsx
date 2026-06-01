@@ -3,20 +3,90 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useIsClient } from "@/hooks/use-is-client";
+import { GalleryThumbnailStrip } from "@/components/GalleryThumbnailStrip";
 
-export function ListingImageGallery({
+type GalleryProps = {
+  images: string[];
+  alt: string;
+  overlay?: ReactNode;
+  compact?: boolean;
+};
+
+function galleryShellClass(compact: boolean) {
+  return `space-y-2 p-2 sm:p-3 ${compact ? "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" : ""}`;
+}
+
+function mainFrameClass(compact: boolean) {
+  return `relative w-full overflow-hidden rounded-lg bg-zinc-100 ${
+    compact
+      ? "aspect-[4/3] w-full lg:min-h-0 lg:flex-1 lg:aspect-auto"
+      : "aspect-[4/3] sm:aspect-[3/2]"
+  }`;
+}
+
+function mainImageClass(compact: boolean) {
+  return `pointer-events-none object-center ${
+    compact ? "object-contain" : "object-cover"
+  }`;
+}
+
+/** SSR + ilk hydrate — sunucu/istemci aynı HTML */
+function ListingImageGalleryStatic({
   images,
   alt,
   overlay,
   compact = false,
-}: {
-  images: string[];
-  alt: string;
-  /** Ana görselin sağ üst köşesi (örn. favori) */
-  overlay?: ReactNode;
-  /** İlan detay: daha düşük ana görsel */
-  compact?: boolean;
-}) {
+}: GalleryProps) {
+  const list = images.filter(Boolean);
+  const main = list[0];
+
+  if (!main) {
+    return (
+      <div className="relative p-2 sm:p-3">
+        <div className="flex aspect-[16/10] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500">
+          Görsel yok
+        </div>
+        {overlay ? (
+          <div className="absolute right-4 top-4 z-10">{overlay}</div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className={galleryShellClass(compact)}>
+      <div className={mainFrameClass(compact)}>
+        <Image
+          src={main}
+          alt={alt}
+          fill
+          unoptimized
+          className={mainImageClass(compact)}
+          priority
+          sizes="(max-width: 1024px) 100vw, 33vw"
+        />
+        {overlay ? (
+          <div className="pointer-events-auto absolute right-2 top-2 z-20">
+            {overlay}
+          </div>
+        ) : null}
+      </div>
+      <GalleryThumbnailStrip
+        images={list}
+        activeIndex={0}
+        staticPreview
+      />
+    </div>
+  );
+}
+
+function ListingImageGalleryInteractive({
+  images,
+  alt,
+  overlay,
+  compact = false,
+}: GalleryProps) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -146,36 +216,24 @@ export function ListingImageGallery({
 
   if (!main) {
     return (
-      <div className="relative">
-        <div className="flex aspect-[16/10] w-full items-center justify-center rounded-xl border border-black/10 bg-zinc-100 text-sm text-zinc-500">
-          Görsel yok
-        </div>
-        {overlay ? (
-          <div className="absolute right-2 top-2 z-10">{overlay}</div>
-        ) : null}
-      </div>
+      <ListingImageGalleryStatic
+        images={images}
+        alt={alt}
+        overlay={overlay}
+        compact={compact}
+      />
     );
   }
 
   return (
-    <div
-      className={`space-y-2 p-2 sm:p-3 ${compact ? "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" : ""}`}
-    >
-      <div
-        className={`relative w-full overflow-hidden rounded-lg bg-zinc-100 ${
-          compact
-            ? "aspect-[4/3] w-full lg:min-h-0 lg:flex-1 lg:aspect-auto"
-            : "aspect-[4/3] sm:aspect-[3/2]"
-        }`}
-      >
+    <div className={galleryShellClass(compact)}>
+      <div className={mainFrameClass(compact)}>
         <Image
           src={main}
           alt={alt}
           fill
           unoptimized
-          className={`pointer-events-none object-center ${
-            compact ? "object-contain" : "object-cover"
-          }`}
+          className={mainImageClass(compact)}
           priority
           sizes="(max-width: 1024px) 100vw, 33vw"
         />
@@ -192,33 +250,11 @@ export function ListingImageGallery({
         ) : null}
       </div>
 
-      {list.length > 1 ? (
-        <div className="flex shrink-0 flex-wrap gap-1.5">
-          {list.map((src, idx) => (
-            <button
-              key={`${src}-${idx}`}
-              type="button"
-              onClick={() => setActive(idx)}
-              className={`relative h-12 w-20 shrink-0 overflow-hidden rounded border-2 bg-black transition sm:h-14 sm:w-24 ${
-                active === idx
-                  ? "border-black"
-                  : "border-black/20 hover:border-black/45"
-              }`}
-              aria-label={`Görsel ${idx + 1}`}
-              aria-current={active === idx}
-            >
-              <Image
-                src={src}
-                alt=""
-                fill
-                unoptimized
-                className="object-cover object-center"
-                sizes="96px"
-              />
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <GalleryThumbnailStrip
+        images={list}
+        activeIndex={active}
+        onSelect={setActive}
+      />
 
       {lightbox ? (
         <div
@@ -344,4 +380,12 @@ export function ListingImageGallery({
       ) : null}
     </div>
   );
+}
+
+export function ListingImageGallery(props: GalleryProps) {
+  const isClient = useIsClient();
+  if (!isClient) {
+    return <ListingImageGalleryStatic {...props} />;
+  }
+  return <ListingImageGalleryInteractive {...props} />;
 }
