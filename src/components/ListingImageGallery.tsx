@@ -3,7 +3,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useIsClient } from "@/hooks/use-is-client";
 import { GalleryThumbnailStrip } from "@/components/GalleryThumbnailStrip";
 
 type GalleryProps = {
@@ -13,73 +12,25 @@ type GalleryProps = {
   compact?: boolean;
 };
 
+const SWIPE_THRESHOLD_PX = 40;
+
 function galleryShellClass() {
   return "space-y-2 p-2 sm:p-3";
 }
 
 function mainFrameClass(compact: boolean) {
-  return `relative w-full overflow-hidden rounded-lg bg-zinc-100 aspect-[4/3] w-full ${
+  return `relative w-full touch-pan-y overflow-hidden rounded-lg bg-zinc-100 aspect-[4/3] ${
     compact ? "" : "sm:aspect-[3/2]"
   }`;
 }
 
 function mainImageClass(compact: boolean) {
-  return `pointer-events-none object-center ${
+  return `pointer-events-none object-center select-none ${
     compact ? "object-contain" : "object-cover"
   }`;
 }
 
-/** SSR + ilk hydrate — sunucu/istemci aynı HTML */
-function ListingImageGalleryStatic({
-  images,
-  alt,
-  overlay,
-  compact = false,
-}: GalleryProps) {
-  const list = images.filter(Boolean);
-  const main = list[0];
-
-  if (!main) {
-    return (
-      <div className="relative p-2 sm:p-3">
-        <div className="flex aspect-[16/10] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500">
-          Görsel yok
-        </div>
-        {overlay ? (
-          <div className="absolute right-4 top-4 z-10">{overlay}</div>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <div className={galleryShellClass()}>
-      <div className={mainFrameClass(compact)}>
-        <Image
-          src={main}
-          alt={alt}
-          fill
-          unoptimized
-          className={mainImageClass(compact)}
-          priority
-          sizes="(max-width: 1024px) 100vw, 33vw"
-        />
-        {overlay ? (
-          <div className="pointer-events-auto absolute right-2 top-2 z-20">
-            {overlay}
-          </div>
-        ) : null}
-      </div>
-      <GalleryThumbnailStrip
-        images={list}
-        activeIndex={0}
-        staticPreview
-      />
-    </div>
-  );
-}
-
-function ListingImageGalleryInteractive({
+export function ListingImageGallery({
   images,
   alt,
   overlay,
@@ -89,13 +40,13 @@ function ListingImageGalleryInteractive({
   const [lightbox, setLightbox] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{
-    dragging: boolean;
-    startX: number;
-    startY: number;
-    startPanX: number;
-    startPanY: number;
-  }>({
+  const swipeRef = useRef({
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+    moved: false,
+  });
+  const dragRef = useRef({
     dragging: false,
     startX: 0,
     startY: 0,
@@ -104,6 +55,7 @@ function ListingImageGalleryInteractive({
   });
   const list = images.filter(Boolean);
   const main = list[active] ?? list[0];
+  const hasMultiple = list.length > 1;
 
   const goPrev = useCallback(() => {
     setActive((a) => (a > 0 ? a - 1 : list.length - 1));
@@ -147,7 +99,7 @@ function ListingImageGalleryInteractive({
     if (!lightbox) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setLightbox(false);
-      if (list.length <= 1) return;
+      if (!hasMultiple) return;
       if (e.key === "ArrowLeft") goPrev();
       if (e.key === "ArrowRight") goNext();
     };
@@ -158,13 +110,68 @@ function ListingImageGalleryInteractive({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [lightbox, list.length, goPrev, goNext]);
+  }, [lightbox, hasMultiple, goPrev, goNext]);
 
   useEffect(() => {
     if (!lightbox) return;
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [lightbox, active]);
+
+  const onMainPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    swipeRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, []);
+
+  const onMainPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (swipeRef.current.pointerId !== e.pointerId) return;
+    const dx = e.clientX - swipeRef.current.startX;
+    const dy = e.clientY - swipeRef.current.startY;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) swipeRef.current.moved = true;
+  }, []);
+
+  const onMainPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (swipeRef.current.pointerId !== e.pointerId) return;
+      const dx = e.clientX - swipeRef.current.startX;
+      const dy = e.clientY - swipeRef.current.startY;
+      const { moved } = swipeRef.current;
+      swipeRef.current.pointerId = -1;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+
+      if (
+        hasMultiple &&
+        moved &&
+        Math.abs(dx) >= SWIPE_THRESHOLD_PX &&
+        Math.abs(dx) > Math.abs(dy)
+      ) {
+        if (dx < 0) goNext();
+        else goPrev();
+        return;
+      }
+      if (!moved) setLightbox(true);
+    },
+    [hasMultiple, goNext, goPrev]
+  );
+
+  const onMainPointerCancel = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    swipeRef.current.pointerId = -1;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const onLightboxWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
@@ -193,12 +200,13 @@ function ListingImageGalleryInteractive({
       if (!dragRef.current.dragging || zoom <= 1) return;
       const dx = e.clientX - dragRef.current.startX;
       const dy = e.clientY - dragRef.current.startY;
-      const next = clampPan(
-        dragRef.current.startPanX + dx,
-        dragRef.current.startPanY + dy,
-        zoom
+      setPan(
+        clampPan(
+          dragRef.current.startPanX + dx,
+          dragRef.current.startPanY + dy,
+          zoom
+        )
       );
-      setPan(next);
     },
     [zoom, clampPan]
   );
@@ -214,33 +222,73 @@ function ListingImageGalleryInteractive({
 
   if (!main) {
     return (
-      <ListingImageGalleryStatic
-        images={images}
-        alt={alt}
-        overlay={overlay}
-        compact={compact}
-      />
+      <div className="relative p-2 sm:p-3">
+        <div className="flex aspect-[16/10] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500">
+          Görsel yok
+        </div>
+        {overlay ? (
+          <div className="absolute right-4 top-4 z-10">{overlay}</div>
+        ) : null}
+      </div>
     );
   }
 
+  const navBtnClass =
+    "absolute top-1/2 z-[2] flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-lg text-white shadow-sm transition hover:bg-black/60 sm:h-10 sm:w-10";
+
   return (
     <div className={galleryShellClass()}>
-      <div className={mainFrameClass(compact)}>
+      <div
+        className={`${mainFrameClass(compact)} cursor-zoom-in`}
+        onPointerDown={onMainPointerDown}
+        onPointerMove={onMainPointerMove}
+        onPointerUp={onMainPointerUp}
+        onPointerCancel={onMainPointerCancel}
+        role={hasMultiple ? "group" : undefined}
+        aria-label={hasMultiple ? "Görseller arasında kaydırın veya okları kullanın" : undefined}
+      >
         <Image
+          key={main}
           src={main}
           alt={alt}
           fill
           unoptimized
+          draggable={false}
           className={mainImageClass(compact)}
-          priority
+          priority={active === 0}
           sizes="(max-width: 1024px) 100vw, 33vw"
         />
-        <button
-          type="button"
-          className="absolute inset-0 z-[1] cursor-zoom-in bg-transparent outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white/40"
-          onClick={() => setLightbox(true)}
-          aria-label="Tam ekran için tıklayın"
-        />
+        {hasMultiple ? (
+          <>
+            <button
+              type="button"
+              className={`${navBtnClass} left-2`}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                goPrev();
+              }}
+              aria-label="Önceki görsel"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className={`${navBtnClass} right-2`}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                goNext();
+              }}
+              aria-label="Sonraki görsel"
+            >
+              ›
+            </button>
+            <p className="pointer-events-none absolute bottom-2 left-0 right-0 z-[2] text-center text-[11px] font-medium text-black/50">
+              {active + 1} / {list.length}
+            </p>
+          </>
+        ) : null}
         {overlay ? (
           <div className="pointer-events-auto absolute right-2 top-2 z-20">
             {overlay}
@@ -310,7 +358,7 @@ function ListingImageGalleryInteractive({
             </button>
           </div>
 
-          {list.length > 1 ? (
+          {hasMultiple ? (
             <>
               <button
                 type="button"
@@ -358,6 +406,7 @@ function ListingImageGalleryInteractive({
                 alt={alt}
                 fill
                 unoptimized
+                draggable={false}
                 className="object-contain object-center transition-transform duration-75 ease-out"
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
@@ -369,7 +418,7 @@ function ListingImageGalleryInteractive({
             </div>
           </div>
 
-          {list.length > 1 ? (
+          {hasMultiple ? (
             <p className="pointer-events-none absolute bottom-4 left-0 right-0 z-20 text-center text-xs text-white/70">
               {active + 1} / {list.length}
             </p>
@@ -378,12 +427,4 @@ function ListingImageGalleryInteractive({
       ) : null}
     </div>
   );
-}
-
-export function ListingImageGallery(props: GalleryProps) {
-  const isClient = useIsClient();
-  if (!isClient) {
-    return <ListingImageGalleryStatic {...props} />;
-  }
-  return <ListingImageGalleryInteractive {...props} />;
 }
