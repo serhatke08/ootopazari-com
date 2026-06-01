@@ -641,9 +641,9 @@ export default async function IlanDetayPage({ params }: Props) {
           {(listing.title as string) ?? "İlan"}
         </h1>
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-x-4 lg:grid-cols-3 lg:items-start lg:gap-x-5">
-        <div className="min-w-0 lg:col-start-1">
-          <div className="flex flex-col overflow-hidden rounded-xl border border-black/10 bg-white lg:h-[min(72vh,680px)] lg:max-h-[min(72vh,680px)]">
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 md:gap-x-5 lg:grid-cols-3 lg:gap-x-5">
+        <div className="min-w-0 md:col-start-1 md:row-start-1 lg:col-start-1">
+          <div className="flex flex-col overflow-hidden rounded-xl border border-black/10 bg-white md:h-[min(72vh,680px)] md:max-h-[min(72vh,680px)] lg:h-[min(72vh,680px)] lg:max-h-[min(72vh,680px)]">
             <ListingImageGallery
               images={galleryUrls}
               alt="İlan görseli"
@@ -662,7 +662,7 @@ export default async function IlanDetayPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="min-w-0 mt-3 sm:mt-4 lg:col-start-2 lg:mt-8">
+        <div className="min-w-0 mt-3 md:col-start-2 md:row-start-1 md:mt-0 lg:col-start-2 lg:mt-8">
           <ListingDetailTabs
             header={
               <div className="px-4 py-2.5">
@@ -801,7 +801,7 @@ export default async function IlanDetayPage({ params }: Props) {
           />
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-3 lg:col-start-3 lg:h-[min(72vh,680px)] lg:max-h-[min(72vh,680px)] lg:overflow-y-auto">
+        <aside className="flex min-w-0 flex-col gap-3 md:col-span-2 md:col-start-1 md:row-start-2 md:grid md:grid-cols-2 md:gap-4 lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:flex lg:flex-col lg:gap-3 lg:h-[min(72vh,680px)] lg:max-h-[min(72vh,680px)] lg:overflow-y-auto">
           {seller ? (
             <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">

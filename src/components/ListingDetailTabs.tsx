@@ -19,12 +19,12 @@ const TABS: Array<{ id: Tab; label: string }> = [
 ];
 
 const SHELL_CLASS =
-  "overflow-hidden rounded-xl border border-black/10 bg-white lg:flex lg:max-h-[min(72vh,680px)] lg:flex-col";
+  "overflow-hidden rounded-xl border border-black/10 bg-white md:flex md:max-h-[min(72vh,680px)] md:flex-col lg:max-h-[min(72vh,680px)]";
 
 const TAB_LIST_CLASS = "flex shrink-0 border-b border-black/10";
 
 const BODY_CLASS =
-  "min-h-[200px] bg-white lg:min-h-0 lg:flex-1 lg:overflow-y-auto";
+  "min-h-[200px] bg-white md:min-h-0 md:flex-1 md:overflow-y-auto lg:min-h-0 lg:flex-1 lg:overflow-y-auto";
 
 const ACTIVE_TAB_CLASS =
   "border-b-2 border-black bg-white text-black font-semibold";
