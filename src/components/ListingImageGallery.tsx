@@ -161,8 +161,8 @@ export function ListingImageGallery({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-black/10 bg-zinc-100">
+    <div className="space-y-2">
+      <div className="relative aspect-[4/3] sm:aspect-[3/2] w-full overflow-hidden rounded-lg border border-black/10 bg-zinc-100">
         <Image
           src={main}
           alt={alt}
@@ -180,14 +180,14 @@ export function ListingImageGallery({
           aria-label="Tam ekran için tıklayın"
         />
         {title || price ? (
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 space-y-1 p-4">
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 space-y-0.5 p-3 sm:p-4">
             {title ? (
-              <h1 className="text-xl font-bold leading-tight text-white drop-shadow-lg sm:text-2xl">
+              <h1 className="text-base font-bold leading-tight text-white drop-shadow-lg sm:text-lg lg:text-xl line-clamp-2">
                 {title}
               </h1>
             ) : null}
             {price ? (
-              <p className="text-lg font-bold text-white drop-shadow-lg sm:text-xl">
+              <p className="text-sm font-bold text-white drop-shadow-lg sm:text-base lg:text-lg">
                 {price}
               </p>
             ) : null}
@@ -200,14 +200,14 @@ export function ListingImageGallery({
         ) : null}
       </div>
 
-      {list.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+      {list.length > 1 ? (
+        <div className="flex flex-wrap gap-1.5">
           {list.map((src, idx) => (
             <button
               key={`${src}-${idx}`}
               type="button"
               onClick={() => setActive(idx)}
-              className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-md border-2 bg-black transition sm:h-[4.75rem] sm:w-28 ${
+              className={`relative h-12 w-20 shrink-0 overflow-hidden rounded border-2 bg-black transition sm:h-14 sm:w-24 ${
                 active === idx
                   ? "border-black"
                   : "border-black/20 hover:border-black/45"
@@ -221,7 +221,7 @@ export function ListingImageGallery({
                 fill
                 unoptimized
                 className="object-cover object-center"
-                sizes="112px"
+                sizes="96px"
               />
             </button>
           ))}

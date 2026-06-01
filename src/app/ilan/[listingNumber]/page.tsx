@@ -500,9 +500,9 @@ export default async function IlanDetayPage({ params }: Props) {
         ) : null}
       </div>
 
-      <div className="space-y-6 sm:space-y-6">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,42%)_minmax(0,1fr)] sm:items-start sm:gap-x-6 lg:gap-x-8">
-        <div className="min-w-0 space-y-3">
+      <div className="space-y-4 sm:space-y-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,36%)_minmax(0,1fr)] sm:items-start sm:gap-x-5 lg:gap-x-6">
+        <div className="min-w-0 space-y-2">
           <ListingImageGallery
             images={galleryUrls}
             alt="İlan görseli"
@@ -528,28 +528,28 @@ export default async function IlanDetayPage({ params }: Props) {
             }
           />
           {seller ? (
-            <div className="flex items-center gap-3 rounded-xl border border-black/10 bg-white px-4 py-3">
+            <div className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2">
               {sellerAvSrc ? (
-                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-black/5">
+                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-black/5">
                   <Image
                     src={sellerAvSrc}
                     alt=""
-                    width={48}
-                    height={48}
-                    className="h-12 w-12 object-cover"
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 object-cover"
                   />
                 </div>
               ) : (
                 <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black/10 text-base font-semibold text-black/55"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/10 text-sm font-semibold text-black/55"
                   aria-hidden
                 >
                   {(sellerDisplayName ?? "?").trim().slice(0, 1).toUpperCase() ||
                     "?"}
                 </div>
               )}
-              <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                <p className="truncate text-base font-semibold leading-tight text-black">
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <p className="truncate text-sm font-semibold leading-tight text-black">
                   {sellerDisplayName}
                 </p>
                 {adminProfile ? <AdminVerifiedBadge /> : null}
@@ -560,8 +560,8 @@ export default async function IlanDetayPage({ params }: Props) {
           <div
             className={
               seller
-                ? "space-y-3 border-t border-black/10 pt-4 sm:border-t-0 sm:pt-0"
-                : "space-y-3"
+                ? "space-y-2 border-t border-black/10 pt-3 sm:border-t-0 sm:pt-0"
+                : "space-y-2"
             }
           >
             {stats ? (
