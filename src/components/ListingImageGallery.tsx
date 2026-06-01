@@ -13,17 +13,13 @@ type GalleryProps = {
   compact?: boolean;
 };
 
-function galleryShellClass(compact: boolean) {
-  return `space-y-2 p-2 sm:p-3 ${
-    compact ? "md:flex md:min-h-0 md:flex-1 md:flex-col" : ""
-  }`;
+function galleryShellClass() {
+  return "space-y-2 p-2 sm:p-3";
 }
 
 function mainFrameClass(compact: boolean) {
-  return `relative w-full overflow-hidden rounded-lg bg-zinc-100 ${
-    compact
-      ? "aspect-[4/3] w-full md:min-h-0 md:flex-1 md:aspect-auto"
-      : "aspect-[4/3] sm:aspect-[3/2]"
+  return `relative w-full overflow-hidden rounded-lg bg-zinc-100 aspect-[4/3] w-full ${
+    compact ? "" : "sm:aspect-[3/2]"
   }`;
 }
 
@@ -57,7 +53,7 @@ function ListingImageGalleryStatic({
   }
 
   return (
-    <div className={galleryShellClass(compact)}>
+    <div className={galleryShellClass()}>
       <div className={mainFrameClass(compact)}>
         <Image
           src={main}
@@ -228,7 +224,7 @@ function ListingImageGalleryInteractive({
   }
 
   return (
-    <div className={galleryShellClass(compact)}>
+    <div className={galleryShellClass()}>
       <div className={mainFrameClass(compact)}>
         <Image
           src={main}
