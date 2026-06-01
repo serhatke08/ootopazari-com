@@ -8,7 +8,7 @@ const MAX_ROWS = 2;
 const PAGE_SIZE = PER_ROW * MAX_ROWS;
 
 const thumbClass = (active: boolean) =>
-  `relative h-12 w-20 shrink-0 overflow-hidden rounded border-2 bg-black transition sm:h-14 sm:w-24 ${
+  `relative aspect-[5/3] w-full min-w-0 overflow-hidden rounded border-2 bg-black transition sm:aspect-auto sm:h-14 sm:w-24 sm:shrink-0 ${
     active ? "border-black" : "border-black/20 hover:border-black/45"
   }`;
 
@@ -42,7 +42,7 @@ export function GalleryThumbnailStrip({
 
   return (
     <div className="flex shrink-0 flex-col gap-2">
-      <div className="grid min-h-0 min-w-0 grid-cols-4 gap-1.5 overflow-hidden max-h-[6.375rem] sm:max-h-[7.375rem]">
+      <div className="grid min-h-0 min-w-0 grid-cols-5 gap-1 overflow-hidden max-h-[5.5rem] sm:grid-cols-4 sm:gap-1.5 sm:max-h-[7.375rem]">
         {visible.map((src, i) => {
           const idx = start + i;
           const active = activeIndex === idx;
