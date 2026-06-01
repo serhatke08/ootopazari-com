@@ -41,6 +41,7 @@ import { SuspendListingButton } from "@/components/SuspendListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
 import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
+import { ListingShareReportActions } from "@/components/ListingShareReportActions";
 
 type Props = { params: Promise<{ listingNumber: string }> };
 
@@ -610,12 +611,29 @@ export default async function IlanDetayPage({ params }: Props) {
             </nav>
           ) : null}
         </div>
-        {viewerAdminProfile && id && detailAccess === "public" ? (
-          <SuspendListingButton
-            listingId={id}
-            listingLabel={`#${String(num ?? "?")} — ${String(listing.title ?? "İlan")}`}
-          />
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {id && detailAccess === "public" ? (
+            <ListingShareReportActions
+              listingId={id}
+              shareTitle={(listing.title as string) ?? "İlan"}
+              sharePath={
+                expectedSeoPath ?? `/ilan/${encodeURIComponent(listingNumber)}`
+              }
+              loggedIn={!!viewer}
+              canReport={
+                !!viewer?.id &&
+                !!sellerUserId &&
+                viewer.id !== sellerUserId
+              }
+            />
+          ) : null}
+          {viewerAdminProfile && id && detailAccess === "public" ? (
+            <SuspendListingButton
+              listingId={id}
+              listingLabel={`#${String(num ?? "?")} — ${String(listing.title ?? "İlan")}`}
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className="space-y-4 sm:space-y-5">
