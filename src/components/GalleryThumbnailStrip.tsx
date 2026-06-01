@@ -16,7 +16,7 @@ type Props = {
   images: string[];
   activeIndex: number;
   onSelect?: (index: number) => void;
-  /** SSR: yalnızca ilk sayfa, buton yok */
+  /** SSR: yalnızca ilk sayfa */
   staticPreview?: boolean;
 };
 
@@ -32,8 +32,7 @@ export function GalleryThumbnailStrip({
   const safePage = Math.min(page, pageCount - 1);
   const start = safePage * PAGE_SIZE;
   const visible = images.slice(start, start + PAGE_SIZE);
-  const hasMore = safePage < pageCount - 1;
-  const hasPrev = safePage > 0;
+  const showDots = pageCount > 1;
 
   useEffect(() => {
     setPage(Math.floor(activeIndex / PAGE_SIZE));
@@ -42,33 +41,20 @@ export function GalleryThumbnailStrip({
   if (total <= 1) return null;
 
   return (
-    <div className="flex shrink-0 items-center gap-1">
-      {hasPrev ? (
-        <button
-          type="button"
-          disabled={staticPreview}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-          className="flex h-[6.375rem] w-9 shrink-0 items-center justify-center rounded-lg border border-black/15 bg-white text-lg font-semibold text-black shadow-sm transition hover:bg-black/[0.04] disabled:pointer-events-none disabled:opacity-40 sm:h-[7.375rem]"
-          aria-label="Önceki görseller"
-        >
-          ‹
-        </button>
-      ) : null}
-      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-4 gap-1.5 overflow-hidden max-h-[6.375rem] sm:max-h-[7.375rem]">
+    <div className="flex shrink-0 flex-col gap-2">
+      <div className="grid min-h-0 min-w-0 grid-cols-4 gap-1.5 overflow-hidden max-h-[6.375rem] sm:max-h-[7.375rem]">
         {visible.map((src, i) => {
           const idx = start + i;
           const active = activeIndex === idx;
           const inner = (
-            <>
-              <Image
-                src={src}
-                alt=""
-                fill
-                unoptimized
-                className="object-cover object-center"
-                sizes="96px"
-              />
-            </>
+            <Image
+              src={src}
+              alt=""
+              fill
+              unoptimized
+              className="object-cover object-center"
+              sizes="96px"
+            />
           );
           if (staticPreview || !onSelect) {
             return (
@@ -96,16 +82,33 @@ export function GalleryThumbnailStrip({
         })}
       </div>
 
-      {hasMore ? (
-        <button
-          type="button"
-          disabled={staticPreview}
-          onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-          className="flex h-[6.375rem] w-9 shrink-0 items-center justify-center rounded-lg border border-black/15 bg-white text-lg font-semibold text-black shadow-sm transition hover:bg-black/[0.04] disabled:pointer-events-none disabled:opacity-40 sm:h-[7.375rem]"
-          aria-label="Sonraki görseller"
+      {showDots ? (
+        <div
+          className="flex items-center justify-center gap-2"
+          role="tablist"
+          aria-label="Görsel sayfaları"
         >
-          ›
-        </button>
+          {Array.from({ length: pageCount }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              disabled={staticPreview}
+              onClick={() => setPage(i)}
+              className="flex h-6 w-6 items-center justify-center disabled:pointer-events-none"
+              role="tab"
+              aria-selected={safePage === i}
+              aria-label={`Görsel grubu ${i + 1}`}
+            >
+              <span
+                className={`block rounded-full transition ${
+                  safePage === i
+                    ? "h-2.5 w-2.5 bg-blue-600"
+                    : "h-2 w-2 bg-black/20 hover:bg-black/35"
+                }`}
+              />
+            </button>
+          ))}
+        </div>
       ) : null}
     </div>
   );

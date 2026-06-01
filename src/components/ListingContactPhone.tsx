@@ -6,6 +6,9 @@ type Props = {
   phone: string;
 };
 
+const primaryBtn =
+  "flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700";
+
 export function ListingContactPhone({ phone }: Props) {
   const [open, setOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -18,7 +21,7 @@ export function ListingContactPhone({ phone }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-black/15 bg-[#ffcc00] px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-amber-300"
+        className={`mt-3 ${primaryBtn}`}
       >
         <PhoneIcon />
         Ara
@@ -28,10 +31,7 @@ export function ListingContactPhone({ phone }: Props) {
 
   return (
     <div className="mt-3 space-y-2">
-      <a
-        href={`tel:${tel}`}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-black/15 bg-[#ffcc00] px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-amber-300"
-      >
+      <a href={`tel:${tel}`} className={primaryBtn}>
         <PhoneIcon />
         Hemen ara
       </a>
@@ -39,12 +39,12 @@ export function ListingContactPhone({ phone }: Props) {
         <button
           type="button"
           onClick={() => setRevealed(true)}
-          className="flex w-full items-center justify-center rounded-lg border border-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-black/[0.03]"
+          className="flex w-full items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
         >
           Numarayı göster
         </button>
       ) : (
-        <p className="rounded-lg border border-black/10 bg-black/[0.02] px-3 py-2.5 text-center text-sm font-semibold tabular-nums text-black">
+        <p className="rounded-lg border border-blue-100 bg-blue-50/80 px-3 py-2.5 text-center text-sm font-semibold tabular-nums text-blue-900">
           {phone}
         </p>
       )}
@@ -67,16 +67,14 @@ function PhoneIcon() {
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      className="h-4 w-4 shrink-0"
+      fill="currentColor"
+      className="h-[1.125rem] w-[1.125rem] shrink-0"
       aria-hidden
     >
       <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.72 1.062a12.042 12.042 0 01-5.303-5.303l1.062-.72c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 6.75z"
+        fillRule="evenodd"
+        d="M1.5 4.5a3 3 0 0 1 3-3h1.372c.86 0 1.61.586 1.819 1.42l1.105 4.423a1.875 1.875 0 0 1-.694 1.955l-1.293 1.293c-.135.135-.202.324-.128.495 1.234 2.676 3.676 5.119 6.352 6.352.17.074.36.007.495-.128l1.293-1.293a1.875 1.875 0 0 1 1.955-.694l4.423 1.105c.834.209 1.42.959 1.42 1.819V19.5a3 3 0 0 1-3 3h-2.25C8.716 22.5 1.5 15.284 1.5 6.75V4.5Z"
+        clipRule="evenodd"
       />
     </svg>
   );
