@@ -8,12 +8,15 @@ type Props = {
   infoContent: ReactNode;
   descriptionContent: ReactNode;
   equipmentContent: ReactNode;
+  /** PC: sabit yükseklik — sekme değişince yan sütunlar oynamaz */
+  fixedHeightOnDesktop?: boolean;
 };
 
 export function ListingDetailTabs({
   infoContent,
   descriptionContent,
   equipmentContent,
+  fixedHeightOnDesktop = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
 
@@ -28,10 +31,20 @@ export function ListingDetailTabs({
   const inactiveClass =
     "border-b-2 border-transparent bg-white text-black/60 hover:text-black hover:border-black/30";
 
+  const shellClass = fixedHeightOnDesktop
+    ? "lg:flex lg:max-h-[min(72vh,680px)] lg:flex-col"
+    : "";
+
+  const bodyClass = fixedHeightOnDesktop
+    ? "lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+    : "min-h-[200px]";
+
   return (
-    <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
+    <div
+      className={`overflow-hidden rounded-xl border border-black/10 bg-white ${shellClass}`}
+    >
       <div
-        className="flex border-b border-black/10"
+        className="flex shrink-0 border-b border-black/10"
         role="tablist"
         aria-label="İlan detay sekmeleri"
       >
@@ -51,7 +64,7 @@ export function ListingDetailTabs({
         ))}
       </div>
 
-      <div className="min-h-[200px] bg-white">
+      <div className={`bg-white ${bodyClass}`}>
         {activeTab === "info" && <div>{infoContent}</div>}
         {activeTab === "description" && (
           <div className="p-4">{descriptionContent}</div>

@@ -600,9 +600,9 @@ export default async function IlanDetayPage({ params }: Props) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3 lg:gap-x-5">
-        <div className="min-w-0 self-start">
-          <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
+        <div className="grid grid-cols-1 gap-4 sm:gap-x-4 lg:grid-cols-3 lg:items-start lg:gap-x-5">
+        <div className="min-w-0 lg:col-start-1">
+          <div className="flex flex-col overflow-hidden rounded-xl border border-black/10 bg-white lg:h-[min(72vh,680px)] lg:max-h-[min(72vh,680px)]">
             <ListingImageGallery
               images={galleryUrls}
               alt="İlan görseli"
@@ -621,8 +621,9 @@ export default async function IlanDetayPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="min-w-0 self-start">
+        <div className="min-w-0 lg:col-start-2">
           <ListingDetailTabs
+            fixedHeightOnDesktop
             infoContent={
               <dl className="px-3 py-1">
                 {num != null ? (
@@ -745,9 +746,9 @@ export default async function IlanDetayPage({ params }: Props) {
           />
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-3 self-start sm:col-span-2 lg:col-span-1">
+        <aside className="flex min-w-0 flex-col gap-3 lg:col-start-3 lg:h-[min(72vh,680px)] lg:max-h-[min(72vh,680px)] lg:overflow-y-auto">
           {seller ? (
-            <div className="rounded-xl border border-black/10 bg-white p-3">
+            <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
                 Satıcı
               </p>
@@ -807,7 +808,7 @@ export default async function IlanDetayPage({ params }: Props) {
             </div>
           ) : null}
 
-          <div className="rounded-xl border border-black/10 bg-white p-3">
+          <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
               Konum
             </p>

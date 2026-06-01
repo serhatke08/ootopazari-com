@@ -158,11 +158,13 @@ export function ListingImageGallery({
   }
 
   return (
-    <div className="space-y-2 p-2 sm:p-3">
+    <div
+      className={`space-y-2 p-2 sm:p-3 ${compact ? "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" : ""}`}
+    >
       <div
         className={`relative w-full overflow-hidden rounded-lg bg-zinc-100 ${
           compact
-            ? "aspect-[4/3] w-full"
+            ? "aspect-[4/3] w-full lg:min-h-0 lg:flex-1 lg:aspect-auto"
             : "aspect-[4/3] sm:aspect-[3/2]"
         }`}
       >
@@ -191,7 +193,7 @@ export function ListingImageGallery({
       </div>
 
       {list.length > 1 ? (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex shrink-0 flex-wrap gap-1.5">
           {list.map((src, idx) => (
             <button
               key={`${src}-${idx}`}
