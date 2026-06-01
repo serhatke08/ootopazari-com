@@ -131,7 +131,7 @@ export default async function RootLayout({
         >
           <SiteHeader />
         </Suspense>
-        <div className="flex flex-1 flex-col pb-[calc(4.35rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+        <div className="layout-with-mobile-nav flex flex-1 flex-col">
           <main className="flex flex-1 flex-col bg-white">{children}</main>
           <SiteFooter loggedIn={footerLoggedIn} />
         </div>

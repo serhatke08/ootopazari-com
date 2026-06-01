@@ -636,13 +636,12 @@ export default async function IlanDetayPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="space-y-4 sm:space-y-5">
-        <h1 className="text-xl font-bold leading-tight text-black sm:text-2xl lg:text-3xl">
+      <div className="listing-detail-layout">
+        <h1 className="listing-detail-title text-xl font-bold leading-tight text-black sm:text-2xl lg:text-3xl">
           {(listing.title as string) ?? "İlan"}
         </h1>
 
-        <div className="grid grid-cols-1 items-start gap-4 min-[768px]:grid-cols-2 min-[768px]:gap-x-5 xl:grid-cols-3 xl:gap-x-5">
-        <div className="min-w-0 min-[768px]:col-start-1 min-[768px]:row-start-1 xl:col-start-1">
+        <div className="listing-detail-gallery min-w-0">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
             <ListingImageGallery
               images={galleryUrls}
@@ -662,7 +661,7 @@ export default async function IlanDetayPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="min-w-0 mt-3 min-[768px]:col-start-2 min-[768px]:row-start-1 min-[768px]:mt-0 xl:col-start-2">
+        <div className="listing-detail-tabs min-w-0 max-md:mt-3">
           <ListingDetailTabs
             header={
               <div className="px-4 py-2.5">
@@ -801,7 +800,7 @@ export default async function IlanDetayPage({ params }: Props) {
           />
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-3 min-[768px]:col-span-2 min-[768px]:col-start-1 min-[768px]:row-start-2 min-[768px]:grid min-[768px]:grid-cols-2 min-[768px]:gap-4 xl:col-span-1 xl:col-start-3 xl:row-start-1 xl:flex xl:flex-col xl:gap-3">
+        <aside className="listing-detail-aside flex min-w-0 flex-col gap-3 max-md:mt-3">
           {seller ? (
             <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
@@ -869,7 +868,6 @@ export default async function IlanDetayPage({ params }: Props) {
             </dl>
           </div>
         </aside>
-        </div>
       </div>
 
       {expertizPanels ? (
