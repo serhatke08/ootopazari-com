@@ -8,11 +8,17 @@ export function ListingImageGallery({
   images,
   alt,
   overlay,
+  title,
+  price,
 }: {
   images: string[];
   alt: string;
   /** Ana görselin sağ üst köşesi (örn. favori) */
   overlay?: ReactNode;
+  /** Görselin üstünde gösterilecek başlık */
+  title?: string;
+  /** Görselin üstünde gösterilecek fiyat */
+  price?: string;
 }) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
@@ -166,12 +172,27 @@ export function ListingImageGallery({
           priority
           sizes="(max-width: 640px) 100vw, 60vw"
         />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         <button
           type="button"
-          className="absolute inset-0 z-[1] cursor-zoom-in bg-transparent outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white/40"
+          className="absolute inset-0 z-[2] cursor-zoom-in bg-transparent outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-white/40"
           onClick={() => setLightbox(true)}
           aria-label="Tam ekran için tıklayın"
         />
+        {title || price ? (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 space-y-1 p-4">
+            {title ? (
+              <h1 className="text-xl font-bold leading-tight text-white drop-shadow-lg sm:text-2xl">
+                {title}
+              </h1>
+            ) : null}
+            {price ? (
+              <p className="text-lg font-bold text-white drop-shadow-lg sm:text-xl">
+                {price}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {overlay ? (
           <div className="pointer-events-auto absolute right-2 top-2 z-20">
             {overlay}

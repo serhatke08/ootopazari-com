@@ -250,12 +250,12 @@ function Field({
   const v =
     typeof value === "object" ? JSON.stringify(value) : String(value);
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-black/10 py-2.5 last:border-0">
-      <dt className="text-xs font-medium uppercase tracking-wide text-black/55">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-black/10 py-1.5 last:border-0">
+      <dt className="text-[10px] font-medium uppercase tracking-wide text-black/50">
         {label}
       </dt>
       <dd
-        className={`min-w-0 text-right text-sm font-medium ${valueClassName}`}
+        className={`min-w-0 text-right text-xs font-medium ${valueClassName}`}
       >
         {v}
       </dd>
@@ -501,11 +501,21 @@ export default async function IlanDetayPage({ params }: Props) {
       </div>
 
       <div className="space-y-6 sm:space-y-6">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-[minmax(0,60%)_minmax(0,1fr)] sm:items-start sm:gap-x-8 lg:gap-x-10">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,42%)_minmax(0,1fr)] sm:items-start sm:gap-x-6 lg:gap-x-8">
         <div className="min-w-0 space-y-3">
           <ListingImageGallery
             images={galleryUrls}
             alt="İlan görseli"
+            title={(listing.title as string) ?? "İlan"}
+            price={
+              listing.price != null
+                ? new Intl.NumberFormat("tr-TR", {
+                    style: "currency",
+                    currency: "TRY",
+                    maximumFractionDigits: 0,
+                  }).format(Number(listing.price))
+                : "Fiyat sorunuz"
+            }
             overlay={
               id && !isSuspendedDetailView ? (
                 <FavoriteHeart
@@ -554,20 +564,6 @@ export default async function IlanDetayPage({ params }: Props) {
                 : "space-y-3"
             }
           >
-            <h2 className="min-w-0 text-2xl font-semibold leading-snug text-black sm:text-3xl">
-              {(listing.title as string) ?? "İlan"}
-            </h2>
-            {listing.price != null ? (
-              <p className="text-2xl font-bold text-black tabular-nums sm:text-3xl">
-                {new Intl.NumberFormat("tr-TR", {
-                  style: "currency",
-                  currency: "TRY",
-                  maximumFractionDigits: 0,
-                }).format(Number(listing.price))}
-              </p>
-            ) : (
-              <p className="text-lg text-black/70 sm:text-xl">Fiyat sorunuz</p>
-            )}
             {stats ? (
               <StatsBadges
                 variant="inline"
@@ -580,13 +576,13 @@ export default async function IlanDetayPage({ params }: Props) {
         </div>
 
         <div className="min-w-0">
-          <dl className="rounded-xl border border-black/10 bg-white px-4 py-1">
+          <dl className="rounded-xl border border-black/10 bg-white px-3 py-1">
             {num != null ? (
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-black/10 py-2.5 last:border-0">
-                <dt className="text-xs font-medium uppercase tracking-wide text-black/55">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-black/10 py-1.5 last:border-0">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-black/50">
                   İlan no
                 </dt>
-                <dd className="min-w-0 text-right text-sm font-medium">
+                <dd className="min-w-0 text-right text-xs font-medium">
                   <CopyListingNumber
                     text={`#${String(num)}`}
                     className="text-blue-600"
