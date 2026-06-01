@@ -89,12 +89,12 @@ export function StartConversationButton({ listingId, ownerUserId }: Props) {
   }
 
   return (
-    <div className="mt-4">
+    <div className="mt-3 w-full">
       <button
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="inline-flex items-center justify-center rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60"
       >
         {loading ? "Açılıyor…" : "Mesaj gönder"}
       </button>

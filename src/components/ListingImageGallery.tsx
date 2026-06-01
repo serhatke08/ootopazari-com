@@ -158,11 +158,11 @@ export function ListingImageGallery({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 p-2 sm:p-3">
       <div
-        className={`relative w-full overflow-hidden rounded-lg border border-black/10 bg-zinc-100 ${
+        className={`relative w-full overflow-hidden rounded-lg bg-zinc-100 ${
           compact
-            ? "aspect-[4/3] max-h-[220px] sm:max-h-[260px] lg:max-h-[300px]"
+            ? "aspect-[4/3] max-h-[220px] sm:max-h-[260px] lg:max-h-[280px]"
             : "aspect-[4/3] sm:aspect-[3/2]"
         }`}
       >
