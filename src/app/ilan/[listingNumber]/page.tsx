@@ -39,6 +39,7 @@ import {
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import { SuspendListingButton } from "@/components/SuspendListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
+import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
 
 type Props = { params: Promise<{ listingNumber: string }> };
@@ -832,12 +833,7 @@ export default async function IlanDetayPage({ params }: Props) {
                 />
               ) : null}
               {showPhone ? (
-                <a
-                  href={`tel:${contactPhone.replace(/\s/g, "")}`}
-                  className="mt-3 flex w-full items-center justify-center rounded-lg border border-black/15 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-black/[0.03]"
-                >
-                  {contactPhone}
-                </a>
+                <ListingContactPhone phone={contactPhone} />
               ) : null}
             </div>
           ) : null}
