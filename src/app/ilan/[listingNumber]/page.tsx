@@ -39,6 +39,7 @@ import {
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import { SuspendListingButton } from "@/components/SuspendListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
+import { ListingDetailTabs } from "@/components/ListingDetailTabs";
 
 type Props = { params: Promise<{ listingNumber: string }> };
 
@@ -501,7 +502,7 @@ export default async function IlanDetayPage({ params }: Props) {
       </div>
 
       <div className="space-y-4 sm:space-y-5">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,36%)_minmax(0,1fr)] sm:items-start sm:gap-x-5 lg:gap-x-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:items-start sm:gap-x-4 lg:gap-x-5">
         <div className="min-w-0 space-y-2">
           <ListingImageGallery
             images={galleryUrls}
@@ -576,121 +577,151 @@ export default async function IlanDetayPage({ params }: Props) {
         </div>
 
         <div className="min-w-0">
-          <dl className="rounded-xl border border-black/10 bg-white px-3 py-1">
-            {num != null ? (
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-black/10 py-1.5 last:border-0">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-black/50">
-                  İlan no
-                </dt>
-                <dd className="min-w-0 text-right text-xs font-medium">
-                  <CopyListingNumber
-                    text={`#${String(num)}`}
-                    className="text-blue-600"
-                  />
-                </dd>
+          <ListingDetailTabs
+            infoContent={
+              <dl className="px-3 py-1">
+                {num != null ? (
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-black/10 py-1.5 last:border-0">
+                    <dt className="text-[10px] font-medium uppercase tracking-wide text-black/50">
+                      İlan no
+                    </dt>
+                    <dd className="min-w-0 text-right text-xs font-medium">
+                      <CopyListingNumber
+                        text={`#${String(num)}`}
+                        className="text-blue-600"
+                      />
+                    </dd>
+                  </div>
+                ) : (
+                  <Field label="İlan no" value="—" />
+                )}
+                <Field label="Şehir" value={cityDisplayResolved ?? "—"} />
+                <Field label="Kategori" value={categoryName ?? undefined} />
+                <Field
+                  label="İlan tarihi"
+                  value={fmtListingDate(row.created_at) ?? "—"}
+                />
+                <Field label="Marka" value={brandName ?? undefined} />
+                <Field label="Seri" value={seriDisplay ?? "—"} />
+                <Field label="Model" value={modelDisplay ?? "—"} />
+                <Field label="Yıl" value={listing.vehicle_year as number} />
+                <Field
+                  label="Kilometre"
+                  value={fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))}
+                />
+                <Field label="Yakıt" value={listing.fuel_type as string} />
+                <Field
+                  label={isMotorcycle ? "Şanzıman" : "Vites"}
+                  value={listing.transmission_type as string}
+                />
+                <Field
+                  label="Motor gücü"
+                  value={pick(row, ["engine_power", "motor_gucu", "motor_power"]) as string | undefined}
+                />
+                <Field
+                  label={isMotorcycle ? "Renk / Kaplama" : "Renk"}
+                  value={listing.color as string}
+                />
+                {isCarLike ? (
+                  <Field label="Kasa tipi" value={listing.body_type as string} />
+                ) : null}
+                <Field
+                  label="Hasar"
+                  value={
+                    listing.is_damaged === true
+                      ? "Evet"
+                      : listing.is_damaged === false
+                        ? "Hayır"
+                        : undefined
+                  }
+                />
+                <Field
+                  label="Ağır hasar kaydı"
+                  value={
+                    fmtBool(
+                      pick(row, [
+                        "heavy_damage_record",
+                        "agir_hasar_kaydi",
+                        "has_heavy_damage",
+                      ])
+                    ) ??
+                    (pick(row, ["heavy_damage_label", "agir_hasar"]) as string)
+                  }
+                />
+                <Field
+                  label={isMotorcycle ? "Motosiklet durumu" : "Araç durumu"}
+                  value={pick(row, [
+                    "vehicle_condition",
+                    "arac_durumu",
+                    "condition",
+                  ]) as string}
+                />
+                <Field
+                  label="Garanti"
+                  value={pick(row, ["warranty", "garanti", "warranty_months"]) as string}
+                />
+                <Field
+                  label="Plaka / uyruk"
+                  value={
+                    [plaka, uyruk].filter(Boolean).join(" · ") || undefined
+                  }
+                />
+                <Field
+                  label={isMotorcycle ? "Ekspertiz / kontrol raporu" : "Ekspertiz raporu"}
+                  value={
+                    listing.has_expertise === true
+                      ? "Var"
+                      : listing.has_expertise === false
+                        ? "Yok"
+                        : undefined
+                  }
+                />
+                <Field
+                  label="Takas"
+                  value={
+                    listing.is_tradeable === true
+                      ? "Evet"
+                      : listing.is_tradeable === false
+                        ? "Hayır"
+                        : undefined
+                  }
+                />
+                {isCarLike ? (
+                  <Field label="Çekiş" value={listing.drive_type as string} />
+                ) : null}
+                <Field
+                  label="Motor hacmi"
+                  value={pick(row, ["engine_capacity", "motor_hacmi"]) as string}
+                />
+              </dl>
+            }
+            descriptionContent={
+              descriptionBlock ? (
+                descriptionBlock
+              ) : (
+                <p className="text-sm text-black/55">Açıklama yok.</p>
+              )
+            }
+            equipmentContent={
+              <div className="space-y-3">
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-black">
+                    Donanım Bilgileri
+                  </h3>
+                  <p className="text-xs text-black/55">
+                    Bu bölüm geliştirilme aşamasındadır. Donanım bilgileri yakında
+                    eklenecektir.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <Field label="İlan no" value="—" />
-            )}
-            <Field label="Şehir" value={cityDisplayResolved ?? "—"} />
-            <Field label="Kategori" value={categoryName ?? undefined} />
-            <Field
-              label="İlan tarihi"
-              value={fmtListingDate(row.created_at) ?? "—"}
-            />
-            <Field label="Marka" value={brandName ?? undefined} />
-            <Field label="Seri" value={seriDisplay ?? "—"} />
-            <Field label="Model" value={modelDisplay ?? "—"} />
-            <Field label="Yıl" value={listing.vehicle_year as number} />
-            <Field
-              label="Kilometre"
-              value={fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))}
-            />
-            <Field label="Yakıt" value={listing.fuel_type as string} />
-            <Field
-              label={isMotorcycle ? "Şanzıman" : "Vites"}
-              value={listing.transmission_type as string}
-            />
-            <Field
-              label="Motor gücü"
-              value={pick(row, ["engine_power", "motor_gucu", "motor_power"]) as string | undefined}
-            />
-            <Field
-              label={isMotorcycle ? "Renk / Kaplama" : "Renk"}
-              value={listing.color as string}
-            />
-            {isCarLike ? (
-              <Field label="Kasa tipi" value={listing.body_type as string} />
-            ) : null}
-            <Field
-              label="Hasar"
-              value={
-                listing.is_damaged === true
-                  ? "Evet"
-                  : listing.is_damaged === false
-                    ? "Hayır"
-                    : undefined
-              }
-            />
-            <Field
-              label="Ağır hasar kaydı"
-              value={
-                fmtBool(
-                  pick(row, [
-                    "heavy_damage_record",
-                    "agir_hasar_kaydi",
-                    "has_heavy_damage",
-                  ])
-                ) ??
-                (pick(row, ["heavy_damage_label", "agir_hasar"]) as string)
-              }
-            />
-            <Field
-              label={isMotorcycle ? "Motosiklet durumu" : "Araç durumu"}
-              value={pick(row, [
-                "vehicle_condition",
-                "arac_durumu",
-                "condition",
-              ]) as string}
-            />
-            <Field
-              label="Garanti"
-              value={pick(row, ["warranty", "garanti", "warranty_months"]) as string}
-            />
-            <Field
-              label="Plaka / uyruk"
-              value={
-                [plaka, uyruk].filter(Boolean).join(" · ") || undefined
-              }
-            />
-            <Field
-              label={isMotorcycle ? "Ekspertiz / kontrol raporu" : "Ekspertiz raporu"}
-              value={
-                listing.has_expertise === true
-                  ? "Var"
-                  : listing.has_expertise === false
-                    ? "Yok"
-                    : undefined
-              }
-            />
-            <Field
-              label="Takas"
-              value={
-                listing.is_tradeable === true
-                  ? "Evet"
-                  : listing.is_tradeable === false
-                    ? "Hayır"
-                    : undefined
-              }
-            />
-            {isCarLike ? (
-              <Field label="Çekiş" value={listing.drive_type as string} />
-            ) : null}
-            <Field
-              label="Motor hacmi"
-              value={pick(row, ["engine_capacity", "motor_hacmi"]) as string}
-            />
-          </dl>
+            }
+          />
+        </div>
+
+        <div className="hidden lg:block min-w-0">
+          <div className="rounded-xl border border-dashed border-black/20 bg-black/5 p-6 text-center">
+            <p className="text-sm text-black/40">Bu alan ileride kullanılacak</p>
+          </div>
         </div>
         </div>
       </div>
