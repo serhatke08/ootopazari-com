@@ -6,6 +6,7 @@ import { useIsClient } from "@/hooks/use-is-client";
 type Tab = "info" | "description" | "equipment";
 
 type Props = {
+  header?: ReactNode;
   infoContent: ReactNode;
   descriptionContent: ReactNode;
   equipmentContent: ReactNode;
@@ -37,10 +38,14 @@ function tabButtonClass(active: boolean) {
 }
 
 function ListingDetailTabsStatic({
+  header,
   infoContent,
-}: Pick<Props, "infoContent">) {
+}: Pick<Props, "header" | "infoContent">) {
   return (
     <div className={SHELL_CLASS}>
+      {header ? (
+        <div className="shrink-0 border-b border-black/10">{header}</div>
+      ) : null}
       <div
         className={TAB_LIST_CLASS}
         role="tablist"
@@ -67,6 +72,7 @@ function ListingDetailTabsStatic({
 }
 
 function ListingDetailTabsInteractive({
+  header,
   infoContent,
   descriptionContent,
   equipmentContent,
@@ -75,6 +81,9 @@ function ListingDetailTabsInteractive({
 
   return (
     <div className={SHELL_CLASS}>
+      {header ? (
+        <div className="shrink-0 border-b border-black/10">{header}</div>
+      ) : null}
       <div
         className={TAB_LIST_CLASS}
         role="tablist"
@@ -110,7 +119,12 @@ function ListingDetailTabsInteractive({
 export function ListingDetailTabs(props: Props) {
   const isClient = useIsClient();
   if (!isClient) {
-    return <ListingDetailTabsStatic infoContent={props.infoContent} />;
+    return (
+      <ListingDetailTabsStatic
+        header={props.header}
+        infoContent={props.infoContent}
+      />
+    );
   }
   return <ListingDetailTabsInteractive {...props} />;
 }

@@ -637,22 +637,9 @@ export default async function IlanDetayPage({ params }: Props) {
       </div>
 
       <div className="space-y-4 sm:space-y-5">
-        <div className="space-y-1">
-          <h1 className="text-xl font-bold leading-tight text-black sm:text-2xl lg:text-3xl">
-            {(listing.title as string) ?? "İlan"}
-          </h1>
-          {listing.price != null ? (
-            <p className="text-lg font-bold text-black tabular-nums sm:text-xl lg:text-2xl">
-              {new Intl.NumberFormat("tr-TR", {
-                style: "currency",
-                currency: "TRY",
-                maximumFractionDigits: 0,
-              }).format(Number(listing.price))}
-            </p>
-          ) : (
-            <p className="text-base text-black/70 sm:text-lg">Fiyat sorunuz</p>
-          )}
-        </div>
+        <h1 className="text-xl font-bold leading-tight text-black sm:text-2xl lg:text-3xl">
+          {(listing.title as string) ?? "İlan"}
+        </h1>
 
         <div className="grid grid-cols-1 gap-4 sm:gap-x-4 lg:grid-cols-3 lg:items-start lg:gap-x-5">
         <div className="min-w-0 lg:col-start-1">
@@ -675,8 +662,23 @@ export default async function IlanDetayPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="min-w-0 lg:col-start-2">
+        <div className="min-w-0 mt-3 sm:mt-4 lg:col-start-2 lg:mt-8">
           <ListingDetailTabs
+            header={
+              <div className="px-4 py-2.5">
+                {listing.price != null ? (
+                  <p className="text-base font-bold text-black tabular-nums sm:text-lg">
+                    {new Intl.NumberFormat("tr-TR", {
+                      style: "currency",
+                      currency: "TRY",
+                      maximumFractionDigits: 0,
+                    }).format(Number(listing.price))}
+                  </p>
+                ) : (
+                  <p className="text-sm font-medium text-black/70">Fiyat sorunuz</p>
+                )}
+              </div>
+            }
             infoContent={
               <dl className="px-3 py-1">
                 {num != null ? (
