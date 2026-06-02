@@ -142,13 +142,13 @@ export default async function AnaSayfa({
           id="ilanlar"
           className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6"
         >
-          <TopCitySelect cities={cities} />
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
             <aside className="hidden w-full shrink-0 lg:sticky lg:top-[5.5rem] lg:flex lg:h-[calc(100dvh-5.5rem)] lg:max-h-[calc(100dvh-5.5rem)] lg:min-h-0 lg:w-[min(280px,22vw)] lg:min-w-[240px] lg:max-w-[300px] lg:flex-col lg:overflow-hidden lg:self-start">
               <HomeSidebar categories={categories} />
             </aside>
 
             <div className="min-w-0 flex-1 space-y-6">
+              <TopCitySelect cities={cities} />
               {items.length === 0 ? (
                 <p className="text-sm text-zinc-500">
                   Henüz ilan yok veya RLS engelliyor.
@@ -200,18 +200,18 @@ export default async function AnaSayfa({
         id="ilanlar"
         className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6"
       >
-        <TopCitySelect cities={cities} />
+        {categoryId && catMap.get(categoryId)?.name ? (
+          <h1 className="mb-6 text-2xl font-bold text-zinc-900 sm:text-3xl">
+            {catMap.get(categoryId)?.name}
+          </h1>
+        ) : null}
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
           <aside className="hidden w-full shrink-0 lg:sticky lg:top-[5.5rem] lg:flex lg:h-[calc(100dvh-5.5rem)] lg:max-h-[calc(100dvh-5.5rem)] lg:min-h-0 lg:w-[min(280px,22vw)] lg:min-w-[240px] lg:max-w-[300px] lg:flex-col lg:overflow-hidden lg:self-start">
             <HomeSidebar categories={categories} />
           </aside>
 
           <div className="min-w-0 flex-1 space-y-6">
-            {categoryId && catMap.get(categoryId)?.name ? (
-              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
-                {catMap.get(categoryId)?.name}
-              </h1>
-            ) : null}
+            <TopCitySelect cities={cities} />
             <p className="text-sm text-zinc-600">
               {total} sonuç
               {cityId && cityMap.get(cityId)?.name
