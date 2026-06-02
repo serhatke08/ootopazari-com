@@ -48,7 +48,7 @@ body {
   grid-column: 1 / -1;
 }
 
-/* Mobil: galeri → satıcı → bilgiler → konum */
+/* Mobil: galeri → satıcı/konum → bilgiler */
 @media (max-width: 47.999rem) {
   .listing-detail-layout > .listing-detail-title {
     order: 1;
@@ -58,20 +58,16 @@ body {
     order: 2;
   }
 
-  .listing-detail-layout > .listing-detail-seller {
+  .listing-detail-layout > .listing-detail-aside {
     order: 3;
   }
 
   .listing-detail-layout > .listing-detail-tabs {
     order: 4;
   }
-
-  .listing-detail-layout > .listing-detail-location {
-    order: 5;
-  }
 }
 
-/* Tablet: sol galeri + satıcı (bitişik), sağ bilgiler + konum */
+/* Tablet: sol galeri + satıcı/konum, sağ bilgiler */
 @media (min-width: 48rem) and (max-width: 79.999rem) {
   .listing-detail-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -84,7 +80,7 @@ body {
     grid-row: 2;
   }
 
-  .listing-detail-layout > .listing-detail-seller {
+  .listing-detail-layout > .listing-detail-aside {
     grid-column: 1;
     grid-row: 3;
     margin-top: 0;
@@ -95,12 +91,6 @@ body {
     grid-row: 2 / span 2;
     margin-top: 0;
     align-self: start;
-  }
-
-  .listing-detail-layout > .listing-detail-location {
-    grid-column: 2;
-    grid-row: 4;
-    margin-top: 0;
   }
 }
 
@@ -123,15 +113,9 @@ body {
     margin-top: 0;
   }
 
-  .listing-detail-layout > .listing-detail-seller {
+  .listing-detail-layout > .listing-detail-aside {
     grid-column: 3;
     grid-row: 2;
-    margin-top: 0;
-  }
-
-  .listing-detail-layout > .listing-detail-location {
-    grid-column: 3;
-    grid-row: 3;
     margin-top: 0;
   }
 }

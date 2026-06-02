@@ -804,80 +804,90 @@ export default async function IlanDetayPage({ params }: Props) {
           />
         </div>
 
-        {seller ? (
-          <div className="listing-detail-seller min-w-0 max-md:mt-2">
-            <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
-                Satıcı
-              </p>
-              <Link
-                href={`/kullanici/${sellerUserId}`}
-                className="flex items-center gap-2 rounded-lg transition hover:bg-black/[0.03]"
-              >
-                {sellerAvSrc ? (
-                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black/5">
-                    <Image
-                      src={sellerAvSrc}
-                      alt=""
-                      width={40}
-                      height={40}
-                      className="h-10 w-10 object-cover"
+        <div className="listing-detail-aside min-w-0 max-md:mt-2">
+          <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
+            {seller ? (
+              <>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
+                  Satıcı
+                </p>
+                <Link
+                  href={`/kullanici/${sellerUserId}`}
+                  className="flex items-center gap-2 rounded-lg transition hover:bg-black/[0.03]"
+                >
+                  {sellerAvSrc ? (
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black/5">
+                      <Image
+                        src={sellerAvSrc}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/10 text-sm font-semibold text-black/55"
+                      aria-hidden
+                    >
+                      {(sellerDisplayName ?? "?").trim().slice(0, 1).toUpperCase() ||
+                        "?"}
+                    </div>
+                  )}
+                  <div className="flex min-w-0 flex-1 items-center gap-1">
+                    <p className="truncate text-sm font-semibold text-black">
+                      {sellerDisplayName}
+                    </p>
+                    {adminProfile ? <AdminVerifiedBadge /> : null}
+                  </div>
+                </Link>
+                {stats ? (
+                  <div className="mt-3 border-t border-black/10 pt-3">
+                    <StatsBadges
+                      variant="inline"
+                      views={stats.views}
+                      favorites={stats.favorites}
                     />
                   </div>
-                ) : (
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/10 text-sm font-semibold text-black/55"
-                    aria-hidden
-                  >
-                    {(sellerDisplayName ?? "?").trim().slice(0, 1).toUpperCase() ||
-                      "?"}
+                ) : null}
+                {showMessageButton && id ? (
+                  <div className="listing-contact-actions mt-3 flex flex-col gap-3 max-md:hidden">
+                    <StartConversationButton
+                      listingId={id}
+                      ownerUserId={sellerUserId}
+                    />
+                    {showPhone ? (
+                      <ListingContactPhone phone={contactPhone} />
+                    ) : null}
                   </div>
-                )}
-                <div className="flex min-w-0 flex-1 items-center gap-1">
-                  <p className="truncate text-sm font-semibold text-black">
-                    {sellerDisplayName}
-                  </p>
-                  {adminProfile ? <AdminVerifiedBadge /> : null}
-                </div>
-              </Link>
-              {stats ? (
-                <div className="mt-3 border-t border-black/10 pt-3">
-                  <StatsBadges
-                    variant="inline"
-                    views={stats.views}
-                    favorites={stats.favorites}
-                  />
-                </div>
-              ) : null}
-              {showMessageButton && id ? (
-                <div className="listing-contact-actions mt-3 flex flex-col gap-3 max-md:hidden">
-                  <StartConversationButton
-                    listingId={id}
-                    ownerUserId={sellerUserId}
-                  />
-                  {showPhone ? (
+                ) : showPhone ? (
+                  <div className="listing-contact-actions mt-3 max-md:hidden">
                     <ListingContactPhone phone={contactPhone} />
-                  ) : null}
+                  </div>
+                ) : null}
+                <div className="mt-3 border-t border-black/10 pt-3">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
+                    Konum
+                  </p>
+                  <dl className="text-sm text-black">
+                    <Field label="Şehir" value={cityDisplayResolved ?? undefined} />
+                    <Field label="İlçe" value={listing.district as string} />
+                    <Field label="Ülke" value={listing.country_name as string} />
+                  </dl>
                 </div>
-              ) : showPhone ? (
-                <div className="listing-contact-actions mt-3 max-md:hidden">
-                  <ListingContactPhone phone={contactPhone} />
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="listing-detail-location min-w-0 max-md:mt-3">
-          <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
-              Konum
-            </p>
-            <dl className="text-sm text-black">
-              <Field label="Şehir" value={cityDisplayResolved ?? undefined} />
-              <Field label="İlçe" value={listing.district as string} />
-              <Field label="Ülke" value={listing.country_name as string} />
-            </dl>
+              </>
+            ) : (
+              <>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
+                  Konum
+                </p>
+                <dl className="text-sm text-black">
+                  <Field label="Şehir" value={cityDisplayResolved ?? undefined} />
+                  <Field label="İlçe" value={listing.district as string} />
+                  <Field label="Ülke" value={listing.country_name as string} />
+                </dl>
+              </>
+            )}
           </div>
         </div>
       </div>
