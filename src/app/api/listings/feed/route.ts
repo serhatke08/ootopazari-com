@@ -3,8 +3,8 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import {
   fetchHomeListingsFeed,
   HOME_LISTINGS_PAGE_SIZE,
-  resolveHomeListingsFeedFilters,
 } from "@/lib/home-listings-feed";
+import { resolveHomeListingsFeedFilters } from "@/lib/home-listings-feed-filters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function parseNum(s: string | null): number | undefined {

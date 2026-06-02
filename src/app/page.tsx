@@ -18,9 +18,11 @@ import {
 import {
   fetchHomeListingsFeed,
   HOME_LISTINGS_PAGE_SIZE,
+} from "@/lib/home-listings-feed";
+import {
   homeListingsFeedHasFilters,
   resolveHomeListingsFeedFilters,
-} from "@/lib/home-listings-feed";
+} from "@/lib/home-listings-feed-filters";
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { TopCitySelect } from "@/components/TopCitySelect";

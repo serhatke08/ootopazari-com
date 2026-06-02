@@ -5,8 +5,8 @@ import type { SupabasePublicEnv } from "@/lib/env";
 import type {
   HomeListingCardItem,
   HomeListingsFeedFilters,
-} from "@/lib/home-listings-feed";
-import { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed";
+} from "@/lib/home-listings-feed-types";
+import { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
 import { ListingCard } from "@/components/ListingCard";
 
 type Props = {
