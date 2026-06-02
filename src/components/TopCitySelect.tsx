@@ -31,20 +31,18 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
   }
 
   return (
-    <div className="mb-5 sm:mb-6">
-      <select
-        name="city_id"
-        value={selectedCityId}
-        onChange={(e) => onChange(e.target.value)}
-        className="min-w-[130px] rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 sm:min-w-[145px] sm:text-sm"
-      >
-        <option value="">Tüm Şehirler</option>
-        {cityOptions.map((city) => (
-          <option key={city.id} value={city.id}>
-            {city.name ?? "Şehir"}
-          </option>
-        ))}
-      </select>
-    </div>
+    <select
+      name="city_id"
+      value={selectedCityId}
+      onChange={(e) => onChange(e.target.value)}
+      className="min-w-[130px] rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs text-zinc-900 shadow-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 sm:min-w-[145px] sm:text-sm"
+    >
+      <option value="">Tüm Şehirler</option>
+      {cityOptions.map((city) => (
+        <option key={city.id} value={city.id}>
+          {city.name ?? "Şehir"}
+        </option>
+      ))}
+    </select>
   );
 }
