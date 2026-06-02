@@ -224,7 +224,9 @@ export function ListingPriceRatingDot({
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={toggleOpen}
-        className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/25"
+        className={`relative z-10 flex shrink-0 items-center justify-center rounded-full transition hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/25 ${
+          size === "sm" ? "h-4 w-4" : "h-7 w-7"
+        }`}
         aria-label="Fiyat değerlendirmesi"
         aria-expanded={open}
       >
