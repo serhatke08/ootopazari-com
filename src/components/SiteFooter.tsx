@@ -8,26 +8,63 @@ const categoryLinks = [
   { label: "Ücretsiz ilan ver", href: "/ilan-ver" },
 ] as const;
 
+const linkColumns = [
+  {
+    title: "Hızlı İşlemler",
+    links: [
+      { label: "+ İlan Ekle", href: "/ilan-ver" },
+      { label: "Favoriler", href: "/favoriler" },
+      { label: "Mesajlar", href: "/mesajlar" },
+    ],
+  },
+  {
+    title: "Keşfet",
+    links: [
+      { label: "Ana Sayfa", href: "/" },
+      { label: "Tüm İlanlar", href: "/ilanlar" },
+      { label: "Ücretsiz İlan Ver", href: "/ilan-ver" },
+    ],
+  },
+  {
+    title: "Rehber",
+    links: [
+      { label: "Tüm rehberler", href: "/rehber" },
+      ...SEO_GUIDE_PAGES.slice(0, 4).map((g) => ({
+        label: g.navLabel,
+        href: `/rehber/${g.slug}`,
+      })),
+    ],
+  },
+] as const;
+
 export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
+  const accountLinks = loggedIn
+    ? [{ label: "Hesabım", href: "/profil" }]
+    : [
+        { label: "Hesabım", href: "/profil" },
+        { label: "Giriş Yap", href: "/giris" },
+        { label: "Kayıt Ol", href: "/kayit" },
+      ];
+
   return (
     <footer
-      className="mt-auto border-t border-amber-400/80 bg-[#ffcc00] py-9 text-zinc-900"
+      className="mt-auto border-t border-amber-400/80 bg-[#ffcc00] py-10 text-zinc-900 sm:py-12"
       style={{ backgroundColor: "#ffcc00" }}
     >
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-        <section aria-labelledby="footer-seo-heading" className="mb-8">
+      <div className="mx-auto max-w-[1400px] px-4 text-center sm:px-6">
+        <section aria-labelledby="footer-seo-heading" className="mx-auto max-w-2xl">
           <h2
             id="footer-seo-heading"
-            className="text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl"
+            className="text-xl font-black leading-tight tracking-tight text-zinc-950 sm:text-2xl md:text-3xl"
           >
             Oto Pazarı — Türkiye&apos;nin araç ilan platformu
           </h2>
-          <div className="mt-3 max-w-3xl space-y-2.5 text-xs leading-relaxed text-zinc-800 sm:text-sm">
+          <div className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-800 sm:text-base">
             <p>
-              <strong className="font-semibold text-zinc-900">Oto Pazarı</strong>
-              , ikinci el araba ve sıfır otomobil ilanlarını tek yerde toplayan
-              Türkiye geneli bir{" "}
-              <strong className="font-semibold text-zinc-900">oto pazarı</strong>
+              <strong className="font-bold text-zinc-950">Oto Pazarı</strong>, ikinci
+              el araba ve sıfır otomobil ilanlarını tek yerde toplayan Türkiye
+              geneli bir{" "}
+              <strong className="font-bold text-zinc-950">oto pazarı</strong>
               dır. Marka, model, şehir ve fiyat filtreleriyle binlerce güncel
               ilanı tarayın; favorilerinize ekleyin ve satıcıyla doğrudan
               mesajlaşın.
@@ -41,13 +78,13 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
           </div>
           <nav
             aria-label="Oto Pazarı kategorileri"
-            className="mt-4 flex flex-wrap gap-2"
+            className="mt-5 flex flex-wrap items-center justify-center gap-2"
           >
             {categoryLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full border border-zinc-900/15 bg-white/80 px-3 py-1 text-[11px] font-semibold text-zinc-800 transition hover:border-zinc-900/30 hover:bg-white sm:text-xs"
+                className="rounded-full border border-zinc-900/20 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900/40 hover:bg-white sm:text-sm"
               >
                 {link.label}
               </Link>
@@ -55,81 +92,33 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
           </nav>
         </section>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-6 border-t border-amber-700/30 pt-6 text-[11px] leading-snug sm:grid-cols-4 sm:gap-x-6 sm:text-sm">
-          <div className="flex min-w-0 flex-col gap-1.5 text-left sm:gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-700 sm:text-xs">
-              Hızlı İşlemler
-            </p>
-            <Link
-              href="/ilan-ver"
-              className="break-words font-semibold hover:underline"
-            >
-              + İlan Ekle
-            </Link>
-            <Link href="/favoriler" className="break-words font-semibold hover:underline">
-              Favoriler
-            </Link>
-            <Link href="/mesajlar" className="break-words font-semibold hover:underline">
-              Mesajlar
-            </Link>
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-1.5 text-left sm:gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-700 sm:text-xs">
-              Keşfet
-            </p>
-            <Link href="/" className="break-words font-semibold hover:underline">
-              Ana Sayfa
-            </Link>
-            <Link href="/ilanlar" className="break-words font-semibold hover:underline">
-              Tüm İlanlar
-            </Link>
-            <Link href="/ilan-ver" className="break-words font-semibold hover:underline">
-              Ücretsiz İlan Ver
-            </Link>
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-1.5 text-left sm:gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-700 sm:text-xs">
-              Rehber
-            </p>
-            <Link href="/rehber" className="break-words font-semibold hover:underline">
-              Tüm rehberler
-            </Link>
-            {SEO_GUIDE_PAGES.slice(0, 4).map((guide) => (
-              <Link
-                key={guide.slug}
-                href={`/rehber/${guide.slug}`}
-                className="break-words font-semibold hover:underline"
+        <div className="mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-8 border-t border-amber-700/30 pt-8 sm:grid-cols-4 sm:gap-6">
+          {[...linkColumns, { title: "Hesap", links: accountLinks }].map(
+            (col) => (
+              <div
+                key={col.title}
+                className="flex flex-col items-center gap-2 text-sm"
               >
-                {guide.navLabel}
-              </Link>
-            ))}
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-1.5 text-left sm:gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-700 sm:text-xs">
-              Hesap
-            </p>
-            <Link href="/profil" className="break-words font-semibold hover:underline">
-              Hesabım
-            </Link>
-            {loggedIn ? null : (
-              <>
-                <Link href="/giris" className="break-words font-semibold hover:underline">
-                  Giriş Yap
-                </Link>
-                <Link href="/kayit" className="break-words font-semibold hover:underline">
-                  Kayıt Ol
-                </Link>
-              </>
-            )}
-          </div>
+                <p className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                  {col.title}
+                </p>
+                {col.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="font-semibold text-zinc-900 hover:underline"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )
+          )}
         </div>
 
-        <div className="mt-6 border-t border-amber-700/30 pt-4 text-center text-xs font-medium text-zinc-800">
+        <p className="mt-8 border-t border-amber-700/30 pt-5 text-xs font-medium text-zinc-800">
           © {new Date().getFullYear()} Oto Pazarı · Tüm hakları saklıdır.
-        </div>
+        </p>
       </div>
     </footer>
   );
