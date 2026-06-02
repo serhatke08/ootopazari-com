@@ -135,7 +135,8 @@ export function listingHomeBoostChromeActive(
   return pulse?.active ?? false;
 }
 
-/** Ana sayfa sıralama zamanı — pulse aktifse pulse başlangıcı, değilse created_at. */
+/** Ana sayfa sıralama zamanı — pulse aktifse o günün pulse başlangıcı; değilse created_at.
+ *  Böylece öne çıkan ilan bir kez yukarı zıplar; sonrasında daha yeni ilanlar üstüne geçer. */
 export function listingFeedSortNewestAt(
   listing: ListingRow,
   now = new Date()

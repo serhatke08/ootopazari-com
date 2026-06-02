@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -18,9 +19,9 @@ const linkClass =
   "text-zinc-900 hover:underline decoration-zinc-900/40 font-semibold";
 
 const navSearchFormClass =
-  "hidden min-w-0 flex-1 max-w-[min(100%,360px)] sm:flex sm:max-w-[360px] md:max-w-[420px]";
+  "flex min-w-0 flex-1 max-w-[min(100%,280px)] sm:max-w-[320px] md:max-w-[380px]";
 const navSearchInputClass =
-  "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25 sm:px-3 sm:py-1.5";
+  "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25";
 
 function BellIcon({ className }: { className?: string }) {
   return (
@@ -84,6 +85,42 @@ function NavSearchForm() {
         className={navSearchInputClass}
       />
     </form>
+  );
+}
+
+function NavProfileAvatar({
+  displayName,
+  avatarUrl,
+  title,
+}: {
+  displayName: string;
+  avatarUrl: string | null;
+  title?: string;
+}) {
+  const initial =
+    displayName.trim().slice(0, 1).toLocaleUpperCase("tr") || "?";
+
+  return (
+    <Link
+      href="/profil"
+      className="relative inline-flex h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-zinc-900/15 transition hover:ring-zinc-900/35"
+      title={title ?? displayName}
+      aria-label="Hesabım"
+    >
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt=""
+          width={36}
+          height={36}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center bg-zinc-900 text-sm font-bold text-[#ffcc00]">
+          {initial}
+        </span>
+      )}
+    </Link>
   );
 }
 
@@ -216,39 +253,50 @@ export function SiteHeaderClient({
       />
 
       <header className="sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm">
-        <div className="mx-auto flex max-w-[1400px] flex-nowrap items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
-          <HamburgerButton
-            open={drawerOpen}
-            onClick={() => setDrawerOpen((o) => !o)}
-            className="text-zinc-900 hover:bg-black/10 focus:ring-zinc-900/30"
-          />
+        <div className="mx-auto grid max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
+          <div className="flex min-w-0 items-center gap-2">
+            <HamburgerButton
+              open={drawerOpen}
+              onClick={() => setDrawerOpen((o) => !o)}
+              className="text-zinc-900 hover:bg-black/10 focus:ring-zinc-900/30"
+            />
+            <NavSearchForm />
+          </div>
 
           <Link
             href="/"
-            className="flex shrink-0 min-w-0 items-center gap-2 py-0.5"
+            className="justify-self-center px-1 py-0.5 text-center"
             onClick={() => setDrawerOpen(false)}
           >
-            <span className="truncate text-lg font-extrabold tracking-tight sm:text-xl md:text-2xl">
-              <span className="text-zinc-900">Oto Pazarı</span>
+            <span className="whitespace-nowrap text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
+              Oto Pazarı
             </span>
           </Link>
 
-          <NavSearchForm />
-
-          <nav className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-2 text-sm sm:gap-x-3">
+          <nav className="flex min-w-0 items-center justify-end gap-x-1.5 gap-y-1 text-sm sm:gap-x-2 md:gap-x-3">
             {hasEnv ? (
               <>
                 <Link
                   href="/ilan-ver"
-                  className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-3 py-2 text-sm font-extrabold text-[#ffcc00] hover:bg-zinc-800 sm:inline-flex sm:items-center sm:justify-center"
+                  className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-extrabold text-[#ffcc00] hover:bg-zinc-800 sm:inline-flex sm:px-3 sm:py-2 sm:text-sm"
                 >
                   İlan ver
+                </Link>
+                <Link
+                  href={
+                    loggedIn
+                      ? "/profil/ilanlarim"
+                      : `/giris?next=${encodeURIComponent("/profil/ilanlarim")}`
+                  }
+                  className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white sm:inline-flex sm:px-3 sm:py-2 sm:text-sm"
+                >
+                  Öne çıkar
                 </Link>
                 {loggedIn ? (
                   <>
                     <Link
                       href="/favoriler"
-                      className={`${linkClass} hidden whitespace-nowrap md:inline-flex`}
+                      className={`${linkClass} hidden whitespace-nowrap lg:inline-flex`}
                     >
                       Favoriler
                     </Link>
@@ -259,14 +307,7 @@ export function SiteHeaderClient({
                       Mesajlar
                       <MessageUnreadBadge count={unreadMessageCount} />
                     </Link>
-                    <Link
-                      href="/profil"
-                      className={`${linkClass} hidden whitespace-nowrap md:inline`}
-                      title={sessionEmail ?? undefined}
-                    >
-                      Hesabım
-                    </Link>
-                    <div className="relative ml-0.5" ref={notifRef}>
+                    <div className="relative shrink-0" ref={notifRef}>
                       <button
                         type="button"
                         onClick={() => setNotifOpen((o) => !o)}
@@ -338,12 +379,15 @@ export function SiteHeaderClient({
                                         </p>
                                       ) : null}
                                       <p className="mt-1 text-[10px] text-zinc-500">
-                                        {new Date(n.created_at).toLocaleString("tr-TR", {
-                                          day: "numeric",
-                                          month: "short",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
+                                        {new Date(n.created_at).toLocaleString(
+                                          "tr-TR",
+                                          {
+                                            day: "numeric",
+                                            month: "short",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          }
+                                        )}
                                       </p>
                                     </li>
                                   );
@@ -363,18 +407,27 @@ export function SiteHeaderClient({
                         </div>
                       ) : null}
                     </div>
+                    <NavProfileAvatar
+                      displayName={
+                        drawerProfile?.displayName ??
+                        sessionEmail?.split("@")[0] ??
+                        "Hesabım"
+                      }
+                      avatarUrl={drawerProfile?.avatarUrl ?? null}
+                      title={sessionEmail ?? undefined}
+                    />
                   </>
                 ) : (
                   <>
                     <Link
                       href="/giris"
-                      className={`${linkClass} whitespace-nowrap`}
+                      className={`${linkClass} whitespace-nowrap text-xs sm:text-sm`}
                     >
                       Giriş
                     </Link>
                     <Link
                       href="/kayit"
-                      className="whitespace-nowrap rounded-md border border-zinc-900/25 bg-zinc-900 px-2.5 py-1 text-xs font-semibold text-[#ffcc00] hover:bg-zinc-800 sm:px-3 sm:py-1.5 sm:text-sm"
+                      className="whitespace-nowrap rounded-md border border-zinc-900/25 bg-zinc-900 px-2.5 py-1.5 text-xs font-semibold text-[#ffcc00] hover:bg-zinc-800 sm:text-sm"
                     >
                       Kayıt
                     </Link>

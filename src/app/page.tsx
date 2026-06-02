@@ -28,6 +28,9 @@ import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
 
+/** Geçici: ana sayfa hero bölümü (kaldırılmadı, devre dışı). */
+const SHOW_HOME_HERO = false;
+
 export const metadata: Metadata = {
   title: {
     absolute: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
@@ -154,13 +157,15 @@ export default async function AnaSayfa({
             __html: JSON.stringify(seoJsonLdWithListings),
           }}
         />
-        <HomeHero
-          categories={categories}
-          cities={cities}
-          selectedCategoryId={categoryId}
-          selectedCityId={cityId}
-          q={q}
-        />
+        {SHOW_HOME_HERO ? (
+          <HomeHero
+            categories={categories}
+            cities={cities}
+            selectedCategoryId={categoryId}
+            selectedCityId={cityId}
+            q={q}
+          />
+        ) : null}
         <HomeQuickLinksStrip />
         <div
           id="ilanlar"
@@ -211,13 +216,15 @@ export default async function AnaSayfa({
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(seoJsonLd) }}
       />
-      <HomeHero
-        categories={categories}
-        cities={cities}
-        selectedCategoryId={categoryId}
-        selectedCityId={cityId}
-        q={q}
-      />
+      {SHOW_HOME_HERO ? (
+        <HomeHero
+          categories={categories}
+          cities={cities}
+          selectedCategoryId={categoryId}
+          selectedCityId={cityId}
+          q={q}
+        />
+      ) : null}
       <HomeQuickLinksStrip />
       <div
         id="ilanlar"

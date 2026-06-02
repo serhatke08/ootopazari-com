@@ -1,12 +1,13 @@
-/** `public.listing_reports` — mobil uygulama ile aynı şema */
+/** `public.listing_reports` — mobil uygulama ile aynı şema (reason = konu başlığı) */
 
 export const LISTING_REPORT_REASONS = [
-  "Yanıltıcı bilgi",
+  "Dolandırıcılık",
   "Yanlış kategori",
-  "Spam",
-  "Sahte ilan",
+  "Eksik açıklama",
+  "Expertiz yanlış, yok veya yüklenmemiş",
+  "Yanıltıcı fiyat veya bilgi",
+  "Sahte veya spam ilan",
   "Uygunsuz içerik",
-  "Fiyat / dolandırıcılık şüphesi",
   "Diğer",
 ] as const;
 

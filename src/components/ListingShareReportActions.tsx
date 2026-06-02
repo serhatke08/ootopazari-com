@@ -170,7 +170,7 @@ export function ListingShareReportActions({
                   htmlFor="report-reason"
                   className="mt-4 block text-sm font-medium text-zinc-800"
                 >
-                  Sebep
+                  Konu
                 </label>
                 <select
                   id="report-reason"

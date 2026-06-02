@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       {
         ok: false,
         error: "invalid_reason",
-        message: "Geçersiz şikayet sebebi.",
+        message: "Geçersiz şikayet konusu.",
         allowed: LISTING_REPORT_REASONS,
       },
       { status: 400 }

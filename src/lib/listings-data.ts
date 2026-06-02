@@ -1,7 +1,6 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  listingHomeBoostChromeActive,
   sortListingsByFeedNewest,
 } from "@/lib/listing-feature-boost";
 
@@ -310,30 +309,37 @@ function applyListingListFilters(
   return query;
 }
 
-/** Pulse aktif öne çıkan ilanlar — ana sayfa sıralaması için (DB'ye yazılmaz). */
-async function fetchPulseActiveBoostedListings(
+/** Onaylı ilanlar — pulse + created_at birleşik sıralama için (sayfalı). */
+async function fetchAllApprovedListingsForFeedSort(
   supabase: SupabaseClient,
   params: Omit<ListingListParams, "page" | "pageSize">
 ): Promise<ListingRow[]> {
-  const nowIso = new Date().toISOString();
-  let q = supabase
-    .from("listings")
-    .select(LISTING_SELECT)
-    .eq("moderation_status", "approved")
-    .gt("featured_until", nowIso);
+  const batchSize = 1000;
+  let from = 0;
+  const out: ListingRow[] = [];
 
-  q = applyListingListFilters(q, params);
-  const { data, error } = await q.limit(200);
+  for (;;) {
+    let q = supabase
+      .from("listings")
+      .select(LISTING_SELECT)
+      .eq("moderation_status", "approved")
+      .order("created_at", { ascending: false, nullsFirst: false });
 
-  if (error) {
-    console.warn("fetchPulseActiveBoostedListings:", error.message);
-    return [];
+    q = applyListingListFilters(q, params);
+    const { data, error } = await q.range(from, from + batchSize - 1);
+
+    if (error) {
+      console.warn("fetchAllApprovedListingsForFeedSort:", error.message);
+      break;
+    }
+
+    const rows = (data ?? []) as unknown as ListingRow[];
+    out.push(...rows);
+    if (rows.length < batchSize) break;
+    from += batchSize;
   }
 
-  const rows = (data ?? []) as unknown as ListingRow[];
-  return sortListingsByFeedNewest(
-    rows.filter((row) => listingHomeBoostChromeActive(row))
-  );
+  return sortListingsByFeedNewest(out);
 }
 
 export async function fetchListingsPage(
@@ -342,59 +348,15 @@ export async function fetchListingsPage(
 ): Promise<{ rows: ListingRow[]; total: number }> {
   const { page, pageSize, ...filterParams } = params;
 
-  let countQuery = supabase
-    .from("listings")
-    .select("id", { count: "exact", head: true })
-    .eq("moderation_status", "approved");
-  countQuery = applyListingListFilters(countQuery, filterParams);
-  const { count, error: countError } = await countQuery;
-
-  if (countError) {
-    throw new Error(countError.message);
-  }
-
-  const total = count ?? 0;
-  const boosted = await fetchPulseActiveBoostedListings(supabase, filterParams);
-  const boostedIds = new Set(
-    boosted.map((row) => row.id).filter(Boolean) as string[]
+  const sorted = await fetchAllApprovedListingsForFeedSort(
+    supabase,
+    filterParams
   );
-
-  const globalStart = (page - 1) * pageSize;
-  const globalEnd = globalStart + pageSize;
-  const boostedSlice = boosted.slice(
-    globalStart,
-    Math.min(globalEnd, boosted.length)
-  );
-  const regularNeeded = pageSize - boostedSlice.length;
-  const regularStart = Math.max(0, globalStart - boosted.length);
-
-  let regularRows: ListingRow[] = [];
-  if (regularNeeded > 0) {
-    const regularFrom = regularStart;
-    const regularTo = regularStart + regularNeeded - 1;
-
-    let regularQuery = supabase
-      .from("listings")
-      .select(LISTING_SELECT)
-      .eq("moderation_status", "approved")
-      .order("created_at", { ascending: false, nullsFirst: false });
-
-    regularQuery = applyListingListFilters(regularQuery, filterParams);
-    if (boostedIds.size > 0) {
-      const quoted = [...boostedIds].map((id) => `"${id}"`).join(",");
-      regularQuery = regularQuery.not("id", "in", `(${quoted})`);
-    }
-
-    const { data, error } = await regularQuery.range(regularFrom, regularTo);
-    if (error) {
-      throw new Error(error.message);
-    }
-    regularRows = (data ?? []) as unknown as ListingRow[];
-  }
+  const start = (page - 1) * pageSize;
 
   return {
-    rows: [...boostedSlice, ...regularRows],
-    total,
+    rows: sorted.slice(start, start + pageSize),
+    total: sorted.length,
   };
 }
 
