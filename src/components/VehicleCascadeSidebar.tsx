@@ -1,10 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FallbackImg } from "@/components/FallbackImg";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  categoryIconFallbackUrl,
+  categoryIconUrl,
+} from "@/lib/category-icon";
 import { getBrandLogoUrl } from "@/lib/brand-logo";
 import { getMotorLogoUrl } from "@/lib/motor-logo";
 import {
@@ -30,10 +33,6 @@ const SELECT_CLASS =
   "mb-1 block w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-1 focus:ring-amber-300";
 const SELECT_CLASS_COMPACT =
   "mb-1 block w-full rounded border border-zinc-300 bg-white px-1.5 py-1 text-[11px] leading-tight text-zinc-900 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-1 focus:ring-amber-300";
-
-function categoryIconUrl(order: number): string {
-  return `/menu/${encodeURIComponent("kategori icon")}/${order}.png`;
-}
 
 function label(text: string, compact?: boolean) {
   return (
@@ -564,16 +563,21 @@ export function VehicleCascadeSidebar({
                   className={categoryListRowClass(categoryOpen, compact)}
                 >
                   <span
-                    className={`relative shrink-0 overflow-hidden rounded ${
+                    className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded ${
                       compact ? "h-5 w-5" : "h-6 w-6"
                     }`}
                   >
-                    <Image
-                      src={slot.icon}
-                      alt=""
-                      fill
-                      className="object-contain"
-                      sizes={compact ? "20px" : "24px"}
+                    <FallbackImg
+                      primary={slot.icon}
+                      fallback={categoryIconFallbackUrl()}
+                      className={
+                        compact ? "h-5 w-5 object-contain" : "h-6 w-6 object-contain"
+                      }
+                      placeholder={
+                        <span className="text-[8px] font-bold text-zinc-500">
+                          {slot.label.slice(0, 2).toUpperCase()}
+                        </span>
+                      }
                     />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-left">
