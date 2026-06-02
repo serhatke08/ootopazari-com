@@ -6,7 +6,7 @@ import { FallbackImg } from "@/components/FallbackImg";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   categoryIconFallbackUrl,
-  categoryIconUrl,
+  categoryIconUrlForCategory,
 } from "@/lib/category-icon";
 import { getBrandLogoUrl } from "@/lib/brand-logo";
 import { getMotorLogoUrl } from "@/lib/motor-logo";
@@ -130,7 +130,7 @@ export function VehicleCascadeSidebar({
       .map((c, i) => ({
         id: c.id,
         label: (c.name ?? c.code ?? "Kategori").trim(),
-        icon: categoryIconUrl(i + 1),
+        icon: categoryIconUrlForCategory(c.code, i + 1),
       }));
   }, [categories]);
 
