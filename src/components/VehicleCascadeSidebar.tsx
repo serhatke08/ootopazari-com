@@ -188,10 +188,13 @@ export function VehicleCascadeSidebar({
   const modelIdRef = useRef(modelId);
   const bodyStyleIdRef = useRef(bodyStyleId);
   const engineIdRef = useRef(engineId);
-  brandIdRef.current = brandId;
-  modelIdRef.current = modelId;
-  bodyStyleIdRef.current = bodyStyleId;
-  engineIdRef.current = engineId;
+
+  useEffect(() => {
+    brandIdRef.current = brandId;
+    modelIdRef.current = modelId;
+    bodyStyleIdRef.current = bodyStyleId;
+    engineIdRef.current = engineId;
+  }, [brandId, modelId, bodyStyleId, engineId]);
 
   const isMotoCategory = useMemo(
     () => categoryIdIsMotorcycle(categoryId, categories),

@@ -1,10 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
+function FallbackImgInner({
+  urls,
+  className,
+  alt = "",
+  placeholder,
+}: {
+  urls: string[];
+  className?: string;
+  alt?: string;
+  placeholder?: ReactNode;
+}) {
+  const [index, setIndex] = useState(0);
+
+  if (urls.length === 0) return <>{placeholder ?? null}</>;
+  if (index >= urls.length) return <>{placeholder ?? null}</>;
+
+  const src = urls[index];
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading="eager"
+      decoding="async"
+      draggable={false}
+      onError={() => setIndex((i) => i + 1)}
+    />
+  );
+}
+
 /**
- * İlk URL yüklenmezse sıradakini dener. Çekmece / sol menü için düz &lt;img&gt; (Next Image değil).
+ * İlk URL yüklenmezse sıradakini dener. Çekmece / sol menü için düz img (Next Image değil).
  */
 export function FallbackImg({
   primary,
@@ -26,28 +57,14 @@ export function FallbackImg({
       )
     ),
   ];
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [primary, fallback]);
-
-  if (urls.length === 0) return <>{placeholder ?? null}</>;
-
-  if (index >= urls.length) return <>{placeholder ?? null}</>;
-
-  const src = urls[index];
 
   return (
-    <img
-      key={src}
-      src={src}
-      alt={alt}
+    <FallbackImgInner
+      key={urls.join("\0")}
+      urls={urls}
       className={className}
-      loading="eager"
-      decoding="async"
-      draggable={false}
-      onError={() => setIndex((i) => i + 1)}
+      alt={alt}
+      placeholder={placeholder}
     />
   );
 }
