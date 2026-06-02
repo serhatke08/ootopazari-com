@@ -91,7 +91,7 @@ export function ListingCard({
   /** Ana sayfa / filtre sonuçları grid’i: daha yüksek görsel + fiyat görsel üzerinde */
   const isHomeGrid = hideCategoryAndYear && cityOnStatsRow;
 
-  const imageArea = (
+  const imageFrame = (
     <div
       className={
         isHomeGrid
@@ -126,24 +126,32 @@ export function ListingCard({
           Görsel yok
         </div>
       )}
-      {isHomeGrid ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2.5 pb-2 pt-12">
-          {listingId ? (
-            <ListingPriceDisplay
-              listingId={listingId}
-              priceLabel={price}
-              summary={ratingSummary}
-              loggedIn={loggedIn}
-              overlay
-            />
-          ) : (
-            <p className="text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs">
-              {price}
-            </p>
-          )}
-        </div>
-      ) : null}
     </div>
+  );
+
+  const imageArea = isHomeGrid ? (
+    <div className="relative">
+      {href ? <Link href={href}>{imageFrame}</Link> : imageFrame}
+      {listingId ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2.5 pb-2 pt-12">
+          <ListingPriceDisplay
+            listingId={listingId}
+            priceLabel={price}
+            summary={ratingSummary}
+            loggedIn={loggedIn}
+            overlay
+          />
+        </div>
+      ) : (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2.5 pb-2 pt-12">
+          <p className="text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs">
+            {price}
+          </p>
+        </div>
+      )}
+    </div>
+  ) : (
+    imageFrame
   );
 
   return (
@@ -164,7 +172,7 @@ export function ListingCard({
           ) : null}
         </div>
       ) : null}
-      {href ? <Link href={href}>{imageArea}</Link> : imageArea}
+      {href && !isHomeGrid ? <Link href={href}>{imageArea}</Link> : imageArea}
       <div className="flex flex-1 flex-col gap-1 p-2 sm:gap-1.5 sm:p-4">
         {ownerName ? (
           ownerHref ? (

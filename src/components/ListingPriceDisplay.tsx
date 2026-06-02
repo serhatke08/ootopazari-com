@@ -38,8 +38,10 @@ export function ListingPriceDisplay({
   return (
     <div
       className={`flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 ${
-        overlay ? "pointer-events-auto" : ""
+        overlay ? "pointer-events-auto relative z-10" : ""
       }`}
+      onClick={overlay ? (e) => e.stopPropagation() : undefined}
+      onMouseDown={overlay ? (e) => e.stopPropagation() : undefined}
     >
       <ListingPriceRatingDot
         listingId={listingId}
