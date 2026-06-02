@@ -44,6 +44,25 @@ body {
   }
 }
 
+.site-footer-seo {
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.site-footer-seo h2,
+.site-footer-seo p {
+  text-align: center;
+}
+
+.site-footer-seo nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
 /* İlan detay düzeni */
 .listing-detail-layout {
   display: grid;
