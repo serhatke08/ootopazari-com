@@ -141,6 +141,8 @@ export default async function RootLayout({
           <main className="flex flex-1 flex-col bg-white">{children}</main>
           <SiteFooter loggedIn={footerLoggedIn} />
         </div>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
