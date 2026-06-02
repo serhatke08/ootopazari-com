@@ -34,11 +34,13 @@ export function ListingPriceDisplay({
   dotSize = "md",
 }: Props) {
   const dotColor = priceRatingIndicatorColor(summary.average, summary.count);
-  const priceCls =
-    priceClassName ??
-    (overlay
-      ? "text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs"
-      : "text-sm font-bold tabular-nums text-emerald-700 sm:text-base md:text-lg");
+  const basePriceCls = overlay
+    ? "text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs"
+    : dotSize === "sm"
+    ? "text-[13px] font-bold tabular-nums leading-tight sm:text-[15px]"
+    : "text-sm font-bold tabular-nums sm:text-base md:text-lg";
+  
+  const priceCls = priceClassName ?? basePriceCls;
 
   const dateCls = overlay
     ? "text-[0.625rem] font-normal tabular-nums text-white/75 sm:text-[0.6875rem]"
@@ -59,7 +61,7 @@ export function ListingPriceDisplay({
         size={dotSize}
         popoverPlacement={popoverPlacement}
       />
-      <span className={priceCls} style={{ color: priceClassName ? undefined : dotColor }}>
+      <span className={priceCls} style={{ color: overlay ? undefined : dotColor }}>
         {priceLabel}
       </span>
       {showHistory ? (

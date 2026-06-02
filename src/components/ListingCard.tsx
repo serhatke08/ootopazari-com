@@ -222,14 +222,15 @@ export function ListingCard({
           </p>
         )}
         {isHomeGrid && listingId ? (
-          <ListingPriceDisplay
-            listingId={listingId}
-            priceLabel={price}
-            summary={ratingSummary}
-            loggedIn={loggedIn}
-            priceClassName="text-[13px] font-bold tabular-nums leading-tight sm:text-[15px]"
-            dotSize="sm"
-          />
+          <div className="flex min-w-0 items-center gap-x-0.5">
+            <ListingPriceDisplay
+              listingId={listingId}
+              priceLabel={price}
+              summary={ratingSummary}
+              loggedIn={loggedIn}
+              dotSize="sm"
+            />
+          </div>
         ) : isHomeGrid ? (
           <p className="text-[13px] font-bold text-emerald-700 tabular-nums leading-tight sm:text-[15px]">
             {price}
