@@ -164,6 +164,28 @@ export async function fetchBrandModelsHierarchy(
   return { hierarchical: false, parents: flat };
 }
 
+/** Marka altında kasa/motor seçimine gidebileceğin düz model listesi. */
+export async function fetchSelectableBrandModels(
+  supabase: SupabaseClient,
+  brandId: string
+): Promise<IdNameRow[]> {
+  const h = await fetchBrandModelsHierarchy(supabase, brandId);
+  if (!h.hierarchical) {
+    return h.parents;
+  }
+
+  const leaves: IdNameRow[] = [];
+  for (const parent of h.parents) {
+    const children = await fetchChildBrandModels(supabase, parent.id);
+    if (children.length > 0) {
+      leaves.push(...children);
+    } else {
+      leaves.push(parent);
+    }
+  }
+  return leaves;
+}
+
 /** Üst model satırına bağlı seriler (`vehicle_brand_models`). */
 export async function fetchChildBrandModels(
   supabase: SupabaseClient,

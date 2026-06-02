@@ -23,17 +23,11 @@ import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
 import type { IdNameRow } from "@/lib/vehicle-hierarchy";
 import {
   fetchBrandsByCategory,
-  fetchBrandModelsHierarchy,
+  fetchSelectableBrandModels,
   fetchBodyStylesForModel,
-  fetchChildBrandModels,
   fetchEnginesForBodyStyle,
   fetchPackagesForEngine,
 } from "@/lib/vehicle-hierarchy";
-
-const SELECT_CLASS =
-  "mb-1 block w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-1 focus:ring-amber-300";
-const SELECT_CLASS_COMPACT =
-  "mb-1 block w-full rounded border border-zinc-300 bg-white px-1.5 py-1 text-[11px] leading-tight text-zinc-900 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-1 focus:ring-amber-300";
 
 function label(text: string, compact?: boolean) {
   return (
@@ -78,14 +72,26 @@ function brandListRowClass(active: boolean, compact?: boolean) {
 function modelListRowClass(active: boolean, compact?: boolean) {
   const ring = compact ? "ring-1 ring-amber-400/70" : "ring-2 ring-amber-400/70";
   const base = compact
-    ? "flex w-full min-w-0 items-center justify-between gap-1 rounded-md border px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight transition"
-    : "flex w-full min-w-0 items-center justify-between gap-1 rounded-md border px-1.5 py-1 text-left text-[11px] font-semibold leading-tight transition";
+    ? "flex w-full min-w-0 items-center justify-between gap-1.5 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold leading-snug transition"
+    : "flex w-full min-w-0 items-center justify-between gap-2 rounded-md border px-2.5 py-2 text-left text-xs font-semibold leading-snug transition";
   return [
     base,
     active
       ? `border-amber-500 bg-[#ffcc00] text-zinc-900 shadow-sm ${ring}`
-      : "border-zinc-300 bg-white text-zinc-800 hover:border-[#ffcc00] hover:bg-amber-50/60",
+      : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50",
   ].join(" ");
+}
+
+function sectionTitle(text: string) {
+  return (
+    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-600">
+      {text}
+    </p>
+  );
+}
+
+function rowLabel(row: IdNameRow): string {
+  return row.name?.trim() || row.code?.trim() || row.id;
 }
 
 function listingCountBadge(n: number, compact?: boolean) {
@@ -151,7 +157,6 @@ function VehicleCascadeSidebarInner({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [supabase] = useState(() => createSupabaseBrowserClient());
-  const selectClass = compact ? SELECT_CLASS_COMPACT : SELECT_CLASS;
 
   const categorySlots = useMemo(() => {
     return [...categories]
@@ -177,13 +182,7 @@ function VehicleCascadeSidebarInner({
   const [packageId, setPackageId] = useState("");
 
   const [brands, setBrands] = useState<IdNameRow[]>([]);
-  /** İki kademeli: üst = modeller (parent_id null), alt = seriler */
-  const [hierarchyHierarchical, setHierarchyHierarchical] = useState(false);
-  const [parentModels, setParentModels] = useState<IdNameRow[]>([]);
-  const [expandedParentModelId, setExpandedParentModelId] = useState<
-    string | null
-  >(null);
-  const [seriesModels, setSeriesModels] = useState<IdNameRow[]>([]);
+  const [selectableModels, setSelectableModels] = useState<IdNameRow[]>([]);
   const [bodyStyles, setBodyStyles] = useState<IdNameRow[]>([]);
   const [engines, setEngines] = useState<IdNameRow[]>([]);
   const [packages, setPackages] = useState<IdNameRow[]>([]);
@@ -208,12 +207,7 @@ function VehicleCascadeSidebarInner({
     () => new Map()
   );
 
-  const allModelsForNav = useMemo(() => {
-    const m = new Map<string, IdNameRow>();
-    for (const x of parentModels) m.set(x.id, x);
-    for (const x of seriesModels) m.set(x.id, x);
-    return [...m.values()];
-  }, [parentModels, seriesModels]);
+  const allModelsForNav = selectableModels;
 
   const brandIdRef = useRef(brandId);
   const modelIdRef = useRef(modelId);
@@ -348,79 +342,22 @@ function VehicleCascadeSidebarInner({
 
   useEffect(() => {
     if (!brandId) {
-      setParentModels([]);
-      setHierarchyHierarchical(false);
-      setExpandedParentModelId(null);
-      setSeriesModels([]);
+      setSelectableModels([]);
       return;
     }
-    setParentModels([]);
-    setExpandedParentModelId(null);
-    setSeriesModels([]);
+    setSelectableModels([]);
     let cancelled = false;
     const requestedBrand = brandId;
     void (async () => {
-      const r = await fetchBrandModelsHierarchy(supabase, requestedBrand);
+      const list = await fetchSelectableBrandModels(supabase, requestedBrand);
       if (cancelled) return;
       if (brandIdRef.current !== requestedBrand) return;
-      setHierarchyHierarchical(r.hierarchical);
-      setParentModels(r.parents);
+      setSelectableModels(list);
     })();
     return () => {
       cancelled = true;
     };
   }, [brandId, supabase]);
-
-  useEffect(() => {
-    if (!expandedParentModelId || !hierarchyHierarchical) {
-      setSeriesModels([]);
-      return;
-    }
-    let cancelled = false;
-    const pid = expandedParentModelId;
-    void (async () => {
-      let list = await fetchChildBrandModels(supabase, pid);
-      if (cancelled) return;
-      if (list.length === 0) {
-        const p = parentModels.find((x) => x.id === pid);
-        if (p) list = [p];
-      }
-      setSeriesModels(list);
-      if (list.length === 1 && !modelIdRef.current) {
-        setModelId(list[0].id);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [expandedParentModelId, hierarchyHierarchical, parentModels, supabase]);
-
-  useEffect(() => {
-    if (!modelId || !brandId || parentModels.length === 0) return;
-    if (parentModels.some((p) => p.id === modelId)) {
-      if (hierarchyHierarchical) {
-        setExpandedParentModelId(modelId);
-      }
-      return;
-    }
-    if (!hierarchyHierarchical) return;
-
-    let cancelled = false;
-    void (async () => {
-      for (const pm of parentModels) {
-        const children = await fetchChildBrandModels(supabase, pm.id);
-        if (cancelled) return;
-        if (children.some((c) => c.id === modelId)) {
-          setExpandedParentModelId(pm.id);
-          setSeriesModels(children);
-          break;
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [modelId, brandId, parentModels, hierarchyHierarchical, supabase]);
 
   useEffect(() => {
     if (!modelId) {
@@ -499,8 +436,6 @@ function VehicleCascadeSidebarInner({
 
   const resetBelowBrand = useCallback(() => {
     setModelId("");
-    setExpandedParentModelId(null);
-    setSeriesModels([]);
     setBodyStyleId("");
     setEngineId("");
     setPackageId("");
@@ -653,7 +588,7 @@ function VehicleCascadeSidebarInner({
                     }
                     id={`category-brands-${slot.id}`}
                   >
-                    {label("Marka", compact)}
+                    {sectionTitle("Marka")}
                     {!categoryId ? (
                       <p className="text-xs text-zinc-500">
                         Kategori seçilemedi; tekrar deneyin.
@@ -749,306 +684,150 @@ function VehicleCascadeSidebarInner({
                   </button>
 
                   {panelOpen && brandId === b.id ? (
-                    <div className="mt-1.5 space-y-1.5 border-l-2 border-amber-200/90 pl-2">
-                      <div>
-                        <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
-                          {hierarchyHierarchical ? "Modeller" : "Seriler"}
-                        </span>
-                        <ul className="flex flex-col gap-0.5">
-                          <li className="min-w-0">
-                            <button
-                              type="button"
-                              title="Bu markanın tüm ilanları (seri filtresiz)"
-                              onClick={() => {
-                                setModelId("");
-                                setExpandedParentModelId(null);
-                                setSeriesModels([]);
-                                resetBelowModel();
-                              }}
-                              className={modelListRowClass(!modelId, compact)}
-                            >
-                              <span className="line-clamp-2 min-w-0 flex-1 text-left">
-                                Tümünü göster
-                              </span>
-                              {listingCountBadge(
-                                brandCounts.get(b.id) ?? 0,
-                                compact
-                              )}
-                            </button>
-                          </li>
-                          {hierarchyHierarchical
-                            ? parentModels.map((pm) => {
-                                const pmTitle = pm.name ?? pm.code ?? pm.id;
-                                const panelOpen = expandedParentModelId === pm.id;
-                                const childSum =
-                                  panelOpen && seriesModels.length > 0
-                                    ? seriesModels.reduce((acc, s) => {
-                                        const n =
-                                          seriesIdCounts.get(s.id) ??
-                                          modelNameCounts.get(
-                                            normalizeListingModelKey(
-                                              s.code ?? s.name ?? ""
-                                            )
-                                          ) ??
-                                          0;
-                                        return acc + n;
-                                      }, 0)
-                                    : null;
-                                return (
-                                  <li key={pm.id} className="min-w-0">
-                                    <button
-                                      type="button"
-                                      title={pmTitle}
-                                      onClick={() => {
-                                        setExpandedParentModelId((prev) =>
-                                          prev === pm.id ? null : pm.id
-                                        );
-                                        setModelId("");
-                                        resetBelowModel();
-                                      }}
-                                      className={modelListRowClass(panelOpen, compact)}
-                                    >
-                                      <span className="line-clamp-2 min-w-0 flex-1 text-left">
-                                        {pmTitle}
-                                      </span>
-                                      {childSum != null ? (
-                                        listingCountBadge(childSum, compact)
-                                      ) : (
-                                        <span
-                                          className={
-                                            compact
-                                              ? "shrink-0 text-[9px] text-zinc-400"
-                                              : "shrink-0 text-[10px] text-zinc-400"
-                                          }
-                                        >
-                                          —
-                                        </span>
-                                      )}
-                                      <span
-                                        className={
-                                          compact
-                                            ? "shrink-0 text-[8px] text-zinc-400"
-                                            : "shrink-0 text-[9px] text-zinc-400"
-                                        }
-                                        aria-hidden
-                                      >
-                                        {panelOpen ? "▼" : "▶"}
-                                      </span>
-                                    </button>
-                                    {panelOpen ? (
-                                      <div className="mt-1 space-y-0.5 border-l border-zinc-200 pl-2">
-                                        <span className="mb-0.5 block text-[8px] font-semibold uppercase tracking-wide text-zinc-500">
-                                          Seriler
-                                        </span>
-                                        <ul className="flex flex-col gap-0.5">
-                                          {seriesModels.map((s) => {
-                                            const sLabel =
-                                              s.code?.trim() ||
-                                              s.name?.trim() ||
-                                              s.id;
-                                            const sActive = modelId === s.id;
-                                            const sCnt =
-                                              seriesIdCounts.get(s.id) ??
-                                              modelNameCounts.get(
-                                                normalizeListingModelKey(
-                                                  s.code ?? s.name ?? ""
-                                                )
-                                              ) ??
-                                              0;
-                                            return (
-                                              <li key={s.id} className="min-w-0">
-                                                <button
-                                                  type="button"
-                                                  title={sLabel}
-                                                  onClick={() => {
-                                                    setModelId(s.id);
-                                                    resetBelowModel();
-                                                  }}
-                                                  className={modelListRowClass(
-                                                    sActive,
-                                                    compact
-                                                  )}
-                                                >
-                                                  <span className="line-clamp-2 min-w-0 flex-1 text-left">
-                                                    {sLabel}
-                                                  </span>
-                                                  {listingCountBadge(sCnt, compact)}
-                                                </button>
-                                              </li>
-                                            );
-                                          })}
-                                        </ul>
-                                      </div>
-                                    ) : null}
-                                  </li>
-                                );
-                              })
-                            : parentModels.map((m) => {
-                                const mTitle = m.name ?? m.code ?? m.id;
-                                const mLabel =
-                                  m.code?.trim() || m.name?.trim() || m.id;
-                                const mActive = modelId === m.id;
-                                const mCnt =
-                                  seriesIdCounts.get(m.id) ??
-                                  modelNameCounts.get(
-                                    normalizeListingModelKey(mTitle)
-                                  ) ??
-                                  0;
-                                return (
-                                  <li key={m.id} className="min-w-0">
-                                    <button
-                                      type="button"
-                                      title={mTitle}
-                                      onClick={() => {
-                                        setModelId(m.id);
-                                        resetBelowModel();
-                                      }}
-                                      className={modelListRowClass(mActive, compact)}
-                                    >
-                                      <span className="line-clamp-2 min-w-0 flex-1 text-left">
-                                        {mLabel}
-                                      </span>
-                                      {listingCountBadge(mCnt, compact)}
-                                    </button>
-                                  </li>
-                                );
-                              })}
-                        </ul>
-                        {parentModels.length === 0 ? (
-                          <p className="mt-1 text-[10px] leading-snug text-zinc-500">
-                            Bu marka için veritabanında model satırı yok; üstteki
-                            seçenekle yine de markaya göre gidebilirsiniz.
-                          </p>
-                        ) : null}
-                      </div>
+                    <div className="mt-2 space-y-3 rounded-md border border-zinc-200 bg-white p-2">
+                      {sectionTitle("Model")}
+                      <ul className="flex flex-col gap-1">
+                        <li className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setModelId("");
+                              resetBelowModel();
+                              navigateToListings({ modelId: "", bodyStyleId: "", engineId: "", packageId: "" });
+                            }}
+                            className={modelListRowClass(!modelId, compact)}
+                          >
+                            <span className="min-w-0 flex-1 truncate text-left">
+                              Tüm {title} ilanları
+                            </span>
+                            {listingCountBadge(brandCounts.get(b.id) ?? 0, compact)}
+                          </button>
+                        </li>
+                        {selectableModels.map((m) => {
+                          const mActive = modelId === m.id;
+                          const mCnt =
+                            seriesIdCounts.get(m.id) ??
+                            modelNameCounts.get(
+                              normalizeListingModelKey(rowLabel(m))
+                            ) ??
+                            0;
+                          return (
+                            <li key={m.id} className="min-w-0">
+                              <button
+                                type="button"
+                                title={rowLabel(m)}
+                                onClick={() => {
+                                  setModelId(m.id);
+                                  resetBelowModel();
+                                }}
+                                className={modelListRowClass(mActive, compact)}
+                              >
+                                <span className="min-w-0 flex-1 truncate text-left">
+                                  {rowLabel(m)}
+                                </span>
+                                {listingCountBadge(mCnt, compact)}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
 
                       {modelId ? (
-                        <div className="mt-2 space-y-2 border-t border-amber-200/90 pt-2">
-                          <div
-                            className={
-                              compact
-                                ? "flex flex-col gap-2"
-                                : "grid grid-cols-2 gap-x-2 gap-y-1"
-                            }
-                          >
-                            <div
-                              className={
-                                compact
-                                  ? "min-w-0"
-                                  : "min-w-0 border-r border-zinc-200 pr-2"
-                              }
+                        <div className="space-y-3 border-t border-zinc-100 pt-3">
+                          {sectionTitle("Kasa")}
+                          {loadingBodyStyles ? (
+                            <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
+                          ) : (
+                            <ul className="flex flex-col gap-1">
+                              {bodyStyles.map((bs) => (
+                                <li key={bs.id} className="min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setBodyStyleId(bs.id);
+                                      resetBelowBody();
+                                    }}
+                                    className={modelListRowClass(bodyStyleId === bs.id, compact)}
+                                  >
+                                    <span className="min-w-0 flex-1 truncate text-left">
+                                      {rowLabel(bs)}
+                                    </span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {!loadingBodyStyles && bodyStyles.length === 0 ? (
+                            <button
+                              type="button"
+                              className="mt-1 w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                              onClick={() => navigateToListings({ packageId: "" })}
                             >
-                              {label("Kasa / gövde", compact)}
-                              <select
-                                className={selectClass}
-                                value={bodyStyleId}
-                                disabled={loadingBodyStyles}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  setBodyStyleId(v);
-                                  resetBelowBody();
-                                }}
-                              >
-                                <option value="">
-                                  {loadingBodyStyles
-                                    ? "Yükleniyor…"
-                                    : "Kasa seçin"}
-                                </option>
-                                {bodyStyles.map((x) => (
-                                  <option key={x.id} value={x.id}>
-                                    {x.name ?? x.code ?? x.id}
-                                  </option>
-                                ))}
-                              </select>
-                              {!loadingBodyStyles &&
-                              bodyStyles.length === 0 ? (
-                                <p className="mt-0.5 text-[9px] leading-snug text-zinc-500">
-                                  Bu model için kasa kaydı yok.
-                                </p>
-                              ) : null}
-                            </div>
-                            <div className={compact ? "min-w-0" : "min-w-0 pl-0.5"}>
-                              {label("Motor", compact)}
-                              <select
-                                className={selectClass}
-                                value={engineId}
-                                disabled={
-                                  !bodyStyleId ||
-                                  loadingEngines ||
-                                  (!loadingEngines && engines.length === 0)
-                                }
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  setEngineId(v);
-                                  resetBelowEngine();
-                                }}
-                              >
-                                <option value="">
-                                  {!bodyStyleId
-                                    ? "Önce kasa seçin"
-                                    : loadingEngines
-                                      ? "Yükleniyor…"
-                                      : engines.length === 0
-                                        ? "Motor yok"
-                                        : "Motor seçin"}
-                                </option>
-                                {engines.map((x) => (
-                                  <option key={x.id} value={x.id}>
-                                    {x.name ?? x.code ?? x.id}
-                                  </option>
-                                ))}
-                              </select>
-                              {bodyStyleId &&
-                              !loadingEngines &&
-                              engines.length === 0 ? (
-                                <p className="mt-0.5 text-[9px] leading-snug text-zinc-500">
-                                  Bu kasa için motor kaydı yok.
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
+                              İlanları göster
+                            </button>
+                          ) : null}
 
-                          {engineId ? (
-                            <div className="w-full min-w-0 rounded-md border border-zinc-200 bg-white/80 p-1.5">
-                              {label("Paket", compact)}
-                              {loadingPackages ? (
-                                <p className="text-[10px] text-zinc-500">
-                                  Paketler yükleniyor…
-                                </p>
-                              ) : packages.length > 0 ? (
-                                <select
-                                  className={selectClass}
-                                  value={packageId}
-                                  onChange={(e) => {
-                                    const v = e.target.value;
-                                    setPackageId(v);
-                                    if (v) {
-                                      navigateToListings({ packageId: v });
-                                    }
-                                  }}
-                                >
-                                  <option value="">Paket seçin</option>
-                                  {packages.map((x) => (
-                                    <option key={x.id} value={x.id}>
-                                      {x.name ?? x.code ?? x.id}
-                                    </option>
-                                  ))}
-                                </select>
+                          {bodyStyleId ? (
+                            <div className="space-y-3 border-t border-zinc-100 pt-3">
+                              {sectionTitle("Motor")}
+                              {loadingEngines ? (
+                                <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
                               ) : (
-                                <button
-                                  type="button"
-                                  className={
-                                    compact
-                                      ? "mb-1 w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-1.5 text-[11px] font-bold text-zinc-900 shadow-sm hover:bg-amber-300"
-                                      : "mb-1 w-full rounded-lg border border-amber-500 bg-[#ffcc00] px-2.5 py-2 text-xs font-bold text-zinc-900 shadow-sm hover:bg-amber-300"
-                                  }
-                                  onClick={() =>
-                                    navigateToListings({ packageId: "" })
-                                  }
-                                >
-                                  İlanları göster
-                                </button>
+                                <ul className="flex flex-col gap-1">
+                                  {engines.map((eng) => (
+                                    <li key={eng.id} className="min-w-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEngineId(eng.id);
+                                          resetBelowEngine();
+                                        }}
+                                        className={modelListRowClass(engineId === eng.id, compact)}
+                                      >
+                                        <span className="min-w-0 flex-1 truncate text-left">
+                                          {rowLabel(eng)}
+                                        </span>
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
                               )}
+
+                              {engineId ? (
+                                <div className="space-y-3 border-t border-zinc-100 pt-3">
+                                  {sectionTitle("Paket")}
+                                  {loadingPackages ? (
+                                    <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
+                                  ) : packages.length > 0 ? (
+                                    <ul className="flex flex-col gap-1">
+                                      {packages.map((pk) => (
+                                        <li key={pk.id} className="min-w-0">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setPackageId(pk.id);
+                                              navigateToListings({ packageId: pk.id });
+                                            }}
+                                            className={modelListRowClass(packageId === pk.id, compact)}
+                                          >
+                                            <span className="min-w-0 flex-1 truncate text-left">
+                                              {rowLabel(pk)}
+                                            </span>
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                                      onClick={() => navigateToListings({ packageId: "" })}
+                                    >
+                                      İlanları göster
+                                    </button>
+                                  )}
+                                </div>
+                              ) : null}
                             </div>
                           ) : null}
                         </div>
