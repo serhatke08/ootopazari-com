@@ -745,7 +745,7 @@ function VehicleCascadeSidebarInner({
                         </ul>
                       )}
 
-                      {modelId ? (
+                      {modelId && selectableModels.length > 0 ? (
                         <div className="space-y-3 border-t border-zinc-100 pt-3">
                           {sectionTitle("Kasa")}
                           {loadingBodyStyles ? (
@@ -786,7 +786,7 @@ function VehicleCascadeSidebarInner({
                             </ul>
                           )}
 
-                          {bodyStyleId ? (
+                          {bodyStyleId && bodyStyles.length > 0 ? (
                             <div className="space-y-3 border-t border-zinc-100 pt-3">
                               {sectionTitle("Motor")}
                               {loadingEngines ? (
@@ -829,7 +829,7 @@ function VehicleCascadeSidebarInner({
                                 </ul>
                               )}
 
-                              {engineId ? (
+                              {engineId && engines.length > 0 ? (
                                 <div className="space-y-3 border-t border-zinc-100 pt-3">
                                   {sectionTitle("Paket")}
                                   {loadingPackages ? (
@@ -874,7 +874,7 @@ function VehicleCascadeSidebarInner({
                                 </div>
                               ) : null}
 
-                              {modelId && !packageId ? (
+                              {modelId && bodyStyles.length > 0 && !loadingBodyStyles && !packageId ? (
                                 <button
                                   type="button"
                                   className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
