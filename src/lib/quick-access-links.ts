@@ -5,11 +5,6 @@ export const QUICK_ACCESS_LINKS: {
   image?: string;
 }[] = [
   {
-    href: "/bayilik-basvuru",
-    label: "Pazar",
-    image: "/menu/pazar.png",
-  },
-  {
     href: "/?q=ekspertiz",
     label: "Ekspertiz",
     image: "/menu/expertiz.png",
