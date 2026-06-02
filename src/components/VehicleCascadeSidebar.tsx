@@ -711,17 +711,9 @@ function VehicleCascadeSidebarInner({
                       {selectableModels.length === 0 ? (
                         <p className="text-[11px] text-zinc-500">Model yükleniyor…</p>
                       ) : (
-                        <select
-                          className={selectClass(compact)}
-                          value={modelId}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setModelId(v);
-                            resetBelowModel();
-                          }}
-                        >
-                          <option value="">Model seçin</option>
+                        <ul className="flex flex-col gap-1">
                           {selectableModels.map((m) => {
+                            const mActive = modelId === m.id;
                             const mCnt =
                               seriesIdCounts.get(m.id) ??
                               modelNameCounts.get(
@@ -729,13 +721,28 @@ function VehicleCascadeSidebarInner({
                               ) ??
                               0;
                             return (
-                              <option key={m.id} value={m.id}>
-                                {rowLabel(m)}
-                                {mCnt > 0 ? ` (${formatListingCount(mCnt)})` : ""}
-                              </option>
+                              <li key={m.id} className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setModelId(m.id);
+                                    resetBelowModel();
+                                  }}
+                                  className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                    mActive
+                                      ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                      : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                                  }`}
+                                >
+                                  <span className="min-w-0 flex-1 truncate">
+                                    {rowLabel(m)}
+                                  </span>
+                                  {mCnt > 0 ? listingCountBadge(mCnt, compact) : null}
+                                </button>
+                              </li>
                             );
                           })}
-                        </select>
+                        </ul>
                       )}
 
                       {modelId ? (
@@ -752,21 +759,31 @@ function VehicleCascadeSidebarInner({
                               İlanları göster
                             </button>
                           ) : (
-                            <select
-                              className={selectClass(compact)}
-                              value={bodyStyleId}
-                              onChange={(e) => {
-                                setBodyStyleId(e.target.value);
-                                resetBelowBody();
-                              }}
-                            >
-                              <option value="">Kasa seçin</option>
-                              {bodyStyles.map((bs) => (
-                                <option key={bs.id} value={bs.id}>
-                                  {rowLabel(bs)}
-                                </option>
-                              ))}
-                            </select>
+                            <ul className="flex flex-col gap-1">
+                              {bodyStyles.map((bs) => {
+                                const bsActive = bodyStyleId === bs.id;
+                                return (
+                                  <li key={bs.id} className="min-w-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setBodyStyleId(bs.id);
+                                        resetBelowBody();
+                                      }}
+                                      className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                        bsActive
+                                          ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                          : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                                      }`}
+                                    >
+                                      <span className="min-w-0 flex-1 truncate">
+                                        {rowLabel(bs)}
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
                           )}
 
                           {bodyStyleId ? (
@@ -785,21 +802,31 @@ function VehicleCascadeSidebarInner({
                                   İlanları göster
                                 </button>
                               ) : (
-                                <select
-                                  className={selectClass(compact)}
-                                  value={engineId}
-                                  onChange={(e) => {
-                                    setEngineId(e.target.value);
-                                    resetBelowEngine();
-                                  }}
-                                >
-                                  <option value="">Motor seçin</option>
-                                  {engines.map((eng) => (
-                                    <option key={eng.id} value={eng.id}>
-                                      {rowLabel(eng)}
-                                    </option>
-                                  ))}
-                                </select>
+                                <ul className="flex flex-col gap-1">
+                                  {engines.map((eng) => {
+                                    const engActive = engineId === eng.id;
+                                    return (
+                                      <li key={eng.id} className="min-w-0">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEngineId(eng.id);
+                                            resetBelowEngine();
+                                          }}
+                                          className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                            engActive
+                                              ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                              : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                                          }`}
+                                        >
+                                          <span className="min-w-0 flex-1 truncate">
+                                            {rowLabel(eng)}
+                                          </span>
+                                        </button>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
                               )}
 
                               {engineId ? (
@@ -818,22 +845,31 @@ function VehicleCascadeSidebarInner({
                                       İlanları göster
                                     </button>
                                   ) : (
-                                    <select
-                                      className={selectClass(compact)}
-                                      value={packageId}
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        setPackageId(v);
-                                        if (v) navigateToListings({ packageId: v });
-                                      }}
-                                    >
-                                      <option value="">Paket seçin</option>
-                                      {packages.map((pk) => (
-                                        <option key={pk.id} value={pk.id}>
-                                          {rowLabel(pk)}
-                                        </option>
-                                      ))}
-                                    </select>
+                                    <ul className="flex flex-col gap-1">
+                                      {packages.map((pk) => {
+                                        const pkActive = packageId === pk.id;
+                                        return (
+                                          <li key={pk.id} className="min-w-0">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setPackageId(pk.id);
+                                                navigateToListings({ packageId: pk.id });
+                                              }}
+                                              className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                                pkActive
+                                                  ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                                  : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                                              }`}
+                                            >
+                                              <span className="min-w-0 flex-1 truncate">
+                                                {rowLabel(pk)}
+                                              </span>
+                                            </button>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
                                   )}
                                 </div>
                               ) : null}

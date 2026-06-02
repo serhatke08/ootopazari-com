@@ -503,6 +503,8 @@ export default async function IlanDetayPage({ params }: Props) {
     paketNote?.trim() ||
     labelFromEquipmentLines(equipmentLines, "Paket") ||
     strCell(pick(row, ["package_name", "paket_name", "package_label"]));
+  
+  const kasaDisplay = listing.body_type?.toString().trim() || kasaNote?.trim();
 
   const vehicleBreadcrumb = [
     brandName?.trim(),
@@ -526,7 +528,9 @@ export default async function IlanDetayPage({ params }: Props) {
       </ul>
     ) : (
       <dl className="space-y-0">
-        <Field label="Kasa tipi" value={listing.body_type as string} />
+        <Field label="Kasa tipi" value={kasaDisplay} />
+        <Field label="Motor" value={motorDisplay} />
+        <Field label="Paket" value={paketDisplay} />
         <Field
           label="Motor hacmi"
           value={pick(row, ["engine_capacity", "motor_hacmi"]) as string}
@@ -538,15 +542,11 @@ export default async function IlanDetayPage({ params }: Props) {
           }
         />
         <Field label="Çekiş" value={listing.drive_type as string} />
-        {kasaNote ? <Field label="Kasa notu" value={kasaNote} /> : null}
-        {motorNote ? <Field label="Motor notu" value={motorNote} /> : null}
-        {paketNote ? <Field label="Paket notu" value={paketNote} /> : null}
-        {!listing.body_type &&
+        {!kasaDisplay &&
+        !motorDisplay &&
+        !paketDisplay &&
         !pick(row, ["engine_capacity", "motor_hacmi"]) &&
-        !listing.drive_type &&
-        !motorNote &&
-        !paketNote &&
-        !kasaNote ? (
+        !listing.drive_type ? (
           <p className="py-2 text-sm text-black/55">Donanım bilgisi girilmemiş.</p>
         ) : null}
       </dl>
@@ -776,6 +776,11 @@ export default async function IlanDetayPage({ params }: Props) {
                 <Field label="Marka" value={brandName ?? undefined} />
                 <Field label="Seri" value={seriDisplay ?? "—"} />
                 <Field label="Model" value={modelDisplay ?? "—"} />
+                {isCarLike ? (
+                  <Field label="Kasa" value={kasaDisplay} />
+                ) : null}
+                <Field label="Motor" value={motorDisplay} />
+                <Field label="Paket" value={paketDisplay} />
                 <Field label="Yıl" value={listing.vehicle_year as number} />
                 <Field
                   label="Kilometre"
@@ -794,9 +799,6 @@ export default async function IlanDetayPage({ params }: Props) {
                   label={isMotorcycle ? "Renk / Kaplama" : "Renk"}
                   value={listing.color as string}
                 />
-                {isCarLike ? (
-                  <Field label="Kasa tipi" value={listing.body_type as string} />
-                ) : null}
                 <Field
                   label="Hasar"
                   value={
