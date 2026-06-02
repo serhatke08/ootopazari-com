@@ -528,22 +528,20 @@ function VehicleCascadeSidebarInner({
     <div className={cascadeRootClass(fillColumn, compact)}>
       {categoryId && selectedCategory ? (
         <>
-          <div className="mb-2 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setCategoryId("");
-                setExpandedCategoryId(null);
-                resetBelowCategory();
-                router.push("/");
-                onNavigate?.();
-              }}
-              className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
-            >
-              <span>←</span>
-              <span>Tüm kategoriler</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setCategoryId("");
+              setExpandedCategoryId(null);
+              resetBelowCategory();
+              router.push("/");
+              onNavigate?.();
+            }}
+            className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
+          >
+            <span className="text-base">←</span>
+            <span>Geri</span>
+          </button>
           {label(selectedCategory.label, compact)}
         </>
       ) : (
@@ -724,30 +722,28 @@ function VehicleCascadeSidebarInner({
         <div
           className={
             compact
-              ? "rounded-md border border-zinc-200 bg-zinc-50/90 p-1.5 shadow-sm"
-              : "rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
+              ? "min-h-[calc(100vh-16rem)] overflow-y-auto rounded-md border border-zinc-200 bg-zinc-50/90 p-1.5 shadow-sm"
+              : "min-h-[calc(100vh-16rem)] overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
           }
         >
           {brandId && selectedBrand ? (
             <>
-              <div className="mb-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBrandId("");
-                    setExpandedBrandId(null);
-                    resetBelowBrand();
-                    const p = new URLSearchParams();
-                    if (categoryId) p.set("category_id", categoryId);
-                    router.push(`/?${p.toString()}`);
-                    onNavigate?.();
-                  }}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
-                >
-                  <span>←</span>
-                  <span>Tüm markalar</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setBrandId("");
+                  setExpandedBrandId(null);
+                  resetBelowBrand();
+                  const p = new URLSearchParams();
+                  if (categoryId) p.set("category_id", categoryId);
+                  router.push(`/?${p.toString()}`);
+                  onNavigate?.();
+                }}
+                className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
+              >
+                <span className="text-base">←</span>
+                <span>Geri</span>
+              </button>
               {sectionTitle(selectedBrand.name ?? selectedBrand.code ?? "Marka")}
             </>
           ) : (
@@ -853,19 +849,17 @@ function VehicleCascadeSidebarInner({
 
               {modelId && selectedModel ? (
                 <>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModelId("");
-                        resetBelowModel();
-                      }}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
-                    >
-                      <span>←</span>
-                      <span>Tüm modeller</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModelId("");
+                      resetBelowModel();
+                    }}
+                    className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    <span className="text-base">←</span>
+                    <span>Geri</span>
+                  </button>
                   {sectionTitle(rowLabel(selectedModel))}
                 </>
               ) : (

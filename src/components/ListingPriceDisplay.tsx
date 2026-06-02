@@ -42,7 +42,7 @@ export function ListingPriceDisplay({
 
   return (
     <div
-      className={`flex w-full min-w-0 items-center gap-x-2 gap-y-0.5 ${
+      className={`flex w-full min-w-0 items-center gap-x-1 gap-y-0.5 ${
         overlay ? "pointer-events-auto relative z-10" : ""
       }`}
       onClick={overlay ? (e) => e.stopPropagation() : undefined}

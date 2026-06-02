@@ -207,11 +207,13 @@ export default async function AnaSayfa({
           </aside>
 
           <div className="min-w-0 flex-1 space-y-6">
+            {categoryId && catMap.get(categoryId)?.name ? (
+              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
+                {catMap.get(categoryId)?.name}
+              </h1>
+            ) : null}
             <p className="text-sm text-zinc-600">
               {total} sonuç
-              {categoryId && catMap.get(categoryId)?.name
-                ? ` · ${catMap.get(categoryId)?.name}`
-                : ""}
               {cityId && cityMap.get(cityId)?.name
                 ? ` · ${cityMap.get(cityId)?.name}`
                 : ""}
