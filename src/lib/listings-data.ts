@@ -1,5 +1,9 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  listingHomeBoostChromeActive,
+  sortListingsByFeedNewest,
+} from "@/lib/listing-feature-boost";
 
 /** listings satırı + olası join — şema geniş; fazladan alanları yok sayarız */
 export type ListingRow = Record<string, unknown> & {
@@ -21,6 +25,10 @@ export type ListingRow = Record<string, unknown> & {
   user_id?: string | null;
   suspension_reason?: string | null;
   suspended_at?: string | null;
+  featured_until?: string | null;
+  featured_started_at?: string | null;
+  feature_boost_campaign_start_at?: string | null;
+  feature_boost_pack_days?: number | null;
 };
 
 export type CategoryRow = {
@@ -67,6 +75,10 @@ const LISTING_SELECT = [
   "moderation_status",
   "suspension_reason",
   "suspended_at",
+  "featured_until",
+  "featured_started_at",
+  "feature_boost_campaign_start_at",
+  "feature_boost_pack_days",
   "contact_phone",
   "contact_via_phone",
   "contact_via_message",
@@ -264,35 +276,28 @@ export type ListingListParams = {
   q?: string;
 };
 
-export async function fetchListingsPage(
-  supabase: SupabaseClient,
-  params: ListingListParams
-): Promise<{ rows: ListingRow[]; total: number }> {
-  const { page, pageSize } = params;
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  let q = supabase
-    .from("listings")
-    .select(LISTING_SELECT, { count: "exact" })
-    .eq("moderation_status", "approved");
-
-  if (params.categoryId) q = q.eq("category_id", params.categoryId);
-  if (params.cityId) q = q.eq("city_id", params.cityId);
-  if (params.vehicleBrandId) q = q.eq("vehicle_brand_id", params.vehicleBrandId);
-  /** Not: `vehicle_brand_model_id` kolonu şemada yoksa kullanılamaz; seri seçiminde `vehicle_model` dolar. */
+function applyListingListFilters(
+  q: any,
+  params: Omit<ListingListParams, "page" | "pageSize">
+): any {
+  let query = q;
+  if (params.categoryId) query = query.eq("category_id", params.categoryId);
+  if (params.cityId) query = query.eq("city_id", params.cityId);
+  if (params.vehicleBrandId) {
+    query = query.eq("vehicle_brand_id", params.vehicleBrandId);
+  }
   if (params.vehicleModel?.trim()) {
     const esc = params.vehicleModel
       .trim()
       .replace(/\\/g, "\\\\")
       .replace(/%/g, "\\%")
       .replace(/_/g, "\\_");
-    q = q.ilike("vehicle_model", `%${esc}%`);
+    query = query.ilike("vehicle_model", `%${esc}%`);
   }
-  if (params.minPrice != null) q = q.gte("price", params.minPrice);
-  if (params.maxPrice != null) q = q.lte("price", params.maxPrice);
-  if (params.minYear != null) q = q.gte("vehicle_year", params.minYear);
-  if (params.maxYear != null) q = q.lte("vehicle_year", params.maxYear);
+  if (params.minPrice != null) query = query.gte("price", params.minPrice);
+  if (params.maxPrice != null) query = query.lte("price", params.maxPrice);
+  if (params.minYear != null) query = query.gte("vehicle_year", params.minYear);
+  if (params.maxYear != null) query = query.lte("vehicle_year", params.maxYear);
   if (params.q?.trim()) {
     const esc = params.q
       .trim()
@@ -300,19 +305,96 @@ export async function fetchListingsPage(
       .replace(/%/g, "\\%")
       .replace(/_/g, "\\_");
     const t = `%${esc}%`;
-    q = q.or(`title.ilike.${t},description.ilike.${t}`);
+    query = query.or(`title.ilike.${t},description.ilike.${t}`);
   }
+  return query;
+}
 
-  q = q.order("created_at", { ascending: false, nullsFirst: false });
-  const { data, error, count } = await q.range(from, to);
+/** Pulse aktif öne çıkan ilanlar — ana sayfa sıralaması için (DB'ye yazılmaz). */
+async function fetchPulseActiveBoostedListings(
+  supabase: SupabaseClient,
+  params: Omit<ListingListParams, "page" | "pageSize">
+): Promise<ListingRow[]> {
+  const nowIso = new Date().toISOString();
+  let q = supabase
+    .from("listings")
+    .select(LISTING_SELECT)
+    .eq("moderation_status", "approved")
+    .gt("featured_until", nowIso);
+
+  q = applyListingListFilters(q, params);
+  const { data, error } = await q.limit(200);
 
   if (error) {
-    throw new Error(error.message);
+    console.warn("fetchPulseActiveBoostedListings:", error.message);
+    return [];
+  }
+
+  const rows = (data ?? []) as unknown as ListingRow[];
+  return sortListingsByFeedNewest(
+    rows.filter((row) => listingHomeBoostChromeActive(row))
+  );
+}
+
+export async function fetchListingsPage(
+  supabase: SupabaseClient,
+  params: ListingListParams
+): Promise<{ rows: ListingRow[]; total: number }> {
+  const { page, pageSize, ...filterParams } = params;
+
+  let countQuery = supabase
+    .from("listings")
+    .select("id", { count: "exact", head: true })
+    .eq("moderation_status", "approved");
+  countQuery = applyListingListFilters(countQuery, filterParams);
+  const { count, error: countError } = await countQuery;
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  const total = count ?? 0;
+  const boosted = await fetchPulseActiveBoostedListings(supabase, filterParams);
+  const boostedIds = new Set(
+    boosted.map((row) => row.id).filter(Boolean) as string[]
+  );
+
+  const globalStart = (page - 1) * pageSize;
+  const globalEnd = globalStart + pageSize;
+  const boostedSlice = boosted.slice(
+    globalStart,
+    Math.min(globalEnd, boosted.length)
+  );
+  const regularNeeded = pageSize - boostedSlice.length;
+  const regularStart = Math.max(0, globalStart - boosted.length);
+
+  let regularRows: ListingRow[] = [];
+  if (regularNeeded > 0) {
+    const regularFrom = regularStart;
+    const regularTo = regularStart + regularNeeded - 1;
+
+    let regularQuery = supabase
+      .from("listings")
+      .select(LISTING_SELECT)
+      .eq("moderation_status", "approved")
+      .order("created_at", { ascending: false, nullsFirst: false });
+
+    regularQuery = applyListingListFilters(regularQuery, filterParams);
+    if (boostedIds.size > 0) {
+      const quoted = [...boostedIds].map((id) => `"${id}"`).join(",");
+      regularQuery = regularQuery.not("id", "in", `(${quoted})`);
+    }
+
+    const { data, error } = await regularQuery.range(regularFrom, regularTo);
+    if (error) {
+      throw new Error(error.message);
+    }
+    regularRows = (data ?? []) as unknown as ListingRow[];
   }
 
   return {
-    rows: (data ?? []) as unknown as ListingRow[],
-    total: count ?? 0,
+    rows: [...boostedSlice, ...regularRows],
+    total,
   };
 }
 
@@ -446,7 +528,7 @@ export async function fetchListingsForUser(
     console.warn("fetchListingsForUser:", error.message);
     return [];
   }
-  return (data ?? []) as unknown as ListingRow[];
+  return sortListingsByFeedNewest((data ?? []) as unknown as ListingRow[]);
 }
 
 /** Herkesin görebileceği profil ziyaret sayfası için: yalnızca onaylı ilanlar. */

@@ -3,6 +3,7 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DeleteListingButton } from "@/components/DeleteListingButton";
 import { ListingCard } from "@/components/ListingCard";
+import { ListingFeatureBoostPanel } from "@/components/ListingFeatureBoostPanel";
 import {
   buildCategoryMap,
   fetchCategories,
@@ -60,8 +61,17 @@ export default async function ProfilIlanlarimPage() {
             const num = listing.listing_number;
             const numStr =
               num != null && String(num).trim() !== "" ? String(num) : null;
+            const listingLabel = numStr
+              ? `#${numStr} · ${String(listing.title ?? "İlan").slice(0, 40)}`
+              : String(listing.title ?? "İlan");
+            const approved = listing.moderation_status === "approved";
             return (
               <li key={id ?? String(listing.listing_number)}>
+                <ListingFeatureBoostPanel
+                  listing={listing}
+                  listingLabel={listingLabel}
+                  canBoost={approved && !isListingSuspended(listing)}
+                />
                 <ListingCard
                   listing={listing}
                   env={env}

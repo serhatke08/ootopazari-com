@@ -8,8 +8,10 @@ import { isHeicLikeUrl } from "@/lib/image-format";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
+import { ListingBoostChrome } from "@/components/ListingBoostChrome";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
+import { listingHomeBoostChromeActive } from "@/lib/listing-feature-boost";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import { EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
 
@@ -59,6 +61,8 @@ export function ListingCard({
   const ratingSummary = priceRating ?? EMPTY_PRICE_RATING_SUMMARY;
   const suspended =
     suspendedProp ?? isListingSuspended(listing);
+  const boostActive =
+    !suspended && listingHomeBoostChromeActive(listing);
   const cityText =
     (cityDisplayName != null && String(cityDisplayName).trim() !== ""
       ? String(cityDisplayName).trim()
@@ -127,6 +131,7 @@ export function ListingCard({
 
   const imageArea = isHomeGrid ? (
     <div className="relative">
+      {boostActive ? <ListingBoostChrome /> : null}
       {href ? <Link href={href}>{imageFrame}</Link> : imageFrame}
       {listingId ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2.5 pb-2 pt-12">
@@ -152,9 +157,11 @@ export function ListingCard({
 
   return (
     <article
-      className={`group flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md sm:rounded-xl ${
-        suspended ? "opacity-[0.72] grayscale-[0.35]" : ""
-      }`}
+      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md sm:rounded-xl ${
+        boostActive && isHomeGrid
+          ? "border-[#ffc400] shadow-[0_0_0_1px_#ffc400]"
+          : "border-zinc-200 hover:border-zinc-300"
+      } ${suspended ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
     >
       {suspended ? (
         <div className="border-b border-red-100 bg-red-50 px-2 py-1.5 sm:px-4">
