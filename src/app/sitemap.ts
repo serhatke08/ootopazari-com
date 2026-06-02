@@ -1,58 +1,45 @@
 import type { MetadataRoute } from "next";
-import { createClient } from "@supabase/supabase-js";
-import { fetchApprovedListingsForSitemap } from "@/lib/listings-data";
-import { tryGetSupabaseEnv } from "@/lib/env";
-import { buildListingSeoPath } from "@/lib/listing-seo";
-import { getAllSeoGuideSlugs } from "@/lib/seo-guides";
-import { resolvePublicSiteOrigin } from "@/lib/site-url";
+import { getSiteOrigin } from "@/lib/site-url";
 
-/** Yeni ilanlar site haritasına yansısın (deploy beklemeden). */
-export const revalidate = 3600;
+export default function sitemap(): MetadataRoute.Sitemap {
+  const origin = getSiteOrigin();
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = await resolvePublicSiteOrigin();
-  const now = new Date();
-
-  const staticEntries: MetadataRoute.Sitemap = [
+  return [
     {
-      url: `${base}/`,
-      lastModified: now,
-      changeFrequency: "daily",
+      url: origin,
+      lastModified: new Date(),
+      changeFrequency: "hourly",
       priority: 1,
     },
     {
-      url: `${base}/rehber`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.6,
+      url: `${origin}/ilan-ver`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
-    ...getAllSeoGuideSlugs().map((slug) => ({
-      url: `${base}/rehber/${slug}`,
-      lastModified: now,
-      changeFrequency: "monthly" as const,
+    {
+      url: `${origin}/hakkimizda`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
       priority: 0.5,
-    })),
+    },
+    {
+      url: `${origin}/iletisim`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${origin}/gizlilik-politikasi`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${origin}/kullanim-kosullari`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
-
-  const env = tryGetSupabaseEnv();
-  if (!env) {
-    return staticEntries;
-  }
-
-  const supabase = createClient(env.url, env.anonKey);
-  const listings = await fetchApprovedListingsForSitemap(supabase);
-
-  const listingEntries: MetadataRoute.Sitemap = listings.map((row) => {
-    const path =
-      buildListingSeoPath(row.listingNumber, row.title) ??
-      `/ilan/${row.listingNumber}`;
-    return {
-      url: `${base}${path}`,
-      lastModified: row.lastModified ?? now,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    };
-  });
-
-  return [...staticEntries, ...listingEntries];
 }

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Disallow private/auth pages
+Disallow: /hesabim
+Disallow: /ilanlarim
+Disallow: /favorilerim
+Disallow: /mesajlarim
+Disallow: /bildirimlerim
+Disallow: /giris
+Disallow: /kayit
+Disallow: /sifre-sifirlama
+Disallow: /ilan-ver
+
+# Disallow API routes
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://otopazari.vercel.app/sitemap.xml
