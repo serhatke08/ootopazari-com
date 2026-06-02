@@ -520,14 +520,41 @@ function VehicleCascadeSidebarInner({
     ]
   );
 
+  const selectedCategory = categorySlots.find((c) => c.id === categoryId);
+  const selectedBrand = brands.find((b) => b.id === brandId);
+  const selectedModel = allModelsForNav.find((m) => m.id === modelId);
+
   return (
     <div className={cascadeRootClass(fillColumn, compact)}>
-      {label("Kategori", compact)}
+      {categoryId && selectedCategory ? (
+        <>
+          <div className="mb-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCategoryId("");
+                setExpandedCategoryId(null);
+                resetBelowCategory();
+                router.push("/");
+                onNavigate?.();
+              }}
+              className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+            >
+              <span>←</span>
+              <span>Tüm kategoriler</span>
+            </button>
+          </div>
+          {label(selectedCategory.label, compact)}
+        </>
+      ) : (
+        label("Kategori", compact)
+      )}
+      
       {categorySlots.length === 0 ? (
         <p className="text-xs text-zinc-500">
           Kategori listesi boş (Supabase `categories` tablosu).
         </p>
-      ) : (
+      ) : !categoryId ? (
         <ul className={cascadeListClass(fillColumn, compact)}>
           {categorySlots.map((slot) => {
             const categoryOpen = expandedCategoryId === slot.id;
@@ -583,7 +610,7 @@ function VehicleCascadeSidebarInner({
                   </span>
                 </button>
 
-                {categoryOpen ? (
+                {categoryOpen && !categoryId ? (
                   <div
                     className={
                       compact
@@ -593,11 +620,7 @@ function VehicleCascadeSidebarInner({
                     id={`category-brands-${slot.id}`}
                   >
                     {sectionTitle("Marka")}
-                    {!categoryId ? (
-                      <p className="text-xs text-zinc-500">
-                        Kategori seçilemedi; tekrar deneyin.
-                      </p>
-                    ) : loadingBrands ? (
+                    {loadingBrands ? (
                       <p className="mb-2 text-[11px] text-zinc-500">
                         Markalar yükleniyor…
                       </p>
@@ -686,212 +709,9 @@ function VehicleCascadeSidebarInner({
                       {panelOpen ? "▼" : "▶"}
                     </span>
                   </button>
-
-                  {panelOpen && brandId === b.id ? (
-                    <div className="mt-2 space-y-3 rounded-md border border-zinc-200 bg-white p-2">
-                      <button
-                        type="button"
-                        className="flex w-full items-center justify-between gap-2 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1.5 text-[11px] font-semibold text-zinc-800 hover:border-[#ffcc00] hover:bg-amber-50/60"
-                        onClick={() => {
-                          setModelId("");
-                          resetBelowModel();
-                          navigateToListings({
-                            modelId: "",
-                            bodyStyleId: "",
-                            engineId: "",
-                            packageId: "",
-                          });
-                        }}
-                      >
-                        <span>Tüm {title} ilanları</span>
-                        {listingCountBadge(brandCounts.get(b.id) ?? 0, compact)}
-                      </button>
-
-                      {sectionTitle("Model")}
-                      {selectableModels.length === 0 ? (
-                        <p className="text-[11px] text-zinc-500">Model yükleniyor…</p>
-                      ) : (
-                        <ul className="flex flex-col gap-1">
-                          {selectableModels.map((m) => {
-                            const mActive = modelId === m.id;
-                            const mCnt =
-                              seriesIdCounts.get(m.id) ??
-                              modelNameCounts.get(
-                                normalizeListingModelKey(rowLabel(m))
-                              ) ??
-                              0;
-                            return (
-                              <li key={m.id} className="min-w-0">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setModelId(m.id);
-                                    resetBelowModel();
-                                  }}
-                                  className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
-                                    mActive
-                                      ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                                      : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                                  }`}
-                                >
-                                  <span className="min-w-0 flex-1 truncate">
-                                    {rowLabel(m)}
-                                  </span>
-                                  {mCnt > 0 ? listingCountBadge(mCnt, compact) : null}
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-
-                      {modelId && selectableModels.length > 0 ? (
-                        <div className="space-y-3 border-t border-zinc-100 pt-3">
-                          {sectionTitle("Kasa")}
-                          {loadingBodyStyles ? (
-                            <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
-                          ) : bodyStyles.length === 0 ? (
-                            <button
-                              type="button"
-                              className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                              onClick={() => navigateToListings({ packageId: "" })}
-                            >
-                              İlanları göster
-                            </button>
-                          ) : (
-                            <ul className="flex flex-col gap-1">
-                              {bodyStyles.map((bs) => {
-                                const bsActive = bodyStyleId === bs.id;
-                                return (
-                                  <li key={bs.id} className="min-w-0">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setBodyStyleId(bs.id);
-                                        resetBelowBody();
-                                      }}
-                                      className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
-                                        bsActive
-                                          ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                                          : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                                      }`}
-                                    >
-                                      <span className="min-w-0 flex-1 truncate">
-                                        {rowLabel(bs)}
-                                      </span>
-                                    </button>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-
-                          {bodyStyleId && bodyStyles.length > 0 ? (
-                            <div className="space-y-3 border-t border-zinc-100 pt-3">
-                              {sectionTitle("Motor")}
-                              {loadingEngines ? (
-                                <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
-                              ) : engines.length === 0 ? (
-                                <button
-                                  type="button"
-                                  className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                                  onClick={() =>
-                                    navigateToListings({ engineId: "", packageId: "" })
-                                  }
-                                >
-                                  İlanları göster
-                                </button>
-                              ) : (
-                                <ul className="flex flex-col gap-1">
-                                  {engines.map((eng) => {
-                                    const engActive = engineId === eng.id;
-                                    return (
-                                      <li key={eng.id} className="min-w-0">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setEngineId(eng.id);
-                                            resetBelowEngine();
-                                          }}
-                                          className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
-                                            engActive
-                                              ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                                              : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                                          }`}
-                                        >
-                                          <span className="min-w-0 flex-1 truncate">
-                                            {rowLabel(eng)}
-                                          </span>
-                                        </button>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              )}
-
-                              {engineId && engines.length > 0 ? (
-                                <div className="space-y-3 border-t border-zinc-100 pt-3">
-                                  {sectionTitle("Paket")}
-                                  {loadingPackages ? (
-                                    <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
-                                  ) : packages.length === 0 ? (
-                                    <button
-                                      type="button"
-                                      className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                                      onClick={() =>
-                                        navigateToListings({ packageId: "" })
-                                      }
-                                    >
-                                      İlanları göster
-                                    </button>
-                                  ) : (
-                                    <ul className="flex flex-col gap-1">
-                                      {packages.map((pk) => {
-                                        const pkActive = packageId === pk.id;
-                                        return (
-                                          <li key={pk.id} className="min-w-0">
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setPackageId(pk.id);
-                                                navigateToListings({ packageId: pk.id });
-                                              }}
-                                              className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
-                                                pkActive
-                                                  ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                                                  : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                                              }`}
-                                            >
-                                              <span className="min-w-0 flex-1 truncate">
-                                                {rowLabel(pk)}
-                                              </span>
-                                            </button>
-                                          </li>
-                                        );
-                                      })}
-                                    </ul>
-                                  )}
-                                </div>
-                              ) : null}
-
-                              {modelId && bodyStyles.length > 0 && !loadingBodyStyles && !packageId ? (
-                                <button
-                                  type="button"
-                                  className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                                  onClick={() => navigateToListings()}
-                                >
-                                  İlanları göster
-                                </button>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
                 </li>
-              );
-            })}
+            );
+          })}
                       </ul>
                     )}
                   </div>
@@ -900,7 +720,341 @@ function VehicleCascadeSidebarInner({
             );
           })}
         </ul>
-      )}
+      ) : categoryId ? (
+        <div
+          className={
+            compact
+              ? "rounded-md border border-zinc-200 bg-zinc-50/90 p-1.5 shadow-sm"
+              : "rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
+          }
+        >
+          {brandId && selectedBrand ? (
+            <>
+              <div className="mb-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBrandId("");
+                    setExpandedBrandId(null);
+                    resetBelowBrand();
+                    const p = new URLSearchParams();
+                    if (categoryId) p.set("category_id", categoryId);
+                    router.push(`/?${p.toString()}`);
+                    onNavigate?.();
+                  }}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  <span>←</span>
+                  <span>Tüm markalar</span>
+                </button>
+              </div>
+              {sectionTitle(selectedBrand.name ?? selectedBrand.code ?? "Marka")}
+            </>
+          ) : (
+            sectionTitle("Marka")
+          )}
+          
+          {loadingBrands ? (
+            <p className="mb-2 text-[11px] text-zinc-500">
+              Markalar yükleniyor…
+            </p>
+          ) : brands.length === 0 ? (
+            <p className="mb-2 text-[11px] text-zinc-500">
+              Bu kategoride marka bulunamadı.
+            </p>
+          ) : !brandId ? (
+            <ul
+              className={
+                compact ? "flex flex-col gap-0.5" : "flex flex-col gap-1"
+              }
+            >
+              {brands.map((b) => {
+                const active = brandId === b.id;
+                const brandHint = [b.name, b.code].filter(Boolean).join(" ") || null;
+                const carLogo = getBrandLogoUrl(b.name ?? null, b.code ?? null);
+                const motoLogo = isMotoCategory
+                  ? getMotorLogoUrl(b.name ?? null, b.code ?? null, brandHint)
+                  : null;
+                const logoPrimary = isMotoCategory ? (motoLogo ?? carLogo) : carLogo;
+                const logoFallback =
+                  isMotoCategory && motoLogo ? carLogo : null;
+                const title = b.name ?? b.code ?? b.id;
+
+                return (
+                  <li key={b.id} className="min-w-0">
+                    <button
+                      type="button"
+                      title={title}
+                      onClick={() => {
+                        setBrandId(b.id);
+                        resetBelowBrand();
+                        setExpandedBrandId(b.id);
+                      }}
+                      className={brandListRowClass(active, compact)}
+                    >
+                      <span
+                        className={`flex shrink-0 items-center justify-center rounded ${
+                          compact ? "h-6 w-6" : "h-7 w-7"
+                        } ${active ? "bg-white" : "bg-white/90"}`}
+                      >
+                        <FallbackImg
+                          primary={logoPrimary}
+                          fallback={logoFallback}
+                          className={
+                            compact ? "h-5 w-5 object-contain" : "h-6 w-6 object-contain"
+                          }
+                          placeholder={
+                            <span className="text-[9px] font-bold text-zinc-400">
+                              {(title.slice(0, 3) || "?").toUpperCase()}
+                            </span>
+                          }
+                        />
+                      </span>
+                      <span
+                        className={
+                          compact
+                            ? `min-w-0 flex-1 truncate text-left text-[10px] font-semibold leading-tight ${
+                                active ? "text-zinc-900" : "text-zinc-800"
+                              }`
+                            : `min-w-0 flex-1 truncate text-left text-[11px] font-semibold leading-tight ${
+                                active ? "text-zinc-900" : "text-zinc-800"
+                              }`
+                        }
+                      >
+                        {title}
+                      </span>
+                      {listingCountBadge(brandCounts.get(b.id) ?? 0, compact)}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          
+          {brandId && selectedBrand ? (
+            <div className="mt-2 space-y-3">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1.5 text-[11px] font-semibold text-zinc-800 hover:border-[#ffcc00] hover:bg-amber-50/60"
+                onClick={() => {
+                  setModelId("");
+                  resetBelowModel();
+                  navigateToListings({
+                    modelId: "",
+                    bodyStyleId: "",
+                    engineId: "",
+                    packageId: "",
+                  });
+                }}
+              >
+                <span>Tüm {selectedBrand.name ?? selectedBrand.code} ilanları</span>
+                {listingCountBadge(brandCounts.get(brandId) ?? 0, compact)}
+              </button>
+
+              {modelId && selectedModel ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModelId("");
+                        resetBelowModel();
+                      }}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      <span>←</span>
+                      <span>Tüm modeller</span>
+                    </button>
+                  </div>
+                  {sectionTitle(rowLabel(selectedModel))}
+                </>
+              ) : (
+                sectionTitle("Model")
+              )}
+              
+              {selectableModels.length === 0 ? (
+                <p className="text-[11px] text-zinc-500">Model yükleniyor…</p>
+              ) : !modelId ? (
+                <ul className="flex flex-col gap-1">
+                  {selectableModels.map((m) => {
+                    const mActive = modelId === m.id;
+                    const mCnt =
+                      seriesIdCounts.get(m.id) ??
+                      modelNameCounts.get(
+                        normalizeListingModelKey(rowLabel(m))
+                      ) ??
+                      0;
+                    return (
+                      <li key={m.id} className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModelId(m.id);
+                            resetBelowModel();
+                          }}
+                          className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                            mActive
+                              ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                              : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                          }`}
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {rowLabel(m)}
+                          </span>
+                          {mCnt > 0 ? listingCountBadge(mCnt, compact) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+
+              {modelId && selectableModels.length > 0 ? (
+                <div className="space-y-3 border-t border-zinc-100 pt-3">
+                  {sectionTitle("Kasa")}
+                  {loadingBodyStyles ? (
+                    <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
+                  ) : bodyStyles.length === 0 ? (
+                    <button
+                      type="button"
+                      className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                      onClick={() => navigateToListings({ packageId: "" })}
+                    >
+                      İlanları göster
+                    </button>
+                  ) : (
+                    <ul className="flex flex-col gap-1">
+                      {bodyStyles.map((bs) => {
+                        const bsActive = bodyStyleId === bs.id;
+                        return (
+                          <li key={bs.id} className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBodyStyleId(bs.id);
+                                resetBelowBody();
+                              }}
+                              className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                bsActive
+                                  ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                  : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                              }`}
+                            >
+                              <span className="min-w-0 flex-1 truncate">
+                                {rowLabel(bs)}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+
+                  {bodyStyleId && bodyStyles.length > 0 ? (
+                    <div className="space-y-3 border-t border-zinc-100 pt-3">
+                      {sectionTitle("Motor")}
+                      {loadingEngines ? (
+                        <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
+                      ) : engines.length === 0 ? (
+                        <button
+                          type="button"
+                          className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                          onClick={() =>
+                            navigateToListings({ engineId: "", packageId: "" })
+                          }
+                        >
+                          İlanları göster
+                        </button>
+                      ) : (
+                        <ul className="flex flex-col gap-1">
+                          {engines.map((eng) => {
+                            const engActive = engineId === eng.id;
+                            return (
+                              <li key={eng.id} className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEngineId(eng.id);
+                                    resetBelowEngine();
+                                  }}
+                                  className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                    engActive
+                                      ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                      : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                                  }`}
+                                >
+                                  <span className="min-w-0 flex-1 truncate">
+                                    {rowLabel(eng)}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+
+                      {engineId && engines.length > 0 ? (
+                        <div className="space-y-3 border-t border-zinc-100 pt-3">
+                          {sectionTitle("Paket")}
+                          {loadingPackages ? (
+                            <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
+                          ) : packages.length === 0 ? (
+                            <button
+                              type="button"
+                              className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                              onClick={() =>
+                                navigateToListings({ packageId: "" })
+                              }
+                            >
+                              İlanları göster
+                            </button>
+                          ) : (
+                            <ul className="flex flex-col gap-1">
+                              {packages.map((pk) => {
+                                const pkActive = packageId === pk.id;
+                                return (
+                                  <li key={pk.id} className="min-w-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPackageId(pk.id);
+                                        navigateToListings({ packageId: pk.id });
+                                      }}
+                                      className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                        pkActive
+                                          ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                          : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                                      }`}
+                                    >
+                                      <span className="min-w-0 flex-1 truncate">
+                                        {rowLabel(pk)}
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      ) : null}
+
+                      {modelId && bodyStyles.length > 0 && !loadingBodyStyles && !packageId ? (
+                        <button
+                          type="button"
+                          className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                          onClick={() => navigateToListings()}
+                        >
+                          İlanları göster
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
