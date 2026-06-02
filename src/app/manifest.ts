@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Oto Pazarı",
     short_name: "Oto Pazarı",
     description:
-      "İkinci el ve sıfır araç ilanlarını keşfedin, favorileyin ve satıcılarla mesajlaşın.",
+      "Oto Pazarı — Türkiye'nin ikinci el araba ve sıfır otomobil ilan platformu.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffcc00",

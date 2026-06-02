@@ -20,10 +20,9 @@ import { fetchPriceRatingSummary, EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listi
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
-import {
-  buildListingSeoPath,
-  extractListingNumberFromSeoParam,
-} from "@/lib/listing-seo";
+import { buildListingSeoPath, extractListingNumberFromSeoParam } from "@/lib/listing-seo";
+import { buildListingVehicleJsonLd } from "@/lib/seo-json-ld";
+import { getSiteOrigin } from "@/lib/site-url";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
@@ -236,8 +235,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     "";
   const desc =
     typeof listing.description === "string"
-      ? listing.description.slice(0, 155)
+      ? listing.description.slice(0, 140)
       : `${title}${city ? ` — ${city}` : ""}`;
+  const metaDescription = `${desc} — Oto Pazarı'nda ikinci el araba ilanı.`;
   const imageRaw = typeof listing.image_url === "string" ? listing.image_url : null;
   const imageUrl = imageRaw ? resolveListingImageUrl(env, imageRaw) : null;
   const canonicalPath =
@@ -247,13 +247,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ) ?? `/ilan/${encodeURIComponent(listingNumber)}`;
   return {
     title,
-    description: desc,
+    description: metaDescription,
     alternates: {
       canonical: canonicalPath,
     },
     openGraph: {
-      title,
-      description: desc,
+      title: `${title} | Oto Pazarı`,
+      description: metaDescription,
       url: canonicalPath,
       type: "article",
       images: imageUrl
@@ -267,8 +267,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: imageUrl ? "summary_large_image" : "summary",
-      title,
-      description: desc,
+      title: `${title} | Oto Pazarı`,
+      description: metaDescription,
       images: imageUrl ? [imageUrl] : undefined,
     },
     robots:
@@ -566,12 +566,62 @@ export default async function IlanDetayPage({ params }: Props) {
       ? String(listing.suspension_reason).trim()
       : "";
 
+  const listingTitle = String(listing.title ?? "İlan");
+  const canonicalPath =
+    expectedSeoPath ??
+    `/ilan/${encodeURIComponent(listingNumber)}`;
+  const primaryImage = galleryUrls[0] ?? null;
+  const vehicleYearRaw = pick(row, ["vehicle_year", "year", "model_year"]);
+  const vehicleYear =
+    vehicleYearRaw != null ? Number(vehicleYearRaw) : null;
+  const mileageRaw = pick(row, ["mileage", "km", "kilometre"]);
+  const mileageKm =
+    mileageRaw != null ? Number(mileageRaw) : null;
+  const fuelType = strCell(
+    pick(row, ["fuel_type", "fuel", "yakit", "yakıt"])
+  );
+  const transmission = strCell(
+    pick(row, ["transmission", "gearbox", "vites"])
+  );
+
+  const listingJsonLd =
+    !isSuspendedDetailView
+      ? buildListingVehicleJsonLd({
+          siteOrigin: getSiteOrigin(),
+          canonicalPath,
+          name: listingTitle,
+          description:
+            typeof listing.description === "string"
+              ? listing.description
+              : listingTitle,
+          price:
+            listing.price != null ? Number(listing.price) : null,
+          image: primaryImage,
+          brand: brandName,
+          model: modelDisplay ?? seriDisplay ?? null,
+          vehicleYear: Number.isFinite(vehicleYear) ? vehicleYear : null,
+          mileageKm: Number.isFinite(mileageKm) ? mileageKm : null,
+          city: cityDisplayResolved ?? null,
+          fuelType: fuelType ?? null,
+          transmission: transmission ?? null,
+        })
+      : null;
+
   return (
     <article
       className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-4 pb-12 pt-4 text-black sm:px-6 ${
         isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""
       }`}
     >
+      {listingJsonLd ? (
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(listingJsonLd),
+          }}
+        />
+      ) : null}
       {id && !isSuspendedDetailView ? (
         <ListingViewTracker listingId={id} />
       ) : null}

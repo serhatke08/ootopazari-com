@@ -22,19 +22,25 @@ export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
   applicationName: "Oto Pazarı",
   title: {
-    default: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    default: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
     template: "%s | Oto Pazarı",
   },
   description:
-    "Türkiye genelinde ikinci el ve sıfır araç ilanları. Otomobil, galeri, ekspertiz, parça ve kiralama kategorilerinde güvenilir ilanları keşfedin.",
+    "Oto Pazarı — Türkiye'nin ikinci el araba ve sıfır otomobil ilan platformu. Ücretsiz ilan ver, filtrele, favorile ve satıcıyla mesajlaş.",
   keywords: [
     "oto pazarı",
+    "oto pazarı ilanları",
+    "otomobil pazarı",
     "araba ilanları",
     "ikinci el araba",
+    "ikinci el otomobil",
     "sıfır araç",
     "otomobil",
+    "araba sat",
+    "araba al",
     "galeri",
     "ekspertiz",
+    "ücretsiz ilan ver",
   ],
   alternates: {
     canonical: "/",
@@ -44,24 +50,15 @@ export const metadata: Metadata = {
     locale: "tr_TR",
     url: "/",
     siteName: "Oto Pazarı",
-    title: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
     description:
-      "Türkiye genelinde ikinci el ve sıfır araç ilanları. Güvenilir satıcılardan ilanları filtreleyin, favorileyin ve mesajlaşın.",
-    images: [
-      {
-        url: "/menu/pazar.png?v=20260413",
-        width: 512,
-        height: 512,
-        alt: "Oto Pazarı",
-      },
-    ],
+      "Oto Pazarı ile Türkiye genelinde ikinci el ve sıfır otomobil ilanlarını keşfedin. Ücretsiz ilan ver, filtrele ve mesajlaş.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
     description:
-      "Türkiye genelinde ikinci el ve sıfır araç ilanlarını keşfedin.",
-    images: ["/menu/pazar.png?v=20260413"],
+      "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
   },
   robots: {
     index: true,
@@ -74,6 +71,13 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? {
+        verification: {
+          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+        },
+      }
+    : {}),
   icons: {
     icon: [
       { url: "/menu/pazar.png?v=20260413", sizes: "32x32", type: "image/png" },

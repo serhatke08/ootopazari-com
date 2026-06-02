@@ -22,21 +22,25 @@ import {
 } from "@/lib/home-listings-feed";
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeSidebar } from "@/components/HomeSidebar";
+import { HomeSeoSection } from "@/components/HomeSeoSection";
 import { TopCitySelect } from "@/components/TopCitySelect";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
+import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "İkinci El ve Sıfır Araç İlanları",
+  title: {
+    absolute: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+  },
   description:
-    "Oto Pazarı'nda otomobil ilanlarını marka, model, şehir ve fiyat filtreleriyle keşfedin.",
+    "Oto Pazarı ile ikinci el araba, sıfır otomobil ve araç ilanlarını keşfedin. Türkiye genelinde ücretsiz ilan ver, filtrele ve mesajlaş.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Oto Pazarı | İkinci El ve Sıfır Araç İlanları",
+    title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
     description:
-      "Marka, model, şehir ve fiyat filtreleriyle araç ilanlarını keşfedin.",
+      "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
     url: "/",
     type: "website",
   },
@@ -54,27 +58,7 @@ export default async function AnaSayfa({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const siteOrigin = getSiteOrigin();
-  const seoJsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        name: "Oto Pazarı",
-        url: siteOrigin,
-        logo: `${siteOrigin}/menu/pazar.png?v=20260413`,
-      },
-      {
-        "@type": "WebSite",
-        name: "Oto Pazarı",
-        url: siteOrigin,
-        potentialAction: {
-          "@type": "SearchAction",
-          target: `${siteOrigin}/?q={search_term_string}`,
-          "query-input": "required name=search_term_string",
-        },
-      },
-    ],
-  };
+  const seoJsonLd = buildHomeSeoJsonLd({ siteOrigin });
 
   const env = tryGetSupabaseEnv();
   if (!env) {
@@ -153,12 +137,22 @@ export default async function AnaSayfa({
       HOME_LISTINGS_PAGE_SIZE
     );
 
+    const seoJsonLdWithListings = buildHomeSeoJsonLd({
+      siteOrigin,
+      listings: items.slice(0, 12).map((item) => ({
+        listingNumber: String(item.listing.listing_number ?? ""),
+        title: String(item.listing.title ?? "Araç ilanı"),
+      })),
+    });
+
     return (
       <>
         <script
           type="application/ld+json"
           suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(seoJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(seoJsonLdWithListings),
+          }}
         />
         <HomeHero
           categories={categories}
@@ -194,6 +188,7 @@ export default async function AnaSayfa({
             </div>
           </div>
         </div>
+        <HomeSeoSection />
       </>
     );
   }
@@ -303,19 +298,19 @@ function HomeHero({
           <div className="md:col-span-6 lg:col-span-5">
             <div className="max-w-[40rem]">
               <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/90">
-                Yeni nesil araç pazarı
+                Türkiye&apos;nin oto pazarı
                 <span className="h-1 w-1 rounded-full bg-[#ffc400]" />
                 İkinci el · Sıfır · Kiralık
               </p>
 
               <h1 className="mt-5 text-3xl font-extrabold leading-[1.06] tracking-tight sm:text-5xl">
-                Aracını <span className="text-[#ffc400]">bul</span>, güvenle{" "}
-                <span className="text-[#ffc400]">sat</span>.
+                <span className="text-[#ffc400]">Oto Pazarı</span>&apos;nda
+                aracını bul, güvenle sat.
               </h1>
 
               <p className="mt-4 text-sm leading-relaxed text-white/80 sm:text-base">
-                Kategori, şehir ve anahtar kelimeyle ilanları filtrele; favorile
-                ve satıcıyla hızlıca iletişime geç.
+                Oto Pazarı&apos;nda ikinci el araba ve sıfır otomobil ilanlarını
+                filtrele; favorile ve satıcıyla hızlıca iletişime geç.
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">

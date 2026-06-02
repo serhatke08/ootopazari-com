@@ -12,7 +12,10 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
             Oto Pazarı
           </h2>
           <p className="mt-3 text-sm font-medium text-zinc-800 sm:mt-4">
-            İlan ver, favorile, mesajlaş.
+            Türkiye&apos;nin oto pazarı — ilan ver, favorile, mesajlaş.
+          </p>
+          <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-zinc-700 sm:text-sm">
+            İkinci el araba ve sıfır otomobil ilanları için güvenilir platform.
           </p>
         </div>
 

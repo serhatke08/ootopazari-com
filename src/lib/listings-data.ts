@@ -682,10 +682,11 @@ export async function fetchApprovedListingCountsByVehicleModel(
 
 export type SitemapListingRow = {
   listingNumber: string;
+  title: string;
   lastModified: Date | undefined;
 };
 
-/** Onaylı ilanlar — SEO site haritası (sayfalı, yalnız numara + tarih). */
+/** Onaylı ilanlar — SEO site haritası (sayfalı, slug URL için başlık dahil). */
 export async function fetchApprovedListingsForSitemap(
   supabase: SupabaseClient
 ): Promise<SitemapListingRow[]> {
@@ -696,7 +697,7 @@ export async function fetchApprovedListingsForSitemap(
   for (;;) {
     const { data, error } = await supabase
       .from("listings")
-      .select("listing_number,updated_at")
+      .select("listing_number,title,updated_at")
       .eq("moderation_status", "approved")
       .order("listing_number", { ascending: true })
       .range(from, from + pageSize - 1);
@@ -708,6 +709,7 @@ export async function fetchApprovedListingsForSitemap(
 
     const rows = (data ?? []) as {
       listing_number?: number | string;
+      title?: string | null;
       updated_at?: string | null;
     }[];
 
@@ -720,7 +722,11 @@ export async function fetchApprovedListingsForSitemap(
         const d = new Date(row.updated_at);
         if (!Number.isNaN(d.getTime())) lastModified = d;
       }
-      out.push({ listingNumber, lastModified });
+      out.push({
+        listingNumber,
+        title: String(row.title ?? "ilan").trim() || "ilan",
+        lastModified,
+      });
     }
 
     if (rows.length < pageSize) break;
