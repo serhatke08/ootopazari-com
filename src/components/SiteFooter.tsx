@@ -55,15 +55,15 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
         <div className="flex w-full justify-center">
           <section
             aria-labelledby="footer-seo-heading"
-            className="w-full max-w-3xl text-center"
+            className="w-full max-w-5xl text-center lg:max-w-6xl"
           >
             <h2
               id="footer-seo-heading"
-              className="text-center text-2xl font-black leading-snug tracking-tight text-zinc-950 sm:text-3xl"
+              className="text-center text-2xl font-black leading-snug tracking-tight text-zinc-950 sm:text-3xl lg:text-4xl"
             >
               Oto Pazarı — Türkiye&apos;nin araç ilan platformu
             </h2>
-            <div className="mx-auto mt-5 max-w-2xl space-y-4 text-center text-sm leading-relaxed text-zinc-800 sm:text-base">
+            <div className="mx-auto mt-6 w-full space-y-4 text-center text-sm leading-relaxed text-zinc-800 sm:text-base lg:text-lg lg:leading-relaxed">
               <p className="text-center">
                 <strong className="font-bold text-zinc-950">Oto Pazarı</strong>, ikinci
                 el araba ve sıfır otomobil ilanlarını tek yerde toplayan Türkiye
@@ -82,13 +82,13 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
             </div>
             <nav
               aria-label="Oto Pazarı kategorileri"
-              className="mt-6 flex flex-wrap items-center justify-center gap-2"
+              className="mt-7 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3"
             >
               {categoryLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="inline-flex rounded-full border border-zinc-900/20 bg-white px-4 py-1.5 text-xs font-semibold text-zinc-900 hover:border-zinc-900/40 sm:text-sm"
+                  className="inline-flex rounded-full border border-zinc-900/20 bg-white px-4 py-2 text-xs font-semibold text-zinc-900 hover:border-zinc-900/40 sm:px-5 sm:text-sm"
                 >
                   {link.label}
                 </Link>
@@ -97,7 +97,7 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
           </section>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-8 border-t border-amber-700/30 pt-8 text-center sm:grid-cols-4 sm:gap-6">
+        <div className="mx-auto mt-12 grid w-full max-w-5xl grid-cols-2 gap-8 border-t border-amber-700/30 pt-10 text-center sm:grid-cols-4 sm:gap-10 lg:max-w-6xl lg:gap-12">
           {[...linkColumns, { title: "Hesap", links: accountLinks }].map(
             (col) => (
               <div key={col.title} className="flex flex-col items-center gap-2 text-sm">
