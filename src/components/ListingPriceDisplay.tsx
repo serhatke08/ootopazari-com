@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ListingPriceHistoryButton } from "@/components/ListingPriceHistoryButton";
 import { ListingPriceRatingDot } from "@/components/ListingPriceRatingDot";
 import type { PriceHistoryEntry } from "@/lib/listing-price-history";
@@ -33,9 +34,15 @@ export function ListingPriceDisplay({
   popoverPlacement = "above",
   dotSize = "md",
 }: Props) {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   const dotColor = priceRatingIndicatorColor(summary.average, summary.count);
   const hasRatings = summary.count > 0 && summary.average != null;
-  const priceColor = overlay ? undefined : hasRatings ? dotColor : "#18181b";
+  const priceColor = overlay || !mounted ? undefined : hasRatings ? dotColor : "#18181b";
   
   const basePriceCls = overlay
     ? "text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs"
