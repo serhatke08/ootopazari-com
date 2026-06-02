@@ -133,23 +133,6 @@ export function ListingCard({
     <div className="relative">
       {boostActive ? <ListingBoostChrome /> : null}
       {href ? <Link href={href}>{imageFrame}</Link> : imageFrame}
-      {listingId ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2.5 pb-2 pt-12">
-          <ListingPriceDisplay
-            listingId={listingId}
-            priceLabel={price}
-            summary={ratingSummary}
-            loggedIn={loggedIn}
-            overlay
-          />
-        </div>
-      ) : (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2.5 pb-2 pt-12">
-          <p className="text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs">
-            {price}
-          </p>
-        </div>
-      )}
     </div>
   ) : (
     imageFrame
@@ -238,12 +221,16 @@ export function ListingCard({
             {listing.title ?? "Başlıksız ilan"} (ilan no eksik)
           </p>
         )}
-        {isHomeGrid &&
-        listing.vehicle_model != null &&
-        String(listing.vehicle_model).trim() !== "" &&
-        String(listing.vehicle_model).trim() !== "—" ? (
-          <p className="line-clamp-1 text-[10px] font-medium text-zinc-500 sm:text-[11px]">
-            {String(listing.vehicle_model).trim()}
+        {isHomeGrid && listingId ? (
+          <ListingPriceDisplay
+            listingId={listingId}
+            priceLabel={price}
+            summary={ratingSummary}
+            loggedIn={loggedIn}
+          />
+        ) : isHomeGrid ? (
+          <p className="text-sm font-bold text-emerald-700 sm:text-base">
+            {price}
           </p>
         ) : null}
         {!isHomeGrid ? (
