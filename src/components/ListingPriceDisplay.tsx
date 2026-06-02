@@ -34,6 +34,9 @@ export function ListingPriceDisplay({
   dotSize = "md",
 }: Props) {
   const dotColor = priceRatingIndicatorColor(summary.average, summary.count);
+  const hasRatings = summary.count > 0 && summary.average != null;
+  const priceColor = overlay ? undefined : hasRatings ? dotColor : "#18181b";
+  
   const basePriceCls = overlay
     ? "text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs"
     : dotSize === "sm"
@@ -61,7 +64,7 @@ export function ListingPriceDisplay({
         size={dotSize}
         popoverPlacement={popoverPlacement}
       />
-      <span className={priceCls} style={{ color: overlay ? undefined : dotColor }}>
+      <span className={priceCls} style={{ color: priceColor }}>
         {priceLabel}
       </span>
       {showHistory ? (
