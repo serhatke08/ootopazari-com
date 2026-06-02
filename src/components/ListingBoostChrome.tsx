@@ -15,19 +15,13 @@ type Props = {
   className?: string;
 };
 
-/** Ana sayfa kartı — pulse aktifken sarı çerçeve + şimşek rozeti. */
+/** Ana sayfa kartı — pulse aktifken şimşek rozeti. */
 export function ListingBoostChrome({ className = "" }: Props) {
   return (
-    <>
-      <div
-        className={`pointer-events-none absolute inset-0 z-[5] rounded-[inherit] ring-2 ring-[#ffc400] ring-inset ${className}`}
-        aria-hidden
-      />
-      <div className="pointer-events-none absolute left-2 top-2 z-[8] flex items-center gap-1 rounded-full bg-[#ffc400] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black shadow-sm">
-        <BoostLightningIcon className="h-3 w-3" />
-        <span>Öne çıkan</span>
-      </div>
-    </>
+    <div className={`pointer-events-none absolute left-2 top-2 z-[8] flex items-center gap-1 rounded-full bg-[#ffc400] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black shadow-sm ${className}`}>
+      <BoostLightningIcon className="h-3 w-3" />
+      <span>Öne çıkan</span>
+    </div>
   );
 }
 

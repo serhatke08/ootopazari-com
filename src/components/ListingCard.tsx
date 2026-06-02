@@ -95,7 +95,7 @@ export function ListingCard({
     <div
       className={
         isHomeGrid
-          ? "relative aspect-square w-full overflow-hidden bg-zinc-100"
+          ? "relative aspect-square w-full overflow-hidden bg-white"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
@@ -140,11 +140,9 @@ export function ListingCard({
 
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md sm:rounded-xl ${
-        boostActive && isHomeGrid
-          ? "border-[#ffc400] shadow-[0_0_0_1px_#ffc400]"
-          : "border-zinc-200 hover:border-zinc-300"
-      } ${suspended ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
+      className={`group relative flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md sm:rounded-xl ${
+        suspended ? "opacity-[0.72] grayscale-[0.35]" : ""
+      }`}
     >
       {suspended ? (
         <div className="border-b border-red-100 bg-red-50 px-2 py-1.5 sm:px-4">
