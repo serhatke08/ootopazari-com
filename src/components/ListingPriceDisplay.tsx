@@ -16,6 +16,7 @@ type Props = {
   overlay?: boolean;
   priceClassName?: string;
   popoverPlacement?: "above" | "below";
+  dotSize?: "sm" | "md";
 };
 
 export function ListingPriceDisplay({
@@ -29,6 +30,7 @@ export function ListingPriceDisplay({
   overlay = false,
   priceClassName,
   popoverPlacement = "above",
+  dotSize = "md",
 }: Props) {
   const priceCls =
     priceClassName ??
@@ -42,7 +44,7 @@ export function ListingPriceDisplay({
 
   return (
     <div
-      className={`flex w-full min-w-0 items-center gap-x-1 gap-y-0.5 ${
+      className={`flex w-full min-w-0 items-center gap-x-0.5 gap-y-0.5 ${
         overlay ? "pointer-events-auto relative z-10" : ""
       }`}
       onClick={overlay ? (e) => e.stopPropagation() : undefined}
@@ -52,7 +54,7 @@ export function ListingPriceDisplay({
         listingId={listingId}
         summary={summary}
         loggedIn={loggedIn}
-        size={overlay ? "sm" : "md"}
+        size={dotSize}
         popoverPlacement={popoverPlacement}
       />
       <span className={priceCls}>{priceLabel}</span>
