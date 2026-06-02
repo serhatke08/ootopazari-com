@@ -8,7 +8,9 @@ import { isHeicLikeUrl } from "@/lib/image-format";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
+import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
+import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 
 type Props = {
   listing: ListingRow;
@@ -32,6 +34,7 @@ type Props = {
   ownerName?: string | null;
   ownerAvatarSrc?: string | null;
   ownerHref?: string | null;
+  priceRating?: PriceRatingSummary;
 };
 
 export function ListingCard({
@@ -50,7 +53,14 @@ export function ListingCard({
   ownerName,
   ownerAvatarSrc,
   ownerHref,
+  priceRating,
 }: Props) {
+  const emptyRating: PriceRatingSummary = {
+    average: null,
+    count: 0,
+    userRating: null,
+  };
+  const ratingSummary = priceRating ?? emptyRating;
   const suspended =
     suspendedProp ?? isListingSuspended(listing);
   const cityText =
@@ -118,9 +128,19 @@ export function ListingCard({
       )}
       {isHomeGrid ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-2.5 pb-2 pt-12">
-          <p className="text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs">
-            {price}
-          </p>
+          {listingId ? (
+            <ListingPriceDisplay
+              listingId={listingId}
+              priceLabel={price}
+              summary={ratingSummary}
+              loggedIn={loggedIn}
+              overlay
+            />
+          ) : (
+            <p className="text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs">
+              {price}
+            </p>
+          )}
         </div>
       ) : null}
     </div>
@@ -208,9 +228,18 @@ export function ListingCard({
           </p>
         )}
         {!isHomeGrid ? (
-          <p className="text-sm font-bold text-emerald-700 sm:text-base md:text-lg">
-            {price}
-          </p>
+          listingId ? (
+            <ListingPriceDisplay
+              listingId={listingId}
+              priceLabel={price}
+              summary={ratingSummary}
+              loggedIn={loggedIn}
+            />
+          ) : (
+            <p className="text-sm font-bold text-emerald-700 sm:text-base md:text-lg">
+              {price}
+            </p>
+          )
         ) : null}
         {!stats ? (
           <div className="mt-0 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:gap-x-2 sm:text-[11px]">

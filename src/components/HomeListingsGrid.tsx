@@ -110,6 +110,7 @@ export function HomeListingsGrid({
             ownerName={item.ownerName}
             ownerAvatarSrc={item.ownerAvatarSrc}
             ownerHref={item.ownerHref}
+            priceRating={item.priceRating}
           />
         ))}
       </div>

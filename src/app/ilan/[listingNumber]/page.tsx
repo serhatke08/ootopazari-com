@@ -16,6 +16,7 @@ import {
   resolveListingCityDisplay,
 } from "@/lib/listings-data";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
+import { fetchPriceRatingSummary } from "@/lib/listing-price-ratings";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
 import {
@@ -41,6 +42,7 @@ import { SuspendListingButton } from "@/components/SuspendListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
 import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
+import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
 
 type Props = { params: Promise<{ listingNumber: string }> };
@@ -377,6 +379,20 @@ export default async function IlanDetayPage({ params }: Props) {
     : [new Map(), { user: null, favoriteIds: new Set<string>() }];
   const stats = id ? statsMap.get(id) : undefined;
 
+  const priceRating = id
+    ? await fetchPriceRatingSummary(supabase, id, viewer?.id ?? null)
+    : { average: null, count: 0, userRating: null };
+
+  const listingDateLabel = fmtListingDate(row.created_at);
+  const priceLabel =
+    listing.price != null
+      ? new Intl.NumberFormat("tr-TR", {
+          style: "currency",
+          currency: "TRY",
+          maximumFractionDigits: 0,
+        }).format(Number(listing.price))
+      : "Fiyat sorunuz";
+
   const sellerUserId = listing.user_id ? String(listing.user_id) : "";
   const showMessageButton =
     detailAccess === "public" &&
@@ -663,19 +679,23 @@ export default async function IlanDetayPage({ params }: Props) {
         <div className="listing-detail-tabs min-w-0 max-md:mt-3">
           <ListingDetailTabs
             header={
-              <div className="px-4 py-2.5">
-                {listing.price != null ? (
-                  <p className="text-base font-bold text-black tabular-nums sm:text-lg">
-                    {new Intl.NumberFormat("tr-TR", {
-                      style: "currency",
-                      currency: "TRY",
-                      maximumFractionDigits: 0,
-                    }).format(Number(listing.price))}
-                  </p>
-                ) : (
-                  <p className="text-sm font-medium text-black/70">Fiyat sorunuz</p>
-                )}
-              </div>
+              id ? (
+                <div className="px-4 py-2.5">
+                  <ListingPriceDisplay
+                    listingId={id}
+                    priceLabel={priceLabel}
+                    listingDate={listingDateLabel}
+                    summary={priceRating}
+                    loggedIn={!!viewer}
+                    priceClassName="text-base font-bold tabular-nums text-black sm:text-lg"
+                    popoverPlacement="below"
+                  />
+                </div>
+              ) : (
+                <div className="px-4 py-2.5">
+                  <p className="text-sm font-medium text-black/70">{priceLabel}</p>
+                </div>
+              )
             }
             infoContent={
               <dl className="px-3 py-1">
@@ -696,10 +716,6 @@ export default async function IlanDetayPage({ params }: Props) {
                 )}
                 <Field label="Şehir" value={cityDisplayResolved ?? "—"} />
                 <Field label="Kategori" value={categoryName ?? undefined} />
-                <Field
-                  label="İlan tarihi"
-                  value={fmtListingDate(row.created_at) ?? "—"}
-                />
                 <Field label="Marka" value={brandName ?? undefined} />
                 <Field label="Seri" value={seriDisplay ?? "—"} />
                 <Field label="Model" value={modelDisplay ?? "—"} />

@@ -4,6 +4,10 @@ import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import type { ListingPublicStats } from "@/lib/listing-stats";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import {
+  fetchPriceRatingSummariesMap,
+  type PriceRatingSummary,
+} from "@/lib/listing-price-ratings";
+import {
   buildCategoryMap,
   buildCityMap,
   fetchCategories,
@@ -28,6 +32,7 @@ export type HomeListingCardItem = {
   ownerName: string | null;
   ownerAvatarSrc: string | null;
   ownerHref: string | null;
+  priceRating: PriceRatingSummary;
 };
 
 export type HomeListingsFeedFilters = {
@@ -88,7 +93,8 @@ function buildCardItems(
   cityMap: Map<string, CityRow>,
   statsMap: Map<string, ListingPublicStats>,
   favoriteIds: Set<string>,
-  owners: Map<string, OwnerMini>
+  owners: Map<string, OwnerMini>,
+  priceRatings: Map<string, PriceRatingSummary>
 ): HomeListingCardItem[] {
   return rows.map((listing) => {
     const cid = listing.category_id ?? undefined;
@@ -96,6 +102,11 @@ function buildCardItems(
     const sid = listing.id ? statsMap.get(listing.id) : undefined;
     const ownerId = listing.user_id ? String(listing.user_id) : null;
     const owner = ownerId ? owners.get(ownerId) : undefined;
+    const emptyRating: PriceRatingSummary = {
+      average: null,
+      count: 0,
+      userRating: null,
+    };
     return {
       listing,
       categoryName,
@@ -105,6 +116,9 @@ function buildCardItems(
       ownerName: owner?.name ?? null,
       ownerAvatarSrc: owner?.avatarSrc ?? null,
       ownerHref: owner?.href ?? null,
+      priceRating: listing.id
+        ? (priceRatings.get(listing.id) ?? emptyRating)
+        : emptyRating,
     };
   });
 }
@@ -152,6 +166,12 @@ export async function fetchHomeListingsFeed(
     ),
   ]);
 
+  const priceRatings = await fetchPriceRatingSummariesMap(
+    supabase,
+    ids,
+    sessionFav.user?.id ?? null
+  );
+
   return {
     items: buildCardItems(
       rows,
@@ -159,7 +179,8 @@ export async function fetchHomeListingsFeed(
       cityMap,
       statsMap,
       sessionFav.favoriteIds,
-      owners
+      owners,
+      priceRatings
     ),
     total,
     loggedIn: !!sessionFav.user,
