@@ -34,23 +34,35 @@ import { getSiteOrigin } from "@/lib/site-url";
 /** Geçici: ana sayfa hero bölümü (kaldırılmadı, devre dışı). */
 const SHOW_HOME_HERO = false;
 
-export const metadata: Metadata = {
-  title: {
-    absolute: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
-  },
-  description:
-    "Oto Pazarı ile ikinci el araba, sıfır otomobil ve araç ilanlarını keşfedin. Türkiye genelinde ücretsiz ilan ver, filtrele ve mesajlaş.",
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const origin = getSiteOrigin();
+  
+  // Query parametreli sayfalar için canonical tag'i ana sayfaya yönlendir
+  const hasQuery = sp.q || sp.category_id || sp.city_id || sp.vehicle_brand_id;
+  
+  return {
+    title: {
+      absolute: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+    },
     description:
-      "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
-    url: "/",
-    type: "website",
-  },
-};
+      "Oto Pazarı ile ikinci el araba, sıfır otomobil ve araç ilanlarını keşfedin. Türkiye genelinde ücretsiz ilan ver, filtrele ve mesajlaş.",
+    alternates: {
+      canonical: hasQuery ? origin : "/",
+    },
+    openGraph: {
+      title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+      description:
+        "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
+      url: "/",
+      type: "website",
+    },
+  };
+}
 
 export default async function AnaSayfa({
   searchParams,
