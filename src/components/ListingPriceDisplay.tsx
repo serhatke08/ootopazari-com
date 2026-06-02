@@ -42,31 +42,31 @@ export function ListingPriceDisplay({
 
   return (
     <div
-      className={`flex w-full min-w-0 items-center justify-between gap-x-2 gap-y-0.5 ${
+      className={`flex w-full min-w-0 items-center gap-x-2 gap-y-0.5 ${
         overlay ? "pointer-events-auto relative z-10" : ""
       }`}
       onClick={overlay ? (e) => e.stopPropagation() : undefined}
       onMouseDown={overlay ? (e) => e.stopPropagation() : undefined}
     >
-      <div className="flex min-w-0 items-center gap-x-2">
-        <ListingPriceRatingDot
-          listingId={listingId}
-          summary={summary}
-          loggedIn={loggedIn}
-          size={overlay ? "sm" : "md"}
+      <ListingPriceRatingDot
+        listingId={listingId}
+        summary={summary}
+        loggedIn={loggedIn}
+        size={overlay ? "sm" : "md"}
+        popoverPlacement={popoverPlacement}
+      />
+      <span className={priceCls}>{priceLabel}</span>
+      {showHistory ? (
+        <ListingPriceHistoryButton
+          history={priceHistory}
           popoverPlacement={popoverPlacement}
+          overlay={overlay}
         />
-        <span className={priceCls}>{priceLabel}</span>
-        {showHistory ? (
-          <ListingPriceHistoryButton
-            history={priceHistory}
-            popoverPlacement={popoverPlacement}
-            overlay={overlay}
-          />
-        ) : null}
-      </div>
+      ) : null}
       {listingDate ? (
-        <span className={`${dateCls} shrink-0 text-right`}>{listingDate}</span>
+        <span className={`${dateCls} ml-auto shrink-0 text-right`}>
+          {listingDate}
+        </span>
       ) : null}
     </div>
   );
