@@ -146,7 +146,17 @@ export async function fetchBrandModelsHierarchy(
     if (error) continue;
     const rows = (data ?? []) as IdNameRow[];
     if (rows.length > 0) {
-      return { hierarchical: true, parents: rows };
+      let anyChildren = false;
+      for (const row of rows.slice(0, 8)) {
+        const children = await fetchChildBrandModels(supabase, row.id);
+        if (children.length > 0) {
+          anyChildren = true;
+          break;
+        }
+      }
+      if (anyChildren) {
+        return { hierarchical: true, parents: rows };
+      }
     }
   }
 

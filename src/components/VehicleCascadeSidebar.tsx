@@ -206,6 +206,7 @@ export function VehicleCascadeSidebar({
     if (pathname !== "/") return;
     const cid = searchParams.get("category_id");
     const bid = searchParams.get("vehicle_brand_id");
+    const mid = searchParams.get("vehicle_brand_model_id");
     if (cid) {
       setCategoryId(cid);
       setExpandedCategoryId(cid);
@@ -213,6 +214,9 @@ export function VehicleCascadeSidebar({
     if (bid) {
       setBrandId(bid);
       setExpandedBrandId(bid);
+    }
+    if (mid) {
+      setModelId(mid);
     }
   }, [pathname, searchParams]);
 
@@ -348,11 +352,41 @@ export function VehicleCascadeSidebar({
         if (p) list = [p];
       }
       setSeriesModels(list);
+      if (list.length === 1 && !modelIdRef.current) {
+        setModelId(list[0].id);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [expandedParentModelId, hierarchyHierarchical, parentModels, supabase]);
+
+  useEffect(() => {
+    if (!modelId || !brandId || parentModels.length === 0) return;
+    if (parentModels.some((p) => p.id === modelId)) {
+      if (hierarchyHierarchical) {
+        setExpandedParentModelId(modelId);
+      }
+      return;
+    }
+    if (!hierarchyHierarchical) return;
+
+    let cancelled = false;
+    void (async () => {
+      for (const pm of parentModels) {
+        const children = await fetchChildBrandModels(supabase, pm.id);
+        if (cancelled) return;
+        if (children.some((c) => c.id === modelId)) {
+          setExpandedParentModelId(pm.id);
+          setSeriesModels(children);
+          break;
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [modelId, brandId, parentModels, hierarchyHierarchical, supabase]);
 
   useEffect(() => {
     if (!modelId) {
@@ -518,11 +552,11 @@ export function VehicleCascadeSidebar({
       className={
         fillColumn
           ? compact
-            ? "flex w-full flex-col gap-1.5 overflow-visible"
-            : "flex w-full flex-col gap-2.5 overflow-visible"
+            ? "flex w-full min-h-0 flex-col gap-1.5"
+            : "flex w-full min-h-0 flex-col gap-2.5"
           : compact
-            ? "w-full space-y-1.5 overflow-visible"
-            : "w-full space-y-2 overflow-visible"
+            ? "w-full space-y-1.5"
+            : "w-full space-y-2"
       }
     >
       {label("Kategori", compact)}
@@ -535,11 +569,11 @@ export function VehicleCascadeSidebar({
           className={
             fillColumn
               ? compact
-                ? "flex flex-col gap-2 overflow-visible"
-                : "flex flex-col gap-3 overflow-visible"
+                ? "flex flex-col gap-2"
+                : "flex flex-col gap-3"
               : compact
-                ? "flex flex-col gap-0.5 overflow-visible"
-                : "flex flex-col gap-1 overflow-visible"
+                ? "flex flex-col gap-0.5"
+                : "flex flex-col gap-1"
           }
         >
           {categorySlots.map((slot) => {
@@ -876,8 +910,20 @@ export function VehicleCascadeSidebar({
 
                       {modelId ? (
                         <div className="mt-2 space-y-2 border-t border-amber-200/90 pt-2">
-                          <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                            <div className="min-w-0 border-r border-zinc-200 pr-2">
+                          <div
+                            className={
+                              compact
+                                ? "flex flex-col gap-2"
+                                : "grid grid-cols-2 gap-x-2 gap-y-1"
+                            }
+                          >
+                            <div
+                              className={
+                                compact
+                                  ? "min-w-0"
+                                  : "min-w-0 border-r border-zinc-200 pr-2"
+                              }
+                            >
                               {label("Kasa / gövde", compact)}
                               <select
                                 className={selectClass}
@@ -907,7 +953,7 @@ export function VehicleCascadeSidebar({
                                 </p>
                               ) : null}
                             </div>
-                            <div className="min-w-0 pl-0.5">
+                            <div className={compact ? "min-w-0" : "min-w-0 pl-0.5"}>
                               {label("Motor", compact)}
                               <select
                                 className={selectClass}

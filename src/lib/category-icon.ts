@@ -29,5 +29,5 @@ export function categoryIconUrlForCategory(
 
 /** Eksik ikon dosyalarında yedek (genel araç). */
 export function categoryIconFallbackUrl(): string {
-  return `/menu/${encodeURIComponent("kategori icon")}/pngwing.com.png`;
+  return categoryIconUrl(1);
 }
