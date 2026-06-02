@@ -1,9 +1,8 @@
 import { Suspense } from "react";
 import type { CategoryRow } from "@/lib/listings-data";
 import { VehicleCascadeSidebar } from "@/components/VehicleCascadeSidebar";
-import { SidebarQuickLinks } from "@/components/SidebarQuickLinks";
 
-/** Ana sayfa sol sütun: kategori cascade kaydırılabilir, kısayollar altta sabit. */
+/** Ana sayfa sol sütun: kategori cascade kaydırılabilir */
 export function HomeSidebar({ categories }: { categories: CategoryRow[] }) {
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col">
@@ -18,9 +17,6 @@ export function HomeSidebar({ categories }: { categories: CategoryRow[] }) {
         >
           <VehicleCascadeSidebar categories={categories} fillColumn compact />
         </Suspense>
-      </div>
-      <div className="mt-2 shrink-0 border-t border-zinc-200 bg-white pt-3">
-        <SidebarQuickLinks compact />
       </div>
     </div>
   );
