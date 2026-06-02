@@ -70,7 +70,7 @@ body {
 
 .site-footer-seo {
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   margin-inline: auto;
   text-align: center;
 }
@@ -87,20 +87,10 @@ body {
 
 .site-footer-seo-text {
   width: 100%;
-  max-width: 720px;
+  max-width: 850px;
   margin-inline: auto;
   margin-top: 0;
   text-align: left;
-  background: rgba(255, 255, 255, 0.45);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  border: 1px solid rgba(180, 83, 9, 0.15);
-}
-
-@media (min-width: 640px) {
-  .site-footer-seo-text {
-    padding: 2rem 2.5rem;
-  }
 }
 
 .site-footer-seo-text p {
@@ -154,7 +144,7 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 2rem 1.5rem;
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   margin-inline: auto;
   margin-top: 2.5rem;
   padding-top: 2rem;
@@ -198,7 +188,7 @@ body {
 }
 
 .site-footer-copy {
-  max-width: 900px;
+  max-width: 1000px;
   margin-inline: auto;
   margin-top: 2rem;
   padding-top: 1.25rem;
