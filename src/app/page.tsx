@@ -147,8 +147,8 @@ export default async function AnaSayfa({
               <HomeSidebar categories={categories} />
             </aside>
 
-            <div className="min-w-0 flex-1 space-y-6">
-              <div className="flex items-center justify-end">
+            <div className="min-w-0 flex-1">
+              <div className="mb-4 flex items-center justify-end">
                 <TopCitySelect cities={cities} />
               </div>
               {items.length === 0 ? (
@@ -207,8 +207,8 @@ export default async function AnaSayfa({
             <HomeSidebar categories={categories} />
           </aside>
 
-          <div className="min-w-0 flex-1 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
               {categoryId && catMap.get(categoryId)?.name ? (
                 <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
                   {catMap.get(categoryId)?.name}
@@ -218,7 +218,7 @@ export default async function AnaSayfa({
               )}
               <TopCitySelect cities={cities} />
             </div>
-            <p className="text-sm text-zinc-600">
+            <p className="mb-4 text-sm text-zinc-600">
               {total} sonuç
               {cityId && cityMap.get(cityId)?.name
                 ? ` · ${cityMap.get(cityId)?.name}`
