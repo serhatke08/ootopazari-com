@@ -4,6 +4,7 @@ import { ListingPriceHistoryButton } from "@/components/ListingPriceHistoryButto
 import { ListingPriceRatingDot } from "@/components/ListingPriceRatingDot";
 import type { PriceHistoryEntry } from "@/lib/listing-price-history";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
+import { priceRatingIndicatorColor } from "@/lib/listing-price-ratings";
 
 type Props = {
   listingId: string;
@@ -32,6 +33,7 @@ export function ListingPriceDisplay({
   popoverPlacement = "above",
   dotSize = "md",
 }: Props) {
+  const dotColor = priceRatingIndicatorColor(summary.average, summary.count);
   const priceCls =
     priceClassName ??
     (overlay
@@ -57,7 +59,9 @@ export function ListingPriceDisplay({
         size={dotSize}
         popoverPlacement={popoverPlacement}
       />
-      <span className={priceCls}>{priceLabel}</span>
+      <span className={priceCls} style={{ color: priceClassName ? undefined : dotColor }}>
+        {priceLabel}
+      </span>
       {showHistory ? (
         <ListingPriceHistoryButton
           history={priceHistory}

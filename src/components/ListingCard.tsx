@@ -227,11 +227,11 @@ export function ListingCard({
             priceLabel={price}
             summary={ratingSummary}
             loggedIn={loggedIn}
-            priceClassName="text-xs font-bold text-emerald-700 tabular-nums leading-tight sm:text-sm"
+            priceClassName="text-[13px] font-bold tabular-nums leading-tight sm:text-[15px]"
             dotSize="sm"
           />
         ) : isHomeGrid ? (
-          <p className="text-xs font-bold text-emerald-700 tabular-nums leading-tight sm:text-sm">
+          <p className="text-[13px] font-bold text-emerald-700 tabular-nums leading-tight sm:text-[15px]">
             {price}
           </p>
         ) : null}
