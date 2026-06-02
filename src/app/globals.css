@@ -257,10 +257,10 @@ body {
   }
 }
 
-/* Masaüstü: 3 sütun */
+/* Masaüstü: 3 sütun - Sol %40, Orta %35, Sağ %25 */
 @media (min-width: 80rem) {
   .listing-detail-layout {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 8fr) minmax(0, 7fr) minmax(0, 5fr);
     row-gap: 1rem;
     column-gap: 1.25rem;
   }
