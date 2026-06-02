@@ -51,12 +51,11 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
       className="mt-auto w-full border-t border-amber-400/80 bg-[#ffcc00] py-10 sm:py-12"
       style={{ backgroundColor: "#ffcc00" }}
     >
-      <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6">
-        <div className="flex w-full justify-center">
-          <section
-            aria-labelledby="footer-seo-heading"
-            className="w-full max-w-5xl text-center lg:max-w-6xl"
-          >
+      <div className="mx-auto w-full max-w-[1400px] px-3 sm:px-4 md:px-5">
+        <section
+          aria-labelledby="footer-seo-heading"
+          className="w-full text-center"
+        >
             <h2
               id="footer-seo-heading"
               className="text-center text-2xl font-black leading-snug tracking-tight text-zinc-950 sm:text-3xl lg:text-4xl"
@@ -94,10 +93,9 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
                 </Link>
               ))}
             </nav>
-          </section>
-        </div>
+        </section>
 
-        <div className="mx-auto mt-12 grid w-full max-w-5xl grid-cols-2 gap-8 border-t border-amber-700/30 pt-10 text-center sm:grid-cols-4 sm:gap-10 lg:max-w-6xl lg:gap-12">
+        <div className="mt-12 grid w-full grid-cols-2 gap-6 border-t border-amber-700/30 pt-10 text-center sm:grid-cols-4 sm:gap-8 lg:gap-10">
           {[...linkColumns, { title: "Hesap", links: accountLinks }].map(
             (col) => (
               <div key={col.title} className="flex flex-col items-center gap-2 text-sm">
