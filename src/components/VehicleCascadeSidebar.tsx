@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FallbackImg } from "@/components/FallbackImg";
+import { useIsClient } from "@/hooks/use-is-client";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   categoryIconFallbackUrl,
@@ -102,7 +103,37 @@ function listingCountBadge(n: number, compact?: boolean) {
   );
 }
 
-export function VehicleCascadeSidebar({
+function cascadeRootClass(fillColumn?: boolean, compact?: boolean) {
+  if (fillColumn) {
+    return compact
+      ? "flex w-full min-h-0 flex-col gap-1.5"
+      : "flex w-full min-h-0 flex-col gap-2.5";
+  }
+  return compact ? "w-full space-y-1.5" : "w-full space-y-2";
+}
+
+function cascadeListClass(fillColumn?: boolean, compact?: boolean) {
+  if (fillColumn) {
+    return compact ? "flex flex-col gap-2" : "flex flex-col gap-3";
+  }
+  return compact ? "flex flex-col gap-0.5" : "flex flex-col gap-1";
+}
+
+function VehicleCascadeSidebarPlaceholder({
+  fillColumn,
+  compact,
+}: {
+  fillColumn?: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <div className={cascadeRootClass(fillColumn, compact)} aria-hidden>
+      <div className="min-h-[12rem] rounded-lg border border-zinc-200 bg-zinc-50/90" />
+    </div>
+  );
+}
+
+function VehicleCascadeSidebarInner({
   categories,
   onNavigate,
   fillColumn = false,
@@ -551,34 +582,14 @@ export function VehicleCascadeSidebar({
   );
 
   return (
-    <div
-      className={
-        fillColumn
-          ? compact
-            ? "flex w-full min-h-0 flex-col gap-1.5"
-            : "flex w-full min-h-0 flex-col gap-2.5"
-          : compact
-            ? "w-full space-y-1.5"
-            : "w-full space-y-2"
-      }
-    >
+    <div className={cascadeRootClass(fillColumn, compact)}>
       {label("Kategori", compact)}
       {categorySlots.length === 0 ? (
         <p className="text-xs text-zinc-500">
           Kategori listesi boş (Supabase `categories` tablosu).
         </p>
       ) : (
-        <ul
-          className={
-            fillColumn
-              ? compact
-                ? "flex flex-col gap-2"
-                : "flex flex-col gap-3"
-              : compact
-                ? "flex flex-col gap-0.5"
-                : "flex flex-col gap-1"
-          }
-        >
+        <ul className={cascadeListClass(fillColumn, compact)}>
           {categorySlots.map((slot) => {
             const categoryOpen = expandedCategoryId === slot.id;
             return (
@@ -1057,5 +1068,32 @@ export function VehicleCascadeSidebar({
         </ul>
       )}
     </div>
+  );
+}
+
+export function VehicleCascadeSidebar({
+  categories,
+  onNavigate,
+  fillColumn = false,
+  compact = false,
+}: {
+  categories: CategoryRow[];
+  onNavigate?: () => void;
+  fillColumn?: boolean;
+  compact?: boolean;
+}) {
+  const isClient = useIsClient();
+  if (!isClient) {
+    return (
+      <VehicleCascadeSidebarPlaceholder fillColumn={fillColumn} compact={compact} />
+    );
+  }
+  return (
+    <VehicleCascadeSidebarInner
+      categories={categories}
+      onNavigate={onNavigate}
+      fillColumn={fillColumn}
+      compact={compact}
+    />
   );
 }
