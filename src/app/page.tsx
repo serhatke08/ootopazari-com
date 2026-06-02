@@ -26,6 +26,7 @@ import {
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { TopCitySelect } from "@/components/TopCitySelect";
+import { ListingFilters } from "@/components/ListingFilters";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
@@ -148,8 +149,9 @@ export default async function AnaSayfa({
             </aside>
 
             <div className="min-w-0 flex-1">
-              <div className="mb-4 flex items-center justify-end">
+              <div className="mb-4 flex items-center justify-end gap-2">
                 <TopCitySelect cities={cities} />
+                <ListingFilters />
               </div>
               {items.length === 0 ? (
                 <p className="text-sm text-zinc-500">
@@ -216,7 +218,10 @@ export default async function AnaSayfa({
               ) : (
                 <div />
               )}
-              <TopCitySelect cities={cities} />
+              <div className="flex items-center gap-2">
+                <TopCitySelect cities={cities} />
+                <ListingFilters />
+              </div>
             </div>
             <p className="mb-4 text-sm text-zinc-600">
               {total} sonuç

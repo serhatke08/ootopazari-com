@@ -24,6 +24,8 @@ export type HomeListingsFeedFilters = {
   maxPrice?: number;
   minYear?: number;
   maxYear?: number;
+  minKm?: number;
+  maxKm?: number;
   q?: string;
   vehicleModel?: string;
   bodyType?: string;

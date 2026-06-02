@@ -28,6 +28,8 @@ function filtersToQuery(filters: HomeListingsFeedFilters | undefined): string {
   if (filters.maxPrice != null) p.set("max_price", String(filters.maxPrice));
   if (filters.minYear != null) p.set("min_year", String(filters.minYear));
   if (filters.maxYear != null) p.set("max_year", String(filters.maxYear));
+  if (filters.minKm != null) p.set("min_km", String(filters.minKm));
+  if (filters.maxKm != null) p.set("max_km", String(filters.maxKm));
   if (filters.q) p.set("q", filters.q);
   if (filters.vehicleModel) p.set("vehicle_model", filters.vehicleModel);
   if (filters.vehicleBrandModelId) {

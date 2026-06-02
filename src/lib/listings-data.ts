@@ -283,6 +283,8 @@ export type ListingListParams = {
   maxPrice?: number;
   minYear?: number;
   maxYear?: number;
+  minKm?: number;
+  maxKm?: number;
   q?: string;
 };
 
@@ -322,6 +324,8 @@ function applyListingListFilters(
   if (params.maxPrice != null) query = query.lte("price", params.maxPrice);
   if (params.minYear != null) query = query.gte("vehicle_year", params.minYear);
   if (params.maxYear != null) query = query.lte("vehicle_year", params.maxYear);
+  if (params.minKm != null) query = query.gte("vehicle_km", params.minKm);
+  if (params.maxKm != null) query = query.lte("vehicle_km", params.maxKm);
   if (params.q?.trim()) {
     const esc = params.q
       .trim()

@@ -60,6 +60,8 @@ export async function resolveHomeListingsFeedFilters(
     maxPrice: parseFilterNum(get("max_price")),
     minYear: parseFilterNum(get("min_year")),
     maxYear: parseFilterNum(get("max_year")),
+    minKm: parseFilterNum(get("min_km")),
+    maxKm: parseFilterNum(get("max_km")),
     q,
     vehicleModel,
     bodyType,
@@ -86,6 +88,8 @@ export function homeListingsFeedHasFilters(
     filters.minPrice != null ||
     filters.maxPrice != null ||
     filters.minYear != null ||
-    filters.maxYear != null
+    filters.maxYear != null ||
+    filters.minKm != null ||
+    filters.maxKm != null
   );
 }
