@@ -44,6 +44,140 @@ body {
   }
 }
 
+.site-footer-inner {
+  width: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: 12px;
+}
+
+@media (min-width: 640px) {
+  .site-footer-inner {
+    padding-inline: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-footer-inner {
+    padding-inline: 28px;
+  }
+}
+
+.site-footer-seo {
+  width: 100%;
+  text-align: center;
+}
+
+.site-footer-seo h2 {
+  font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: #09090b;
+  text-align: center;
+}
+
+.site-footer-seo-text {
+  width: 100%;
+  max-width: none;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.site-footer-seo-text p {
+  margin-inline: auto;
+  max-width: none;
+  text-align: center;
+  font-size: clamp(0.875rem, 1.1vw, 1.125rem);
+  line-height: 1.65;
+  color: #27272a;
+}
+
+.site-footer-seo-text p + p {
+  margin-top: 1rem;
+}
+
+.site-footer-seo-text strong {
+  font-weight: 700;
+  color: #09090b;
+}
+
+.site-footer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.625rem;
+  margin-top: 1.75rem;
+}
+
+.site-footer-tag {
+  display: inline-flex;
+  border-radius: 9999px;
+  border: 1px solid rgb(24 24 27 / 0.2);
+  background: #fff;
+  padding: 0.5rem 1.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.site-footer-tag:hover {
+  border-color: rgb(24 24 27 / 0.4);
+}
+
+.site-footer-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+  width: 100%;
+  margin-top: 3rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid rgb(180 83 9 / 0.3);
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .site-footer-links {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+}
+
+.site-footer-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.site-footer-col-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3f3f46;
+}
+
+.site-footer-col a {
+  font-weight: 600;
+  color: #18181b;
+}
+
+.site-footer-col a:hover {
+  text-decoration: underline;
+}
+
+.site-footer-copy {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgb(180 83 9 / 0.3);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #27272a;
+}
+
 /* İlan detay düzeni */
 .listing-detail-layout {
   display: grid;
