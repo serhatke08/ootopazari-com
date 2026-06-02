@@ -95,7 +95,7 @@ export function ListingCard({
     <div
       className={
         isHomeGrid
-          ? "relative aspect-square w-full overflow-hidden bg-white"
+          ? "relative aspect-square w-full overflow-hidden bg-white sm:aspect-[4/5]"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
@@ -157,7 +157,7 @@ export function ListingCard({
         </div>
       ) : null}
       {href && !isHomeGrid ? <Link href={href}>{imageArea}</Link> : imageArea}
-      <div className="flex flex-1 flex-col gap-1 p-2 sm:gap-1.5 sm:p-4">
+      <div className="flex flex-1 flex-col gap-1 p-2 sm:gap-1.5 sm:p-3">
         {ownerName ? (
           ownerHref ? (
             <Link
@@ -249,7 +249,7 @@ export function ListingCard({
           )
         ) : null}
         {!stats ? (
-          <div className="mt-0 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:gap-x-2 sm:text-[11px]">
+          <div className="mt-0 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:gap-x-1.5 sm:text-[10px]">
             {cityText ? <span>{cityText}</span> : null}
             {!hideCategoryAndYear && listing.vehicle_year != null ? (
               <>
@@ -261,7 +261,7 @@ export function ListingCard({
             ) : null}
           </div>
         ) : stats && !cityOnStatsRow ? (
-          <div className="mt-0 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:gap-x-2 sm:text-[11px]">
+          <div className="mt-0 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:gap-x-1.5 sm:text-[10px]">
             {cityText ? <span>{cityText}</span> : null}
             {!hideCategoryAndYear && listing.vehicle_year != null ? (
               <>
@@ -273,7 +273,7 @@ export function ListingCard({
             ) : null}
           </div>
         ) : !hideCategoryAndYear && listing.vehicle_year != null ? (
-          <div className="mt-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:text-[11px]">
+          <div className="mt-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:text-[10px]">
             {String(listing.vehicle_year)}
           </div>
         ) : null}
