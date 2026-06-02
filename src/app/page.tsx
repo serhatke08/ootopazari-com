@@ -18,7 +18,8 @@ import {
 import {
   fetchHomeListingsFeed,
   HOME_LISTINGS_PAGE_SIZE,
-  type HomeListingsFeedFilters,
+  homeListingsFeedHasFilters,
+  resolveHomeListingsFeedFilters,
 } from "@/lib/home-listings-feed";
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeSidebar } from "@/components/HomeSidebar";
@@ -48,12 +49,6 @@ export const metadata: Metadata = {
   },
 };
 
-function parseNum(s: string | undefined): number | undefined {
-  if (s == null || s === "") return undefined;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : undefined;
-}
-
 export default async function AnaSayfa({
   searchParams,
 }: {
@@ -82,54 +77,29 @@ export default async function AnaSayfa({
     return Array.isArray(v) ? v[0] : v;
   };
 
-  const categoryId = get("category_id");
-  const cityId = get("city_id");
-  const vehicleBrandId = get("vehicle_brand_id");
-  const minPrice = parseNum(get("min_price"));
-  const maxPrice = parseNum(get("max_price"));
-  const minYear = parseNum(get("min_year"));
-  const maxYear = parseNum(get("max_year"));
   const q = get("q")?.trim() ?? "";
-  const vehicleModel = get("vehicle_model")?.trim() ?? "";
-  const vehicleBrandModelId = get("vehicle_brand_model_id")?.trim() ?? "";
 
   const directListingNo = listingNumberFromSearchQuery(q);
   if (directListingNo) {
     redirect(`/ilan/${directListingNo}`);
   }
 
-  const hasListFilters = !!(
-    categoryId ||
-    cityId ||
-    vehicleBrandId ||
-    vehicleBrandModelId ||
-    minPrice != null ||
-    maxPrice != null ||
-    minYear != null ||
-    maxYear != null ||
-    q ||
-    vehicleModel
-  );
-
   const supabase = await createSupabaseServerClient();
+  const listFilters = await resolveHomeListingsFeedFilters(supabase, (k) =>
+    get(k)
+  );
+  const hasListFilters = homeListingsFeedHasFilters(listFilters);
+
+  const categoryId = listFilters.categoryId;
+  const cityId = listFilters.cityId;
+  const vehicleBrandId = listFilters.vehicleBrandId;
+
   const [categories, cities] = await Promise.all([
     fetchCategories(supabase),
     fetchCities(supabase),
   ]);
   const catMap = buildCategoryMap(categories);
   const cityMap = buildCityMap(cities);
-
-  const listFilters: HomeListingsFeedFilters = {
-    categoryId: categoryId || undefined,
-    cityId: cityId || undefined,
-    vehicleBrandId: vehicleBrandId || undefined,
-    minPrice,
-    maxPrice,
-    minYear,
-    maxYear,
-    q: q || undefined,
-    vehicleModel: vehicleModel || undefined,
-  };
 
   if (!hasListFilters) {
     const { items, total, loggedIn } = await fetchHomeListingsFeed(
@@ -246,14 +216,12 @@ export default async function AnaSayfa({
               {vehicleBrandId && brandMap.get(vehicleBrandId)?.name
                 ? ` · ${brandMap.get(vehicleBrandId)?.name}`
                 : ""}
-              {vehicleBrandModelId && vehicleModel
-                ? ` · seri: ${vehicleModel}`
-                : vehicleBrandModelId
-                  ? " · seri filtresi"
-                  : vehicleModel
-                    ? ` · model: ${vehicleModel}`
-                    : ""}
-              {q ? ` · “${q}”` : ""}
+              {listFilters.vehicleModel
+                ? ` · ${listFilters.vehicleModel}`
+                : ""}
+              {listFilters.bodyType ? ` · ${listFilters.bodyType}` : ""}
+              {listFilters.vehicleEnginePackageId ? " · paket filtresi" : ""}
+              {listFilters.q ? ` · “${listFilters.q}”` : ""}
             </p>
 
             {items.length === 0 ? (

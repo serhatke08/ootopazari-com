@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   sortListingsByFeedNewest,
 } from "@/lib/listing-feature-boost";
+import { fetchBrandModels } from "@/lib/vehicle-hierarchy";
 
 /** listings satırı + olası join — şema geniş; fazladan alanları yok sayarız */
 export type ListingRow = Record<string, unknown> & {
@@ -18,6 +19,8 @@ export type ListingRow = Record<string, unknown> & {
   category_id?: string | null;
   vehicle_brand_id?: string | null;
   vehicle_model?: string | null;
+  body_type?: string | null;
+  vehicle_engine_package_id?: string | null;
   vehicle_year?: number | null;
   moderation_status?: string | null;
   created_at?: string | null;
@@ -64,6 +67,8 @@ const LISTING_SELECT = [
   "category_id",
   "vehicle_brand_id",
   "vehicle_model",
+  "body_type",
+  "vehicle_engine_package_id",
   "vehicle_year",
   "fuel_type",
   "transmission_type",
@@ -268,6 +273,12 @@ export type ListingListParams = {
   vehicleBrandId?: string;
   /** `listings.vehicle_model` üzerinde kısmi eşleşme (seri adı / kodu) */
   vehicleModel?: string;
+  /** `listings.body_type` — kasa adı */
+  bodyType?: string;
+  /** Tek paket filtresi */
+  vehicleEnginePackageId?: string;
+  /** Motor altındaki tüm paketler (engine seçili, paket seçili değil) */
+  vehicleEnginePackageIds?: string[];
   minPrice?: number;
   maxPrice?: number;
   minYear?: number;
@@ -292,6 +303,20 @@ function applyListingListFilters(
       .replace(/%/g, "\\%")
       .replace(/_/g, "\\_");
     query = query.ilike("vehicle_model", `%${esc}%`);
+  }
+  if (params.bodyType?.trim()) {
+    query = query.eq("body_type", params.bodyType.trim());
+  }
+  if (params.vehicleEnginePackageId?.trim()) {
+    query = query.eq(
+      "vehicle_engine_package_id",
+      params.vehicleEnginePackageId.trim()
+    );
+  } else if (params.vehicleEnginePackageIds?.length) {
+    query = query.in(
+      "vehicle_engine_package_id",
+      params.vehicleEnginePackageIds
+    );
   }
   if (params.minPrice != null) query = query.gte("price", params.minPrice);
   if (params.maxPrice != null) query = query.lte("price", params.maxPrice);
@@ -652,41 +677,37 @@ export function normalizeListingModelKey(s: string | null | undefined): string {
 }
 
 /**
- * Seçili kategori + marka için ilanlardaki `vehicle_model` alanına göre sayım
- * (şema `vehicle_model` string tutuyorsa model satırıyla eşleştirilebilir).
- */
-/**
- * Kategori + marka için `listings.vehicle_brand_model_id` dağılımı (seri rozetleri).
+ * Kategori + marka için model satırı id → ilan sayısı.
+ * `listings` tablosunda FK yok; `vehicle_model` metni model adıyla eşleştirilir.
  */
 export async function fetchApprovedListingCountsByVehicleBrandModelId(
   supabase: SupabaseClient,
   options: { categoryId: string; vehicleBrandId: string }
 ): Promise<Map<string, number>> {
+  const models = await fetchBrandModels(supabase, options.vehicleBrandId);
+  if (models.length === 0) return new Map();
+
+  const byModelText = await fetchApprovedListingCountsByVehicleModel(
+    supabase,
+    options
+  );
   const map = new Map<string, number>();
-  const pageSize = 1000;
-  let from = 0;
 
-  for (;;) {
-    const { data, error } = await supabase
-      .from("listings")
-      .select("vehicle_brand_model_id")
-      .eq("moderation_status", "approved")
-      .eq("category_id", options.categoryId)
-      .eq("vehicle_brand_id", options.vehicleBrandId)
-      .range(from, from + pageSize - 1);
-
-    if (error) {
-      console.warn("listing counts by vehicle_brand_model_id:", error.message);
-      return map;
+  for (const model of models) {
+    const needle = normalizeListingModelKey(model.name ?? model.code);
+    if (!needle) continue;
+    let count = 0;
+    for (const [listingKey, c] of byModelText) {
+      if (
+        listingKey === needle ||
+        listingKey.startsWith(`${needle} `) ||
+        listingKey.includes(` ${needle} `) ||
+        listingKey.endsWith(` ${needle}`)
+      ) {
+        count += c;
+      }
     }
-    const rows = (data ?? []) as { vehicle_brand_model_id?: string | null }[];
-    for (const row of rows) {
-      const key = row.vehicle_brand_model_id;
-      if (key == null || key === "") continue;
-      map.set(key, (map.get(key) ?? 0) + 1);
-    }
-    if (rows.length < pageSize) break;
-    from += pageSize;
+    if (count > 0) map.set(model.id, count);
   }
   return map;
 }

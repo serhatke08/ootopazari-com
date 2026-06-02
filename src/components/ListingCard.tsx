@@ -238,6 +238,14 @@ export function ListingCard({
             {listing.title ?? "Başlıksız ilan"} (ilan no eksik)
           </p>
         )}
+        {isHomeGrid &&
+        listing.vehicle_model != null &&
+        String(listing.vehicle_model).trim() !== "" &&
+        String(listing.vehicle_model).trim() !== "—" ? (
+          <p className="line-clamp-1 text-[10px] font-medium text-zinc-500 sm:text-[11px]">
+            {String(listing.vehicle_model).trim()}
+          </p>
+        ) : null}
         {!isHomeGrid ? (
           listingId ? (
             <ListingPriceDisplay

@@ -30,6 +30,15 @@ function filtersToQuery(filters: HomeListingsFeedFilters | undefined): string {
   if (filters.maxYear != null) p.set("max_year", String(filters.maxYear));
   if (filters.q) p.set("q", filters.q);
   if (filters.vehicleModel) p.set("vehicle_model", filters.vehicleModel);
+  if (filters.vehicleBrandModelId) {
+    p.set("vehicle_brand_model_id", filters.vehicleBrandModelId);
+  }
+  if (filters.bodyType) p.set("body_type", filters.bodyType);
+  if (filters.bodyStyleId) p.set("body_style_id", filters.bodyStyleId);
+  if (filters.engineId) p.set("engine_id", filters.engineId);
+  if (filters.vehicleEnginePackageId) {
+    p.set("vehicle_engine_package_id", filters.vehicleEnginePackageId);
+  }
   const qs = p.toString();
   return qs ? `&${qs}` : "";
 }

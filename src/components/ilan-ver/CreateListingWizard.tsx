@@ -815,6 +815,9 @@ export function CreateListingWizard({
       base.color = color.trim() || null;
       base.body_type = bodyTypeForListing;
       base.drive_type = driveType.trim() || null;
+      if (!bodyOther && !engineOther && !packageOther && packageId) {
+        base.vehicle_engine_package_id = packageId;
+      }
       base.has_expertise = hasExpertise;
       base.is_damaged = isDamagedFinal;
       base.is_tradeable = isTradeable;

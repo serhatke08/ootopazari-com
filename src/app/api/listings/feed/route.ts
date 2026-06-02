@@ -3,7 +3,7 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import {
   fetchHomeListingsFeed,
   HOME_LISTINGS_PAGE_SIZE,
-  type HomeListingsFeedFilters,
+  resolveHomeListingsFeedFilters,
 } from "@/lib/home-listings-feed";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -11,24 +11,6 @@ function parseNum(s: string | null): number | undefined {
   if (s == null || s === "") return undefined;
   const n = Number(s);
   return Number.isFinite(n) ? n : undefined;
-}
-
-function filtersFromSearchParams(
-  sp: URLSearchParams
-): HomeListingsFeedFilters {
-  const q = sp.get("q")?.trim();
-  const vehicleModel = sp.get("vehicle_model")?.trim();
-  return {
-    categoryId: sp.get("category_id")?.trim() || undefined,
-    cityId: sp.get("city_id")?.trim() || undefined,
-    vehicleBrandId: sp.get("vehicle_brand_id")?.trim() || undefined,
-    minPrice: parseNum(sp.get("min_price")),
-    maxPrice: parseNum(sp.get("max_price")),
-    minYear: parseNum(sp.get("min_year")),
-    maxYear: parseNum(sp.get("max_year")),
-    q: q || undefined,
-    vehicleModel: vehicleModel || undefined,
-  };
 }
 
 export async function GET(req: Request) {
@@ -46,12 +28,15 @@ export async function GET(req: Request) {
 
   try {
     const supabase = await createSupabaseServerClient();
+    const filters = await resolveHomeListingsFeedFilters(supabase, (key) =>
+      sp.get(key)?.trim() || undefined
+    );
     const { items, total, loggedIn } = await fetchHomeListingsFeed(
       supabase,
       env,
       page,
       pageSize,
-      filtersFromSearchParams(sp)
+      filters
     );
 
     return NextResponse.json({

@@ -69,25 +69,18 @@ function brandListRowClass(active: boolean, compact?: boolean) {
   ].join(" ");
 }
 
-function modelListRowClass(active: boolean, compact?: boolean) {
-  const ring = compact ? "ring-1 ring-amber-400/70" : "ring-2 ring-amber-400/70";
-  const base = compact
-    ? "flex w-full min-w-0 items-center justify-between gap-1.5 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold leading-snug transition"
-    : "flex w-full min-w-0 items-center justify-between gap-2 rounded-md border px-2.5 py-2 text-left text-xs font-semibold leading-snug transition";
-  return [
-    base,
-    active
-      ? `border-amber-500 bg-[#ffcc00] text-zinc-900 shadow-sm ${ring}`
-      : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50",
-  ].join(" ");
-}
-
 function sectionTitle(text: string) {
   return (
     <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-600">
       {text}
     </p>
   );
+}
+
+function selectClass(compact?: boolean) {
+  return compact
+    ? "w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-[11px] font-medium text-zinc-800"
+    : "w-full rounded-md border border-zinc-300 bg-white px-2.5 py-2 text-xs font-medium text-zinc-800";
 }
 
 function rowLabel(row: IdNameRow): string {
@@ -235,6 +228,9 @@ function VehicleCascadeSidebarInner({
     const cid = searchParams.get("category_id");
     const bid = searchParams.get("vehicle_brand_id");
     const mid = searchParams.get("vehicle_brand_model_id");
+    const bsid = searchParams.get("body_style_id");
+    const eid = searchParams.get("engine_id");
+    const pkid = searchParams.get("vehicle_engine_package_id");
     if (cid) {
       setCategoryId(cid);
       setExpandedCategoryId(cid);
@@ -245,6 +241,15 @@ function VehicleCascadeSidebarInner({
     }
     if (mid) {
       setModelId(mid);
+    }
+    if (bsid) {
+      setBodyStyleId(bsid);
+    }
+    if (eid) {
+      setEngineId(eid);
+    }
+    if (pkid) {
+      setPackageId(pkid);
     }
   }, [pathname, searchParams]);
 
@@ -483,18 +488,17 @@ function VehicleCascadeSidebarInner({
       const model = allModelsForNav.find((m) => m.id === mid);
       if (mid) {
         p.set("vehicle_brand_model_id", mid);
-        const label = (model?.name ?? model?.code ?? "").trim();
-        if (label) p.set("vehicle_model", label);
+        const modelLabel = (model?.name ?? model?.code ?? "").trim();
+        if (modelLabel) p.set("vehicle_model", modelLabel);
       }
 
-      const extra: string[] = [];
       const bs = bodyStyles.find((x) => x.id === bsid);
-      if (bs?.name?.trim()) extra.push(bs.name.trim());
-      const eng = engines.find((x) => x.id === eid);
-      if (eng?.name?.trim()) extra.push(eng.name.trim());
-      const pk = packages.find((x) => x.id === pkid);
-      if (pk?.name?.trim()) extra.push(pk.name.trim());
-      if (extra.length) p.set("q", extra.join(" "));
+      if (bsid) p.set("body_style_id", bsid);
+      if (bs?.name?.trim()) p.set("body_type", bs.name.trim());
+
+      if (eid) p.set("engine_id", eid);
+
+      if (pkid) p.set("vehicle_engine_package_id", pkid);
 
       const qs = p.toString();
       router.push(qs ? `/?${qs}` : "/");
@@ -685,112 +689,117 @@ function VehicleCascadeSidebarInner({
 
                   {panelOpen && brandId === b.id ? (
                     <div className="mt-2 space-y-3 rounded-md border border-zinc-200 bg-white p-2">
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between gap-2 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1.5 text-[11px] font-semibold text-zinc-800 hover:border-[#ffcc00] hover:bg-amber-50/60"
+                        onClick={() => {
+                          setModelId("");
+                          resetBelowModel();
+                          navigateToListings({
+                            modelId: "",
+                            bodyStyleId: "",
+                            engineId: "",
+                            packageId: "",
+                          });
+                        }}
+                      >
+                        <span>Tüm {title} ilanları</span>
+                        {listingCountBadge(brandCounts.get(b.id) ?? 0, compact)}
+                      </button>
+
                       {sectionTitle("Model")}
-                      <ul className="flex flex-col gap-1">
-                        <li className="min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setModelId("");
-                              resetBelowModel();
-                              navigateToListings({ modelId: "", bodyStyleId: "", engineId: "", packageId: "" });
-                            }}
-                            className={modelListRowClass(!modelId, compact)}
-                          >
-                            <span className="min-w-0 flex-1 truncate text-left">
-                              Tüm {title} ilanları
-                            </span>
-                            {listingCountBadge(brandCounts.get(b.id) ?? 0, compact)}
-                          </button>
-                        </li>
-                        {selectableModels.map((m) => {
-                          const mActive = modelId === m.id;
-                          const mCnt =
-                            seriesIdCounts.get(m.id) ??
-                            modelNameCounts.get(
-                              normalizeListingModelKey(rowLabel(m))
-                            ) ??
-                            0;
-                          return (
-                            <li key={m.id} className="min-w-0">
-                              <button
-                                type="button"
-                                title={rowLabel(m)}
-                                onClick={() => {
-                                  setModelId(m.id);
-                                  resetBelowModel();
-                                }}
-                                className={modelListRowClass(mActive, compact)}
-                              >
-                                <span className="min-w-0 flex-1 truncate text-left">
-                                  {rowLabel(m)}
-                                </span>
-                                {listingCountBadge(mCnt, compact)}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      {selectableModels.length === 0 ? (
+                        <p className="text-[11px] text-zinc-500">Model yükleniyor…</p>
+                      ) : (
+                        <select
+                          className={selectClass(compact)}
+                          value={modelId}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setModelId(v);
+                            resetBelowModel();
+                          }}
+                        >
+                          <option value="">Model seçin</option>
+                          {selectableModels.map((m) => {
+                            const mCnt =
+                              seriesIdCounts.get(m.id) ??
+                              modelNameCounts.get(
+                                normalizeListingModelKey(rowLabel(m))
+                              ) ??
+                              0;
+                            return (
+                              <option key={m.id} value={m.id}>
+                                {rowLabel(m)}
+                                {mCnt > 0 ? ` (${formatListingCount(mCnt)})` : ""}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      )}
 
                       {modelId ? (
                         <div className="space-y-3 border-t border-zinc-100 pt-3">
                           {sectionTitle("Kasa")}
                           {loadingBodyStyles ? (
                             <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
-                          ) : (
-                            <ul className="flex flex-col gap-1">
-                              {bodyStyles.map((bs) => (
-                                <li key={bs.id} className="min-w-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setBodyStyleId(bs.id);
-                                      resetBelowBody();
-                                    }}
-                                    className={modelListRowClass(bodyStyleId === bs.id, compact)}
-                                  >
-                                    <span className="min-w-0 flex-1 truncate text-left">
-                                      {rowLabel(bs)}
-                                    </span>
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          {!loadingBodyStyles && bodyStyles.length === 0 ? (
+                          ) : bodyStyles.length === 0 ? (
                             <button
                               type="button"
-                              className="mt-1 w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                              className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
                               onClick={() => navigateToListings({ packageId: "" })}
                             >
                               İlanları göster
                             </button>
-                          ) : null}
+                          ) : (
+                            <select
+                              className={selectClass(compact)}
+                              value={bodyStyleId}
+                              onChange={(e) => {
+                                setBodyStyleId(e.target.value);
+                                resetBelowBody();
+                              }}
+                            >
+                              <option value="">Kasa seçin</option>
+                              {bodyStyles.map((bs) => (
+                                <option key={bs.id} value={bs.id}>
+                                  {rowLabel(bs)}
+                                </option>
+                              ))}
+                            </select>
+                          )}
 
                           {bodyStyleId ? (
                             <div className="space-y-3 border-t border-zinc-100 pt-3">
                               {sectionTitle("Motor")}
                               {loadingEngines ? (
                                 <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
+                              ) : engines.length === 0 ? (
+                                <button
+                                  type="button"
+                                  className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                                  onClick={() =>
+                                    navigateToListings({ engineId: "", packageId: "" })
+                                  }
+                                >
+                                  İlanları göster
+                                </button>
                               ) : (
-                                <ul className="flex flex-col gap-1">
+                                <select
+                                  className={selectClass(compact)}
+                                  value={engineId}
+                                  onChange={(e) => {
+                                    setEngineId(e.target.value);
+                                    resetBelowEngine();
+                                  }}
+                                >
+                                  <option value="">Motor seçin</option>
                                   {engines.map((eng) => (
-                                    <li key={eng.id} className="min-w-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEngineId(eng.id);
-                                          resetBelowEngine();
-                                        }}
-                                        className={modelListRowClass(engineId === eng.id, compact)}
-                                      >
-                                        <span className="min-w-0 flex-1 truncate text-left">
-                                          {rowLabel(eng)}
-                                        </span>
-                                      </button>
-                                    </li>
+                                    <option key={eng.id} value={eng.id}>
+                                      {rowLabel(eng)}
+                                    </option>
                                   ))}
-                                </ul>
+                                </select>
                               )}
 
                               {engineId ? (
@@ -798,35 +807,45 @@ function VehicleCascadeSidebarInner({
                                   {sectionTitle("Paket")}
                                   {loadingPackages ? (
                                     <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
-                                  ) : packages.length > 0 ? (
-                                    <ul className="flex flex-col gap-1">
-                                      {packages.map((pk) => (
-                                        <li key={pk.id} className="min-w-0">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setPackageId(pk.id);
-                                              navigateToListings({ packageId: pk.id });
-                                            }}
-                                            className={modelListRowClass(packageId === pk.id, compact)}
-                                          >
-                                            <span className="min-w-0 flex-1 truncate text-left">
-                                              {rowLabel(pk)}
-                                            </span>
-                                          </button>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  ) : (
+                                  ) : packages.length === 0 ? (
                                     <button
                                       type="button"
                                       className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                                      onClick={() => navigateToListings({ packageId: "" })}
+                                      onClick={() =>
+                                        navigateToListings({ packageId: "" })
+                                      }
                                     >
                                       İlanları göster
                                     </button>
+                                  ) : (
+                                    <select
+                                      className={selectClass(compact)}
+                                      value={packageId}
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        setPackageId(v);
+                                        if (v) navigateToListings({ packageId: v });
+                                      }}
+                                    >
+                                      <option value="">Paket seçin</option>
+                                      {packages.map((pk) => (
+                                        <option key={pk.id} value={pk.id}>
+                                          {rowLabel(pk)}
+                                        </option>
+                                      ))}
+                                    </select>
                                   )}
                                 </div>
+                              ) : null}
+
+                              {modelId && !packageId ? (
+                                <button
+                                  type="button"
+                                  className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                                  onClick={() => navigateToListings()}
+                                >
+                                  İlanları göster
+                                </button>
                               ) : null}
                             </div>
                           ) : null}

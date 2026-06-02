@@ -395,6 +395,49 @@ export async function fetchPackagesForEngine(
   return [];
 }
 
+/** Tek satır adı (kasa / motor / paket / model). */
+export async function fetchHierarchyRowName(
+  supabase: SupabaseClient,
+  table:
+    | "vehicle_brand_models"
+    | "vehicle_model_body_styles"
+    | "vehicle_body_style_engines"
+    | "vehicle_engine_packages",
+  id: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from(table)
+    .select("name,code")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data || typeof data !== "object") return null;
+  const r = data as { name?: string | null; code?: string | null };
+  return r.name?.trim() || r.code?.trim() || null;
+}
+
+/** Motor altındaki paket id’leri (`listings.vehicle_engine_package_id` filtresi). */
+export async function fetchPackageIdsForEngine(
+  supabase: SupabaseClient,
+  engineId: string
+): Promise<string[]> {
+  const fkColumns = [
+    "engine_id",
+    "body_style_engine_id",
+    "vehicle_body_style_engine_id",
+  ] as const;
+
+  for (const column of fkColumns) {
+    const { data, error } = await supabase
+      .from("vehicle_engine_packages")
+      .select("id")
+      .eq(column, engineId);
+    if (!error && data?.length) {
+      return (data as { id: string }[]).map((r) => r.id).filter(Boolean);
+    }
+  }
+  return [];
+}
+
 /** İlan formunda motor seçilince yakıt / güç otomatik doldurmak için. */
 export async function fetchBodyStyleEngineRow(
   supabase: SupabaseClient,
