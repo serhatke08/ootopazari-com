@@ -141,6 +141,8 @@ export function SiteHeaderClient({
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
   const notifRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const [sessionEmail, setSessionEmail] = useState<string | null>(email);
@@ -172,6 +174,25 @@ export function SiteHeaderClient({
     setDrawerOpen(false);
     setNotifOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY < 10) {
+        setHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        setHeaderVisible(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        setHeaderVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const loggedIn = !!sessionEmail;
   const unreadMessageCount = useUnreadMessageCount(hasEnv, loggedIn);
@@ -252,7 +273,11 @@ export function SiteHeaderClient({
         unreadMessageCount={unreadMessageCount}
       />
 
-      <header className="sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm">
+      <header
+        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm transition-transform duration-300 ${
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         <div className="mx-auto grid max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <HamburgerButton
