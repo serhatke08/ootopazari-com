@@ -209,36 +209,32 @@ export function ListingCard({
             {categoryName}
           </p>
         ) : null}
-        <div className="flex items-center justify-between gap-2">
-          {href ? (
-            <Link
-              href={href}
-              className="line-clamp-2 min-h-[1.85rem] min-w-0 flex-1 text-[11px] font-semibold leading-snug text-zinc-900 sm:min-h-[2.2rem] sm:text-[13px]"
-            >
-              {listing.title ?? "Başlıksız ilan"}
-            </Link>
-          ) : (
-            <p className="line-clamp-2 min-h-[1.85rem] min-w-0 flex-1 text-[11px] font-semibold text-zinc-500 sm:min-h-[2.2rem] sm:text-[13px]">
-              {listing.title ?? "Başlıksız ilan"} (ilan no eksik)
-            </p>
-          )}
-          {isHomeGrid && listingId ? (
-            <div className="shrink-0">
-              <ListingPriceDisplay
-                listingId={listingId}
-                priceLabel={price}
-                summary={ratingSummary}
-                loggedIn={loggedIn}
-                priceClassName="text-[10px] font-bold text-emerald-700 tabular-nums leading-tight sm:text-[11px]"
-                dotSize="sm"
-              />
-            </div>
-          ) : isHomeGrid ? (
-            <p className="shrink-0 text-[10px] font-bold text-emerald-700 tabular-nums leading-tight sm:text-[11px]">
-              {price}
-            </p>
-          ) : null}
-        </div>
+        {href ? (
+          <Link
+            href={href}
+            className="line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold leading-snug text-zinc-900 sm:min-h-[2.2rem] sm:text-[13px]"
+          >
+            {listing.title ?? "Başlıksız ilan"}
+          </Link>
+        ) : (
+          <p className="line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold text-zinc-500 sm:min-h-[2.2rem] sm:text-[13px]">
+            {listing.title ?? "Başlıksız ilan"} (ilan no eksik)
+          </p>
+        )}
+        {isHomeGrid && listingId ? (
+          <ListingPriceDisplay
+            listingId={listingId}
+            priceLabel={price}
+            summary={ratingSummary}
+            loggedIn={loggedIn}
+            priceClassName="text-[10px] font-bold text-emerald-700 tabular-nums leading-tight sm:text-[11px]"
+            dotSize="sm"
+          />
+        ) : isHomeGrid ? (
+          <p className="text-[10px] font-bold text-emerald-700 tabular-nums leading-tight sm:text-[11px]">
+            {price}
+          </p>
+        ) : null}
         {!isHomeGrid ? (
           listingId ? (
             <ListingPriceDisplay
