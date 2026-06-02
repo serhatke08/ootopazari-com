@@ -116,7 +116,7 @@ export function ListingCard({
           unoptimized={imgUnoptimized}
           className={
             isHomeGrid
-              ? "object-cover object-center transition duration-300 group-hover:opacity-[0.97]"
+              ? "object-contain object-center transition duration-300 group-hover:opacity-[0.97]"
               : "object-contain object-center scale-[1.14] transition duration-300 group-hover:opacity-[0.97]"
           }
           sizes="(max-width: 639px) 50vw, (max-width: 1279px) 25vw, 20vw"
