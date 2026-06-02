@@ -48,7 +48,7 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
 
   return (
     <footer
-      className="site-footer mt-auto w-full border-t border-amber-400/80 bg-[#ffcc00] py-10 sm:py-12"
+      className="site-footer mt-auto w-full border-t border-amber-400/80 bg-[#ffcc00] py-8 sm:py-9"
       style={{ backgroundColor: "#ffcc00" }}
     >
       <div className="site-footer-inner">
