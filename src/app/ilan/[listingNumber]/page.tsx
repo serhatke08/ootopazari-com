@@ -331,7 +331,11 @@ export default async function IlanDetayPage({ params }: Props) {
     fetchCities(supabase),
     fetchCategories(supabase),
   ]);
-  if (!detail) notFound();
+  
+  if (!detail) {
+    // İlan bulunamadı - ana sayfaya yönlendir (SEO için daha iyi)
+    redirect("/?not_found=1");
+  }
 
   const { listing, access: detailAccess } = detail;
   const expectedSeoPath = buildListingSeoPath(
