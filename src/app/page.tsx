@@ -22,7 +22,6 @@ import {
 } from "@/lib/home-listings-feed";
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeSidebar } from "@/components/HomeSidebar";
-import { HomeSeoSection } from "@/components/HomeSeoSection";
 import { TopCitySelect } from "@/components/TopCitySelect";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
@@ -193,7 +192,6 @@ export default async function AnaSayfa({
             </div>
           </div>
         </div>
-        <HomeSeoSection />
       </>
     );
   }
