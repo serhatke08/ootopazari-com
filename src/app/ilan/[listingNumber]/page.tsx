@@ -39,7 +39,6 @@ import {
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import { SuspendListingButton } from "@/components/SuspendListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
-import { ListingMobileContactBar } from "@/components/ListingMobileContactBar";
 import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
@@ -541,8 +540,6 @@ export default async function IlanDetayPage({ params }: Props) {
     listing.contact_via_phone === true &&
     detailAccess === "public";
 
-  const showMobileContactBar = showMessageButton || showPhone;
-
   const suspensionReason =
     listing.suspension_reason != null
       ? String(listing.suspension_reason).trim()
@@ -551,10 +548,8 @@ export default async function IlanDetayPage({ params }: Props) {
   return (
     <article
       className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-4 pb-12 pt-4 text-black sm:px-6 ${
-        showMobileContactBar
-          ? "max-md:pb-[calc(8.75rem+env(safe-area-inset-bottom,0px))]"
-          : "max-md:pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]"
-      } ${isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""}`}
+        isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""
+      }`}
     >
       {id && !isSuspendedDetailView ? (
         <ListingViewTracker listingId={id} />
@@ -851,17 +846,21 @@ export default async function IlanDetayPage({ params }: Props) {
                   </div>
                 ) : null}
                 {showMessageButton && id ? (
-                  <div className="listing-contact-actions mt-3 flex flex-col gap-3 max-md:hidden">
-                    <StartConversationButton
-                      listingId={id}
-                      ownerUserId={sellerUserId}
-                    />
+                  <div className="mt-3 flex gap-2">
+                    <div className={showPhone ? "min-w-0 flex-1" : "w-full"}>
+                      <StartConversationButton
+                        listingId={id}
+                        ownerUserId={sellerUserId}
+                      />
+                    </div>
                     {showPhone ? (
-                      <ListingContactPhone phone={contactPhone} />
+                      <div className="min-w-0 flex-1">
+                        <ListingContactPhone phone={contactPhone} />
+                      </div>
                     ) : null}
                   </div>
                 ) : showPhone ? (
-                  <div className="listing-contact-actions mt-3 max-md:hidden">
+                  <div className="mt-3">
                     <ListingContactPhone phone={contactPhone} />
                   </div>
                 ) : null}
@@ -891,16 +890,6 @@ export default async function IlanDetayPage({ params }: Props) {
           </div>
         </div>
       </div>
-
-      {showMobileContactBar && id ? (
-        <ListingMobileContactBar
-          listingId={id}
-          ownerUserId={sellerUserId}
-          showMessage={showMessageButton}
-          showPhone={showPhone}
-          phone={contactPhone}
-        />
-      ) : null}
 
       {expertizPanels ? (
         <section className="mt-10">
