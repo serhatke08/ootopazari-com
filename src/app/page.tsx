@@ -168,7 +168,7 @@ export default async function AnaSayfa({
         >
           <TopCitySelect cities={cities} />
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
-            <aside className="hidden w-full shrink-0 lg:flex lg:w-[min(240px,20vw)] lg:min-w-[200px] lg:max-w-[260px] lg:flex-col lg:self-start">
+            <aside className="home-category-dealers-panel hidden w-full shrink-0 overflow-visible lg:sticky lg:top-[5.5rem] lg:flex lg:w-[min(240px,20vw)] lg:min-w-[200px] lg:max-w-[260px] lg:flex-col lg:self-start">
               <HomeSidebar categories={categories} />
             </aside>
 
@@ -225,7 +225,7 @@ export default async function AnaSayfa({
       >
         <TopCitySelect cities={cities} />
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
-          <aside className="hidden w-full shrink-0 lg:flex lg:w-[min(240px,20vw)] lg:min-w-[200px] lg:max-w-[260px] lg:flex-col lg:self-start">
+          <aside className="home-category-dealers-panel hidden w-full shrink-0 overflow-visible lg:sticky lg:top-[5.5rem] lg:flex lg:w-[min(240px,20vw)] lg:min-w-[200px] lg:max-w-[260px] lg:flex-col lg:self-start">
             <HomeSidebar categories={categories} />
           </aside>
 

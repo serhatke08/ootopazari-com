@@ -19,7 +19,19 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* Alt menü yalnızca mobil (<768px) */
+/* Ana sayfa sol kategori + bayi kısayolları — iç scroll yok */
+.home-category-dealers-panel {
+  overflow: visible;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.home-category-dealers-panel::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 @media (min-width: 48rem) {
   [data-mobile-bottom-nav="true"] {
     display: none !important;

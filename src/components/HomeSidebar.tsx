@@ -3,10 +3,11 @@ import type { CategoryRow } from "@/lib/listings-data";
 import { VehicleCascadeSidebar } from "@/components/VehicleCascadeSidebar";
 import { SidebarQuickLinks } from "@/components/SidebarQuickLinks";
 
+/** Ana sayfa sol sütun: kategori listesi + bayi kısayolları (scroll yok). */
 export function HomeSidebar({ categories }: { categories: CategoryRow[] }) {
   return (
-    <div className="w-full">
-      <div className="space-y-2">
+    <div className="home-category-dealers-panel w-full overflow-visible">
+      <div className="space-y-2 overflow-visible">
         <Suspense
           fallback={
             <div

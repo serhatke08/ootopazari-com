@@ -518,11 +518,11 @@ export function VehicleCascadeSidebar({
       className={
         fillColumn
           ? compact
-            ? "flex w-full min-h-0 flex-col gap-1.5"
-            : "flex w-full min-h-0 flex-col gap-2.5"
+            ? "flex w-full flex-col gap-1.5 overflow-visible"
+            : "flex w-full flex-col gap-2.5 overflow-visible"
           : compact
-            ? "w-full space-y-1.5"
-            : "w-full space-y-2"
+            ? "w-full space-y-1.5 overflow-visible"
+            : "w-full space-y-2 overflow-visible"
       }
     >
       {label("Kategori", compact)}
@@ -535,11 +535,11 @@ export function VehicleCascadeSidebar({
           className={
             fillColumn
               ? compact
-                ? "flex flex-col gap-2"
-                : "flex flex-col gap-3"
+                ? "flex flex-col gap-2 overflow-visible"
+                : "flex flex-col gap-3 overflow-visible"
               : compact
-                ? "flex flex-col gap-0.5"
-                : "flex flex-col gap-1"
+                ? "flex flex-col gap-0.5 overflow-visible"
+                : "flex flex-col gap-1 overflow-visible"
           }
         >
           {categorySlots.map((slot) => {
