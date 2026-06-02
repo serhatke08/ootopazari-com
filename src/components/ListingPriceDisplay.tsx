@@ -1,6 +1,8 @@
 "use client";
 
+import { ListingPriceHistoryButton } from "@/components/ListingPriceHistoryButton";
 import { ListingPriceRatingDot } from "@/components/ListingPriceRatingDot";
+import type { PriceHistoryEntry } from "@/lib/listing-price-history";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 
 type Props = {
@@ -9,7 +11,8 @@ type Props = {
   listingDate?: string | null;
   summary: PriceRatingSummary;
   loggedIn: boolean;
-  /** Kart görseli üzerinde beyaz metin */
+  priceHistory?: PriceHistoryEntry[];
+  showHistory?: boolean;
   overlay?: boolean;
   priceClassName?: string;
   popoverPlacement?: "above" | "below";
@@ -21,6 +24,8 @@ export function ListingPriceDisplay({
   listingDate,
   summary,
   loggedIn,
+  priceHistory = [],
+  showHistory = false,
   overlay = false,
   priceClassName,
   popoverPlacement = "above",
@@ -53,6 +58,13 @@ export function ListingPriceDisplay({
       <span className={priceCls}>{priceLabel}</span>
       {listingDate ? (
         <span className={dateCls}>{listingDate}</span>
+      ) : null}
+      {showHistory ? (
+        <ListingPriceHistoryButton
+          history={priceHistory}
+          popoverPlacement={popoverPlacement}
+          overlay={overlay}
+        />
       ) : null}
     </div>
   );

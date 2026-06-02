@@ -16,7 +16,8 @@ import {
   resolveListingCityDisplay,
 } from "@/lib/listings-data";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
-import { fetchPriceRatingSummary } from "@/lib/listing-price-ratings";
+import { fetchPriceRatingSummary, EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
+import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
 import {
@@ -381,7 +382,11 @@ export default async function IlanDetayPage({ params }: Props) {
 
   const priceRating = id
     ? await fetchPriceRatingSummary(supabase, id, viewer?.id ?? null)
-    : { average: null, count: 0, userRating: null };
+    : EMPTY_PRICE_RATING_SUMMARY;
+
+  const priceHistory = id
+    ? await fetchListingPriceHistory(supabase, id)
+    : [];
 
   const listingDateLabel = fmtListingDate(row.created_at);
   const priceLabel =
@@ -687,6 +692,8 @@ export default async function IlanDetayPage({ params }: Props) {
                     listingDate={listingDateLabel}
                     summary={priceRating}
                     loggedIn={!!viewer}
+                    showHistory
+                    priceHistory={priceHistory}
                     priceClassName="text-base font-bold tabular-nums text-black sm:text-lg"
                     popoverPlacement="below"
                   />

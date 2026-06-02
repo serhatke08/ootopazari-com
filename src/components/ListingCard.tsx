@@ -11,6 +11,7 @@ import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
+import { EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
 
 type Props = {
   listing: ListingRow;
@@ -55,12 +56,7 @@ export function ListingCard({
   ownerHref,
   priceRating,
 }: Props) {
-  const emptyRating: PriceRatingSummary = {
-    average: null,
-    count: 0,
-    userRating: null,
-  };
-  const ratingSummary = priceRating ?? emptyRating;
+  const ratingSummary = priceRating ?? EMPTY_PRICE_RATING_SUMMARY;
   const suspended =
     suspendedProp ?? isListingSuspended(listing);
   const cityText =

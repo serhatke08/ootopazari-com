@@ -5,6 +5,7 @@ import type { ListingPublicStats } from "@/lib/listing-stats";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import {
   fetchPriceRatingSummariesMap,
+  EMPTY_PRICE_RATING_SUMMARY,
   type PriceRatingSummary,
 } from "@/lib/listing-price-ratings";
 import {
@@ -102,11 +103,7 @@ function buildCardItems(
     const sid = listing.id ? statsMap.get(listing.id) : undefined;
     const ownerId = listing.user_id ? String(listing.user_id) : null;
     const owner = ownerId ? owners.get(ownerId) : undefined;
-    const emptyRating: PriceRatingSummary = {
-      average: null,
-      count: 0,
-      userRating: null,
-    };
+    const emptyRating = EMPTY_PRICE_RATING_SUMMARY;
     return {
       listing,
       categoryName,

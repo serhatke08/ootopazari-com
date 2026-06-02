@@ -175,6 +175,7 @@ export function ListingPriceRatingDot({
         <div className="mt-3 flex flex-col gap-2">
           {PRICE_RATING_OPTIONS.map((opt) => {
             const active = summary.userRating === opt.value;
+            const voteCount = summary.counts[opt.countKey];
             return (
               <button
                 key={opt.value}
@@ -191,11 +192,22 @@ export function ListingPriceRatingDot({
                   className="h-4 w-4 shrink-0 rounded-full"
                   style={{ backgroundColor: opt.color }}
                 />
-                <span className="text-black">{opt.label}</span>
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2 text-black">
+                  <span>{opt.label}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-black/45">
+                    {voteCount}
+                  </span>
+                </span>
               </button>
             );
           })}
         </div>
+        {summary.count > 0 ? (
+          <p className="mt-3 border-t border-black/10 pt-2 text-[11px] text-black/55">
+            Toplam {summary.count} oy · Makul {summary.counts.fair} · Biraz
+            pahalı {summary.counts.expensive} · Fahiş {summary.counts.exorbitant}
+          </p>
+        ) : null}
         {error ? (
           <p className="mt-2 text-xs text-red-600" role="alert">
             {error}
