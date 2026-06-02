@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getClientAuthUser } from "@/lib/supabase/auth-client";
 import { findConversationForListingAndPair } from "@/lib/messages";
 
 type Props = {
@@ -21,9 +22,7 @@ export function StartConversationButton({ listingId, ownerUserId }: Props) {
     setLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getClientAuthUser(supabase);
       if (!user) {
         const next = pathname || "/";
         router.push(`/giris?next=${encodeURIComponent(next)}`);
@@ -83,6 +82,8 @@ export function StartConversationButton({ listingId, ownerUserId }: Props) {
       }
 
       router.push(`/mesajlar/${convId}`);
+    } catch {
+      setError("Bağlantı kurulamadı. İnternet veya Supabase ayarlarını kontrol edin.");
     } finally {
       setLoading(false);
     }

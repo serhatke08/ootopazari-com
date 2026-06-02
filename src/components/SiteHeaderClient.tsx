@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import type { CategoryRow } from "@/lib/listings-data";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getClientAuthUser } from "@/lib/supabase/auth-client";
 import { HamburgerButton, LeftNavDrawer } from "@/components/LeftNavDrawer";
 import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
@@ -155,13 +156,7 @@ export function SiteHeaderClient({
     setNotifLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      let user: { id: string } | null = null;
-      try {
-        const authRes = await supabase.auth.getUser();
-        user = authRes.data.user ? { id: authRes.data.user.id } : null;
-      } catch {
-        user = null;
-      }
+      const user = await getClientAuthUser(supabase);
       if (!user) return;
       const { data } = await supabase
         .from("user_notifications")

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getClientAuthUser } from "@/lib/supabase/auth-client";
 
 function explainSupabaseError(e: unknown): string {
   if (e instanceof Error && e.message) return e.message;
@@ -95,9 +96,7 @@ export function FavoriteHeart({
     setPending(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getClientAuthUser(supabase);
       if (!user) {
         goLogin();
         return;

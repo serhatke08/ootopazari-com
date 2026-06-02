@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { countUnreadMessages } from "@/lib/messages";
 import { UNREAD_MESSAGES_REFRESH_EVENT } from "@/lib/unread-messages-events";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getClientAuthUser } from "@/lib/supabase/auth-client";
 
 /**
  * Giriş yapmış kullanıcı için okunmamış gelen mesaj sayısı (site geneli rozet).
@@ -30,9 +31,7 @@ export function useUnreadMessageCount(
 
     async function load() {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await getClientAuthUser(supabase);
         if (!user) {
           if (!cancelled) setCount(0);
           return;
@@ -40,7 +39,6 @@ export function useUnreadMessageCount(
         const n = await countUnreadMessages(supabase, user.id);
         if (!cancelled) setCount(n);
       } catch {
-        // Geçici ağ/Supabase kesintilerinde sessizce son değeri koru.
         if (!cancelled) setCount(0);
       }
     }
