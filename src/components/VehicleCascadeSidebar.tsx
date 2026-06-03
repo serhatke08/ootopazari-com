@@ -47,13 +47,13 @@ function label(text: string, compact?: boolean) {
 function categoryListRowClass(active: boolean, compact?: boolean) {
   const ring = compact ? "ring-1 ring-amber-400/70" : "ring-2 ring-amber-400/70";
   const base = compact
-    ? "flex w-full min-w-0 items-center justify-between gap-1.5 border px-2 py-1.5 text-left text-xs font-semibold transition"
-    : "flex w-full min-w-0 items-center justify-between gap-2 border px-2.5 py-2.5 text-left text-sm font-semibold transition";
+    ? "flex w-full min-w-0 items-center justify-between gap-1.5 px-2 py-1.5 text-left text-xs font-semibold transition"
+    : "flex w-full min-w-0 items-center justify-between gap-2 px-2.5 py-2.5 text-left text-sm font-semibold transition";
   return [
     base,
     active
-      ? `border-amber-500 bg-[#ffcc00] text-blue-900 shadow-sm ${ring}`
-      : "border-blue-500 bg-white text-blue-700 hover:border-blue-600 hover:bg-blue-50/40",
+      ? `bg-[#ffcc00] text-blue-900 shadow-sm ${ring}`
+      : "bg-white text-blue-700 hover:bg-blue-50/40",
   ].join(" ");
 }
 
@@ -645,172 +645,180 @@ function VehicleCascadeSidebarInner({
           Kategori listesi boş (Supabase `categories` tablosu).
         </p>
       ) : !categoryId ? (
-        <ul className={cascadeListClass(fillColumn, compact)}>
-          {categorySlots.map((slot) => {
-            const categoryOpen = expandedCategoryId === slot.id;
-            return (
-              <li key={slot.id} className="min-w-0">
-                <button
-                  type="button"
-                  aria-expanded={categoryOpen}
-                  onClick={() => {
-                    if (expandedCategoryId === slot.id) {
-                      setExpandedCategoryId(null);
-                      setCategoryId("");
-                      resetBelowCategory();
-                    } else {
-                      setExpandedCategoryId(slot.id);
-                      setCategoryId(slot.id);
-                      resetBelowCategory();
-                    }
-                  }}
-                  className={categoryListRowClass(categoryOpen, compact)}
-                >
-                  <span
-                    className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded ${
-                      compact ? "h-5 w-5" : "h-6 w-6"
-                    }`}
-                  >
-                    <FallbackImg
-                      primary={slot.icon}
-                      fallback={categoryIconFallbackUrl()}
-                      className={
-                        compact ? "h-5 w-5 object-contain" : "h-6 w-6 object-contain"
-                      }
-                      placeholder={
-                        <span className="text-[8px] font-bold text-zinc-500">
-                          {slot.label.slice(0, 2).toUpperCase()}
-                        </span>
-                      }
-                    />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-left">
-                    {slot.label}
-                  </span>
-                  {listingCountBadge(categoryCounts.get(slot.id) ?? 0, compact)}
-                  <span
-                    className={
-                      compact
-                        ? "shrink-0 text-[9px] text-zinc-400"
-                        : "shrink-0 text-[10px] text-zinc-400"
-                    }
-                    aria-hidden
-                  >
-                    {categoryOpen ? "▼" : "▶"}
-                  </span>
-                </button>
-
-                {categoryOpen && !categoryId ? (
-                  <div
-                    className={
-                      compact
-                        ? "mt-1 rounded-md border border-zinc-200 bg-zinc-50/90 p-1.5 shadow-sm"
-                        : "mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
-                    }
-                    id={`category-brands-${slot.id}`}
-                  >
-                    {sectionTitle("Marka")}
-                    {loadingBrands ? (
-                      <p className="mb-2 text-[11px] text-zinc-500">
-                        Markalar yükleniyor…
-                      </p>
-                    ) : brands.length === 0 ? (
-                      <p className="mb-2 text-[11px] text-zinc-500">
-                        Bu kategoride marka bulunamadı.
-                      </p>
-                    ) : (
-                      <ul
-                        className={
-                          compact ? "flex flex-col gap-0.5" : "flex flex-col gap-1"
-                        }
-                      >
-                        {brands.map((b) => {
-              const active = brandId === b.id;
-              const panelOpen = expandedBrandId === b.id;
-              const brandHint = [b.name, b.code].filter(Boolean).join(" ") || null;
-              const carLogo = getBrandLogoUrl(b.name ?? null, b.code ?? null);
-              const motoLogo = isMotoCategory
-                ? getMotorLogoUrl(b.name ?? null, b.code ?? null, brandHint)
-                : null;
-              const logoPrimary = isMotoCategory ? (motoLogo ?? carLogo) : carLogo;
-              const logoFallback =
-                isMotoCategory && motoLogo ? carLogo : null;
-              const title = b.name ?? b.code ?? b.id;
-
+        <div
+          className={
+            compact
+              ? "rounded-md border border-blue-500 bg-white p-1"
+              : "rounded-lg border border-blue-500 bg-white p-1.5"
+          }
+        >
+          <ul className={cascadeListClass(fillColumn, compact)}>
+            {categorySlots.map((slot) => {
+              const categoryOpen = expandedCategoryId === slot.id;
               return (
-                <li key={b.id} className="min-w-0">
+                <li key={slot.id} className="min-w-0">
                   <button
                     type="button"
-                    title={title}
+                    aria-expanded={categoryOpen}
                     onClick={() => {
-                      if (brandId !== b.id) {
-                        setBrandId(b.id);
-                        resetBelowBrand();
-                        setExpandedBrandId(b.id);
-                        /** Sayfa yenileme yok — önce modeller/seriler açılsın; filtre seri veya “Tümünü göster”de. */
-                        navigateToListings({ brandId: b.id, modelId: "", bodyStyleId: "", engineId: "", packageId: "" });
+                      if (expandedCategoryId === slot.id) {
+                        setExpandedCategoryId(null);
+                        setCategoryId("");
+                        resetBelowCategory();
                       } else {
-                        setExpandedBrandId((prev) =>
-                          prev === b.id ? null : b.id
-                        );
+                        setExpandedCategoryId(slot.id);
+                        setCategoryId(slot.id);
+                        resetBelowCategory();
                       }
                     }}
-                    className={brandListRowClass(active, compact)}
+                    className={categoryListRowClass(categoryOpen, compact)}
                   >
                     <span
-                      className={`flex shrink-0 items-center justify-center rounded ${
-                        compact ? "h-6 w-6" : "h-7 w-7"
-                      } ${active ? "bg-white" : "bg-white/90"}`}
+                      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded ${
+                        compact ? "h-5 w-5" : "h-6 w-6"
+                      }`}
                     >
                       <FallbackImg
-                        primary={logoPrimary}
-                        fallback={logoFallback}
+                        primary={slot.icon}
+                        fallback={categoryIconFallbackUrl()}
                         className={
                           compact ? "h-5 w-5 object-contain" : "h-6 w-6 object-contain"
                         }
                         placeholder={
-                          <span className="text-[9px] font-bold text-zinc-400">
-                            {(title.slice(0, 3) || "?").toUpperCase()}
+                          <span className="text-[8px] font-bold text-zinc-500">
+                            {slot.label.slice(0, 2).toUpperCase()}
                           </span>
                         }
                       />
                     </span>
-                    <span
-                      className={
-                        compact
-                          ? `min-w-0 flex-1 truncate text-left text-[10px] font-semibold leading-tight ${
-                              active ? "text-zinc-900" : "text-zinc-800"
-                            }`
-                          : `min-w-0 flex-1 truncate text-left text-[11px] font-semibold leading-tight ${
-                              active ? "text-zinc-900" : "text-zinc-800"
-                            }`
-                      }
-                    >
-                      {title}
+                    <span className="min-w-0 flex-1 truncate text-left">
+                      {slot.label}
                     </span>
-                    {listingCountBadge(brandCounts.get(b.id) ?? 0, compact)}
+                    {listingCountBadge(categoryCounts.get(slot.id) ?? 0, compact)}
                     <span
                       className={
                         compact
-                          ? "shrink-0 text-[8px] text-zinc-400"
-                          : "shrink-0 text-[9px] text-zinc-400"
+                          ? "shrink-0 text-[9px] text-zinc-400"
+                          : "shrink-0 text-[10px] text-zinc-400"
                       }
                       aria-hidden
                     >
-                      {panelOpen ? "▼" : "▶"}
+                      {categoryOpen ? "▼" : "▶"}
                     </span>
                   </button>
+
+                  {categoryOpen && !categoryId ? (
+                    <div
+                      className={
+                        compact
+                          ? "mt-1 rounded-md border border-zinc-200 bg-zinc-50/90 p-1.5 shadow-sm"
+                          : "mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
+                      }
+                      id={`category-brands-${slot.id}`}
+                    >
+                      {sectionTitle("Marka")}
+                      {loadingBrands ? (
+                        <p className="mb-2 text-[11px] text-zinc-500">
+                          Markalar yükleniyor…
+                        </p>
+                      ) : brands.length === 0 ? (
+                        <p className="mb-2 text-[11px] text-zinc-500">
+                          Bu kategoride marka bulunamadı.
+                        </p>
+                      ) : (
+                        <ul
+                          className={
+                            compact ? "flex flex-col gap-0.5" : "flex flex-col gap-1"
+                          }
+                        >
+                          {brands.map((b) => {
+                const active = brandId === b.id;
+                const panelOpen = expandedBrandId === b.id;
+                const brandHint = [b.name, b.code].filter(Boolean).join(" ") || null;
+                const carLogo = getBrandLogoUrl(b.name ?? null, b.code ?? null);
+                const motoLogo = isMotoCategory
+                  ? getMotorLogoUrl(b.name ?? null, b.code ?? null, brandHint)
+                  : null;
+                const logoPrimary = isMotoCategory ? (motoLogo ?? carLogo) : carLogo;
+                const logoFallback =
+                  isMotoCategory && motoLogo ? carLogo : null;
+                const title = b.name ?? b.code ?? b.id;
+
+                return (
+                  <li key={b.id} className="min-w-0">
+                    <button
+                      type="button"
+                      title={title}
+                      onClick={() => {
+                        if (brandId !== b.id) {
+                          setBrandId(b.id);
+                          resetBelowBrand();
+                          setExpandedBrandId(b.id);
+                          /** Sayfa yenileme yok — önce modeller/seriler açılsın; filtre seri veya “Tümünü göster”de. */
+                          navigateToListings({ brandId: b.id, modelId: "", bodyStyleId: "", engineId: "", packageId: "" });
+                        } else {
+                          setExpandedBrandId((prev) =>
+                            prev === b.id ? null : b.id
+                          );
+                        }
+                      }}
+                      className={brandListRowClass(active, compact)}
+                    >
+                      <span
+                        className={`flex shrink-0 items-center justify-center rounded ${
+                          compact ? "h-6 w-6" : "h-7 w-7"
+                        } ${active ? "bg-white" : "bg-white/90"}`}
+                      >
+                        <FallbackImg
+                          primary={logoPrimary}
+                          fallback={logoFallback}
+                          className={
+                            compact ? "h-5 w-5 object-contain" : "h-6 w-6 object-contain"
+                          }
+                          placeholder={
+                            <span className="text-[9px] font-bold text-zinc-400">
+                              {(title.slice(0, 3) || "?").toUpperCase()}
+                            </span>
+                          }
+                        />
+                      </span>
+                      <span
+                        className={
+                          compact
+                            ? `min-w-0 flex-1 truncate text-left text-[10px] font-semibold leading-tight ${
+                                active ? "text-zinc-900" : "text-zinc-800"
+                              }`
+                            : `min-w-0 flex-1 truncate text-left text-[11px] font-semibold leading-tight ${
+                                active ? "text-zinc-900" : "text-zinc-800"
+                              }`
+                        }
+                      >
+                        {title}
+                      </span>
+                      {listingCountBadge(brandCounts.get(b.id) ?? 0, compact)}
+                      <span
+                        className={
+                          compact
+                            ? "shrink-0 text-[8px] text-zinc-400"
+                            : "shrink-0 text-[9px] text-zinc-400"
+                        }
+                        aria-hidden
+                      >
+                        {panelOpen ? "▼" : "▶"}
+                      </span>
+                    </button>
+                  </li>
+              );
+            })}
+                        </ul>
+                      )}
+                    </div>
+                  ) : null}
                 </li>
-            );
-          })}
-                      </ul>
-                    )}
-                  </div>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
+              );
+            })}
+          </ul>
+        </div>
       ) : categoryId ? (
         <div
           className={

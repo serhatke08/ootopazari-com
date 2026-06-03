@@ -279,10 +279,9 @@ export function SiteHeaderClient({
       />
 
       <header
-        className={`sticky top-0 z-40 overflow-hidden border-b border-amber-400/80 bg-[#ffcc00] shadow-sm transition-[transform,height] duration-300 ${
+        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm transition-transform duration-300 ${
           headerVisible ? "translate-y-0" : "-translate-y-full"
         }`}
-        style={{ height: headerVisible ? undefined : 0 }}
       >
         <div className="mx-auto grid max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
           <div className="flex min-w-0 items-center gap-2">
