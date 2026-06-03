@@ -88,7 +88,12 @@ export default async function BayiBasvuruPage({ searchParams }: Props) {
   }
 
   const dealerType = typeParam as DealerType;
-  const cities = await fetchCities(supabase);
+  const cities = (await fetchCities(supabase))
+    .filter((city) => city.name != null)
+    .map((city) => ({
+      id: String(city.id),
+      name: String(city.name),
+    }));
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-12 sm:px-6">
