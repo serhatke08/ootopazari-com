@@ -194,6 +194,11 @@ export function SiteHeaderClient({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const offset = headerVisible ? "5.5rem" : "0px";
+    document.documentElement.style.setProperty("--header-offset", offset);
+  }, [headerVisible]);
+
   const loggedIn = !!sessionEmail;
   const unreadMessageCount = useUnreadMessageCount(hasEnv, loggedIn);
   const unreadNotificationCount = useUnreadNotificationCount(hasEnv, loggedIn);
