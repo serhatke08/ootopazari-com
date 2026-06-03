@@ -548,11 +548,29 @@ function VehicleCascadeSidebarInner({
   const selectedCategory = categorySlots.find((c) => c.id === categoryId);
   const selectedBrand = brands.find((b) => b.id === brandId);
   const selectedModel = allModelsForNav.find((m) => m.id === modelId);
+  const selectedBodyStyle = bodyStyles.find((bs) => bs.id === bodyStyleId);
+  const selectedEngine = engines.find((e) => e.id === engineId);
+
+  // Breadcrumb navigation
+  const breadcrumbItems = [];
+  if (categoryId && selectedCategory) {
+    breadcrumbItems.push({ label: selectedCategory.label, onClick: () => { setCategoryId(""); setExpandedCategoryId(null); resetBelowCategory(); router.push("/"); onNavigate?.(); }});
+  }
+  if (brandId && selectedBrand) {
+    breadcrumbItems.push({ label: selectedBrand.name ?? selectedBrand.code ?? "Marka", onClick: () => { setBrandId(""); setExpandedBrandId(null); resetBelowBrand(); }});
+  }
+  if (modelId && selectedModel) {
+    breadcrumbItems.push({ label: rowLabel(selectedModel), onClick: () => { setModelId(""); resetBelowModel(); }});
+  }
+  if (engineId && selectedEngine) {
+    breadcrumbItems.push({ label: rowLabel(selectedEngine), onClick: () => { setEngineId(""); resetBelowEngine(); }});
+  }
 
   return (
     <div className={cascadeRootClass(fillColumn, compact)}>
-      {categoryId && selectedCategory ? (
-        <>
+      {/* Modern Breadcrumb Navigation */}
+      {breadcrumbItems.length > 0 ? (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50/50 px-2.5 py-2">
           <button
             type="button"
             onClick={() => {
@@ -562,16 +580,30 @@ function VehicleCascadeSidebarInner({
               router.push("/");
               onNavigate?.();
             }}
-            className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
+            className="text-xs font-medium text-zinc-500 hover:text-zinc-700 transition"
           >
-            <span className="text-base">←</span>
-            <span>Geri</span>
+            Ana Sayfa
           </button>
-          {label(selectedCategory.label, compact)}
-        </>
-      ) : (
-        label("Kategori", compact)
-      )}
+          {breadcrumbItems.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-1.5">
+              <span className="text-zinc-400">/</span>
+              <button
+                type="button"
+                onClick={item.onClick}
+                className={`text-xs font-semibold transition ${
+                  idx === breadcrumbItems.length - 1
+                    ? "text-[#ffcc00] cursor-default"
+                    : "text-zinc-700 hover:text-zinc-900"
+                }`}
+              >
+                {item.label}
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {!categoryId ? label("Kategori", compact) : null}
       
       {categorySlots.length === 0 ? (
         <p className="text-xs text-zinc-500">
@@ -752,29 +784,7 @@ function VehicleCascadeSidebarInner({
               : "min-h-[calc(100vh-16rem)] overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
           }
         >
-          {brandId && selectedBrand ? (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  setBrandId("");
-                  setExpandedBrandId(null);
-                  resetBelowBrand();
-                  const p = new URLSearchParams();
-                  if (categoryId) p.set("category_id", categoryId);
-                  router.push(`/?${p.toString()}`);
-                  onNavigate?.();
-                }}
-                className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
-              >
-                <span className="text-base">←</span>
-                <span>Geri</span>
-              </button>
-              {sectionTitle(selectedBrand.name ?? selectedBrand.code ?? "Marka")}
-            </>
-          ) : (
-            sectionTitle("Marka")
-          )}
+          {!brandId ? sectionTitle("Marka") : null}
           
           {loadingBrands ? (
             <p className="mb-2 text-[11px] text-zinc-500">
@@ -883,24 +893,7 @@ function VehicleCascadeSidebarInner({
                 {listingCountBadge(brandCounts.get(brandId) ?? 0, compact)}
               </button>
 
-              {modelId && selectedModel ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setModelId("");
-                      resetBelowModel();
-                    }}
-                    className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
-                  >
-                    <span className="text-base">←</span>
-                    <span>Geri</span>
-                  </button>
-                  {sectionTitle(rowLabel(selectedModel))}
-                </>
-              ) : (
-                sectionTitle("Model")
-              )}
+              {!modelId ? sectionTitle("Model") : null}
               
               {selectableModels.length === 0 ? (
                 <p className="text-[11px] text-zinc-500">Model yükleniyor…</p>
