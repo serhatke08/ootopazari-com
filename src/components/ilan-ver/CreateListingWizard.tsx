@@ -1919,12 +1919,14 @@ export function CreateListingWizard({
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700">
-                  Plaka
+                  Plaka *
                 </label>
                 <input
+                  required
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   value={plateNumber}
                   onChange={(e) => setPlateNumber(e.target.value)}
+                  placeholder="34 ABC 1234"
                 />
               </div>
 
