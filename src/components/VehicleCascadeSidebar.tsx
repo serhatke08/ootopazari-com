@@ -1056,17 +1056,15 @@ function VehicleCascadeSidebarInner({
                     </>
                   ) : null}
 
-                  {/* İlanları Göster Butonu */}
-                  {modelId && bodyStyles.length > 0 && !loadingBodyStyles && !packageId ? (
-                    <button
-                      type="button"
-                      className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                      onClick={() => navigateToListings()}
-                    >
-                      İlanları göster
-                    </button>
-                  ) : null}
-                </div>
+              {/* İlanları Göster Butonu */}
+              {modelId && bodyStyles.length > 0 && !loadingBodyStyles && !packageId ? (
+                <button
+                  type="button"
+                  className="mt-3 w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                  onClick={() => navigateToListings()}
+                >
+                  İlanları göster
+                </button>
               ) : null}
             </div>
           ) : null}
