@@ -775,26 +775,26 @@ export default async function IlanDetayPage({ params }: Props) {
                 ) : (
                   <Field label="İlan no" value="—" />
                 )}
-                <Field label="Şehir" value={cityDisplayResolved ?? "—"} />
-                <Field label="Kategori" value={categoryName ?? undefined} />
                 <Field label="Marka" value={brandName ?? undefined} />
                 <Field label="Seri" value={seriDisplay ?? "—"} />
                 <Field label="Model" value={modelDisplay ?? "—"} />
+                <Field label="Yıl" value={listing.vehicle_year as number} />
+                <Field label="Yakıt Tipi" value={listing.fuel_type as string} />
+                <Field
+                  label={isMotorcycle ? "Şanzıman" : "Vites"}
+                  value={listing.transmission_type as string}
+                />
+                <Field
+                  label="Kilometre"
+                  value={fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))}
+                />
                 {isCarLike ? (
                   <Field label="Kasa" value={kasaDisplay} />
                 ) : null}
                 <Field label="Motor" value={motorDisplay} />
                 <Field label="Paket" value={paketDisplay} />
-                <Field label="Yıl" value={listing.vehicle_year as number} />
-                <Field
-                  label="Kilometre"
-                  value={fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))}
-                />
-                <Field label="Yakıt" value={listing.fuel_type as string} />
-                <Field
-                  label={isMotorcycle ? "Şanzıman" : "Vites"}
-                  value={listing.transmission_type as string}
-                />
+                <Field label="Kategori" value={categoryName ?? undefined} />
+                <Field label="Şehir" value={cityDisplayResolved ?? "—"} />
                 <Field
                   label="Motor gücü"
                   value={pick(row, ["engine_power", "motor_gucu", "motor_power"]) as string | undefined}
