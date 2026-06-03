@@ -739,21 +739,56 @@ export function CreateListingWizard({
 
   const submit = async () => {
     setErr(null);
-    const e3 = validateStep3();
-    if (e3) {
-      setErr(e3);
-      return;
+    
+    // Kapak görseli kontrolü - eğer seçilmemişse ilk görseli seç
+    const totalPhotos = initialGalleryUrls.length + files.length;
+    if (totalPhotos > 0 && (coverIndex < 0 || coverIndex >= totalPhotos)) {
+      setCoverIndex(0);
     }
-    const e2 = validateStep2();
+    
+    // Tüm hataları topla
+    const errors: string[] = [];
+    
     const e1 = validateStep1();
-    if (e1 || e2) {
-      setErr(e1 ?? e2 ?? "Eksik bilgi.");
-      return;
-    }
-
+    if (e1) errors.push(e1);
+    
+    const e2 = validateStep2();
+    if (e2) errors.push(e2);
+    
+    const e3 = validateStep3();
+    if (e3) errors.push(e3);
+    
     const priceNum = parsePriceTry(priceStr);
-    if (priceNum == null) {
-      setErr("Fiyat geçersiz.");
+    if (priceNum == null) errors.push("Geçerli bir fiyat girin.");
+    
+    // Plaka kontrolü
+    if (isVehicle && !plateNumber.trim()) {
+      errors.push("Plaka numarası zorunludur.");
+    }
+    
+    // Yakıt kontrolü
+    if (isVehicle && !fuelType.trim()) {
+      errors.push("Yakıt tipi seçin.");
+    }
+    
+    // Vites kontrolü
+    if (isVehicle && !transmissionType.trim()) {
+      errors.push("Vites tipi seçin.");
+    }
+    
+    // Çekiş kontrolü
+    if (isVehicle && !driveType.trim()) {
+      errors.push("Çekiş tipi seçin.");
+    }
+    
+    // Expertiz onay kontrolü
+    if (isVehicle && hasExpertise && !expertizConfirmed) {
+      errors.push("Expertiz bilgilerini doğru girdiğinizi onaylamalısınız.");
+    }
+    
+    // Hata varsa göster
+    if (errors.length > 0) {
+      setErr(errors.join("|||")); // Ayraç ile birleştir
       return;
     }
 
@@ -1142,12 +1177,21 @@ export function CreateListingWizard({
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-zinc-900">Eksik Bilgi</h3>
-                <p className="text-sm text-zinc-600">Lütfen tüm gerekli alanları doldurun</p>
+                <h3 className="text-lg font-bold text-zinc-900">Eksik Bilgiler</h3>
+                <p className="text-sm text-zinc-600">Lütfen aşağıdaki alanları tamamlayın</p>
               </div>
             </div>
-            <div className="mb-6 rounded-lg bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-900">{err}</p>
+            <div className="mb-6 max-h-80 overflow-y-auto rounded-lg bg-red-50 p-4">
+              <ul className="space-y-2">
+                {err.split("|||").map((error, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm font-medium text-red-900">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-200 text-xs font-bold text-red-700">
+                      {idx + 1}
+                    </span>
+                    <span className="flex-1">{error}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
             <button
               onClick={() => setErr(null)}
