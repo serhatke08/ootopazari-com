@@ -88,7 +88,7 @@ export function StatsBadges({
         </span>
       </div>
       {rightSlot ? (
-        <span className="max-w-[min(12rem,48%)] shrink-0 truncate text-right font-medium text-zinc-600">
+        <span className="shrink-0 text-right text-[10px] font-medium leading-tight text-zinc-600 max-sm:text-[9px]">
           {rightSlot}
         </span>
       ) : null}
