@@ -47,13 +47,13 @@ function label(text: string, compact?: boolean) {
 function categoryListRowClass(active: boolean, compact?: boolean) {
   const ring = compact ? "ring-1 ring-amber-400/70" : "ring-2 ring-amber-400/70";
   const base = compact
-    ? "flex w-full min-w-0 items-center justify-between gap-1.5 px-2 py-1.5 text-left text-xs font-semibold transition"
-    : "flex w-full min-w-0 items-center justify-between gap-2 px-2.5 py-2.5 text-left text-sm font-semibold transition";
+    ? "flex w-full min-w-0 items-center justify-between gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs font-semibold transition"
+    : "flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2.5 text-left text-sm font-semibold transition";
   return [
     base,
     active
-      ? `bg-[#ffcc00] text-blue-900 shadow-sm ${ring}`
-      : "bg-white text-blue-700 hover:bg-blue-50/40",
+      ? `border-amber-500 bg-[#ffcc00] text-zinc-900 shadow-sm ${ring}`
+      : "border-zinc-300 bg-white text-zinc-800 hover:border-[#ffcc00] hover:bg-amber-50/60",
   ].join(" ");
 }
 
