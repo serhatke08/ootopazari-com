@@ -192,7 +192,7 @@ export default async function BayiPanelPage({ params }: Props) {
                 key={dealer.id}
                 dealer={dealer}
                 dealerType={dealerType}
-                supabaseUrl={env.supabaseUrl}
+                supabaseUrl={env.url}
               />
             ))}
           </div>
