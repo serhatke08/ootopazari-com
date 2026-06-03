@@ -955,7 +955,7 @@ export function CreateListingWizard({
 
         const { error: imgErr } = await supabase
           .from("listings")
-          .update({ image_url: coverUrl, images: galleryUrlsForDb })
+          .update({ image_url: coverUrl })
           .eq("id", editListingId)
           .eq("user_id", uid);
         if (imgErr) {
@@ -1004,7 +1004,7 @@ export function CreateListingWizard({
 
       const { error: upListingErr } = await supabase
         .from("listings")
-        .update({ image_url: coverUrl, images: galleryUrls })
+        .update({ image_url: coverUrl })
         .eq("id", listingId);
 
       if (upListingErr) {
