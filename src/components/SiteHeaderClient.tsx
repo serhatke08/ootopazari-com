@@ -284,7 +284,7 @@ export function SiteHeaderClient({
         }`}
       >
         <div className="mx-auto grid max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
-          <div className="flex min-w-0 items-center gap-2 justify-self-start">
+          <div className="flex min-w-0 items-center gap-2">
             <HamburgerButton
               open={drawerOpen}
               onClick={() => setDrawerOpen((o) => !o)}
