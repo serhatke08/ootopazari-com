@@ -284,7 +284,17 @@ export function SiteHeaderClient({
         }`}
       >
         <div className="mx-auto grid max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
-          <div className="flex min-w-0 items-center gap-2">
+          <Link
+            href="/"
+            className="justify-self-start px-1 py-0.5 text-left"
+            onClick={() => setDrawerOpen(false)}
+          >
+            <span className="whitespace-nowrap text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
+              Oto Pazarı
+            </span>
+          </Link>
+
+          <div className="flex min-w-0 items-center gap-2 justify-self-center">
             <HamburgerButton
               open={drawerOpen}
               onClick={() => setDrawerOpen((o) => !o)}
@@ -292,16 +302,6 @@ export function SiteHeaderClient({
             />
             <NavSearchForm />
           </div>
-
-          <Link
-            href="/"
-            className="justify-self-center px-1 py-0.5 text-center"
-            onClick={() => setDrawerOpen(false)}
-          >
-            <span className="whitespace-nowrap text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
-              Oto Pazarı
-            </span>
-          </Link>
 
           <nav className="flex min-w-0 items-center justify-end gap-x-1.5 gap-y-1 text-sm sm:gap-x-2 md:gap-x-3">
             {hasEnv ? (
