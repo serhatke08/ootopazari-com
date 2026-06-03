@@ -1804,11 +1804,20 @@ export function CreateListingWizard({
                   <label className="mb-1 block text-sm font-medium text-zinc-700">
                     Yakıt
                   </label>
-                  <input
+                  <select
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                     value={fuelType}
                     onChange={(e) => setFuelType(e.target.value)}
-                  />
+                  >
+                    <option value="">Seçiniz</option>
+                    <option value="Benzin">Benzin</option>
+                    <option value="Dizel">Dizel</option>
+                    <option value="LPG">LPG</option>
+                    <option value="Benzin & LPG">Benzin & LPG</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Elektrik">Elektrik</option>
+                    <option value="CNG">CNG (Doğalgaz)</option>
+                  </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-zinc-700">
