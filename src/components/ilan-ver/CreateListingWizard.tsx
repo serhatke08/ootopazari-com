@@ -1802,9 +1802,10 @@ export function CreateListingWizard({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-zinc-700">
-                    Yakıt
+                    Yakıt *
                   </label>
                   <select
+                    required
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                     value={fuelType}
                     onChange={(e) => setFuelType(e.target.value)}
@@ -1821,9 +1822,10 @@ export function CreateListingWizard({
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-zinc-700">
-                    Vites
+                    Vites *
                   </label>
                   <select
+                    required
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                     value={transmissionType}
                     onChange={(e) => setTransmissionType(e.target.value)}
@@ -1869,9 +1871,10 @@ export function CreateListingWizard({
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700">
-                  Çekiş
+                  Çekiş *
                 </label>
                 <select
+                  required
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   value={driveType}
                   onChange={(e) => setDriveType(e.target.value)}
