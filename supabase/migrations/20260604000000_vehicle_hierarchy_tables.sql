@@ -110,11 +110,21 @@ CREATE TABLE IF NOT EXISTS user_notifications (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
   title TEXT NOT NULL,
-  message TEXT,
-  data JSONB,
-  read_at TIMESTAMPTZ,
+  body TEXT,
+  listing_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add read_at column if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'user_notifications' AND column_name = 'read_at'
+  ) THEN
+    ALTER TABLE user_notifications ADD COLUMN read_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id ON user_notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_notifications_read_at ON user_notifications(read_at);
