@@ -15,6 +15,7 @@ import {
   fetchApprovedListingCountsByField,
   fetchApprovedListingCountsByVehicleBrandModelId,
   fetchApprovedListingCountsByVehicleModel,
+  fetchApprovedListingCountsByEnginePackages,
   formatListingCount,
   normalizeListingModelKey,
   type CategoryRow,
@@ -199,6 +200,9 @@ function VehicleCascadeSidebarInner({
   const [seriesIdCounts, setSeriesIdCounts] = useState<Map<string, number>>(
     () => new Map()
   );
+  const [engineIdCounts, setEngineIdCounts] = useState<Map<string, number>>(
+    () => new Map()
+  );
 
   const allModelsForNav = selectableModels;
 
@@ -324,6 +328,22 @@ function VehicleCascadeSidebarInner({
       cancelled = true;
     };
   }, [categoryId, brandId, expandedBrandId, supabase]);
+
+  useEffect(() => {
+    if (engines.length === 0) {
+      setEngineIdCounts(new Map());
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const engineIds = engines.map(e => e.id);
+      const m = await fetchApprovedListingCountsByEnginePackages(supabase, engineIds);
+      if (!cancelled) setEngineIdCounts(m);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [engines, supabase]);
 
   useEffect(() => {
     if (!categoryId) {
@@ -942,6 +962,7 @@ function VehicleCascadeSidebarInner({
                         <ul className="flex flex-col gap-1">
                           {engines.map((eng) => {
                             const engActive = engineId === eng.id;
+                            const engCnt = engineIdCounts.get(eng.id) ?? 0;
                             return (
                               <li key={eng.id} className="min-w-0">
                                 <button
@@ -960,6 +981,7 @@ function VehicleCascadeSidebarInner({
                                   <span className="min-w-0 flex-1 truncate">
                                     {rowLabel(eng)}
                                   </span>
+                                  {engCnt > 0 ? listingCountBadge(engCnt, compact) : null}
                                 </button>
                               </li>
                             );

@@ -749,6 +749,62 @@ export async function fetchApprovedListingCountsByVehicleModel(
   return map;
 }
 
+export async function fetchApprovedListingCountsByEnginePackages(
+  supabase: SupabaseClient,
+  engineIds: string[]
+): Promise<Map<string, number>> {
+  if (engineIds.length === 0) return new Map();
+  
+  // Her engine için package ID'lerini fetch et
+  const engineToPackages = new Map<string, string[]>();
+  for (const engineId of engineIds) {
+    const { data } = await supabase
+      .from("vehicle_engine_packages")
+      .select("id")
+      .or(`engine_id.eq.${engineId},body_style_engine_id.eq.${engineId},vehicle_body_style_engine_id.eq.${engineId}`);
+    
+    if (data && data.length > 0) {
+      engineToPackages.set(engineId, data.map(p => p.id));
+    }
+  }
+  
+  // Tüm package ID'leri topla
+  const allPackageIds = Array.from(engineToPackages.values()).flat();
+  if (allPackageIds.length === 0) return new Map();
+  
+  // Package ID'lerine göre ilan sayılarını fetch et
+  const { data, error } = await supabase
+    .from("listings")
+    .select("vehicle_engine_package_id")
+    .eq("moderation_status", "approved")
+    .in("vehicle_engine_package_id", allPackageIds);
+  
+  if (error || !data) return new Map();
+  
+  // Package sayılarını hesapla
+  const packageCounts = new Map<string, number>();
+  for (const row of data) {
+    const pkgId = row.vehicle_engine_package_id;
+    if (pkgId) {
+      packageCounts.set(pkgId, (packageCounts.get(pkgId) ?? 0) + 1);
+    }
+  }
+  
+  // Engine bazlı topla
+  const engineCounts = new Map<string, number>();
+  for (const [engineId, packageIds] of engineToPackages) {
+    let total = 0;
+    for (const pkgId of packageIds) {
+      total += packageCounts.get(pkgId) ?? 0;
+    }
+    if (total > 0) {
+      engineCounts.set(engineId, total);
+    }
+  }
+  
+  return engineCounts;
+}
+
 export type SitemapListingRow = {
   listingNumber: string;
   title: string;
