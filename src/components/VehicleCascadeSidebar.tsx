@@ -946,6 +946,7 @@ function VehicleCascadeSidebarInner({
                                   onClick={() => {
                                     setEngineId(eng.id);
                                     resetBelowEngine();
+                                    navigateToListings({ engineId: eng.id, packageId: "" });
                                   }}
                                   className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
                                     engActive
