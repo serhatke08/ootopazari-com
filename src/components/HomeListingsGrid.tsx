@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { SupabasePublicEnv } from "@/lib/env";
 import type {
   HomeListingCardItem,
@@ -53,11 +54,19 @@ export function HomeListingsGrid({
   loggedIn: initialLoggedIn,
   filters,
 }: Props) {
+  const searchParams = useSearchParams();
   const [items, setItems] = useState(initialItems);
   const [page, setPage] = useState(1);
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // URL parametreleri değiştiğinde sayfayı yenile
+  useEffect(() => {
+    // Sayfa yeniden yüklendiğinde server'dan gelen initialItems'ı kullan
+    setItems(initialItems);
+    setPage(1);
+  }, [searchParams, initialItems]);
 
   const hasMore = items.length < total;
 
