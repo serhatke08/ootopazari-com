@@ -240,6 +240,7 @@ export function CreateListingWizard({
   const [vehicleCondition, setVehicleCondition] = useState("");
   const [warranty, setWarranty] = useState<boolean | null>(null);
   const [plateNumber, setPlateNumber] = useState("");
+  const [expertizConfirmed, setExpertizConfirmed] = useState(false);
 
   const [expertiz, setExpertiz] = useState<
     Partial<Record<PanelKey, ExpertizDurum | "">>
@@ -410,6 +411,8 @@ export function CreateListingWizard({
     if (!parentId || !hierarchical) return;
     void (async () => {
       const ch = await fetchChildBrandModels(supabase, parentId);
+      // A-Z sıralama
+      ch.sort((a, b) => (a.name || "").localeCompare(b.name || "", "tr-TR"));
       setChildren(ch);
     })();
   }, [parentId, hierarchical, supabase]);
@@ -460,6 +463,12 @@ export function CreateListingWizard({
     }
     void (async () => {
       const en = await fetchEnginesForBodyStyle(supabase, bodyStyleId);
+      // Motorları küçükten büyüğe sırala (sayısal)
+      en.sort((a, b) => {
+        const aNum = parseFloat((a.name || "").replace(/[^\d.]/g, "")) || 0;
+        const bNum = parseFloat((b.name || "").replace(/[^\d.]/g, "")) || 0;
+        return aNum - bNum;
+      });
       setEngines(en);
     })();
   }, [bodyStyleId, bodyOther, supabase]);
@@ -1805,11 +1814,16 @@ export function CreateListingWizard({
                   <label className="mb-1 block text-sm font-medium text-zinc-700">
                     Vites
                   </label>
-                  <input
+                  <select
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                     value={transmissionType}
                     onChange={(e) => setTransmissionType(e.target.value)}
-                  />
+                  >
+                    <option value="">Seçiniz</option>
+                    <option value="Manuel">Manuel</option>
+                    <option value="Otomatik">Otomatik</option>
+                    <option value="Yarı Otomatik">Yarı Otomatik</option>
+                  </select>
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1848,21 +1862,32 @@ export function CreateListingWizard({
                 <label className="mb-1 block text-sm font-medium text-zinc-700">
                   Çekiş
                 </label>
-                <input
+                <select
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   value={driveType}
                   onChange={(e) => setDriveType(e.target.value)}
-                />
+                >
+                  <option value="">Seçiniz</option>
+                  <option value="Önden Çekiş">Önden Çekiş</option>
+                  <option value="Arkadan İtiş">Arkadan İtiş</option>
+                  <option value="4WD (Sürekli)">4WD (Sürekli)</option>
+                  <option value="4WD (Bağlanabilir)">4WD (Bağlanabilir)</option>
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700">
                   Araç durumu
                 </label>
-                <input
+                <select
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   value={vehicleCondition}
                   onChange={(e) => setVehicleCondition(e.target.value)}
-                />
+                >
+                  <option value="">Seçiniz</option>
+                  <option value="İkinci El">İkinci El</option>
+                  <option value="Sıfır">Sıfır</option>
+                  <option value="Hasarlı">Hasarlı</option>
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700">
@@ -1973,6 +1998,26 @@ export function CreateListingWizard({
                       </select>
                     </div>
                   ))}
+                </div>
+
+                {/* Expertiz Onay Checkbox */}
+                <div className="mt-4 rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={expertizConfirmed}
+                      onChange={(e) => setExpertizConfirmed(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 shrink-0 rounded border-blue-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                    />
+                    <div className="text-sm">
+                      <p className="font-semibold text-blue-900">
+                        Expertiz bilgilerini doğru girdiğimi onaylıyorum
+                      </p>
+                      <p className="mt-1 text-xs text-blue-800">
+                        <strong>Uyarı:</strong> Expertiz bilgilerinin yanlış girilmesi durumunda ilanınız platform tarafından kaldırılacaktır. Lütfen tüm bölgeleri (kaput, çamurluklar, kapılar vb.) doğru şekilde işaretlediğinizden emin olun.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </>
