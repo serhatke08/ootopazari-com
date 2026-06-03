@@ -917,99 +917,101 @@ function VehicleCascadeSidebarInner({
                 {listingCountBadge(brandCounts.get(brandId) ?? 0, compact)}
               </button>
 
-              {!modelId ? sectionTitle("Model") : null}
-              
-              {selectableModels.length === 0 ? (
-                <p className="text-[11px] text-zinc-500">Model yükleniyor…</p>
-              ) : !modelId ? (
-                <ul className="flex flex-col gap-1">
-                  {selectableModels.map((m) => {
-                    const mActive = modelId === m.id;
-                    const mCnt =
-                      seriesIdCounts.get(m.id) ??
-                      modelNameCounts.get(
-                        normalizeListingModelKey(rowLabel(m))
-                      ) ??
-                      0;
-                    return (
-                      <li key={m.id} className="min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setModelId(m.id);
-                            resetBelowModel();
-                            navigateToListings({ modelId: m.id, bodyStyleId: "", engineId: "", packageId: "" });
-                          }}
-                          className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
-                            mActive
-                              ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                              : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                          }`}
-                        >
-                          <span className="min-w-0 flex-1 truncate">
-                            {rowLabel(m)}
-                          </span>
-                          {mCnt > 0 ? listingCountBadge(mCnt, compact) : null}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {/* Model listesi - Sadece model seçilmemişse göster */}
+              {!modelId ? (
+                <>
+                  {sectionTitle("Model")}
+                  {selectableModels.length === 0 ? (
+                    <p className="text-[11px] text-zinc-500">Model yükleniyor…</p>
+                  ) : (
+                    <ul className="flex flex-col gap-1">
+                      {selectableModels.map((m) => {
+                        const mActive = modelId === m.id;
+                        const mCnt =
+                          seriesIdCounts.get(m.id) ??
+                          modelNameCounts.get(
+                            normalizeListingModelKey(rowLabel(m))
+                          ) ??
+                          0;
+                        return (
+                          <li key={m.id} className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModelId(m.id);
+                                resetBelowModel();
+                                navigateToListings({ modelId: m.id, bodyStyleId: "", engineId: "", packageId: "" });
+                              }}
+                              className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                mActive
+                                  ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                  : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                              }`}
+                            >
+                              <span className="min-w-0 flex-1 truncate">
+                                {rowLabel(m)}
+                              </span>
+                              {mCnt > 0 ? listingCountBadge(mCnt, compact) : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
               ) : null}
 
-              {modelId && selectableModels.length > 0 ? (
-                <div className="space-y-3 border-t border-zinc-100 pt-3">
-                  {/* MOTOR - Otomatik ilk kasa seçildi */}
-                  {bodyStyleId && bodyStyles.length > 0 ? (
-                    <>
-                      {loadingEngines ? (
-                        <p className="text-[11px] text-zinc-500">Motor yükleniyor…</p>
-                      ) : engines.length === 0 ? (
-                        <button
-                          type="button"
-                          className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                          onClick={() =>
-                            navigateToListings({ engineId: "", packageId: "" })
-                          }
-                        >
-                          İlanları göster
-                        </button>
-                      ) : (
-                        <ul className="flex flex-col gap-1">
-                          {engines.map((eng) => {
-                            const engActive = engineId === eng.id;
-                            const engCnt = engineIdCounts.get(eng.id) ?? 0;
-                            return (
-                              <li key={eng.id} className="min-w-0">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEngineId(eng.id);
-                                    resetBelowEngine();
-                                    navigateToListings({ engineId: eng.id, packageId: "" });
-                                  }}
-                                  className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
-                                    engActive
-                                      ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                                      : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                                  }`}
-                                >
-                                  <span className="min-w-0 flex-1 truncate">
-                                    {rowLabel(eng)}
-                                  </span>
-                                  {engCnt > 0 ? listingCountBadge(engCnt, compact) : null}
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </>
-                  ) : null}
+              {/* Motor listesi - Model seçildiyse ve motor seçilmemişse göster */}
+              {modelId && !engineId && bodyStyleId && bodyStyles.length > 0 ? (
+                <>
+                  {loadingEngines ? (
+                    <p className="text-[11px] text-zinc-500">Motor yükleniyor…</p>
+                  ) : engines.length === 0 ? (
+                    <button
+                      type="button"
+                      className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
+                      onClick={() =>
+                        navigateToListings({ engineId: "", packageId: "" })
+                      }
+                    >
+                      İlanları göster
+                    </button>
+                  ) : (
+                    <ul className="flex flex-col gap-1">
+                      {engines.map((eng) => {
+                        const engActive = engineId === eng.id;
+                        const engCnt = engineIdCounts.get(eng.id) ?? 0;
+                        return (
+                          <li key={eng.id} className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEngineId(eng.id);
+                                resetBelowEngine();
+                                navigateToListings({ engineId: eng.id, packageId: "" });
+                              }}
+                              className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                                engActive
+                                  ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                  : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                              }`}
+                            >
+                              <span className="min-w-0 flex-1 truncate">
+                                {rowLabel(eng)}
+                              </span>
+                              {engCnt > 0 ? listingCountBadge(engCnt, compact) : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
+              ) : null}
 
-                  {/* PAKET */}
-                  {engineId && engines.length > 0 ? (
-                    <div className="space-y-2 mt-2 pl-3 border-l-2 border-zinc-200">
+              {/* Paket listesi - Motor seçildiyse göster */}
+              {engineId && engines.length > 0 ? (
+                    <>
                       {loadingPackages ? (
                         <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
                       ) : packages.length === 0 ? (
@@ -1051,7 +1053,7 @@ function VehicleCascadeSidebarInner({
                           })}
                         </ul>
                       )}
-                    </div>
+                    </>
                   ) : null}
 
                   {/* İlanları Göster Butonu */}
