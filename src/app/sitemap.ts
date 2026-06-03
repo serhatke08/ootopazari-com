@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
+import { createClient } from "@supabase/supabase-js";
 import { getSiteOrigin } from "@/lib/site-url";
 import { tryGetSupabaseEnv } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -51,7 +51,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!env) return staticPages;
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createClient(env.url, env.anonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
 
     // Fetch categories
     const { data: categories } = await supabase

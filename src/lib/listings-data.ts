@@ -635,7 +635,8 @@ export async function fetchApprovedListingsTotal(
 export type ListingCountGroupField =
   | "category_id"
   | "city_id"
-  | "vehicle_brand_id";
+  | "vehicle_brand_id"
+  | "vehicle_engine_package_id";
 
 /**
  * Onaylı ilanları tek alana göre gruplayıp sayar (büyük tabloda sayfalı okur).

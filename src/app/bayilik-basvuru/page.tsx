@@ -5,7 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { BayiApplicationForm } from "@/components/BayiApplicationForm";
 import { fetchCities } from "@/lib/listings-data";
-import { DEALER_TYPE_META, type DealerType } from "@/lib/dealer-types";
+import { DEALER_TYPE_META } from "@/lib/dealer-types";
+import { DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
 
 export const metadata: Metadata = {
   title: "Bayilik Başvurusu",
@@ -34,7 +35,11 @@ function statusClass(status: string | null): string {
   return "bg-amber-100 text-amber-900";
 }
 
-export default async function BayilikBasvuruPage() {
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function BayilikBasvuruPage({ searchParams }: Props) {
   const env = tryGetSupabaseEnv();
   if (!env) {
     return (
@@ -53,7 +58,13 @@ export default async function BayilikBasvuruPage() {
     redirect(`/giris?next=${encodeURIComponent("/bayilik-basvuru")}`);
   }
 
-  const [{ data }, cities] = await Promise.all([
+  const sp = await searchParams;
+  const typeParam = Array.isArray(sp.type) ? sp.type[0] : sp.type;
+  const dealerType = DEALER_TYPES.includes(typeParam as DealerType)
+    ? (typeParam as DealerType)
+    : "galeri";
+
+  const [{ data }, citiesRaw] = await Promise.all([
     supabase
       .from("bayi_applications")
       .select("id,dealer_type,status,created_at")
@@ -64,6 +75,12 @@ export default async function BayilikBasvuruPage() {
   ]);
 
   const rows = (data ?? []) as ApplicationRow[];
+  const cities = citiesRaw
+    .filter((city) => city.name != null)
+    .map((city) => ({
+      id: String(city.id),
+      name: String(city.name),
+    }));
 
   return (
     <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6">
@@ -76,7 +93,7 @@ export default async function BayilikBasvuruPage() {
       </p>
 
       <div className="mt-5">
-        <BayiApplicationForm cities={cities} />
+        <BayiApplicationForm dealerType={dealerType} cities={cities} />
       </div>
 
       <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
