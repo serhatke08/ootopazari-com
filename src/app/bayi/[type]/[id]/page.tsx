@@ -71,7 +71,7 @@ export default async function BayiDetailPage({ params }: Props) {
     notFound();
   }
 
-  const coverImageUrl = resolveDealerCoverImageUrl(dealer, env.supabaseUrl);
+  const coverImageUrl = resolveDealerCoverImageUrl(dealer, env.url);
   const cityName = dealer.city_name ?? "Türkiye";
 
   // Expertiz price list
