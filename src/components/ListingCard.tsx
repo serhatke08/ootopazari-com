@@ -81,11 +81,9 @@ export function ListingCard({
   const imgUnoptimized = isHeicLikeUrl(img);
   const price =
     listing.price != null
-      ? new Intl.NumberFormat("tr-TR", {
-          style: "currency",
-          currency: "TRY",
+      ? `${new Intl.NumberFormat("tr-TR", {
           maximumFractionDigits: 0,
-        }).format(Number(listing.price))
+        }).format(Number(listing.price))} TL`
       : "Fiyat sorunuz";
 
   /** Ana sayfa / filtre sonuçları grid’i: daha yüksek görsel + fiyat görsel üzerinde */
