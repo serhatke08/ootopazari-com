@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -334,7 +334,7 @@ export default async function IlanDetayPage({ params }: Props) {
   
   if (!detail) {
     // İlan bulunamadı - ana sayfaya yönlendir (SEO için daha iyi)
-    redirect("/?not_found=1");
+    permanentRedirect("/?not_found=1");
   }
 
   const { listing, access: detailAccess } = detail;
