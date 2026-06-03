@@ -645,93 +645,86 @@ function VehicleCascadeSidebarInner({
           Kategori listesi boş (Supabase `categories` tablosu).
         </p>
       ) : !categoryId ? (
-        <div
-          className={
-            compact
-              ? "rounded-md border border-blue-500 bg-white p-1"
-              : "rounded-lg border border-blue-500 bg-white p-1.5"
-          }
-        >
-          <ul className={cascadeListClass(fillColumn, compact)}>
-            {categorySlots.map((slot) => {
-              const categoryOpen = expandedCategoryId === slot.id;
-              return (
-                <li key={slot.id} className="min-w-0">
-                  <button
-                    type="button"
-                    aria-expanded={categoryOpen}
-                    onClick={() => {
-                      if (expandedCategoryId === slot.id) {
-                        setExpandedCategoryId(null);
-                        setCategoryId("");
-                        resetBelowCategory();
-                      } else {
-                        setExpandedCategoryId(slot.id);
-                        setCategoryId(slot.id);
-                        resetBelowCategory();
-                      }
-                    }}
-                    className={categoryListRowClass(categoryOpen, compact)}
+        <ul className={cascadeListClass(fillColumn, compact)}>
+          {categorySlots.map((slot) => {
+            const categoryOpen = expandedCategoryId === slot.id;
+            return (
+              <li key={slot.id} className="min-w-0">
+                <button
+                  type="button"
+                  aria-expanded={categoryOpen}
+                  onClick={() => {
+                    if (expandedCategoryId === slot.id) {
+                      setExpandedCategoryId(null);
+                      setCategoryId("");
+                      resetBelowCategory();
+                    } else {
+                      setExpandedCategoryId(slot.id);
+                      setCategoryId(slot.id);
+                      resetBelowCategory();
+                    }
+                  }}
+                  className={categoryListRowClass(categoryOpen, compact)}
+                >
+                  <span
+                    className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded ${
+                      compact ? "h-5 w-5" : "h-6 w-6"
+                    }`}
                   >
-                    <span
-                      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded ${
-                        compact ? "h-5 w-5" : "h-6 w-6"
-                      }`}
-                    >
-                      <FallbackImg
-                        primary={slot.icon}
-                        fallback={categoryIconFallbackUrl()}
-                        className={
-                          compact ? "h-5 w-5 object-contain" : "h-6 w-6 object-contain"
-                        }
-                        placeholder={
-                          <span className="text-[8px] font-bold text-zinc-500">
-                            {slot.label.slice(0, 2).toUpperCase()}
-                          </span>
-                        }
-                      />
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-left">
-                      {slot.label}
-                    </span>
-                    {listingCountBadge(categoryCounts.get(slot.id) ?? 0, compact)}
-                    <span
+                    <FallbackImg
+                      primary={slot.icon}
+                      fallback={categoryIconFallbackUrl()}
                       className={
-                        compact
-                          ? "shrink-0 text-[9px] text-zinc-400"
-                          : "shrink-0 text-[10px] text-zinc-400"
+                        compact ? "h-5 w-5 object-contain" : "h-6 w-6 object-contain"
                       }
-                      aria-hidden
-                    >
-                      {categoryOpen ? "▼" : "▶"}
-                    </span>
-                  </button>
+                      placeholder={
+                        <span className="text-[8px] font-bold text-zinc-500">
+                          {slot.label.slice(0, 2).toUpperCase()}
+                        </span>
+                      }
+                    />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-left">
+                    {slot.label}
+                  </span>
+                  {listingCountBadge(categoryCounts.get(slot.id) ?? 0, compact)}
+                  <span
+                    className={
+                      compact
+                        ? "shrink-0 text-[9px] text-zinc-400"
+                        : "shrink-0 text-[10px] text-zinc-400"
+                    }
+                    aria-hidden
+                  >
+                    {categoryOpen ? "▼" : "▶"}
+                  </span>
+                </button>
 
-                  {categoryOpen && !categoryId ? (
-                    <div
-                      className={
-                        compact
-                          ? "mt-1 rounded-md border border-zinc-200 bg-zinc-50/90 p-1.5 shadow-sm"
-                          : "mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
-                      }
-                      id={`category-brands-${slot.id}`}
-                    >
-                      {sectionTitle("Marka")}
-                      {loadingBrands ? (
-                        <p className="mb-2 text-[11px] text-zinc-500">
-                          Markalar yükleniyor…
-                        </p>
-                      ) : brands.length === 0 ? (
-                        <p className="mb-2 text-[11px] text-zinc-500">
-                          Bu kategoride marka bulunamadı.
-                        </p>
-                      ) : (
-                        <ul
-                          className={
-                            compact ? "flex flex-col gap-0.5" : "flex flex-col gap-1"
-                          }
-                        >
-                          {brands.map((b) => {
+                {categoryOpen && !categoryId ? (
+                  <div
+                    className={
+                      compact
+                        ? "mt-1 rounded-md border border-zinc-200 bg-zinc-50/90 p-1.5 shadow-sm"
+                        : "mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 shadow-sm"
+                    }
+                    id={`category-brands-${slot.id}`}
+                  >
+                    {sectionTitle("Marka")}
+                    {loadingBrands ? (
+                      <p className="mb-2 text-[11px] text-zinc-500">
+                        Markalar yükleniyor…
+                      </p>
+                    ) : brands.length === 0 ? (
+                      <p className="mb-2 text-[11px] text-zinc-500">
+                        Bu kategoride marka bulunamadı.
+                      </p>
+                    ) : (
+                      <ul
+                        className={
+                          compact ? "flex flex-col gap-0.5" : "flex flex-col gap-1"
+                        }
+                      >
+                        {brands.map((b) => {
                 const active = brandId === b.id;
                 const panelOpen = expandedBrandId === b.id;
                 const brandHint = [b.name, b.code].filter(Boolean).join(" ") || null;
@@ -810,15 +803,14 @@ function VehicleCascadeSidebarInner({
                   </li>
               );
             })}
-                        </ul>
-                      )}
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+                      </ul>
+                    )}
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
       ) : categoryId ? (
         <div
           className={
