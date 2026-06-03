@@ -238,6 +238,17 @@ function VehicleCascadeSidebarInner({
     const bsid = searchParams.get("body_style_id");
     const eid = searchParams.get("engine_id");
     const pkid = searchParams.get("vehicle_engine_package_id");
+    if (!cid && !bid && !mid && !bsid && !eid && !pkid) {
+      setCategoryId("");
+      setExpandedCategoryId(null);
+      setBrandId("");
+      setExpandedBrandId(null);
+      setModelId("");
+      setBodyStyleId("");
+      setEngineId("");
+      setPackageId("");
+      return;
+    }
     if (cid) {
       setCategoryId(cid);
       setExpandedCategoryId(cid);
@@ -340,9 +351,7 @@ function VehicleCascadeSidebarInner({
     let cancelled = false;
     void (async () => {
       const engineIds = engines.map(e => e.id);
-      console.log('[DEBUG] Fetching engine counts for:', engineIds);
       const m = await fetchApprovedListingCountsByEnginePackages(supabase, engineIds);
-      console.log('[DEBUG] Engine counts result:', m);
       if (!cancelled) setEngineIdCounts(m);
     })();
     return () => {
@@ -358,15 +367,12 @@ function VehicleCascadeSidebarInner({
     let cancelled = false;
     void (async () => {
       const packageIds = packages.map(p => p.id);
-      console.log('[DEBUG] Fetching package counts for:', packageIds);
       const m = await fetchApprovedListingCountsByField(supabase, "vehicle_engine_package_id");
-      console.log('[DEBUG] All package counts:', m.size, 'entries');
       const filtered = new Map<string, number>();
       for (const pkgId of packageIds) {
         const count = m.get(pkgId) ?? 0;
         if (count > 0) filtered.set(pkgId, count);
       }
-      console.log('[DEBUG] Filtered package counts:', filtered);
       if (!cancelled) setPackageIdCounts(filtered);
     })();
     return () => {

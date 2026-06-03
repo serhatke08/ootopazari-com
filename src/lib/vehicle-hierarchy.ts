@@ -108,14 +108,14 @@ export async function fetchBrandModels(
 }
 
 export type BrandModelsHierarchyResult = {
-  /** `parent_id` / `parent_model_id` null üst satırlar varsa iki kademeli menü */
+  /** `parent_model_id` null üst satırlar varsa iki kademeli menü */
   hierarchical: boolean;
   /** Üst seviye (Modeller) veya düz listede tüm seriler */
   parents: IdNameRow[];
 };
 
 /**
- * Marka altında: üst model satırları (`parent_id` / `parent_model_id` null).
+ * Marka altında: üst model satırları (`parent_model_id` null).
  * Hiçbiri yoksa tüm `vehicle_brand_models` düz liste olarak döner (`hierarchical: false`).
  */
 export async function fetchBrandModelsHierarchy(
@@ -123,14 +123,6 @@ export async function fetchBrandModelsHierarchy(
   brandId: string
 ): Promise<BrandModelsHierarchyResult> {
   const parentTries = [
-    () =>
-      supabase
-        .from("vehicle_brand_models")
-        .select("id,name,code,sort_order")
-        .eq("brand_id", brandId)
-        .is("parent_id", null)
-        .order("sort_order", { ascending: true, nullsFirst: false })
-        .order("id", { ascending: true }),
     () =>
       supabase
         .from("vehicle_brand_models")
@@ -196,13 +188,6 @@ export async function fetchChildBrandModels(
       supabase
         .from("vehicle_brand_models")
         .select("id,name,code,sort_order")
-        .eq("parent_id", parentId)
-        .order("sort_order", { ascending: true, nullsFirst: false })
-        .order("id", { ascending: true }),
-    () =>
-      supabase
-        .from("vehicle_brand_models")
-        .select("id,name,code,sort_order")
         .eq("parent_model_id", parentId)
         .order("sort_order", { ascending: true, nullsFirst: false })
         .order("id", { ascending: true }),
@@ -240,52 +225,25 @@ export async function fetchVehicleBrandModelSeriCode(
 
 /**
  * `vehicle_brand_models.id` → `vehicle_model_body_styles` (Flutter: model_id + sort_order).
- * FK kolon adı projede farklı olabilir; sırayla denenir.
  */
 export async function fetchBodyStylesForModel(
   supabase: SupabaseClient,
   modelId: string
 ): Promise<IdNameRow[]> {
-  const fkColumns = [
-    "model_id",
-    "vehicle_brand_model_id",
-    "brand_model_id",
-  ] as const;
+  const { data, error } = await supabase
+    .from("vehicle_model_body_styles")
+    .select("id,name,sort_order")
+    .eq("model_id", modelId)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
 
-  for (const column of fkColumns) {
-    const sorted = await supabase
-      .from("vehicle_model_body_styles")
-      .select("id,name,code,sort_order")
-      .eq(column, modelId)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("name", { ascending: true });
-
-    if (!sorted.error && sorted.data) {
-      return (sorted.data ?? []) as IdNameRow[];
-    }
-
-    const byName = await supabase
-      .from("vehicle_model_body_styles")
-      .select("id,name,code")
-      .eq(column, modelId)
-      .order("name", { ascending: true });
-
-    if (!byName.error && byName.data) {
-      return (byName.data ?? []) as IdNameRow[];
-    }
-
-    const minimal = await supabase
-      .from("vehicle_model_body_styles")
-      .select("id,name")
-      .eq(column, modelId);
-
-    if (!minimal.error && minimal.data && minimal.data.length > 0) {
-      return (minimal.data ?? []) as IdNameRow[];
-    }
+  if (!error && data) {
+    return (data ?? []) as IdNameRow[];
   }
 
   console.warn(
-    "vehicle_model_body_styles: sorgu başarısız veya FK kolonu yok (model_id / vehicle_brand_model_id / brand_model_id)."
+    "vehicle_model_body_styles:",
+    error?.message ?? "sorgu başarısız"
   );
   return [];
 }
@@ -298,47 +256,20 @@ export async function fetchEnginesForBodyStyle(
   supabase: SupabaseClient,
   modelBodyStyleId: string
 ): Promise<IdNameRow[]> {
-  const fkColumns = [
-    "body_style_id",
-    "vehicle_model_body_style_id",
-    "model_body_style_id",
-    "vehicle_body_style_id",
-  ] as const;
+  const { data, error } = await supabase
+    .from("vehicle_body_style_engines")
+    .select("id,name,fuel_type,horsepower,sort_order")
+    .eq("body_style_id", modelBodyStyleId)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
 
-  for (const column of fkColumns) {
-    const full = await supabase
-      .from("vehicle_body_style_engines")
-      .select("id,name,code,fuel_type,horsepower,sort_order")
-      .eq(column, modelBodyStyleId)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("name", { ascending: true });
-
-    if (!full.error && full.data) {
-      return (full.data ?? []) as IdNameRow[];
-    }
-
-    const byName = await supabase
-      .from("vehicle_body_style_engines")
-      .select("id,name,code")
-      .eq(column, modelBodyStyleId)
-      .order("name", { ascending: true });
-
-    if (!byName.error && byName.data) {
-      return (byName.data ?? []) as IdNameRow[];
-    }
-
-    const minimal = await supabase
-      .from("vehicle_body_style_engines")
-      .select("id,name")
-      .eq(column, modelBodyStyleId);
-
-    if (!minimal.error && minimal.data && minimal.data.length > 0) {
-      return (minimal.data ?? []) as IdNameRow[];
-    }
+  if (!error && data) {
+    return (data ?? []) as IdNameRow[];
   }
 
   console.warn(
-    "vehicle_body_style_engines: sorgu başarısız veya FK kolonu yok (body_style_id / vehicle_model_body_style_id / …)."
+    "vehicle_body_style_engines:",
+    error?.message ?? "sorgu başarısız"
   );
   return [];
 }
@@ -351,46 +282,20 @@ export async function fetchPackagesForEngine(
   supabase: SupabaseClient,
   bodyStyleEngineId: string
 ): Promise<IdNameRow[]> {
-  const fkColumns = [
-    "engine_id",
-    "body_style_engine_id",
-    "vehicle_body_style_engine_id",
-  ] as const;
+  const { data, error } = await supabase
+    .from("vehicle_engine_packages")
+    .select("id,name,sort_order")
+    .eq("engine_id", bodyStyleEngineId)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
 
-  for (const column of fkColumns) {
-    const full = await supabase
-      .from("vehicle_engine_packages")
-      .select("id,name,code,sort_order")
-      .eq(column, bodyStyleEngineId)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("name", { ascending: true });
-
-    if (!full.error && full.data) {
-      return (full.data ?? []) as IdNameRow[];
-    }
-
-    const byName = await supabase
-      .from("vehicle_engine_packages")
-      .select("id,name,code")
-      .eq(column, bodyStyleEngineId)
-      .order("name", { ascending: true });
-
-    if (!byName.error && byName.data) {
-      return (byName.data ?? []) as IdNameRow[];
-    }
-
-    const minimal = await supabase
-      .from("vehicle_engine_packages")
-      .select("id,name")
-      .eq(column, bodyStyleEngineId);
-
-    if (!minimal.error && minimal.data && minimal.data.length > 0) {
-      return (minimal.data ?? []) as IdNameRow[];
-    }
+  if (!error && data) {
+    return (data ?? []) as IdNameRow[];
   }
 
   console.warn(
-    "vehicle_engine_packages: sorgu başarısız veya FK kolonu yok (engine_id / body_style_engine_id / …)."
+    "vehicle_engine_packages:",
+    error?.message ?? "sorgu başarısız"
   );
   return [];
 }
@@ -405,6 +310,17 @@ export async function fetchHierarchyRowName(
     | "vehicle_engine_packages",
   id: string
 ): Promise<string | null> {
+  if (table !== "vehicle_brand_models") {
+    const { data, error } = await supabase
+      .from(table)
+      .select("name")
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data || typeof data !== "object") return null;
+    const r = data as { name?: string | null };
+    return r.name?.trim() || null;
+  }
+
   const { data, error } = await supabase
     .from(table)
     .select("name,code")
@@ -420,20 +336,12 @@ export async function fetchPackageIdsForEngine(
   supabase: SupabaseClient,
   engineId: string
 ): Promise<string[]> {
-  const fkColumns = [
-    "engine_id",
-    "body_style_engine_id",
-    "vehicle_body_style_engine_id",
-  ] as const;
-
-  for (const column of fkColumns) {
-    const { data, error } = await supabase
-      .from("vehicle_engine_packages")
-      .select("id")
-      .eq(column, engineId);
-    if (!error && data?.length) {
-      return (data as { id: string }[]).map((r) => r.id).filter(Boolean);
-    }
+  const { data, error } = await supabase
+    .from("vehicle_engine_packages")
+    .select("id")
+    .eq("engine_id", engineId);
+  if (!error && data?.length) {
+    return (data as { id: string }[]).map((r) => r.id).filter(Boolean);
   }
   return [];
 }

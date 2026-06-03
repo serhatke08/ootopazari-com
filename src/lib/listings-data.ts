@@ -761,7 +761,7 @@ export async function fetchApprovedListingCountsByEnginePackages(
     const { data } = await supabase
       .from("vehicle_engine_packages")
       .select("id")
-      .or(`engine_id.eq.${engineId},body_style_engine_id.eq.${engineId},vehicle_body_style_engine_id.eq.${engineId}`);
+      .eq("engine_id", engineId);
     
     if (data && data.length > 0) {
       engineToPackages.set(engineId, data.map(p => p.id));

@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import type { CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { tryGetSupabaseEnv } from "@/lib/env";
 
@@ -18,23 +18,49 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/giris?error=config`);
   }
   const { url, anonKey } = env;
-  const cookieStore = await cookies();
+  const pendingCookies: {
+    name: string;
+    value: string;
+    options: CookieOptions;
+  }[] = [];
+  const pendingHeaders = new Headers();
+  const requestCookies = new Map(
+    request.cookies.getAll().map((cookie) => [cookie.name, cookie.value])
+  );
+  const redirectWithAuthCookies = (location: string) => {
+    const response = NextResponse.redirect(location);
+    pendingCookies.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options);
+    });
+    pendingHeaders.forEach((value, key) => {
+      response.headers.set(key, value);
+    });
+    return response;
+  };
+
   const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {
-        return cookieStore.getAll();
+        return Array.from(requestCookies.entries()).map(([name, value]) => ({
+          name,
+          value,
+        }));
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          cookieStore.set(name, value, options)
-        );
+      setAll(cookiesToSet, headers) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          requestCookies.set(name, value);
+          pendingCookies.push({ name, value, options });
+        });
+        Object.entries(headers).forEach(([key, value]) => {
+          pendingHeaders.set(key, value);
+        });
       },
     },
   });
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(
+    return redirectWithAuthCookies(
       `${origin}/giris?error=${encodeURIComponent(error.message)}`
     );
   }
@@ -75,11 +101,11 @@ export async function GET(request: NextRequest) {
     const hasPhone = Boolean(profilePhone || metaPhone);
 
     if (!hasName || !hasPhone) {
-      return NextResponse.redirect(
+      return redirectWithAuthCookies(
         `${origin}/hesap-tamamla?next=${encodeURIComponent(next)}`
       );
     }
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return redirectWithAuthCookies(`${origin}${next}`);
 }

@@ -6,15 +6,7 @@ import Link from "next/link";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { GoogleIcon } from "@/components/GoogleIcon";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-
-function buildOAuthRedirectTo(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  const base = fromEnv && fromEnv !== "" ? fromEnv : window.location.origin;
-  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(base)
-    ? base
-    : `https://${base}`;
-  return new URL("/auth/callback", withProtocol).toString();
-}
+import { buildOAuthRedirectTo } from "@/lib/oauth-redirect";
 
 export function LoginForm() {
   const router = useRouter();
@@ -39,7 +31,7 @@ export function LoginForm() {
     setOauthLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const redirectTo = buildOAuthRedirectTo();
+      const redirectTo = buildOAuthRedirectTo(next);
       const oauthOptions = {
         provider: "google" as const,
         options: {
