@@ -5,7 +5,6 @@
 CREATE TABLE IF NOT EXISTS vehicle_brand_models (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id UUID NOT NULL REFERENCES vehicle_brands(id) ON DELETE CASCADE,
-  parent_id UUID REFERENCES vehicle_brand_models(id) ON DELETE SET NULL,
   name TEXT NOT NULL,
   code TEXT,
   sort_order INTEGER DEFAULT 0,
@@ -13,12 +12,25 @@ CREATE TABLE IF NOT EXISTS vehicle_brand_models (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add parent_model_id if it doesn't exist (self-referencing FK)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'vehicle_brand_models' AND column_name = 'parent_model_id'
+  ) THEN
+    ALTER TABLE vehicle_brand_models 
+    ADD COLUMN parent_model_id UUID REFERENCES vehicle_brand_models(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_vehicle_brand_models_brand_id ON vehicle_brand_models(brand_id);
-CREATE INDEX IF NOT EXISTS idx_vehicle_brand_models_parent_id ON vehicle_brand_models(parent_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_brand_models_parent_model_id ON vehicle_brand_models(parent_model_id);
 CREATE INDEX IF NOT EXISTS idx_vehicle_brand_models_sort_order ON vehicle_brand_models(sort_order);
 
 ALTER TABLE vehicle_brand_models ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public can view vehicle_brand_models" ON vehicle_brand_models;
 CREATE POLICY "Public can view vehicle_brand_models"
   ON vehicle_brand_models
   FOR SELECT
@@ -40,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_model_body_styles_sort_order ON vehicle_m
 
 ALTER TABLE vehicle_model_body_styles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public can view vehicle_model_body_styles" ON vehicle_model_body_styles;
 CREATE POLICY "Public can view vehicle_model_body_styles"
   ON vehicle_model_body_styles
   FOR SELECT
@@ -63,6 +76,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_body_style_engines_sort_order ON vehicle_
 
 ALTER TABLE vehicle_body_style_engines ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public can view vehicle_body_style_engines" ON vehicle_body_style_engines;
 CREATE POLICY "Public can view vehicle_body_style_engines"
   ON vehicle_body_style_engines
   FOR SELECT
@@ -84,6 +98,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_engine_packages_sort_order ON vehicle_eng
 
 ALTER TABLE vehicle_engine_packages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public can view vehicle_engine_packages" ON vehicle_engine_packages;
 CREATE POLICY "Public can view vehicle_engine_packages"
   ON vehicle_engine_packages
   FOR SELECT
@@ -107,11 +122,13 @@ CREATE INDEX IF NOT EXISTS idx_user_notifications_created_at ON user_notificatio
 
 ALTER TABLE user_notifications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own notifications" ON user_notifications;
 CREATE POLICY "Users can view own notifications"
   ON user_notifications
   FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own notifications" ON user_notifications;
 CREATE POLICY "Users can update own notifications"
   ON user_notifications
   FOR UPDATE
@@ -126,21 +143,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_vehicle_brand_models_updated_at ON vehicle_brand_models;
 CREATE TRIGGER update_vehicle_brand_models_updated_at
   BEFORE UPDATE ON vehicle_brand_models
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_vehicle_model_body_styles_updated_at ON vehicle_model_body_styles;
 CREATE TRIGGER update_vehicle_model_body_styles_updated_at
   BEFORE UPDATE ON vehicle_model_body_styles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_vehicle_body_style_engines_updated_at ON vehicle_body_style_engines;
 CREATE TRIGGER update_vehicle_body_style_engines_updated_at
   BEFORE UPDATE ON vehicle_body_style_engines
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_vehicle_engine_packages_updated_at ON vehicle_engine_packages;
 CREATE TRIGGER update_vehicle_engine_packages_updated_at
   BEFORE UPDATE ON vehicle_engine_packages
   FOR EACH ROW
