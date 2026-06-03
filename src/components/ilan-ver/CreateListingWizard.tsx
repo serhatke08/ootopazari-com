@@ -250,7 +250,13 @@ export function CreateListingWizard({
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const categoryCode = selectedCategory?.code ?? null;
+  const categoryName = selectedCategory?.name ?? null;
   const isVehicle = isVehicleCategoryCode(categoryCode);
+  
+  // Scooter kategorisi - plaka ve bazı özellikler zorunlu değil
+  const isScooter = categoryName?.toLowerCase().includes("scooter") || 
+                    categoryCode?.toLowerCase().includes("scooter") ||
+                    false;
 
   useEffect(() => {
     void (async () => {
@@ -761,23 +767,23 @@ export function CreateListingWizard({
     const priceNum = parsePriceTry(priceStr);
     if (priceNum == null) errors.push("Geçerli bir fiyat girin.");
     
-    // Plaka kontrolü
-    if (isVehicle && !plateNumber.trim()) {
+    // Plaka kontrolü (scooter hariç)
+    if (isVehicle && !isScooter && !plateNumber.trim()) {
       errors.push("Plaka numarası zorunludur.");
     }
     
-    // Yakıt kontrolü
-    if (isVehicle && !fuelType.trim()) {
+    // Yakıt kontrolü (scooter hariç)
+    if (isVehicle && !isScooter && !fuelType.trim()) {
       errors.push("Yakıt tipi seçin.");
     }
     
-    // Vites kontrolü
-    if (isVehicle && !transmissionType.trim()) {
+    // Vites kontrolü (scooter hariç)
+    if (isVehicle && !isScooter && !transmissionType.trim()) {
       errors.push("Vites tipi seçin.");
     }
     
-    // Çekiş kontrolü
-    if (isVehicle && !driveType.trim()) {
+    // Çekiş kontrolü (scooter hariç)
+    if (isVehicle && !isScooter && !driveType.trim()) {
       errors.push("Çekiş tipi seçin.");
     }
     
@@ -1784,7 +1790,10 @@ export function CreateListingWizard({
               <input
                 type="checkbox"
                 checked={isFixedPrice}
-                onChange={(e) => setIsFixedPrice(e.target.checked)}
+                onChange={(e) => {
+                  setIsFixedPrice(e.target.checked);
+                  if (e.target.checked) setIsNegotiable(false);
+                }}
               />
               Sabit fiyat
             </label>
@@ -1792,7 +1801,10 @@ export function CreateListingWizard({
               <input
                 type="checkbox"
                 checked={isNegotiable}
-                onChange={(e) => setIsNegotiable(e.target.checked)}
+                onChange={(e) => {
+                  setIsNegotiable(e.target.checked);
+                  if (e.target.checked) setIsFixedPrice(false);
+                }}
               />
               Pazarlık var
             </label>
