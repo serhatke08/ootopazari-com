@@ -95,7 +95,7 @@ export function ListingCard({
     <div
       className={
         isHomeGrid
-          ? "relative aspect-square w-full overflow-hidden bg-white sm:aspect-[4/5]"
+          ? "relative aspect-[4/3] w-full overflow-hidden bg-white sm:aspect-[3/2]"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
