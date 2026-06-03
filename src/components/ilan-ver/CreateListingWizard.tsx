@@ -1945,7 +1945,7 @@ export function CreateListingWizard({
                     Durum seçtikçe renkli parça katmanları şablona yansır.
                   </p>
                 </div>
-                <div className="space-y-2 rounded-lg border border-zinc-200 p-2">
+                <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 p-2">
                   {(Object.keys(PANEL_LABELS) as PanelKey[]).map((key) => (
                     <div
                       key={key}
