@@ -176,7 +176,7 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
               key={dealer.id}
               dealer={dealer}
               dealerType={dealerType}
-              supabaseUrl={env.supabaseUrl}
+              supabaseUrl={env.url}
             />
           ))}
         </div>
