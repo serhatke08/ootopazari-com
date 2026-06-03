@@ -744,6 +744,12 @@ export function CreateListingWizard({
   }, [thumbUrls]);
 
   const submit = async () => {
+    // Double-submit engelleme
+    if (busy) {
+      console.warn("Submit zaten işleniyor, tekrar gönderim engellendi.");
+      return;
+    }
+    
     setErr(null);
     
     // Kapak görseli kontrolü - eğer seçilmemişse ilk görseli seç
@@ -988,33 +994,52 @@ export function CreateListingWizard({
 
       const listingId = inserted.id as string;
 
-      const galleryUrls: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        const ext = extForFile(f);
-        const path = `${listingId}/${i}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("listings-images")
-          .upload(path, f, {
-            upsert: true,
-            contentType: mimeForUpload(f),
-          });
-        if (upErr) {
-          setErr(`Görsel yüklenemedi: ${upErr.message}`);
-          return;
+      // Görsel yükleme - hata olursa ilan silinecek
+      let uploadSuccess = false;
+      try {
+        const galleryUrls: string[] = [];
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          const ext = extForFile(f);
+          const path = `${listingId}/${i}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("listings-images")
+            .upload(path, f, {
+              upsert: true,
+              contentType: mimeForUpload(f),
+            });
+          if (upErr) {
+            throw new Error(`Görsel yüklenemedi: ${upErr.message}`);
+          }
+          galleryUrls.push(publicListingImageUrl(env, path));
         }
-        galleryUrls.push(publicListingImageUrl(env, path));
+
+        const coverUrl = galleryUrls[coverIndex] ?? galleryUrls[0];
+
+        const { error: upListingErr } = await supabase
+          .from("listings")
+          .update({ image_url: coverUrl })
+          .eq("id", listingId);
+
+        if (upListingErr) {
+          throw new Error(`Kapak güncellenemedi: ${upListingErr.message}`);
+        }
+        
+        uploadSuccess = true;
+      } catch (err) {
+        // Hata oluştu - oluşturulan ilanı sil (rollback)
+        await supabase
+          .from("listings")
+          .delete()
+          .eq("id", listingId)
+          .eq("user_id", uid);
+        
+        setErr(err instanceof Error ? err.message : "İlan oluşturulamadı.");
+        return;
       }
 
-      const coverUrl = galleryUrls[coverIndex] ?? galleryUrls[0];
-
-      const { error: upListingErr } = await supabase
-        .from("listings")
-        .update({ image_url: coverUrl })
-        .eq("id", listingId);
-
-      if (upListingErr) {
-        setErr(`Kapak güncellenemedi: ${upListingErr.message}`);
+      if (!uploadSuccess) {
+        setErr("İlan kaydedilemedi.");
         return;
       }
 
