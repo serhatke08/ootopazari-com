@@ -843,7 +843,16 @@ function VehicleCascadeSidebarInner({
                   });
                 }}
               >
-                <span>Tüm {selectedBrand.name ?? selectedBrand.code} ilanları</span>
+                <span className="flex items-center gap-2">
+                  <FallbackImg
+                    primary={getBrandLogoUrl(selectedBrand.name ?? null, selectedBrand.code ?? null)}
+                    fallback={null}
+                    alt={selectedBrand.name ?? ""}
+                    className="h-5 w-5 shrink-0 rounded object-contain"
+                    fallbackClassName="hidden"
+                  />
+                  <span>Tüm {selectedBrand.name ?? selectedBrand.code} ilanları</span>
+                </span>
                 {listingCountBadge(brandCounts.get(brandId) ?? 0, compact)}
               </button>
 
