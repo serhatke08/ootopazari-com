@@ -1970,17 +1970,17 @@ export function CreateListingWizard({
                     Durum seçtikçe renkli parça katmanları şablona yansır.
                   </p>
                 </div>
-                <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 p-2">
+                <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
                   {(Object.keys(PANEL_LABELS) as PanelKey[]).map((key) => (
                     <div
                       key={key}
-                      className="flex flex-wrap items-center gap-2 text-sm"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-zinc-50 px-3 py-2 text-sm"
                     >
-                      <span className="w-40 shrink-0 text-zinc-600">
+                      <span className="font-medium text-zinc-700">
                         {PANEL_LABELS[key]}
                       </span>
                       <select
-                        className="min-w-[10rem] rounded border border-zinc-300 px-2 py-1 text-xs"
+                        className="min-w-[10rem] rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium"
                         value={expertiz[key] ?? "orijinal"}
                         onChange={(e) => {
                           const v = e.target.value as ExpertizDurum;
