@@ -203,6 +203,9 @@ function VehicleCascadeSidebarInner({
   const [engineIdCounts, setEngineIdCounts] = useState<Map<string, number>>(
     () => new Map()
   );
+  const [packageIdCounts, setPackageIdCounts] = useState<Map<string, number>>(
+    () => new Map()
+  );
 
   const allModelsForNav = selectableModels;
 
@@ -344,6 +347,27 @@ function VehicleCascadeSidebarInner({
       cancelled = true;
     };
   }, [engines, supabase]);
+
+  useEffect(() => {
+    if (packages.length === 0) {
+      setPackageIdCounts(new Map());
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const packageIds = packages.map(p => p.id);
+      const m = await fetchApprovedListingCountsByField(supabase, "vehicle_engine_package_id");
+      const filtered = new Map<string, number>();
+      for (const pkgId of packageIds) {
+        const count = m.get(pkgId) ?? 0;
+        if (count > 0) filtered.set(pkgId, count);
+      }
+      if (!cancelled) setPackageIdCounts(filtered);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [packages, supabase]);
 
   useEffect(() => {
     if (!categoryId) {
@@ -935,12 +959,11 @@ function VehicleCascadeSidebarInner({
 
               {modelId && selectableModels.length > 0 ? (
                 <div className="space-y-3 border-t border-zinc-100 pt-3">
-                  {/* MOTOR ÖNCE - Otomatik ilk kasa seçildi */}
+                  {/* MOTOR - Otomatik ilk kasa seçildi */}
                   {bodyStyleId && bodyStyles.length > 0 ? (
                     <>
-                      {sectionTitle("Motor")}
                       {loadingEngines ? (
-                        <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
+                        <p className="text-[11px] text-zinc-500">Motor yükleniyor…</p>
                       ) : engines.length === 0 ? (
                         <button
                           type="button"
@@ -986,8 +1009,7 @@ function VehicleCascadeSidebarInner({
 
                   {/* PAKET */}
                   {engineId && engines.length > 0 ? (
-                    <div className="space-y-3 border-t border-zinc-100 pt-3">
-                      {sectionTitle("Paket")}
+                    <div className="space-y-2 mt-2 pl-3 border-l-2 border-zinc-200">
                       {loadingPackages ? (
                         <p className="text-[11px] text-zinc-500">Yükleniyor…</p>
                       ) : packages.length === 0 ? (
@@ -1004,6 +1026,7 @@ function VehicleCascadeSidebarInner({
                         <ul className="flex flex-col gap-1">
                           {packages.map((pk) => {
                             const pkActive = packageId === pk.id;
+                            const pkCnt = packageIdCounts.get(pk.id) ?? 0;
                             return (
                               <li key={pk.id} className="min-w-0">
                                 <button
@@ -1021,6 +1044,7 @@ function VehicleCascadeSidebarInner({
                                   <span className="min-w-0 flex-1 truncate">
                                     {rowLabel(pk)}
                                   </span>
+                                  {pkCnt > 0 ? listingCountBadge(pkCnt, compact) : null}
                                 </button>
                               </li>
                             );
