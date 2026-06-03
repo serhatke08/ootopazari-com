@@ -661,6 +661,7 @@ function VehicleCascadeSidebarInner({
                         resetBelowBrand();
                         setExpandedBrandId(b.id);
                         /** Sayfa yenileme yok — önce modeller/seriler açılsın; filtre seri veya “Tümünü göster”de. */
+                        navigateToListings({ brandId: b.id, modelId: "", bodyStyleId: "", engineId: "", packageId: "" });
                       } else {
                         setExpandedBrandId((prev) =>
                           prev === b.id ? null : b.id
@@ -789,6 +790,7 @@ function VehicleCascadeSidebarInner({
                       onClick={() => {
                         setBrandId(b.id);
                         resetBelowBrand();
+                        navigateToListings({ brandId: b.id, modelId: "", bodyStyleId: "", engineId: "", packageId: "" });
                         setExpandedBrandId(b.id);
                       }}
                       className={brandListRowClass(active, compact)}
@@ -899,6 +901,7 @@ function VehicleCascadeSidebarInner({
                           onClick={() => {
                             setModelId(m.id);
                             resetBelowModel();
+                            navigateToListings({ modelId: m.id, bodyStyleId: "", engineId: "", packageId: "" });
                           }}
                           className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
                             mActive
