@@ -129,7 +129,7 @@ export default async function RootLayout({
           href="/menu/pazar.png?v=20260413"
         />
       </head>
-      <body className="flex min-h-full flex-col bg-white text-zinc-900">
+      <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900">
         <Suspense
           fallback={
             <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />
@@ -138,7 +138,7 @@ export default async function RootLayout({
           <SiteHeader />
         </Suspense>
         <div className="layout-with-mobile-nav flex flex-1 flex-col">
-          <main className="flex flex-1 flex-col bg-white">{children}</main>
+          <main className="flex flex-1 flex-col bg-zinc-50">{children}</main>
           <SiteFooter loggedIn={footerLoggedIn} />
         </div>
         <Analytics />
