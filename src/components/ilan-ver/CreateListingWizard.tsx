@@ -976,45 +976,139 @@ export function CreateListingWizard({
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 pb-16">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">
-          {isEditMode ? "İlanı düzenle" : "İlan ver"}
-        </h1>
-        {isEditMode && editListingNumber ? (
-          <p className="mt-1 text-sm text-zinc-500">
-            İlan no:{" "}
-            <span className="font-semibold tabular-nums text-zinc-800">
+      {/* Modern Header */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-zinc-900">
+            {isEditMode ? "İlanı Düzenle" : "İlan Ver"}
+          </h1>
+          {isEditMode && editListingNumber ? (
+            <span className="rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-semibold tabular-nums text-zinc-700">
               #{editListingNumber}
             </span>
-          </p>
-        ) : null}
-        <p className="mt-1 text-sm text-zinc-600">
-          Adım {step} / 3 —{" "}
-          {step === 1
-            ? "Kategori ve araç seçimi"
-            : step === 2
-              ? "Fotoğraf, başlık, açıklama, fiyat"
-              : "Konum, iletişim ve araç detayları"}
-        </p>
-        <ol className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
-          <li className={step >= 1 ? "font-semibold text-zinc-800" : ""}>
-            1 Kategori
-          </li>
-          <li aria-hidden>→</li>
-          <li className={step >= 2 ? "font-semibold text-zinc-800" : ""}>
-            2 Fotoğraf
-          </li>
-          <li aria-hidden>→</li>
-          <li className={step >= 3 ? "font-semibold text-zinc-800" : ""}>
-            3 Detay
-          </li>
-        </ol>
+          ) : null}
+        </div>
+
+        {/* Modern Step Indicator */}
+        <div className="space-y-4">
+          {/* Progress Bar */}
+          <div className="relative h-2 overflow-hidden rounded-full bg-zinc-100">
+            <div
+              className="h-full rounded-full bg-[#ffc400] transition-all duration-500 ease-out"
+              style={{ width: `${(step / 3) * 100}%` }}
+            />
+          </div>
+
+          {/* Steps */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Step 1 */}
+            <div className="flex flex-col items-center text-center">
+              <div
+                className={`mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 font-bold transition-all duration-300 ${
+                  step >= 1
+                    ? "border-[#ffc400] bg-[#ffc400] text-black shadow-md"
+                    : "border-zinc-300 bg-white text-zinc-400"
+                }`}
+              >
+                {step > 1 ? (
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                ) : (
+                  "1"
+                )}
+              </div>
+              <p
+                className={`text-xs font-semibold transition-colors ${
+                  step >= 1 ? "text-zinc-900" : "text-zinc-400"
+                }`}
+              >
+                Kategori
+              </p>
+              <p className="mt-0.5 text-[10px] text-zinc-500">Araç seçimi</p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex flex-col items-center text-center">
+              <div
+                className={`mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 font-bold transition-all duration-300 ${
+                  step >= 2
+                    ? "border-[#ffc400] bg-[#ffc400] text-black shadow-md"
+                    : "border-zinc-300 bg-white text-zinc-400"
+                }`}
+              >
+                {step > 2 ? (
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                ) : (
+                  "2"
+                )}
+              </div>
+              <p
+                className={`text-xs font-semibold transition-colors ${
+                  step >= 2 ? "text-zinc-900" : "text-zinc-400"
+                }`}
+              >
+                Fotoğraf
+              </p>
+              <p className="mt-0.5 text-[10px] text-zinc-500">Başlık & Fiyat</p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-center text-center">
+              <div
+                className={`mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 font-bold transition-all duration-300 ${
+                  step >= 3
+                    ? "border-[#ffc400] bg-[#ffc400] text-black shadow-md"
+                    : "border-zinc-300 bg-white text-zinc-400"
+                }`}
+              >
+                3
+              </div>
+              <p
+                className={`text-xs font-semibold transition-colors ${
+                  step >= 3 ? "text-zinc-900" : "text-zinc-400"
+                }`}
+              >
+                Detay
+              </p>
+              <p className="mt-0.5 text-[10px] text-zinc-500">Konum & İletişim</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Message for Step 1 */}
         {step === 1 ? (
-          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-            Fotoğraf yükleme bu sayfanın{" "}
-            <strong className="font-semibold">2. adımında</strong>. Önce kategori
-            ve araç bilgilerini doldurup <strong>İleri</strong> ile geçin.
-          </p>
+          <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <svg
+              className="mt-0.5 h-5 w-5 shrink-0 text-blue-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="text-sm text-blue-900">
+              <p className="font-semibold">Fotoğraflar sonraki adımda</p>
+              <p className="mt-1 text-blue-800">
+                Önce kategori ve araç bilgilerini seçin, ardından{" "}
+                <span className="font-semibold">İleri</span> butonuyla fotoğraf
+                yükleme adımına geçin.
+              </p>
+            </div>
+          </div>
         ) : null}
       </div>
 
