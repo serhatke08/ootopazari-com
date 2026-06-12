@@ -22,6 +22,7 @@ export type ListingRow = Record<string, unknown> & {
   body_type?: string | null;
   vehicle_engine_package_id?: string | null;
   vehicle_year?: number | null;
+  vehicle_mileage?: number | string | null;
   moderation_status?: string | null;
   created_at?: string | null;
   user_id?: string | null;
@@ -692,11 +693,11 @@ export async function fetchApprovedListingCountsByVehicleBrandModelId(
   const models = await fetchBrandModels(supabase, options.vehicleBrandId);
   if (models.length === 0) return new Map();
 
+  const map = new Map<string, number>();
   const byModelText = await fetchApprovedListingCountsByVehicleModel(
     supabase,
     options
   );
-  const map = new Map<string, number>();
 
   for (const model of models) {
     const needle = normalizeListingModelKey(model.name ?? model.code);
@@ -713,6 +714,90 @@ export async function fetchApprovedListingCountsByVehicleBrandModelId(
       }
     }
     if (count > 0) map.set(model.id, count);
+  }
+
+  const modelIds = models.map((model) => model.id).filter(Boolean);
+  const { data: bodyRows, error: bodyErr } = await supabase
+    .from("vehicle_model_body_styles")
+    .select("id,model_id")
+    .in("model_id", modelIds);
+
+  if (bodyErr || !bodyRows?.length) {
+    if (bodyErr) {
+      console.warn("model count body styles:", bodyErr.message);
+    }
+    return map;
+  }
+
+  const bodyToModel = new Map<string, string>();
+  const bodyIds: string[] = [];
+  for (const row of bodyRows as { id?: string | null; model_id?: string | null }[]) {
+    if (!row.id || !row.model_id) continue;
+    bodyToModel.set(row.id, row.model_id);
+    bodyIds.push(row.id);
+  }
+  if (bodyIds.length === 0) return map;
+
+  const { data: engineRows, error: engineErr } = await supabase
+    .from("vehicle_body_style_engines")
+    .select("id,body_style_id")
+    .in("body_style_id", bodyIds);
+
+  if (engineErr || !engineRows?.length) {
+    if (engineErr) {
+      console.warn("model count engines:", engineErr.message);
+    }
+    return map;
+  }
+
+  const engineToModel = new Map<string, string>();
+  const engineIds: string[] = [];
+  for (const row of engineRows as {
+    id?: string | null;
+    body_style_id?: string | null;
+  }[]) {
+    if (!row.id || !row.body_style_id) continue;
+    const modelId = bodyToModel.get(row.body_style_id);
+    if (!modelId) continue;
+    engineToModel.set(row.id, modelId);
+    engineIds.push(row.id);
+  }
+  if (engineIds.length === 0) return map;
+
+  const { data: packageRows, error: packageErr } = await supabase
+    .from("vehicle_engine_packages")
+    .select("id,engine_id")
+    .in("engine_id", engineIds);
+
+  if (packageErr || !packageRows?.length) {
+    if (packageErr) {
+      console.warn("model count packages:", packageErr.message);
+    }
+    return map;
+  }
+
+  const packageCounts = await fetchApprovedListingCountsByField(
+    supabase,
+    "vehicle_engine_package_id",
+    { categoryId: options.categoryId }
+  );
+
+  const hierarchyCounts = new Map<string, number>();
+  for (const row of packageRows as {
+    id?: string | null;
+    engine_id?: string | null;
+  }[]) {
+    if (!row.id || !row.engine_id) continue;
+    const modelId = engineToModel.get(row.engine_id);
+    if (!modelId) continue;
+    hierarchyCounts.set(
+      modelId,
+      (hierarchyCounts.get(modelId) ?? 0) + (packageCounts.get(row.id) ?? 0)
+    );
+  }
+
+  for (const [modelId, hierarchyCount] of hierarchyCounts) {
+    map.set(modelId, Math.max(map.get(modelId) ?? 0, hierarchyCount));
   }
   return map;
 }

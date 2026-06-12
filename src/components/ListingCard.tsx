@@ -40,6 +40,64 @@ type Props = {
   priceRating?: PriceRatingSummary;
 };
 
+function formatMaskedMileage(value: unknown): string | null {
+  if (value == null || value === "") return null;
+  const digits = String(value).replace(/\D/g, "");
+  if (!digits) return null;
+  const mileage = Number(digits);
+  if (!Number.isFinite(mileage) || mileage < 0) return null;
+  if (mileage === 0) return "0 km";
+  const thousands = Math.floor(mileage / 1000);
+  return `${new Intl.NumberFormat("tr-TR", {
+    maximumFractionDigits: 0,
+  }).format(thousands)}.xxx km`;
+}
+
+function LocationPinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className ?? "h-[11px] w-[11px]"}
+      aria-hidden
+    >
+      <path d="M12 2.25c-3.87 0-7 3.13-7 7 0 5.25 7 12.5 7 12.5s7-7.25 7-12.5c0-3.87-3.13-7-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z" />
+    </svg>
+  );
+}
+
+function SpeedIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className ?? "h-[11px] w-[11px]"}
+      aria-hidden
+    >
+      <path
+        d="M4.2 17.8a8.8 8.8 0 1 1 15.6 0"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path
+        d="m12 14 4.2-5.4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path
+        d="M7.2 18h9.6"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
 export function ListingCard({
   listing,
   env,
@@ -88,6 +146,7 @@ export function ListingCard({
 
   /** Ana sayfa / filtre sonuçları grid’i: daha yüksek görsel + fiyat görsel üzerinde */
   const isHomeGrid = hideCategoryAndYear && cityOnStatsRow;
+  const maskedMileage = formatMaskedMileage(listing.vehicle_mileage);
 
   const imageFrame = (
     <div
@@ -276,14 +335,41 @@ export function ListingCard({
           </div>
         ) : null}
         {stats ? (
-          <StatsBadges
-            variant="card"
-            views={stats.views}
-            favorites={stats.favorites}
-            rightSlot={
-              cityOnStatsRow && cityText ? cityText : undefined
-            }
-          />
+          isHomeGrid ? (
+            <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-100 pt-2 text-[11px] text-zinc-500 max-sm:mt-1 max-sm:pt-1.5 max-sm:text-[10px]">
+              {cityText ? (
+                <span
+                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-left text-[10px] font-medium leading-tight text-zinc-600 max-sm:text-[9px]"
+                  title="Şehir"
+                >
+                  <LocationPinIcon className="h-[11px] w-[11px] shrink-0 text-zinc-600" />
+                  <span className="truncate">
+                    {cityText}
+                  </span>
+                </span>
+              ) : (
+                <span className="min-w-0 flex-1" aria-hidden />
+              )}
+              <span
+                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-right font-semibold tabular-nums text-zinc-700"
+                title="Kilometre"
+              >
+                <SpeedIcon className="h-[11px] w-[11px] shrink-0 text-zinc-700" />
+                <span>
+                  {maskedMileage ?? "Km belirtilmedi"}
+                </span>
+              </span>
+            </div>
+          ) : (
+            <StatsBadges
+              variant="card"
+              views={stats.views}
+              favorites={stats.favorites}
+              rightSlot={
+                cityOnStatsRow && cityText ? cityText : undefined
+              }
+            />
+          )
         ) : null}
         {ownerActions ? (
           <div className="mt-2 flex flex-wrap gap-2 border-t border-zinc-100 pt-2">
