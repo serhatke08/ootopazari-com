@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 
 type Pack = {
   productId: string;
@@ -77,18 +78,24 @@ export function FeatureBoostPackagesDialog({
 
       <div className="border-t border-black/10 px-4 py-3">
         <p className="text-xs leading-relaxed text-black/60">
-          Web ödemesi yakında eklenecek. Şimdilik öne çıkarma satın almak için
-          mobil uygulamayı (App Store / Google Play) kullanın. Ödeme doğrulaması
-          ve ilan güncellemesi sunucu tarafında güvenli RPC ile yapılır; site
-          üzerinden boost alanlarına doğrudan yazılmaz.
+          Web ödemeleri PayTR güvenli ödeme altyapısı üzerinden alınacak şekilde
+          hazırlanır. Kart bilgileriniz Oto Pazarı tarafından saklanmaz.
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-3 w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm font-semibold text-black hover:bg-black/[0.03]"
-        >
-          Tamam
-        </button>
+        <div className="mt-3 grid gap-2">
+          <Link
+            href="/ilan-one-cikar"
+            className="w-full rounded-lg bg-[#ffc400] px-3 py-2 text-center text-sm font-extrabold text-black hover:bg-[#ffd24d]"
+          >
+            Paket Detayları
+          </Link>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm font-semibold text-black hover:bg-black/[0.03]"
+          >
+            Tamam
+          </button>
+        </div>
       </div>
     </dialog>
   );

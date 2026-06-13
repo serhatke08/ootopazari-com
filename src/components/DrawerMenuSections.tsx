@@ -45,6 +45,19 @@ function IconMessageBlue({ className }: { className?: string }) {
   );
 }
 
+function IconBoostAmber({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 ${className ?? ""}`}
+      aria-hidden
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />
+      </svg>
+    </span>
+  );
+}
+
 const rowClass =
   "flex items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-900 shadow-sm transition hover:border-[#ffcc00] hover:bg-amber-50/50";
 
@@ -114,6 +127,15 @@ export function DrawerMenuSections({
       <Link href="/ilan-ver" onClick={() => onNavigate?.()} className={rowClass}>
         <IconPlusGreen />
         <span>İlan ver</span>
+      </Link>
+
+      <Link
+        href="/ilan-one-cikar"
+        onClick={() => onNavigate?.()}
+        className={rowClass}
+      >
+        <IconBoostAmber />
+        <span>İlan öne çıkar</span>
       </Link>
 
       <Link href="/favoriler" onClick={() => onNavigate?.()} className={rowClass}>

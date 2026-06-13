@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ADSENSE_CLIENT_ID } from "@/lib/adsense";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -130,6 +131,12 @@ export default async function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900">
+        <div
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>`,
+          }}
+        />
         <Suspense
           fallback={
             <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />

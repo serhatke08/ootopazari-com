@@ -19,7 +19,7 @@ const linkClass =
   "text-zinc-900 hover:underline decoration-zinc-900/40 font-semibold";
 
 const navSearchFormClass =
-  "flex min-w-0 flex-1 max-w-[min(100%,280px)] sm:max-w-[320px] md:max-w-[380px]";
+  "flex min-w-0 w-full";
 const navSearchInputClass =
   "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25";
 
@@ -51,7 +51,7 @@ type HeaderNotification = {
   created_at: string;
 };
 
-function NavSearchForm() {
+function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
   const router = useRouter();
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -72,11 +72,11 @@ function NavSearchForm() {
       className={navSearchFormClass}
       onSubmit={handleSubmit}
     >
-      <label htmlFor="site-nav-search" className="sr-only">
+      <label htmlFor={id} className="sr-only">
         İlan ara
       </label>
       <input
-        id="site-nav-search"
+        id={id}
         type="search"
         name="q"
         placeholder="Ara…"
@@ -283,14 +283,17 @@ export function SiteHeaderClient({
           headerVisible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="mx-auto grid max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5 md:px-6">
+        <div className="mx-auto max-w-[1400px] px-2 py-2 sm:px-4 sm:py-2.5 md:px-6">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto_minmax(13rem,1fr)] sm:gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <HamburgerButton
               open={drawerOpen}
               onClick={() => setDrawerOpen((o) => !o)}
               className="text-zinc-900 hover:bg-black/10 focus:ring-zinc-900/30"
             />
-            <NavSearchForm />
+            <div className="hidden min-w-0 flex-1 sm:block sm:max-w-[280px] md:max-w-[340px] lg:max-w-[420px]">
+              <NavSearchForm id="site-nav-search-desktop" />
+            </div>
           </div>
 
           <Link
@@ -303,22 +306,18 @@ export function SiteHeaderClient({
             </span>
           </Link>
 
-          <nav className="flex min-w-0 items-center justify-end gap-x-1.5 gap-y-1 text-sm sm:gap-x-2 md:gap-x-3">
+          <nav className="flex min-w-0 items-center justify-end gap-x-1.5 gap-y-1 text-sm sm:gap-x-2 md:gap-x-2 lg:gap-x-3">
             {hasEnv ? (
               <>
                 <Link
                   href="/ilan-ver"
-                  className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-extrabold text-[#ffcc00] hover:bg-zinc-800 sm:inline-flex sm:px-3 sm:py-2 sm:text-sm"
+                  className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-extrabold text-[#ffcc00] hover:bg-zinc-800 md:inline-flex lg:px-3 lg:py-2 lg:text-sm"
                 >
                   İlan ver
                 </Link>
                 <Link
-                  href={
-                    loggedIn
-                      ? "/profil/ilanlarim"
-                      : `/giris?next=${encodeURIComponent("/profil/ilanlarim")}`
-                  }
-                  className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white sm:inline-flex sm:px-3 sm:py-2 sm:text-sm"
+                  href="/ilan-one-cikar"
+                  className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white md:inline-flex lg:px-3 lg:py-2 lg:text-sm"
                 >
                   Öne çıkar
                 </Link>
@@ -326,13 +325,13 @@ export function SiteHeaderClient({
                   <>
                     <Link
                       href="/favoriler"
-                      className={`${linkClass} hidden whitespace-nowrap lg:inline-flex`}
+                      className={`${linkClass} hidden whitespace-nowrap xl:inline-flex`}
                     >
                       Favoriler
                     </Link>
                     <Link
                       href="/mesajlar"
-                      className={`${linkClass} hidden whitespace-nowrap md:inline-flex md:items-center md:gap-1.5`}
+                      className={`${linkClass} hidden whitespace-nowrap lg:inline-flex lg:items-center lg:gap-1.5`}
                     >
                       Mesajlar
                       <MessageUnreadBadge count={unreadMessageCount} />
@@ -466,6 +465,10 @@ export function SiteHeaderClient({
               </>
             ) : null}
           </nav>
+          </div>
+          <div className="mt-2 sm:hidden">
+            <NavSearchForm id="site-nav-search-mobile" />
+          </div>
         </div>
       </header>
 

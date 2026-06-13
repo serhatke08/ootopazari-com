@@ -44,6 +44,8 @@ import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
+import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
+import { AdSenseUnit } from "@/components/AdSenseUnit";
 
 type Props = { params: Promise<{ listingNumber: string }> };
 
@@ -967,6 +969,11 @@ export default async function IlanDetayPage({ params }: Props) {
               </>
             )}
           </div>
+          <AdSenseUnit
+            slot={ADSENSE_LISTING_DETAIL_SLOT}
+            className="mt-3 hidden lg:block"
+            label="Sponsorlu"
+          />
         </div>
       </div>
 

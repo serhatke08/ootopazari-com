@@ -22,6 +22,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
+      url: `${origin}/ilan-one-cikar`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: `${origin}/hakkimizda`,
       lastModified: new Date(),
       changeFrequency: "monthly",
@@ -41,6 +47,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${origin}/kullanim-kosullari`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${origin}/iade-iptal-politikasi`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${origin}/mesafeli-satis-sozlesmesi`,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,

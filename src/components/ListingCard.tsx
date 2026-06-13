@@ -6,7 +6,7 @@ import type { ListingPublicStats } from "@/lib/listing-stats";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { isHeicLikeUrl } from "@/lib/image-format";
 import { buildListingSeoPath } from "@/lib/listing-seo";
-import { resolveListingImageUrl } from "@/lib/storage";
+import { isPublicListingImageUrl, resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingBoostChrome } from "@/components/ListingBoostChrome";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
@@ -136,7 +136,7 @@ export function ListingCard({
   );
   const listingId = listing.id;
   const img = resolveListingImageUrl(env, listing.image_url);
-  const imgUnoptimized = isHeicLikeUrl(img);
+  const imgUnoptimized = isHeicLikeUrl(img) || isPublicListingImageUrl(env, img);
   const price =
     listing.price != null
       ? `${new Intl.NumberFormat("tr-TR", {

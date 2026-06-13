@@ -27,6 +27,23 @@ export function resolveListingImageUrl(
   return publicListingImageUrl(env, imageUrl);
 }
 
+export function isPublicListingImageUrl(
+  env: SupabasePublicEnv,
+  imageUrl: string | null | undefined
+): boolean {
+  if (!imageUrl) return false;
+  try {
+    const url = new URL(imageUrl);
+    const base = new URL(env.url);
+    return (
+      url.origin === base.origin &&
+      url.pathname.startsWith(`/storage/v1/object/public/${BUCKET}/`)
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** `avatars` bucket içi göreli yol → public URL (istemci `getPublicUrl` tercih edebilir). */
 export function publicAvatarUrl(
   env: SupabasePublicEnv,

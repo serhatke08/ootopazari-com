@@ -2,9 +2,9 @@ import Link from "next/link";
 
 const quickLinks = [
   { label: "+ İlan Ekle", href: "/ilan-ver" },
+  { label: "İlan Öne Çıkar", href: "/ilan-one-cikar" },
   { label: "Favoriler", href: "/favoriler" },
   { label: "Mesajlar", href: "/mesajlar" },
-  { label: "Tüm İlanlar", href: "/ilanlar" },
 ] as const;
 
 export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
@@ -113,6 +113,7 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
               <Link href="/">Ana Sayfa</Link>
               <Link href="/ilanlar">Tüm İlanlar</Link>
               <Link href="/ilan-ver">Ücretsiz İlan Ver</Link>
+              <Link href="/ilan-one-cikar">İlan Öne Çıkar</Link>
             </div>
             <div className="site-footer-col">
               <p className="site-footer-col-title">Hesap</p>
@@ -121,6 +122,15 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
                   {link.label}
                 </Link>
               ))}
+            </div>
+            <div className="site-footer-col">
+              <p className="site-footer-col-title">Kurumsal</p>
+              <Link href="/hakkimizda">Hakkımızda</Link>
+              <Link href="/iletisim">İletişim</Link>
+              <Link href="/gizlilik-politikasi">Gizlilik Politikası</Link>
+              <Link href="/kullanim-kosullari">Kullanım Koşulları</Link>
+              <Link href="/iade-iptal-politikasi">İade ve İptal</Link>
+              <Link href="/mesafeli-satis-sozlesmesi">Mesafeli Satış</Link>
             </div>
           </div>
 

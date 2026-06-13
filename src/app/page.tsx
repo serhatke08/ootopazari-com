@@ -30,6 +30,8 @@ import { ListingFilters } from "@/components/ListingFilters";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
+import { ADSENSE_HOME_SLOT } from "@/lib/adsense";
+import { AdSenseUnit } from "@/components/AdSenseUnit";
 
 /** Geçici: ana sayfa hero bölümü (kaldırılmadı, devre dışı). */
 const SHOW_HOME_HERO = false;
@@ -165,6 +167,11 @@ export default async function AnaSayfa({
                 <TopCitySelect cities={cities} />
                 <ListingFilters />
               </div>
+              <AdSenseUnit
+                slot={ADSENSE_HOME_SLOT}
+                className="mb-4 hidden sm:block"
+                label="Sponsorlu"
+              />
               {items.length === 0 ? (
                 <p className="text-sm text-zinc-500">
                   Henüz ilan yok veya RLS engelliyor.
@@ -250,6 +257,11 @@ export default async function AnaSayfa({
               {listFilters.vehicleEnginePackageId ? " · paket filtresi" : ""}
               {listFilters.q ? ` · “${listFilters.q}”` : ""}
             </p>
+            <AdSenseUnit
+              slot={ADSENSE_HOME_SLOT}
+              className="mb-4 hidden sm:block"
+              label="Sponsorlu"
+            />
 
             {items.length === 0 ? (
               <p className="text-sm text-zinc-500">
