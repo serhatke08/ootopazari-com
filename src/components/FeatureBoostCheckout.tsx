@@ -17,6 +17,19 @@ type Props = {
   initialListingNumber?: string | null;
 };
 
+function pickInitialListingId(
+  listings: FeatureBoostListingOption[],
+  initialListingNumber?: string | null
+): string | null {
+  if (initialListingNumber) {
+    const fromUrl = listings.find(
+      (l) => l.listingNumber === initialListingNumber && l.canBoost
+    );
+    if (fromUrl) return fromUrl.id;
+  }
+  return listings.find((l) => l.canBoost)?.id ?? null;
+}
+
 function formatListingPrice(price: number | null): string {
   if (price == null) return "Fiyat yok";
   return new Intl.NumberFormat("tr-TR", {
@@ -31,14 +44,8 @@ export function FeatureBoostCheckout({
   initialListingNumber,
 }: Props) {
   const router = useRouter();
-  const [selectedListingId, setSelectedListingId] = useState<string | null>(
-    () => {
-      if (!initialListingNumber) return null;
-      const match = listings.find(
-        (l) => l.listingNumber === initialListingNumber
-      );
-      return match?.canBoost ? match.id : null;
-    }
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(() =>
+    pickInitialListingId(listings, initialListingNumber)
   );
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -213,39 +220,43 @@ export function FeatureBoostCheckout({
         ) : null}
       </section>
 
-      <section
-        className={`rounded-xl border bg-white p-5 shadow-sm sm:p-6 ${
-          selectedListing ? "border-zinc-200" : "border-zinc-200 opacity-60"
-        }`}
-      >
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-lg font-black text-zinc-950">2. Paket seç</h2>
         <p className="mt-1 text-sm text-zinc-600">
           {selectedListing
             ? `${selectedListing.title} için paket seçin.`
-            : "Önce bir ilan seçin."}
+            : "Önce yukarıdan uygun bir ilan seçin."}
         </p>
+
+        {!selectedListing ? (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Paketleri görmek için önce onaylı ve uygun bir ilan seçmelisiniz.
+          </p>
+        ) : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURE_BOOST_PACKS.map((pack: Pack) => {
             const selected = selectedPackId === pack.productId;
-            const disabled = !selectedListing;
+            const inactive = !selectedListing;
 
             return (
               <button
                 key={pack.productId}
                 type="button"
-                disabled={disabled}
                 onClick={() => {
-                  if (disabled) return;
+                  if (!selectedListing) {
+                    setError("Önce bir ilan seçin.");
+                    return;
+                  }
                   setSelectedPackId(pack.productId);
                   setError(null);
                 }}
                 className={`rounded-xl border p-4 text-left transition ${
-                  disabled
-                    ? "cursor-not-allowed border-zinc-200 bg-zinc-50"
+                  inactive
+                    ? "border-zinc-200 bg-zinc-50"
                     : selected
                       ? "border-[#ffc400] bg-amber-50 ring-2 ring-[#ffc400]/40"
-                      : "border-zinc-200 bg-white hover:border-zinc-300"
+                      : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
                 }`}
               >
                 <p className="text-base font-black text-zinc-950">
@@ -259,6 +270,12 @@ export function FeatureBoostCheckout({
             );
           })}
         </div>
+
+        {error && !selectedPack ? (
+          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        ) : null}
       </section>
 
       {selectedListing && selectedPack ? (

@@ -1,13 +1,23 @@
 import Link from "next/link";
 
-const quickLinks = [
-  { label: "+ İlan Ekle", href: "/ilan-ver" },
-  { label: "İlan Öne Çıkar", href: "/ilan-one-cikar" },
-  { label: "Favoriler", href: "/favoriler" },
-  { label: "Mesajlar", href: "/mesajlar" },
-] as const;
+const quickLinks = (hasListings: boolean) =>
+  [
+    { label: "+ İlan Ekle", href: "/ilan-ver" },
+    ...(hasListings
+      ? [{ label: "İlan Öne Çıkar", href: "/ilan-one-cikar" } as const]
+      : []),
+    { label: "Favoriler", href: "/favoriler" },
+    { label: "Mesajlar", href: "/mesajlar" },
+  ] as const;
 
-export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
+export function SiteFooter({
+  loggedIn = false,
+  hasListings = false,
+}: {
+  loggedIn?: boolean;
+  hasListings?: boolean;
+}) {
+  const links = quickLinks(hasListings);
   const accountLinks = loggedIn
     ? [{ label: "Hesabım", href: "/profil" }]
     : [
@@ -30,7 +40,7 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
 
           {/* Quick Links Grid */}
           <div className="mb-6 grid grid-cols-2 gap-2">
-            {quickLinks.map((link) => (
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -113,7 +123,9 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
               <Link href="/">Ana Sayfa</Link>
               <Link href="/ilanlar">Tüm İlanlar</Link>
               <Link href="/ilan-ver">Ücretsiz İlan Ver</Link>
-              <Link href="/ilan-one-cikar">İlan Öne Çıkar</Link>
+              {hasListings ? (
+                <Link href="/ilan-one-cikar">İlan Öne Çıkar</Link>
+              ) : null}
             </div>
             <div className="site-footer-col">
               <p className="site-footer-col-title">Hesap</p>

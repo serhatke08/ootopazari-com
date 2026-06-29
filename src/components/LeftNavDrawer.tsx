@@ -56,6 +56,7 @@ export function LeftNavDrawer({
   drawerProfile,
   sessionEmail = null,
   unreadMessageCount = 0,
+  hasListings = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -65,6 +66,7 @@ export function LeftNavDrawer({
   /** İstemci oturumu (SSR profili gecikmeli gelse bile menüde girişli gösterim). */
   sessionEmail?: string | null;
   unreadMessageCount?: number;
+  hasListings?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -140,6 +142,7 @@ export function LeftNavDrawer({
               dealerApplications={dealerApplications}
               sessionEmail={sessionEmail}
               unreadMessageCount={unreadMessageCount}
+              hasListings={hasListings}
               onNavigate={onClose}
             />
             <div className="border-t border-zinc-200 pt-1">

@@ -99,6 +99,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   let footerLoggedIn = false;
+  let footerHasListings = false;
   if (tryGetSupabaseEnv()) {
     try {
       const supabase = await createSupabaseServerClient();
@@ -106,8 +107,16 @@ export default async function RootLayout({
         data: { user },
       } = await supabase.auth.getUser();
       footerLoggedIn = !!user;
+      if (user) {
+        const { count } = await supabase
+          .from("listings")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        footerHasListings = (count ?? 0) > 0;
+      }
     } catch {
       footerLoggedIn = false;
+      footerHasListings = false;
     }
   }
 
@@ -146,7 +155,7 @@ export default async function RootLayout({
         </Suspense>
         <div className="layout-with-mobile-nav flex flex-1 flex-col">
           <main className="flex flex-1 flex-col bg-zinc-50">{children}</main>
-          <SiteFooter loggedIn={footerLoggedIn} />
+          <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />
         </div>
         <Analytics />
         <SpeedInsights />

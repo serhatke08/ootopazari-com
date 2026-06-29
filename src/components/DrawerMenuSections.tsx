@@ -66,12 +66,14 @@ export function DrawerMenuSections({
   dealerApplications,
   sessionEmail = null,
   unreadMessageCount,
+  hasListings = false,
   onNavigate,
 }: {
   drawerProfile: { displayName: string; avatarUrl: string | null } | null;
   dealerApplications: BayiApplicationMenuRow[];
   sessionEmail?: string | null;
   unreadMessageCount: number;
+  hasListings?: boolean;
   onNavigate?: () => void;
 }) {
   const loggedIn = !!drawerProfile || !!sessionEmail;
@@ -129,14 +131,16 @@ export function DrawerMenuSections({
         <span>İlan ver</span>
       </Link>
 
-      <Link
-        href="/ilan-one-cikar"
-        onClick={() => onNavigate?.()}
-        className={rowClass}
-      >
-        <IconBoostAmber />
-        <span>İlan öne çıkar</span>
-      </Link>
+      {hasListings ? (
+        <Link
+          href="/ilan-one-cikar"
+          onClick={() => onNavigate?.()}
+          className={rowClass}
+        >
+          <IconBoostAmber />
+          <span>İlan öne çıkar</span>
+        </Link>
+      ) : null}
 
       <Link href="/favoriler" onClick={() => onNavigate?.()} className={rowClass}>
         <IconHeartRed />

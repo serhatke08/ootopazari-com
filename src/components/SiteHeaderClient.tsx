@@ -12,6 +12,7 @@ import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useUnreadMessageCount } from "@/hooks/useUnreadMessageCount";
 import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
+import { useUserHasListings } from "@/hooks/useUserHasListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 
@@ -200,6 +201,7 @@ export function SiteHeaderClient({
   }, [headerVisible]);
 
   const loggedIn = !!sessionEmail;
+  const hasListings = useUserHasListings(hasEnv, loggedIn);
   const unreadMessageCount = useUnreadMessageCount(hasEnv, loggedIn);
   const unreadNotificationCount = useUnreadNotificationCount(hasEnv, loggedIn);
 
@@ -276,6 +278,7 @@ export function SiteHeaderClient({
         drawerProfile={drawerProfile}
         sessionEmail={sessionEmail}
         unreadMessageCount={unreadMessageCount}
+        hasListings={hasListings}
       />
 
       <header
@@ -315,12 +318,14 @@ export function SiteHeaderClient({
                 >
                   İlan ver
                 </Link>
-                <Link
-                  href="/ilan-one-cikar"
-                  className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white md:inline-flex lg:px-3 lg:py-2 lg:text-sm"
-                >
-                  Öne çıkar
-                </Link>
+                {hasListings ? (
+                  <Link
+                    href="/ilan-one-cikar"
+                    className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white md:inline-flex lg:px-3 lg:py-2 lg:text-sm"
+                  >
+                    Öne çıkar
+                  </Link>
+                ) : null}
                 {loggedIn ? (
                   <>
                     <Link
