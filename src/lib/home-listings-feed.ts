@@ -25,6 +25,7 @@ import type {
   HomeListingCardItem,
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
+import { enrichListingRowsCoverImages } from "@/lib/listing-images";
 
 export type { HomeListingCardItem, HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
 export { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
@@ -132,6 +133,12 @@ export async function fetchHomeListingsFeed(
       vehicleEnginePackageIds: filters.vehicleEnginePackageIds,
     }),
   ]);
+
+  await enrichListingRowsCoverImages(
+    supabase,
+    env,
+    rows as Record<string, unknown>[]
+  );
 
   const catMap = buildCategoryMap(categories);
   const cityMap = buildCityMap(cities);

@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SupabasePublicEnv } from "@/lib/env";
-import { publicListingImageUrl, resolveListingImageUrl } from "@/lib/storage";
+import {
+  listingImageDisplayUrl,
+  publicListingImageUrl,
+  resolveListingImageUrl,
+} from "@/lib/storage";
 
 const BUCKET = "listings-images";
 
@@ -13,7 +17,8 @@ function addPath(
   out: string[],
   path: string | null | undefined
 ) {
-  pushUnique(out, resolveListingImageUrl(env, path));
+  const resolved = listingImageDisplayUrl(env, path) ?? resolveListingImageUrl(env, path);
+  pushUnique(out, resolved);
 }
 
 /** Tek `image_url` + olası çoklu alanlar (`images`, `image_urls`, JSON dizi, virgüllü string). */
@@ -112,4 +117,44 @@ export async function collectListingGalleryUrlsWithStorageFallback(
     publicListingImageUrl(env, `${id}/${n}`)
   );
   return fromStorage;
+}
+
+/** `image_url` boş veya geçersizse depodan kapak görseli bulur (kartlar için). */
+export async function resolveListingCoverImageUrl(
+  supabase: SupabaseClient,
+  env: SupabasePublicEnv,
+  row: Record<string, unknown>
+): Promise<string | null> {
+  const primary = row.image_url as string | null | undefined;
+  const fromField =
+    listingImageDisplayUrl(env, primary) ?? resolveListingImageUrl(env, primary);
+  if (fromField) return fromField;
+
+  const urls = await collectListingGalleryUrlsWithStorageFallback(
+    supabase,
+    env,
+    row,
+    null
+  );
+  return urls[0] ?? null;
+}
+
+/** Ana sayfa feed: kapak görseli eksik ilanları depodan tamamlar. */
+export async function enrichListingRowsCoverImages(
+  supabase: SupabaseClient,
+  env: SupabasePublicEnv,
+  rows: Record<string, unknown>[]
+): Promise<void> {
+  const missing = rows.filter((r) => {
+    const url = r.image_url as string | null | undefined;
+    return !resolveListingImageUrl(env, url);
+  });
+  if (missing.length === 0) return;
+
+  await Promise.all(
+    missing.map(async (row) => {
+      const cover = await resolveListingCoverImageUrl(supabase, env, row);
+      if (cover) row.image_url = cover;
+    })
+  );
 }

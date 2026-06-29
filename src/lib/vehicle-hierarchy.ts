@@ -300,6 +300,48 @@ export async function fetchPackagesForEngine(
   return [];
 }
 
+/** İlan detayında `vehicle_engine_package_id` → motor + paket adları. */
+export async function fetchListingEnginePackageLabels(
+  supabase: SupabaseClient,
+  packageId: string | null | undefined
+): Promise<{ motor: string | null; paket: string | null }> {
+  const id = packageId?.trim();
+  if (!id) return { motor: null, paket: null };
+
+  const { data: pkg, error } = await supabase
+    .from("vehicle_engine_packages")
+    .select("id,name,code,engine_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !pkg || typeof pkg !== "object") {
+    return { motor: null, paket: null };
+  }
+
+  const row = pkg as {
+    name?: string | null;
+    code?: string | null;
+    engine_id?: string | null;
+  };
+  const paket = (row.name?.trim() || row.code?.trim() || "") || null;
+
+  let motor: string | null = null;
+  const engineId = row.engine_id?.trim();
+  if (engineId) {
+    const { data: eng } = await supabase
+      .from("vehicle_body_style_engines")
+      .select("name,code")
+      .eq("id", engineId)
+      .maybeSingle();
+    if (eng && typeof eng === "object") {
+      const e = eng as { name?: string | null; code?: string | null };
+      motor = (e.name?.trim() || e.code?.trim() || "") || null;
+    }
+  }
+
+  return { motor, paket };
+}
+
 /** Tek satır adı (kasa / motor / paket / model). */
 export async function fetchHierarchyRowName(
   supabase: SupabaseClient,

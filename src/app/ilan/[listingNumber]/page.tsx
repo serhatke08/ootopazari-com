@@ -32,7 +32,10 @@ import { StatsBadges } from "@/components/StatsBadges";
 import { CopyListingNumber } from "@/components/CopyListingNumber";
 import { ExpertizDiagram } from "@/components/ExpertizDiagram";
 import { mergeExpertizWithDefaults, parseExpertizPanels } from "@/lib/expertiz";
-import { fetchVehicleBrandModelSeriCode } from "@/lib/vehicle-hierarchy";
+import {
+  fetchVehicleBrandModelSeriCode,
+  fetchListingEnginePackageLabels,
+} from "@/lib/vehicle-hierarchy";
 import {
   fetchAdminProfileByUserId,
   publicDisplayNameWithAdmin,
@@ -501,12 +504,19 @@ export default async function IlanDetayPage({ params }: Props) {
   const paketNote = pick(row, ["package_note", "paket_note"]) as string | undefined;
   const kasaNote = pick(row, ["body_note", "kasa_note"]) as string | undefined;
 
+  const packageId = pick(row, ["vehicle_engine_package_id"]) as string | undefined;
+  const hierarchyLabels = packageId
+    ? await fetchListingEnginePackageLabels(supabase, String(packageId))
+    : { motor: null, paket: null };
+
   const motorDisplay =
     motorNote?.trim() ||
+    hierarchyLabels.motor ||
     labelFromEquipmentLines(equipmentLines, "Motor") ||
     strCell(pick(row, ["engine_name", "motor_name", "engine_label"]));
   const paketDisplay =
     paketNote?.trim() ||
+    hierarchyLabels.paket ||
     labelFromEquipmentLines(equipmentLines, "Paket") ||
     strCell(pick(row, ["package_name", "paket_name", "package_label"]));
   
