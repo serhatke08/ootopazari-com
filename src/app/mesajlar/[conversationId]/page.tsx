@@ -18,12 +18,13 @@ import {
   fetchMessagesForConversation,
   fetchProfilesByIds,
   fetchUnreadCountsByConversation,
+  listingConversationStatus,
   otherParticipantId,
   profileDisplayName,
 } from "@/lib/messages";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { buildListingSeoPath } from "@/lib/listing-seo";
-import { publicAvatarUrl } from "@/lib/storage";
+import { publicAvatarUrl, resolveListingImageUrl } from "@/lib/storage";
 
 type Props = { params: Promise<{ conversationId: string }> };
 
@@ -90,6 +91,8 @@ export default async function MesajConversationPage({ params }: Props) {
     num != null ? String(num) : null,
     listingTitle
   );
+  const listingImageUrl = resolveListingImageUrl(env, listing?.image_url ?? null);
+  const listingStatus = listingConversationStatus(listing);
   const otherProfile = profileMap.get(otherId) ?? null;
   const otherIsAdmin = adminMap.has(otherId);
   const otherName = profileDisplayName(otherProfile);
@@ -166,6 +169,11 @@ export default async function MesajConversationPage({ params }: Props) {
             initialMessages={messages}
             listingTitle={listingTitle}
             listingHref={listingHref}
+            listingImageUrl={listingImageUrl}
+            listingActive={listingStatus.active}
+            listingInactiveMessage={
+              listingStatus.active ? "" : listingStatus.message
+            }
             otherUserName={otherName}
             otherUserAvatarUrl={otherAvatarUrl}
             blocked={blocked}

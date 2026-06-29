@@ -13,6 +13,9 @@ type Props = {
   initialMessages: MessageRow[];
   listingTitle: string | null;
   listingHref: string | null;
+  listingImageUrl?: string | null;
+  listingActive: boolean;
+  listingInactiveMessage: string;
   otherUserName: string;
   otherUserAvatarUrl: string | null;
   blocked: boolean;
@@ -24,6 +27,9 @@ export function ChatThreadClient({
   initialMessages,
   listingTitle,
   listingHref,
+  listingImageUrl = null,
+  listingActive,
+  listingInactiveMessage,
   otherUserName,
   otherUserAvatarUrl,
   blocked,
@@ -121,7 +127,7 @@ export function ChatThreadClient({
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed || blocked) return;
+    if (!trimmed || blocked || !listingActive) return;
     setSendError(null);
     setSending(true);
     try {
@@ -152,19 +158,49 @@ export function ChatThreadClient({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {listingTitle ? (
-        <p className="mb-2 text-xs text-zinc-600">
-          İlan:{" "}
-          {listingHref ? (
-            <Link
-              href={listingHref}
-              className="font-medium text-emerald-800 underline-offset-2 hover:underline"
-            >
-              {listingTitle}
-            </Link>
-          ) : (
-            <span className="font-medium text-zinc-800">{listingTitle}</span>
-          )}
-        </p>
+        <div
+          className={`mb-3 flex items-center gap-2.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 transition-opacity ${
+            listingActive ? "" : "opacity-50"
+          }`}
+        >
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-200">
+            {listingImageUrl ? (
+              <Image
+                src={listingImageUrl}
+                alt=""
+                width={40}
+                height={40}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-zinc-500">
+                İlan
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+              İlan
+            </p>
+            {listingHref && listingActive ? (
+              <Link
+                href={listingHref}
+                className="line-clamp-2 text-sm font-semibold text-emerald-800 underline-offset-2 hover:underline"
+              >
+                {listingTitle}
+              </Link>
+            ) : (
+              <p className="line-clamp-2 text-sm font-semibold text-zinc-700">
+                {listingTitle}
+              </p>
+            )}
+            {!listingActive ? (
+              <p className="mt-0.5 text-xs font-medium text-zinc-500">
+                Artık aktif değil
+              </p>
+            ) : null}
+          </div>
+        </div>
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto rounded-xl border border-zinc-200 bg-zinc-50/80 p-3 sm:p-4">
@@ -248,27 +284,36 @@ export function ChatThreadClient({
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={send} className="mt-4 flex gap-2">
-        <label htmlFor="msg-input" className="sr-only">
-          Mesaj yazın
-        </label>
-        <textarea
-          id="msg-input"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Mesajınızı yazın…"
-          rows={2}
-          className="min-h-[44px] flex-1 resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80"
-        />
-        <button
-          type="submit"
-          disabled={sending || !text.trim()}
-          className="shrink-0 self-end rounded-lg bg-[#ffcc00] px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50"
+      {!listingActive ? (
+        <div
+          className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm text-zinc-600"
+          role="status"
         >
-          {sending ? "…" : "Gönder"}
-        </button>
-      </form>
-      {sendError ? (
+          {listingInactiveMessage}
+        </div>
+      ) : (
+        <form onSubmit={send} className="mt-4 flex gap-2">
+          <label htmlFor="msg-input" className="sr-only">
+            Mesaj yazın
+          </label>
+          <textarea
+            id="msg-input"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Mesajınızı yazın…"
+            rows={2}
+            className="min-h-[44px] flex-1 resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80"
+          />
+          <button
+            type="submit"
+            disabled={sending || !text.trim()}
+            className="shrink-0 self-end rounded-lg bg-[#ffcc00] px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50"
+          >
+            {sending ? "…" : "Gönder"}
+          </button>
+        </form>
+      )}
+      {sendError && listingActive ? (
         <p className="mt-2 text-sm text-red-600" role="alert">
           {sendError}
         </p>

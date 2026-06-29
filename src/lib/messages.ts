@@ -175,7 +175,52 @@ export type ListingMessageSummary = {
   title: string | null;
   image_url: string | null;
   listing_number: number | string | null;
+  moderation_status?: string | null;
 };
+
+export type ListingConversationStatus =
+  | { active: true }
+  | { active: false; message: string };
+
+/** Mesajlaşmaya açık mı? (silinmiş / askıda / onaysız ilanlar kapalı). */
+export function listingConversationStatus(
+  listing: ListingMessageSummary | null | undefined
+): ListingConversationStatus {
+  if (!listing) {
+    return {
+      active: false,
+      message: "Bu ilan artık aktif değil. Yeni mesaj gönderilemez.",
+    };
+  }
+
+  const status = String(listing.moderation_status ?? "").toLowerCase();
+  if (status === "approved") {
+    return { active: true };
+  }
+
+  switch (status) {
+    case "suspended":
+      return {
+        active: false,
+        message: "Bu ilan askıya alındı. Yeni mesaj gönderilemez.",
+      };
+    case "pending":
+      return {
+        active: false,
+        message: "Bu ilan onay bekliyor. Yeni mesaj gönderilemez.",
+      };
+    case "rejected":
+      return {
+        active: false,
+        message: "Bu ilan yayında değil. Yeni mesaj gönderilemez.",
+      };
+    default:
+      return {
+        active: false,
+        message: "Bu ilan artık aktif değil. Yeni mesaj gönderilemez.",
+      };
+  }
+}
 
 export async function fetchListingSummariesByIds(
   supabase: SupabaseClient,
@@ -185,7 +230,7 @@ export async function fetchListingSummariesByIds(
   if (listingIds.length === 0) return map;
   const { data, error } = await supabase
     .from("listings")
-    .select("id,title,image_url,listing_number")
+    .select("id,title,image_url,listing_number,moderation_status")
     .in("id", listingIds);
 
   if (error) {

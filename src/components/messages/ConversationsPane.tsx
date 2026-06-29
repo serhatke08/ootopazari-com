@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import {
+  listingConversationStatus,
   otherParticipantId,
   profileDisplayName,
   type ConversationRow,
@@ -97,6 +98,7 @@ export function ConversationsPane({
           const otherId = otherParticipantId(c, userId);
           const title = listing?.title?.trim() || "İlan";
           const imgSrc = resolveListingImageUrl(env, listing?.image_url ?? null);
+          const listingStatus = listingConversationStatus(listing);
           const otherName = profileDisplayName(otherProfile ?? null);
           const isAdminUser = adminUserIds.has(otherId);
           const active = activeConversationId === c.id;
@@ -108,7 +110,7 @@ export function ConversationsPane({
               href={`/mesajlar/${c.id}`}
               className={`flex items-center gap-3 border-b border-zinc-100 px-4 py-3 transition-colors last:border-0 hover:bg-zinc-50 active:bg-zinc-100 ${
                 active ? "bg-[#fffbf0]" : ""
-              }`}
+              } ${!listingStatus.active ? "opacity-55" : ""}`}
             >
               {/* Avatar & Listing Image */}
               <div className="relative shrink-0">
@@ -149,7 +151,14 @@ export function ConversationsPane({
                     </span>
                   ) : null}
                 </div>
-                <p className="truncate text-[11px] text-zinc-500">{title}</p>
+                <p className="truncate text-[11px] text-zinc-500">
+                  {title}
+                  {!listingStatus.active ? (
+                    <span className="ml-1 font-medium text-zinc-400">
+                      · İlan kapalı
+                    </span>
+                  ) : null}
+                </p>
                 <p
                   className={`mt-0.5 truncate text-[13px] ${
                     unread > 0
