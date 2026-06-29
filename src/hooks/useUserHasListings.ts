@@ -8,10 +8,15 @@ import { getClientAuthUser } from "@/lib/supabase/auth-client";
 /** Giriş yapmış kullanıcının en az bir ilanı var mı (öne çıkarma menüsü için). */
 export function useUserHasListings(
   hasEnv: boolean,
-  loggedIn: boolean
+  loggedIn: boolean,
+  initialHasListings = false
 ): boolean {
   const pathname = usePathname();
-  const [hasListings, setHasListings] = useState(false);
+  const [hasListings, setHasListings] = useState(initialHasListings);
+
+  useEffect(() => {
+    setHasListings(initialHasListings);
+  }, [initialHasListings]);
 
   useEffect(() => {
     if (!hasEnv || !loggedIn) {

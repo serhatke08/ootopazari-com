@@ -131,12 +131,14 @@ export function SiteHeaderClient({
   drawerProfile,
   email,
   hasEnv,
+  hasListings: serverHasListings,
 }: {
   categories: CategoryRow[];
   dealerApplications: BayiApplicationMenuRow[];
   drawerProfile: { displayName: string; avatarUrl: string | null } | null;
   email: string | null;
   hasEnv: boolean;
+  hasListings: boolean;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -201,7 +203,7 @@ export function SiteHeaderClient({
   }, [headerVisible]);
 
   const loggedIn = !!sessionEmail;
-  const hasListings = useUserHasListings(hasEnv, loggedIn);
+  const hasListings = useUserHasListings(hasEnv, loggedIn, serverHasListings);
   const unreadMessageCount = useUnreadMessageCount(hasEnv, loggedIn);
   const unreadNotificationCount = useUnreadNotificationCount(hasEnv, loggedIn);
 

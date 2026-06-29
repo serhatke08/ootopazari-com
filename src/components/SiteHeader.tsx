@@ -17,6 +17,7 @@ export async function SiteHeader() {
   let dealerApplications: BayiApplicationMenuRow[] = [];
   let drawerProfile: { displayName: string; avatarUrl: string | null } | null =
     null;
+  let hasListings = false;
 
   if (env) {
     try {
@@ -36,6 +37,12 @@ export async function SiteHeader() {
       dealerApplications = applications;
 
       if (user) {
+        const { count } = await supabase
+          .from("listings")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        hasListings = (count ?? 0) > 0;
+
         const displayName = displayNameFromAuthUser(user, profile);
         let avatarUrl: string | null = null;
         const raw =
@@ -64,6 +71,7 @@ export async function SiteHeader() {
       drawerProfile={drawerProfile}
       email={email}
       hasEnv={!!env}
+      hasListings={hasListings}
     />
   );
 }
