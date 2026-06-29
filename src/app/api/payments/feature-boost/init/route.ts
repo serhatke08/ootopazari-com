@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { FEATURE_BOOST_PACKS } from "@/lib/listing-feature-boost";
 import { isListingSuspended } from "@/lib/listings-data";
+import { buildFeatureBoostMerchantOid } from "@/lib/paytr-merchant-oid";
 import { createPaytrIframeToken, tryGetPaytrConfig } from "@/lib/paytr";
 import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 function clientIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for");
@@ -57,7 +59,7 @@ export async function POST(req: Request) {
   const { data: listing, error: listingErr } = await supabase
     .from("listings")
     .select(
-      "id,listing_number,title,user_id,moderation_status,suspension_reason,suspended_at,featured_until,featured_started_at,feature_boost_campaign_start_at,feature_boost_pack_days"
+      "id,listing_number,title,user_id,moderation_status,suspension_reason,suspended_at"
     )
     .eq("id", listingId)
     .maybeSingle();
@@ -97,8 +99,7 @@ export async function POST(req: Request) {
       {
         ok: false,
         code: "paytr_not_configured",
-        message:
-          "Ödeme altyapısı henüz yapılandırılmadı. PAYTR_MERCHANT_ID, PAYTR_MERCHANT_KEY ve PAYTR_MERCHANT_SALT değerlerini ekleyin.",
+        message: "Ödeme altyapısı şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
       },
       { status: 503 }
     );
@@ -106,17 +107,33 @@ export async function POST(req: Request) {
 
   const email = user.email?.trim() || "musteri@otopazari.com";
   const listingNumber = String(listing.listing_number ?? "");
-  const merchantOid = `FB${listingNumber}${Date.now()}`.slice(0, 64);
+  const merchantOid = buildFeatureBoostMerchantOid(listingNumber, pack.days);
   const origin = getSiteOrigin();
   const paymentAmountKurus = Math.round(pack.fallbackPriceTry * 100);
   const basketName = `İlan öne çıkarma · ${pack.label} · #${listingNumber}`;
+  const basketPriceTry = pack.fallbackPriceTry.toFixed(2);
+
+  const admin = createSupabaseServiceClient();
+  if (admin) {
+    const { error: orderErr } = await admin.from("feature_boost_payments").insert({
+      merchant_oid: merchantOid,
+      listing_id: listingId,
+      user_id: user.id,
+      pack_days: pack.days,
+      amount_kurus: paymentAmountKurus,
+      status: "pending",
+    });
+    if (orderErr) {
+      console.warn("feature_boost_payments insert:", orderErr.message);
+    }
+  }
 
   const tokenResult = await createPaytrIframeToken(paytr, {
     userIp: clientIp(req),
     merchantOid,
     email,
     paymentAmountKurus,
-    basket: [[basketName, paymentAmountKurus.toFixed(2), 1]],
+    basket: [[basketName, basketPriceTry, 1]],
     okUrl: `${origin}/odeme/basarili?type=feature_boost`,
     failUrl: `${origin}/odeme/basarisiz?type=feature_boost`,
     userName: email.split("@")[0] || "Müşteri",
@@ -126,17 +143,10 @@ export async function POST(req: Request) {
 
   if (!tokenResult.ok) {
     return NextResponse.json(
-      {
-        ok: false,
-        message: tokenResult.reason,
-      },
+      { ok: false, message: tokenResult.reason },
       { status: 502 }
     );
   }
 
-  return NextResponse.json({
-    ok: true,
-    token: tokenResult.token,
-    merchantOid,
-  });
+  return NextResponse.json({ ok: true, token: tokenResult.token });
 }

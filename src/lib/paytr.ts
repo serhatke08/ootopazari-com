@@ -14,11 +14,12 @@ export function tryGetPaytrConfig(): PaytrConfig | null {
   const merchantSalt = process.env.PAYTR_MERCHANT_SALT?.trim();
   if (!merchantId || !merchantKey || !merchantSalt) return null;
 
-  const testMode =
-    process.env.PAYTR_TEST_MODE?.trim() === "1" ||
-    process.env.NODE_ENV !== "production";
-
-  return { merchantId, merchantKey, merchantSalt, testMode };
+  return {
+    merchantId,
+    merchantKey,
+    merchantSalt,
+    testMode: process.env.PAYTR_TEST_MODE?.trim() === "1",
+  };
 }
 
 type BasketItem = [string, string, number];
@@ -27,15 +28,8 @@ function encodeUserBasket(items: BasketItem[]): string {
   return Buffer.from(JSON.stringify(items), "utf8").toString("base64");
 }
 
-function buildPaytrToken(
-  hashStr: string,
-  merchantKey: string,
-  merchantSalt: string
-): string {
-  return crypto
-    .createHmac("sha256", merchantKey)
-    .update(hashStr + merchantSalt)
-    .digest("base64");
+function paytrHmac(data: string, merchantKey: string): string {
+  return crypto.createHmac("sha256", merchantKey).update(data).digest("base64");
 }
 
 export type PaytrIframeTokenInput = {
@@ -55,6 +49,7 @@ export type PaytrIframeTokenResult =
   | { ok: true; token: string }
   | { ok: false; reason: string; status?: string };
 
+/** PayTR iFrame API — 1. Adım (get-token) */
 export async function createPaytrIframeToken(
   config: PaytrConfig,
   input: PaytrIframeTokenInput
@@ -78,14 +73,12 @@ export async function createPaytrIframeToken(
     currency +
     testMode;
 
-  const paytrToken = buildPaytrToken(
-    hashStr,
-    config.merchantKey,
-    config.merchantSalt
-  );
+  const paytrToken = paytrHmac(hashStr + config.merchantSalt, config.merchantKey);
 
   const body = new URLSearchParams({
     merchant_id: config.merchantId,
+    merchant_key: config.merchantKey,
+    merchant_salt: config.merchantSalt,
     user_ip: input.userIp,
     merchant_oid: input.merchantOid,
     email: input.email,
@@ -103,6 +96,7 @@ export async function createPaytrIframeToken(
     timeout_limit: "30",
     currency,
     test_mode: testMode,
+    lang: "tr",
   });
 
   const res = await fetch("https://www.paytr.com/odeme/api/get-token", {
@@ -112,7 +106,12 @@ export async function createPaytrIframeToken(
     cache: "no-store",
   });
 
-  const data = (await res.json()) as { status?: string; token?: string; reason?: string };
+  const data = (await res.json()) as {
+    status?: string;
+    token?: string;
+    reason?: string;
+  };
+
   if (data.status === "success" && data.token) {
     return { ok: true, token: data.token };
   }
@@ -124,6 +123,7 @@ export async function createPaytrIframeToken(
   };
 }
 
+/** PayTR iFrame API — 2. Adım (bildirim URL hash doğrulama) */
 export function verifyPaytrCallbackHash(input: {
   merchantOid: string;
   status: string;
@@ -136,10 +136,6 @@ export function verifyPaytrCallbackHash(input: {
     input.config.merchantSalt +
     input.status +
     input.totalAmount;
-  const expected = buildPaytrToken(
-    hashStr,
-    input.config.merchantKey,
-    input.config.merchantSalt
-  );
+  const expected = paytrHmac(hashStr, input.config.merchantKey);
   return expected === input.hash;
 }

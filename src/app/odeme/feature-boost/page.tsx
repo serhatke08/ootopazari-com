@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -40,10 +41,21 @@ function PaytrIframe() {
 export default function FeatureBoostPaymentPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <h1 className="text-2xl font-black text-zinc-950">Güvenli ödeme</h1>
-      <p className="mt-1 text-sm text-zinc-600">
-        Kart bilgileriniz PayTR altyapısı üzerinden işlenir.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-zinc-950">Güvenli ödeme</h1>
+          <p className="mt-1 text-sm text-zinc-600">
+            Kart bilgileriniz PayTR altyapısı üzerinden işlenir.
+          </p>
+        </div>
+        <Image
+          src="/paytr-logo.svg"
+          alt="PayTR"
+          width={120}
+          height={32}
+          className="h-8 w-auto"
+        />
+      </div>
       <div className="mt-6">
         <Suspense
           fallback={
