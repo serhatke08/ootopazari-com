@@ -310,11 +310,14 @@ export async function fetchListingEnginePackageLabels(
 
   const { data: pkg, error } = await supabase
     .from("vehicle_engine_packages")
-    .select("id,name,code,engine_id")
+    .select(
+      "name,code,engine_id,vehicle_body_style_engines(name,code)"
+    )
     .eq("id", id)
     .maybeSingle();
 
   if (error || !pkg || typeof pkg !== "object") {
+    if (error) console.warn("vehicle_engine_packages by id:", error.message);
     return { motor: null, paket: null };
   }
 
@@ -322,16 +325,24 @@ export async function fetchListingEnginePackageLabels(
     name?: string | null;
     code?: string | null;
     engine_id?: string | null;
+    vehicle_body_style_engines?:
+      | { name?: string | null; code?: string | null }
+      | { name?: string | null; code?: string | null }[]
+      | null;
   };
+
   const paket = (row.name?.trim() || row.code?.trim() || "") || null;
 
-  let motor: string | null = null;
-  const engineId = row.engine_id?.trim();
-  if (engineId) {
+  const embedded = row.vehicle_body_style_engines;
+  const engRow = Array.isArray(embedded) ? embedded[0] : embedded;
+  let motor =
+    (engRow?.name?.trim() || engRow?.code?.trim() || "") || null;
+
+  if (!motor && row.engine_id?.trim()) {
     const { data: eng } = await supabase
       .from("vehicle_body_style_engines")
       .select("name,code")
-      .eq("id", engineId)
+      .eq("id", row.engine_id.trim())
       .maybeSingle();
     if (eng && typeof eng === "object") {
       const e = eng as { name?: string | null; code?: string | null };

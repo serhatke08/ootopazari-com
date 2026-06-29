@@ -211,22 +211,30 @@ body {
   grid-column: 1 / -1;
 }
 
+.listing-detail-layout > .listing-detail-meta {
+  grid-column: 1 / -1;
+}
+
 /* Mobil: galeri → satıcı/konum → bilgiler */
 @media (max-width: 47.999rem) {
   .listing-detail-layout > .listing-detail-title {
     order: 1;
   }
 
-  .listing-detail-layout > .listing-detail-gallery {
+  .listing-detail-layout > .listing-detail-meta {
     order: 2;
   }
 
-  .listing-detail-layout > .listing-detail-aside {
+  .listing-detail-layout > .listing-detail-gallery {
     order: 3;
   }
 
-  .listing-detail-layout > .listing-detail-tabs {
+  .listing-detail-layout > .listing-detail-aside {
     order: 4;
+  }
+
+  .listing-detail-layout > .listing-detail-tabs {
+    order: 5;
   }
 }
 

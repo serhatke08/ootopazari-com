@@ -29,6 +29,7 @@ import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingImageGallery } from "@/components/ListingImageGallery";
 import { ListingViewTracker } from "@/components/ListingViewTracker";
 import { StatsBadges } from "@/components/StatsBadges";
+import { resolveListingModelDisplay } from "@/lib/listing-vehicle-display";
 import { CopyListingNumber } from "@/components/CopyListingNumber";
 import { ExpertizDiagram } from "@/components/ExpertizDiagram";
 import { mergeExpertizWithDefaults, parseExpertizPanels } from "@/lib/expertiz";
@@ -519,15 +520,21 @@ export default async function IlanDetayPage({ params }: Props) {
     hierarchyLabels.paket ||
     labelFromEquipmentLines(equipmentLines, "Paket") ||
     strCell(pick(row, ["package_name", "paket_name", "package_label"]));
+
+  const modelForDisplay = resolveListingModelDisplay({
+    trimModel: modelDisplay,
+    motor: motorDisplay,
+    paket: paketDisplay,
+    vehicleModel: listing.vehicle_model as string | null | undefined,
+    seri: seriDisplay,
+  });
   
   const kasaDisplay = listing.body_type?.toString().trim() || kasaNote?.trim();
 
   const vehicleBreadcrumb = [
     brandName?.trim(),
-    modelDisplay?.trim(),
     seriDisplay?.trim(),
-    motorDisplay,
-    paketDisplay,
+    modelForDisplay?.trim(),
   ].filter((p): p is string => !!p);
 
   const equipmentTabContent =
@@ -614,7 +621,7 @@ export default async function IlanDetayPage({ params }: Props) {
             listing.price != null ? Number(listing.price) : null,
           image: primaryImage,
           brand: brandName,
-          model: modelDisplay ?? seriDisplay ?? null,
+          model: modelForDisplay ?? seriDisplay ?? null,
           vehicleYear: Number.isFinite(vehicleYear) ? vehicleYear : null,
           mileageKm: Number.isFinite(mileageKm) ? mileageKm : null,
           city: cityDisplayResolved ?? null,
@@ -726,6 +733,24 @@ export default async function IlanDetayPage({ params }: Props) {
         <h1 className="listing-detail-title text-xl font-bold leading-tight text-black sm:text-2xl lg:text-3xl">
           {(listing.title as string) ?? "İlan"}
         </h1>
+        {(num != null || cityDisplayResolved) ? (
+          <p className="listing-detail-meta -mt-2 mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-black/65">
+            {num != null ? (
+              <CopyListingNumber
+                text={`#${String(num)}`}
+                className="font-semibold text-blue-600"
+              />
+            ) : null}
+            {num != null && cityDisplayResolved ? (
+              <span className="text-black/30" aria-hidden>
+                ·
+              </span>
+            ) : null}
+            {cityDisplayResolved ? (
+              <span className="font-medium text-black/75">{cityDisplayResolved}</span>
+            ) : null}
+          </p>
+        ) : null}
 
         <div className="listing-detail-gallery min-w-0">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
@@ -789,7 +814,7 @@ export default async function IlanDetayPage({ params }: Props) {
                 )}
                 <Field label="Marka" value={brandName ?? undefined} />
                 <Field label="Seri" value={seriDisplay ?? "—"} />
-                <Field label="Model" value={modelDisplay ?? "—"} />
+                <Field label="Model" value={modelForDisplay ?? "—"} />
                 <Field label="Yıl" value={listing.vehicle_year as number} />
                 <Field label="Yakıt Tipi" value={listing.fuel_type as string} />
                 <Field
@@ -803,8 +828,6 @@ export default async function IlanDetayPage({ params }: Props) {
                 {isCarLike ? (
                   <Field label="Kasa" value={kasaDisplay} />
                 ) : null}
-                <Field label="Motor" value={motorDisplay} />
-                <Field label="Paket" value={paketDisplay} />
                 <Field label="Kategori" value={categoryName ?? undefined} />
                 <Field label="Şehir" value={cityDisplayResolved ?? "—"} />
                 <Field

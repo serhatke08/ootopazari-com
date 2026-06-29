@@ -871,6 +871,14 @@ export function CreateListingWizard({
       base.color = color.trim() || null;
       base.body_type = bodyTypeForListing;
       base.drive_type = driveType.trim() || null;
+      if (
+        resolvedModelId &&
+        !modelOther &&
+        !brandOther &&
+        !useCustomModelText
+      ) {
+        base.vehicle_brand_model_id = resolvedModelId;
+      }
       if (!bodyOther && !engineOther && !packageOther && packageId) {
         base.vehicle_engine_package_id = packageId;
       }

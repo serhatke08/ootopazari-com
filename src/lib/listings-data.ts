@@ -18,6 +18,7 @@ export type ListingRow = Record<string, unknown> & {
   country_name?: string | null;
   category_id?: string | null;
   vehicle_brand_id?: string | null;
+  vehicle_brand_model_id?: string | null;
   vehicle_model?: string | null;
   body_type?: string | null;
   vehicle_engine_package_id?: string | null;
