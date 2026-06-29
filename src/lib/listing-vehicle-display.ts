@@ -1,3 +1,34 @@
+/** Açıklama metninden `Etiket: değer` satırı (çok satırlı). */
+export function parseDescriptionSpecLine(
+  text: string,
+  label: string
+): string | undefined {
+  if (!text.trim()) return undefined;
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`^${escaped}\\s*:\\s*(.+)$`, "im");
+  const match = text.match(re);
+  const value = match?.[1]?.trim();
+  return value || undefined;
+}
+
+export type DescriptionVehicleSpecs = {
+  seriModel?: string;
+  motor?: string;
+  paket?: string;
+  kasa?: string;
+};
+
+export function parseDescriptionVehicleSpecs(
+  description: string
+): DescriptionVehicleSpecs {
+  return {
+    seriModel: parseDescriptionSpecLine(description, "Seri/Model"),
+    motor: parseDescriptionSpecLine(description, "Motor"),
+    paket: parseDescriptionSpecLine(description, "Paket"),
+    kasa: parseDescriptionSpecLine(description, "Kasa Tipi"),
+  };
+}
+
 /** İlan detayında Model satırı: motor + paket birleşimi. */
 export function joinMotorPaket(
   motor: string | null | undefined,
@@ -43,4 +74,18 @@ export function resolveListingModelDisplay(opts: {
   if (motorPaket) return motorPaket;
 
   return vehicleModelTailAfterSeri(opts.vehicleModel, opts.seri);
+}
+
+export type ListingSpecRow = {
+  label: string;
+  value: string;
+};
+
+export function specValue(
+  value: string | number | boolean | null | undefined,
+  fallback = "—"
+): string {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "boolean") return value ? "Evet" : "Hayır";
+  return String(value);
 }

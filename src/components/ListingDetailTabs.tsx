@@ -12,7 +12,7 @@ type Props = {
 };
 
 const TABS: Array<{ id: Tab; label: string }> = [
-  { id: "info", label: "Genel Bilgiler" },
+  { id: "info", label: "Araç bilgileri" },
   { id: "description", label: "Açıklama" },
   { id: "equipment", label: "Donanım" },
 ];
