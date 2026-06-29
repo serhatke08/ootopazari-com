@@ -74,6 +74,35 @@ export function parseListingDate(v: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function addCalendarDays(base: Date, days: number): Date {
+  const d = new Date(base.getTime());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/** Ödeme sonrası bitiş — RPC ile aynı mantık (kampanya başlangıcı + toplam gün). */
+export function computeFeatureBoostEndAfterPurchase(
+  listing: Pick<
+    ListingRow,
+    | "featured_until"
+    | "feature_boost_campaign_start_at"
+    | "featured_started_at"
+    | "feature_boost_pack_days"
+  >,
+  additionalPackDays: number,
+  now = new Date()
+): Date {
+  const { featuredUntil, campaignStart, packDays } =
+    listingFeatureBoostFields(listing);
+  const active = Boolean(featuredUntil && featuredUntil > now);
+  const hasPulseCampaign = active && campaignStart != null && packDays > 0;
+
+  if (hasPulseCampaign && campaignStart) {
+    return addCalendarDays(campaignStart, packDays + additionalPackDays);
+  }
+  return addCalendarDays(now, additionalPackDays);
+}
+
 export function listingFeatureBoostFields(listing: ListingRow) {
   const featuredUntil = parseListingDate(listing.featured_until);
   const featuredStartedAt = parseListingDate(listing.featured_started_at);

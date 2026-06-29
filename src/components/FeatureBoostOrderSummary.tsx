@@ -3,6 +3,7 @@
 import type { FeatureBoostListingOption } from "@/lib/feature-boost-listing";
 import {
   FEATURE_BOOST_PACKS,
+  computeFeatureBoostEndAfterPurchase,
   formatFeatureBoostEndDisplay,
   formatTryPrice,
   parseListingDate,
@@ -61,6 +62,17 @@ export function FeatureBoostOrderSummary({
                     parseListingDate(listing.featuredUntil)
                   )
                 : null;
+              const projectedEnd = formatFeatureBoostEndDisplay(
+                computeFeatureBoostEndAfterPurchase(
+                  {
+                    featured_until: listing.featuredUntil,
+                    feature_boost_campaign_start_at: listing.campaignStartAt,
+                    featured_started_at: listing.campaignStartAt,
+                    feature_boost_pack_days: listing.packDays,
+                  },
+                  selectedPack.days
+                )
+              );
               return (
                 <li
                   key={listing.id}
@@ -83,6 +95,13 @@ export function FeatureBoostOrderSummary({
                           · {end.remainingLabel}
                         </span>
                       ) : null}
+                    </div>
+                  ) : null}
+                  {projectedEnd ? (
+                    <div className="mt-2 text-xs text-emerald-800">
+                      <span className="font-medium">Ödeme sonrası bitiş: </span>
+                      <span className="block font-bold">{projectedEnd.dateLine}</span>
+                      <span className="tabular-nums">saat {projectedEnd.timeLine}</span>
                     </div>
                   ) : null}
                 </li>

@@ -19,6 +19,7 @@ export type FeatureBoostListingOption = {
   blockReason: string | null;
   boostPhase: FeatureBoostOwnerPhase;
   featuredUntil: string | null;
+  campaignStartAt: string | null;
   packDays: number;
   boostEndLabel: string | null;
   isBoostActive: boolean;
@@ -73,7 +74,7 @@ export function buildFeatureBoostListingOption(
 
   const blockReason = featureBoostBlockReason(listing, now);
   const boostPhase = listingFeatureBoostOwnerPhase(listing, now);
-  const { featuredUntil, packDays } = listingFeatureBoostFields(listing);
+  const { featuredUntil, campaignStart, packDays } = listingFeatureBoostFields(listing);
   const isBoostActive =
     boostPhase === "pulseActive" ||
     boostPhase === "legacyActive" ||
@@ -96,6 +97,7 @@ export function buildFeatureBoostListingOption(
     blockReason,
     boostPhase,
     featuredUntil: featuredUntil?.toISOString() ?? null,
+    campaignStartAt: campaignStart?.toISOString() ?? null,
     packDays,
     boostEndLabel: featuredUntil ? formatFeatureBoostDate(featuredUntil) : null,
     isBoostActive,
