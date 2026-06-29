@@ -20,7 +20,7 @@ export function FeatureBoostPackPicker({
   onSelect,
 }: Props) {
   return (
-    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 xl:grid-cols-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
       {FEATURE_BOOST_PACKS.map((pack: Pack) => {
         const selected = selectedPackId === pack.productId;
         const isPopular = pack.productId === POPULAR_PACK_ID;
@@ -31,28 +31,27 @@ export function FeatureBoostPackPicker({
             type="button"
             disabled={disabled}
             onClick={() => onSelect(pack.productId)}
-            className={`relative min-w-[9.5rem] shrink-0 snap-start rounded-2xl border p-4 text-left transition sm:min-w-0 ${
+            className={`relative flex flex-col items-center justify-center rounded-xl border px-2 py-3 text-center transition sm:rounded-2xl sm:px-3 sm:py-4 ${
               disabled
-                ? "cursor-not-allowed border-zinc-200 bg-zinc-50 opacity-50"
+                ? "cursor-not-allowed border-zinc-200 bg-zinc-50 opacity-45"
                 : selected
                   ? "border-[#ffc400] bg-amber-50 shadow-md ring-2 ring-[#ffc400]/35"
                   : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
             }`}
           >
             {isPopular ? (
-              <span className="absolute -top-2.5 right-3 rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-zinc-900 px-2 py-px text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">
                 Popüler
               </span>
             ) : null}
-            <p className="text-lg font-black text-zinc-950">{pack.label}</p>
-            <p className="mt-0.5 text-xs leading-snug text-zinc-600">
-              {pack.subtitle}
-            </p>
-            <p className="mt-4 text-2xl font-black tabular-nums tracking-tight text-zinc-950">
+            <span className="text-base font-black text-zinc-950 sm:text-lg">
+              {pack.label}
+            </span>
+            <span className="mt-1.5 text-sm font-black tabular-nums text-zinc-950 sm:text-xl">
               {formatTryPrice(pack.fallbackPriceTry)}
-            </p>
+            </span>
             {listingCount > 1 ? (
-              <p className="mt-1 text-xs text-zinc-500">ilan başına</p>
+              <span className="mt-0.5 text-[10px] text-zinc-500">/ ilan</span>
             ) : null}
           </button>
         );

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import type { FeatureBoostListingOption } from "@/lib/feature-boost-listing";
 import type { ListingBoostPaymentInfo } from "@/lib/feature-boost-payment-status";
-import { boostPaymentStatusLabel } from "@/lib/feature-boost-payment-status";
 import {
   formatFeatureBoostEndDisplay,
   parseListingDate,
@@ -18,7 +17,7 @@ type Props = {
 };
 
 function formatPrice(price: number | null): string {
-  if (price == null) return "Fiyat yok";
+  if (price == null) return "—";
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",
     currency: "TRY",
@@ -30,13 +29,11 @@ export function FeatureBoostListingCard({
   listing,
   selected,
   disabled,
-  paymentInfo,
   onToggle,
 }: Props) {
   const endDisplay = listing.featuredUntil
     ? formatFeatureBoostEndDisplay(parseListingDate(listing.featuredUntil))
     : null;
-  const purchasedLabel = boostPaymentStatusLabel(paymentInfo ?? undefined);
 
   return (
     <li>
@@ -45,95 +42,72 @@ export function FeatureBoostListingCard({
         disabled={disabled}
         onClick={onToggle}
         aria-pressed={selected}
-        className={`group flex w-full gap-3 overflow-hidden rounded-2xl border p-3 text-left transition sm:gap-4 sm:p-4 ${
+        className={`group relative flex h-full w-full flex-col overflow-hidden rounded-xl border text-left transition ${
           disabled
-            ? "cursor-not-allowed border-zinc-200 bg-zinc-50 opacity-60"
+            ? "cursor-not-allowed border-zinc-200 bg-zinc-50 opacity-55"
             : selected
-              ? "border-[#ffc400] bg-gradient-to-br from-amber-50 to-white shadow-md ring-2 ring-[#ffc400]/30"
+              ? "border-[#ffc400] bg-white shadow-md ring-2 ring-[#ffc400]/40"
               : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
         }`}
       >
-        <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-28 sm:w-36">
+        <div className="relative aspect-[4/3] w-full bg-zinc-100">
           {listing.coverImageUrl ? (
             <Image
               src={listing.coverImageUrl}
               alt={listing.title}
               fill
               className="object-cover"
-              sizes="144px"
+              sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-zinc-400">
               Görsel yok
             </div>
           )}
-          {selected ? (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/40">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ffc400] text-sm font-black text-black">
-                ✓
-              </span>
+
+          {listing.isBoostActive ? (
+            <span className="absolute left-2 top-2 rounded-md bg-[#ffc400] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-black shadow-sm">
+              Öne çıkıyor
             </span>
           ) : null}
+
+          {selected ? (
+            <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#ffc400] text-sm font-black text-black shadow-md">
+              ✓
+            </span>
+          ) : (
+            <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white/90 bg-black/25 text-transparent opacity-0 transition group-hover:opacity-100 group-hover:text-white/80" />
+          )}
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="line-clamp-2 text-sm font-bold text-zinc-900 sm:text-base">
-                {listing.title}
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                #{listing.listingNumber}
-                {listing.cityName ? ` · ${listing.cityName}` : ""}
-              </p>
-            </div>
-            <p className="shrink-0 text-sm font-bold tabular-nums text-zinc-900">
-              {formatPrice(listing.price)}
-            </p>
-          </div>
+        <div className="flex flex-1 flex-col p-2.5 sm:p-3">
+          <p className="line-clamp-2 text-sm font-bold leading-snug text-zinc-900">
+            {listing.title}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+            #{listing.listingNumber}
+            {listing.cityName ? ` · ${listing.cityName}` : ""}
+          </p>
+          <p className="mt-1.5 text-sm font-black tabular-nums text-zinc-950">
+            {formatPrice(listing.price)}
+          </p>
 
           {listing.blockReason ? (
-            <p className="mt-2 rounded-lg bg-amber-100/80 px-2.5 py-1.5 text-xs text-amber-900">
+            <p className="mt-2 line-clamp-2 text-[11px] font-medium text-amber-800">
               {listing.blockReason}
             </p>
           ) : listing.isBoostActive && endDisplay ? (
-            <div className="mt-3 rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[#ffc400] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-black">
-                  Öne çıkıyor
-                </span>
-                {endDisplay.remainingLabel ? (
-                  <span className="text-xs font-semibold text-amber-800">
-                    {endDisplay.remainingLabel}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-1.5 text-xs font-medium text-amber-950/70">
-                Kampanya bitişi
-              </p>
-              <p className="text-sm font-bold leading-snug text-amber-950">
+            <p className="mt-2 text-[11px] font-semibold leading-snug text-amber-800">
+              {endDisplay.remainingLabel ?? "Aktif"}
+              <span className="mt-0.5 block font-medium text-amber-700/90">
                 {endDisplay.dateLine}
-              </p>
-              <p className="text-xs font-semibold tabular-nums text-amber-800">
-                saat {endDisplay.timeLine}
-              </p>
-              {listing.packDays > 0 ? (
-                <p className="mt-1 text-[11px] text-amber-800/90">
-                  {listing.packDays} günlük pulse paketi
-                </p>
-              ) : null}
-            </div>
+              </span>
+            </p>
           ) : (
-            <p className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-              Öne çıkarmaya uygun
+            <p className="mt-2 text-[11px] font-semibold text-emerald-700">
+              Uygun
             </p>
           )}
-
-          {purchasedLabel ? (
-            <p className="mt-2 text-xs font-medium text-zinc-600">
-              Son ödeme: {purchasedLabel}
-            </p>
-          ) : null}
         </div>
       </button>
     </li>

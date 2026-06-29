@@ -118,12 +118,9 @@ export function FeatureBoostCheckout({
   if (listings.length === 0) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center shadow-sm">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-2xl">
-          📋
-        </div>
-        <p className="text-xl font-black text-zinc-900">Henüz ilanınız yok</p>
+        <p className="text-lg font-black text-zinc-900">Henüz ilanınız yok</p>
         <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-600">
-          Öne çıkarma satın almak için önce onaylı bir ilan oluşturun.
+          Önce onaylı bir ilan oluşturun.
         </p>
         <Link
           href="/ilan-ver"
@@ -136,36 +133,19 @@ export function FeatureBoostCheckout({
   }
 
   return (
-    <div className="lg:grid lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-8 xl:grid-cols-[1fr_24rem]">
-      <div className="space-y-6 pb-28 lg:pb-0">
-        {/* Adım 1 */}
-        <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-sm font-black text-white">
-                1
-              </span>
-              <div>
-                <h2 className="text-lg font-black text-zinc-950 sm:text-xl">
-                  İlan seçin
-                </h2>
-                <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                  Birden fazla ilan işaretleyebilirsiniz. Aktif öne çıkarmaya
-                  ek paket süreyi uzatır.
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700">
-                {selectedListingIds.length} seçili
-              </span>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
-                {boostableCount} uygun
-              </span>
-            </div>
+    <div className="lg:grid lg:grid-cols-[1fr_17.5rem] lg:items-start lg:gap-6 xl:grid-cols-[1fr_19rem] xl:gap-8">
+      <div className="space-y-5 pb-24 lg:pb-0">
+        <section className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-black text-zinc-950 sm:text-base">
+              İlanlarınız
+            </h2>
+            <span className="text-xs font-semibold text-zinc-500">
+              {selectedListingIds.length} seçili · {boostableCount} uygun
+            </span>
           </div>
 
-          <ul className="mt-5 space-y-3">
+          <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
             {listings.map((listing) => (
               <FeatureBoostListingCard
                 key={listing.id}
@@ -179,77 +159,50 @@ export function FeatureBoostCheckout({
           </ul>
 
           {boostableCount === 0 ? (
-            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Onaylı ilanınız olmadığı için şu an öne çıkarma satın alınamaz.
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Onaylı ilan yok.
             </p>
           ) : null}
         </section>
 
-        {/* Adım 2 */}
-        <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-sm font-black text-white">
-              2
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-black text-zinc-950 sm:text-xl">
-                Paket seçin
-              </h2>
-              <p className="mt-1 text-sm text-zinc-600">
-                {selectedListings.length > 0
-                  ? `${selectedListings.length} ilan için süre paketi`
-                  : "Önce en az bir ilan seçin"}
-              </p>
-            </div>
-          </div>
+        <section
+          className={`rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-5 ${
+            selectedListings.length === 0 ? "opacity-60" : ""
+          }`}
+        >
+          <h2 className="mb-3 text-sm font-black text-zinc-950 sm:text-base">
+            Paket
+          </h2>
 
-          {selectedListings.length === 0 ? (
-            <p className="mt-4 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-center text-sm text-zinc-600">
-              Paketleri görmek için yukarıdan ilan seçin.
-            </p>
-          ) : (
-            <div className="mt-5">
-              <FeatureBoostPackPicker
-                selectedPackId={selectedPackId}
-                listingCount={selectedListings.length}
-                disabled={selectedListings.length === 0}
-                onSelect={(id) => {
-                  setSelectedPackId(id);
-                  setError(null);
-                }}
-              />
-            </div>
-          )}
-
-          {error && !readyToPay ? (
-            <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {error}
-            </p>
-          ) : null}
+          <FeatureBoostPackPicker
+            selectedPackId={selectedPackId}
+            listingCount={selectedListings.length}
+            disabled={selectedListings.length === 0}
+            onSelect={(id) => {
+              setSelectedPackId(id);
+              setError(null);
+            }}
+          />
         </section>
       </div>
 
-      {/* Özet — masaüstü sağ kolon */}
-      {readyToPay && selectedPack ? (
-        <div className="hidden lg:block">
-          <FeatureBoostOrderSummary
-            sticky
-            selectedListings={selectedListings}
-            selectedPack={selectedPack}
-            totalPrice={totalPrice}
-            submitting={submitting}
-            error={error}
-            onCheckout={handleCheckout}
-          />
-        </div>
-      ) : null}
+      <div className="hidden lg:block">
+        <FeatureBoostOrderSummary
+          sticky
+          selectedListings={selectedListings}
+          selectedPack={selectedPack}
+          totalPrice={totalPrice}
+          submitting={submitting}
+          error={error}
+          onCheckout={handleCheckout}
+        />
+      </div>
 
-      {/* Mobil sabit ödeme çubuğu */}
       {readyToPay && selectedPack ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 p-4 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-md lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 p-3 shadow-[0_-6px_24px_rgba(0,0,0,0.08)] backdrop-blur-md lg:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-zinc-500">
+              <p className="text-[11px] font-semibold text-zinc-500">
                 {selectedPack.label} · {selectedListings.length} ilan
               </p>
               <p className="text-xl font-black tabular-nums text-zinc-950">
@@ -263,13 +216,13 @@ export function FeatureBoostCheckout({
               type="button"
               disabled={submitting}
               onClick={handleCheckout}
-              className="shrink-0 rounded-xl bg-[#ffc400] px-5 py-3.5 text-sm font-black text-black disabled:opacity-60"
+              className="shrink-0 rounded-xl bg-[#ffc400] px-5 py-3 text-sm font-black text-black disabled:opacity-60"
             >
               {submitting ? "…" : "Öde"}
             </button>
           </div>
           {error ? (
-            <p className="mx-auto mt-2 max-w-lg text-center text-xs text-red-700">
+            <p className="mx-auto mt-1.5 max-w-lg text-center text-xs text-red-700">
               {error}
             </p>
           ) : null}
