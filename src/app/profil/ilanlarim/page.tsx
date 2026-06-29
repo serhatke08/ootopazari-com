@@ -11,6 +11,7 @@ import {
   isListingSuspended,
 } from "@/lib/listings-data";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
+import { fetchBoostPaymentInfoByListing } from "@/lib/feature-boost-payment-status";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 
 export default async function ProfilIlanlarimPage() {
@@ -33,9 +34,10 @@ export default async function ProfilIlanlarimPage() {
 
   const catMap = buildCategoryMap(categories);
   const ids = rows.map((r) => r.id).filter(Boolean) as string[];
-  const [statsMap, sessionFav] = await Promise.all([
+  const [statsMap, sessionFav, boostPayments] = await Promise.all([
     fetchListingPublicStatsMap(supabase, ids),
     getSessionAndFavoriteSet(supabase, ids),
+    fetchBoostPaymentInfoByListing(supabase, user.id, ids),
   ]);
   const loggedIn = !!sessionFav.user;
   const favSet = sessionFav.favoriteIds;
@@ -71,6 +73,7 @@ export default async function ProfilIlanlarimPage() {
                   listing={listing}
                   listingLabel={listingLabel}
                   canBoost={approved && !isListingSuspended(listing)}
+                  paymentInfo={id ? boostPayments.get(id) ?? null : null}
                 />
                 <ListingCard
                   listing={listing}

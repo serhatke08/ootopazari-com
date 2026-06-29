@@ -219,10 +219,46 @@ export function formatFeatureBoostDate(d: Date | null): string | null {
   if (!d) return null;
   return d.toLocaleString("tr-TR", {
     day: "numeric",
-    month: "short",
+    month: "long",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** Kart ve özet alanları için: tarih ve saat ayrı satır. */
+export function formatFeatureBoostEndDisplay(
+  d: Date | null,
+  now = new Date()
+): { dateLine: string; timeLine: string; remainingLabel: string | null } | null {
+  if (!d) return null;
+
+  const dateLine = d.toLocaleDateString("tr-TR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const timeLine = d.toLocaleTimeString("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const msLeft = d.getTime() - now.getTime();
+  let remainingLabel: string | null = null;
+  if (msLeft <= 0) {
+    remainingLabel = "Süre doldu";
+  } else {
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+    if (daysLeft === 1) remainingLabel = "Son gün";
+    else if (daysLeft <= 30) remainingLabel = `${daysLeft} gün kaldı`;
+    else {
+      const months = Math.floor(daysLeft / 30);
+      remainingLabel = months === 1 ? "1 ay kaldı" : `${months} ay kaldı`;
+    }
+  }
+
+  return { dateLine, timeLine, remainingLabel };
 }
 
 export function featureBoostOwnerStatusCopy(
