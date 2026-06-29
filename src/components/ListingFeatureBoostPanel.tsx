@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import type { ListingRow } from "@/lib/listings-data";
 import {
-  FEATURE_BOOST_PACKS,
   featureBoostOwnerStatusCopy,
-  formatTryPrice,
   listingFeatureBoostOwnerPhase,
 } from "@/lib/listing-feature-boost";
-import { FeatureBoostPackagesDialog } from "@/components/FeatureBoostPackagesDialog";
 
 type Props = {
   listing: ListingRow;
@@ -24,18 +21,19 @@ const toneClasses = {
 
 export function ListingFeatureBoostPanel({
   listing,
-  listingLabel,
   canBoost,
 }: Props) {
-  const [dialogOpen, setDialogOpen] = useState(false);
   const phase = listingFeatureBoostOwnerPhase(listing);
   const status = featureBoostOwnerStatusCopy(listing);
   const showBoostButton =
     canBoost && phase !== "pulseActive" && phase !== "legacyActive";
+  const listingNumber =
+    listing.listing_number != null
+      ? String(listing.listing_number).trim()
+      : "";
 
   return (
-    <>
-      <div
+    <div
         className={`mb-2 rounded-lg border px-3 py-2 ${toneClasses[status.tone]}`}
       >
         <div className="flex items-start justify-between gap-2">
@@ -53,26 +51,14 @@ export function ListingFeatureBoostPanel({
             </span>
           ) : null}
         </div>
-        {showBoostButton ? (
-          <button
-            type="button"
-            onClick={() => setDialogOpen(true)}
-            className="mt-2 w-full rounded-lg bg-[#ffc400] px-3 py-2 text-xs font-extrabold text-black transition hover:bg-[#ffd24d]"
+        {showBoostButton && listingNumber ? (
+          <Link
+            href={`/ilan-one-cikar?listing=${encodeURIComponent(listingNumber)}`}
+            className="mt-2 block w-full rounded-lg bg-[#ffc400] px-3 py-2 text-center text-xs font-extrabold text-black transition hover:bg-[#ffd24d]"
           >
             Öne çıkar
-          </button>
+          </Link>
         ) : null}
-      </div>
-
-      <FeatureBoostPackagesDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        listingLabel={listingLabel}
-        packs={FEATURE_BOOST_PACKS.map((pack) => ({
-          ...pack,
-          priceLabel: formatTryPrice(pack.fallbackPriceTry),
-        }))}
-      />
-    </>
+    </div>
   );
 }
