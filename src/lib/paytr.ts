@@ -139,3 +139,49 @@ export function verifyPaytrCallbackHash(input: {
   const expected = paytrHmac(hashStr, input.config.merchantKey);
   return expected === input.hash;
 }
+
+export type PaytrStatusQueryResult =
+  | { ok: true; paymentAmountKurus: number }
+  | { ok: false; reason: string };
+
+/** Ödeme tamamlandı mı diye PayTR durum sorgusu (başarı sayfası yedek onayı). */
+export async function queryPaytrPaymentStatus(
+  config: PaytrConfig,
+  merchantOid: string
+): Promise<PaytrStatusQueryResult> {
+  const hashStr = config.merchantId + merchantOid + config.merchantSalt;
+  const paytrToken = paytrHmac(hashStr, config.merchantKey);
+
+  const body = new URLSearchParams({
+    merchant_id: config.merchantId,
+    merchant_oid: merchantOid,
+    paytr_token: paytrToken,
+  });
+
+  const res = await fetch("https://www.paytr.com/odeme/durum-sorgu", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+    cache: "no-store",
+  });
+
+  const data = (await res.json()) as {
+    status?: string;
+    payment_amount?: string | number;
+    err_msg?: string;
+  };
+
+  if (data.status !== "success") {
+    return {
+      ok: false,
+      reason: data.err_msg ?? "PayTR ödeme doğrulanamadı.",
+    };
+  }
+
+  const paymentAmountKurus = Math.round(Number(data.payment_amount ?? 0));
+  if (!Number.isFinite(paymentAmountKurus) || paymentAmountKurus <= 0) {
+    return { ok: false, reason: "invalid_payment_amount" };
+  }
+
+  return { ok: true, paymentAmountKurus };
+}

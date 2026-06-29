@@ -1,3 +1,6 @@
+import { FEATURE_BOOST_HOURS_BETWEEN } from "@/lib/listing-feature-boost";
+
+/** Satın alma anından itibaren her 24 saat = 1 gün pulse (3 gün = 72 saat). */
 export function computeFeatureBoostListingUpdate(
   packDays: number,
   now = new Date()
@@ -7,8 +10,8 @@ export function computeFeatureBoostListingUpdate(
   feature_boost_pack_days: number;
   featured_until: string;
 } {
-  const until = new Date(now);
-  until.setDate(until.getDate() + packDays);
+  const msPerDay = FEATURE_BOOST_HOURS_BETWEEN * 60 * 60 * 1000;
+  const until = new Date(now.getTime() + packDays * msPerDay);
 
   return {
     featured_started_at: now.toISOString(),

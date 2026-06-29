@@ -134,7 +134,7 @@ export async function POST(req: Request) {
     email,
     paymentAmountKurus,
     basket: [[basketName, basketPriceTry, 1]],
-    okUrl: `${origin}/odeme/basarili?type=feature_boost`,
+    okUrl: `${origin}/odeme/basarili?type=feature_boost&oid=${encodeURIComponent(merchantOid)}`,
     failUrl: `${origin}/odeme/basarisiz?type=feature_boost`,
     userName: email.split("@")[0] || "Müşteri",
     userAddress: "Türkiye",
@@ -148,5 +148,5 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true, token: tokenResult.token });
+  return NextResponse.json({ ok: true, token: tokenResult.token, merchantOid });
 }

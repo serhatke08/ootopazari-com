@@ -83,6 +83,7 @@ export function FeatureBoostCheckout({
       const data = (await res.json()) as {
         ok?: boolean;
         token?: string;
+        merchantOid?: string;
         message?: string;
         code?: string;
       };
@@ -96,6 +97,9 @@ export function FeatureBoostCheckout({
       }
 
       if (data.token) {
+        if (data.merchantOid) {
+          sessionStorage.setItem("feature_boost_merchant_oid", data.merchantOid);
+        }
         router.push(
           `/odeme/feature-boost?token=${encodeURIComponent(data.token)}`
         );

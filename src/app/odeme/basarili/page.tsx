@@ -1,22 +1,26 @@
 import Link from "next/link";
+import { FeatureBoostSuccessActivator } from "@/components/FeatureBoostSuccessActivator";
 
 type Props = {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; oid?: string }>;
 };
 
 export default async function OdemeBasariliPage({ searchParams }: Props) {
-  const { type } = await searchParams;
+  const { type, oid } = await searchParams;
   const isFeatureBoost = type === "feature_boost";
+  const merchantOid = oid?.trim() || null;
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-16 text-center sm:px-6">
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-8">
         <p className="text-2xl font-black text-emerald-950">Ödeme alındı</p>
-        <p className="mt-3 text-sm leading-6 text-emerald-900">
-          {isFeatureBoost
-            ? "Ödemeniz onaylandı. Paket kısa süre içinde ilanınıza tanımlanacaktır."
-            : "Ödemeniz başarıyla tamamlandı."}
-        </p>
+        {isFeatureBoost ? (
+          <FeatureBoostSuccessActivator merchantOid={merchantOid} />
+        ) : (
+          <p className="mt-3 text-sm leading-6 text-emerald-900">
+            Ödemeniz başarıyla tamamlandı.
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Link
             href="/profil/ilanlarim"
