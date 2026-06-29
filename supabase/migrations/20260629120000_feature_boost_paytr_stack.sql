@@ -1,13 +1,4 @@
--- Supabase SQL Editor'da çalıştırın (PayTR web öne çıkarma)
--- Aynı içerik: supabase/migrations/20260629100000_register_feature_boost_paytr.sql
-
-ALTER TABLE feature_boost_iap_purchases
-  DROP CONSTRAINT IF EXISTS feature_boost_iap_purchases_platform_check;
-
-ALTER TABLE feature_boost_iap_purchases
-  ADD CONSTRAINT feature_boost_iap_purchases_platform_check
-  CHECK (platform IN ('ios', 'android', 'web', 'admin'));
-
+-- PayTR öne çıkarma: aktif kampanyaya ek paket süreyi üstüne ekler (pack_days toplanır).
 CREATE OR REPLACE FUNCTION register_feature_boost_paytr_purchase(
   p_user_id uuid,
   p_listing_id uuid,

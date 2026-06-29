@@ -25,40 +25,43 @@ export function ListingFeatureBoostPanel({
 }: Props) {
   const phase = listingFeatureBoostOwnerPhase(listing);
   const status = featureBoostOwnerStatusCopy(listing);
-  const showBoostButton =
-    canBoost && phase !== "pulseActive" && phase !== "legacyActive";
   const listingNumber =
     listing.listing_number != null
       ? String(listing.listing_number).trim()
       : "";
+  const isActive =
+    phase === "pulseActive" ||
+    phase === "legacyActive" ||
+    phase === "waitingNextPulse" ||
+    phase === "packDaysDone";
 
   return (
     <div
-        className={`mb-2 rounded-lg border px-3 py-2 ${toneClasses[status.tone]}`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-bold">{status.title}</p>
-            {status.detail ? (
-              <p className="mt-0.5 text-[11px] leading-snug opacity-90">
-                {status.detail}
-              </p>
-            ) : null}
-          </div>
-          {phase === "pulseActive" || phase === "legacyActive" ? (
-            <span className="shrink-0 rounded-full bg-[#ffc400] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
-              Aktif
-            </span>
+      className={`mb-2 rounded-lg border px-3 py-2 ${toneClasses[status.tone]}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-bold">{status.title}</p>
+          {status.detail ? (
+            <p className="mt-0.5 text-[11px] leading-snug opacity-90">
+              {status.detail}
+            </p>
           ) : null}
         </div>
-        {showBoostButton && listingNumber ? (
-          <Link
-            href={`/ilan-one-cikar?listing=${encodeURIComponent(listingNumber)}`}
-            className="mt-2 block w-full rounded-lg bg-[#ffc400] px-3 py-2 text-center text-xs font-extrabold text-black transition hover:bg-[#ffd24d]"
-          >
-            Öne çıkar
-          </Link>
+        {isActive ? (
+          <span className="shrink-0 rounded-full bg-[#ffc400] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
+            {phase === "pulseActive" || phase === "legacyActive" ? "Aktif" : "Devam"}
+          </span>
         ) : null}
+      </div>
+      {canBoost && listingNumber ? (
+        <Link
+          href={`/ilan-one-cikar?listing=${encodeURIComponent(listingNumber)}`}
+          className="mt-2 block w-full rounded-lg bg-[#ffc400] px-3 py-2 text-center text-xs font-extrabold text-black transition hover:bg-[#ffd24d]"
+        >
+          {isActive ? "Süre ekle" : "Öne çıkar"}
+        </Link>
+      ) : null}
     </div>
   );
 }

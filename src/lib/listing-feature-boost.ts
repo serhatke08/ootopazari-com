@@ -237,7 +237,9 @@ export function featureBoostOwnerStatusCopy(
     case "pulseActive":
       return {
         title: "Öne çıkarma aktif",
-        detail: "İlanınız bugün ana sayfada öne çıkarılıyor.",
+        detail: featuredUntil
+          ? `Bugün ana sayfada öne çıkarılıyor · Bitiş: ${formatFeatureBoostDate(featuredUntil)}${packDays > 0 ? ` · ${packDays} gün paket` : ""}`
+          : "İlanınız bugün ana sayfada öne çıkarılıyor.",
         tone: "amber",
       };
     case "waitingNextPulse": {
@@ -247,9 +249,14 @@ export function featureBoostOwnerStatusCopy(
           : null;
       return {
         title: "Sonraki pulse bekleniyor",
-        detail: next
-          ? `Bir sonraki öne çıkarma: ${formatFeatureBoostDate(next)}`
-          : "Kampanya devam ediyor.",
+        detail: [
+          next ? `Bir sonraki öne çıkarma: ${formatFeatureBoostDate(next)}` : null,
+          featuredUntil
+            ? `Kampanya bitişi: ${formatFeatureBoostDate(featuredUntil)}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
         tone: "zinc",
       };
     }

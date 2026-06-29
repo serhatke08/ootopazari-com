@@ -1,6 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { parseFeatureBoostMerchantOid } from "@/lib/paytr-merchant-oid";
+import {
+  buildFeatureBoostPaytrTransactionId,
+  parseFeatureBoostMerchantOid,
+} from "@/lib/paytr-merchant-oid";
 import {
   FEATURE_BOOST_HOURS_BETWEEN,
   featureBoostProductIdForPackDays,
@@ -16,15 +19,25 @@ export type FulfillFeatureBoostInput = {
 };
 
 export type FulfillFeatureBoostResult =
-  | { ok: true; listingId: string; packDays: number; alreadyApplied: boolean }
+  | {
+      ok: true;
+      listingId: string;
+      packDays: number;
+      listingCount: number;
+      alreadyApplied: boolean;
+    }
   | { ok: false; reason: string };
+
+type PaymentItem = {
+  listing_id: string;
+  listing_number: string;
+  pack_days: number;
+};
 
 type RpcBoostResult = {
   ok?: boolean;
   already_applied?: boolean;
   error?: string;
-  listing_id?: string;
-  days?: number;
 };
 
 export async function findListingByNumber(
@@ -53,12 +66,30 @@ export async function findListingByNumber(
   return { id: String(data.id), user_id: String(data.user_id) };
 }
 
+async function loadPaymentItems(
+  admin: SupabaseClient,
+  merchantOid: string
+): Promise<PaymentItem[]> {
+  const { data } = await admin
+    .from("feature_boost_payment_items")
+    .select("listing_id,listing_number,pack_days")
+    .eq("merchant_oid", merchantOid);
+
+  if (!data?.length) return [];
+
+  return data.map((row) => ({
+    listing_id: String(row.listing_id),
+    listing_number: String(row.listing_number),
+    pack_days: Number(row.pack_days),
+  }));
+}
+
 async function applyFeatureBoostViaRpc(
   admin: SupabaseClient,
   input: {
     userId: string;
     listingId: string;
-    merchantOid: string;
+    transactionId: string;
     packDays: number;
   }
 ): Promise<{ ok: true; alreadyApplied: boolean } | { ok: false; reason: string }> {
@@ -71,7 +102,7 @@ async function applyFeatureBoostViaRpc(
     p_user_id: input.userId,
     p_listing_id: input.listingId,
     p_product_id: productId,
-    p_transaction_id: input.merchantOid,
+    p_transaction_id: input.transactionId,
     p_days: input.packDays,
     p_hours_between: FEATURE_BOOST_HOURS_BETWEEN,
   });
@@ -88,8 +119,7 @@ async function applyFeatureBoostViaRpc(
 
   const result = (data ?? {}) as RpcBoostResult;
   if (!result.ok) {
-    const rpcError = result.error ?? "rpc_rejected";
-    return { ok: false, reason: rpcError };
+    return { ok: false, reason: result.error ?? "rpc_rejected" };
   }
 
   return { ok: true, alreadyApplied: Boolean(result.already_applied) };
@@ -111,35 +141,69 @@ export async function fulfillFeatureBoostPayment(
     .eq("merchant_oid", merchantOid)
     .maybeSingle();
 
-  if (paymentRow?.status === "paid" && paymentRow.listing_id) {
+  const paymentItems = await loadPaymentItems(admin, merchantOid);
+
+  if (paymentRow?.status === "paid") {
+    const firstListingId =
+      paymentItems[0]?.listing_id ?? String(paymentRow.listing_id ?? "");
     return {
       ok: true,
-      listingId: String(paymentRow.listing_id),
+      listingId: firstListingId,
       packDays: Number(paymentRow.pack_days),
+      listingCount: paymentItems.length || 1,
       alreadyApplied: true,
     };
   }
 
-  let listingId = input.listingId ?? (paymentRow?.listing_id as string | undefined);
-  let packDays = input.packDays ?? Number(paymentRow?.pack_days);
   let userId = input.userId ?? (paymentRow?.user_id as string | undefined);
+  let packDays = input.packDays ?? Number(paymentRow?.pack_days);
 
-  if (!listingId || !packDays) {
-    const parsed = parseFeatureBoostMerchantOid(merchantOid);
-    if (!parsed) {
-      return { ok: false, reason: "invalid_merchant_oid" };
-    }
-    packDays = parsed.packDays;
-    const listing = await findListingByNumber(admin, parsed.listingNumber);
-    if (!listing) {
-      return { ok: false, reason: "listing_not_found" };
-    }
-    listingId = listing.id;
-    userId = userId ?? listing.user_id;
-  }
+  const targets: PaymentItem[] = paymentItems.length
+    ? paymentItems
+    : [];
 
-  if (!listingId || !packDays || packDays <= 0) {
-    return { ok: false, reason: "missing_listing_or_pack" };
+  if (targets.length === 0) {
+    let listingId =
+      input.listingId ?? (paymentRow?.listing_id as string | undefined);
+    packDays = packDays || undefined;
+
+    if (!listingId || !packDays) {
+      const parsed = parseFeatureBoostMerchantOid(merchantOid);
+      if (!parsed) {
+        return { ok: false, reason: "invalid_merchant_oid" };
+      }
+      packDays = parsed.packDays;
+      if (parsed.kind === "single") {
+        const listing = await findListingByNumber(admin, parsed.listingNumber);
+        if (!listing) {
+          return { ok: false, reason: "listing_not_found" };
+        }
+        listingId = listing.id;
+        userId = userId ?? listing.user_id;
+        targets.push({
+          listing_id: listingId,
+          listing_number: parsed.listingNumber,
+          pack_days: packDays,
+        });
+      } else {
+        return { ok: false, reason: "missing_payment_items" };
+      }
+    } else {
+      const { data: listingRow } = await admin
+        .from("listings")
+        .select("listing_number,user_id")
+        .eq("id", listingId)
+        .maybeSingle();
+      if (!listingRow?.listing_number) {
+        return { ok: false, reason: "listing_not_found" };
+      }
+      userId = userId ?? String(listingRow.user_id);
+      targets.push({
+        listing_id: listingId,
+        listing_number: String(listingRow.listing_number),
+        pack_days: packDays,
+      });
+    }
   }
 
   if (!userId) {
@@ -150,15 +214,26 @@ export async function fulfillFeatureBoostPayment(
     return { ok: false, reason: "forbidden" };
   }
 
-  const rpcResult = await applyFeatureBoostViaRpc(admin, {
-    userId,
-    listingId,
-    merchantOid,
-    packDays,
-  });
-
-  if (!rpcResult.ok) {
-    return { ok: false, reason: rpcResult.reason };
+  let allAlreadyApplied = true;
+  const usePerListingTx = targets.length > 1;
+  for (const item of targets) {
+    const transactionId = buildFeatureBoostPaytrTransactionId(
+      merchantOid,
+      item.listing_number,
+      usePerListingTx
+    );
+    const rpcResult = await applyFeatureBoostViaRpc(admin, {
+      userId,
+      listingId: item.listing_id,
+      transactionId,
+      packDays: item.pack_days,
+    });
+    if (!rpcResult.ok) {
+      return { ok: false, reason: rpcResult.reason };
+    }
+    if (!rpcResult.alreadyApplied) {
+      allAlreadyApplied = false;
+    }
   }
 
   const paidAt = new Date().toISOString();
@@ -166,12 +241,13 @@ export async function fulfillFeatureBoostPayment(
     input.totalAmountKurus ??
     Number(paymentRow?.amount_kurus) ??
     1;
+  const firstTarget = targets[0];
 
   const paymentPayload = {
     merchant_oid: merchantOid,
-    listing_id: listingId,
+    listing_id: firstTarget.listing_id,
     user_id: userId,
-    pack_days: packDays,
+    pack_days: firstTarget.pack_days,
     amount_kurus: amountKurus,
     status: "paid" as const,
     paytr_status: input.paytrStatus ?? "success",
@@ -189,8 +265,9 @@ export async function fulfillFeatureBoostPayment(
 
   return {
     ok: true,
-    listingId,
-    packDays,
-    alreadyApplied: rpcResult.alreadyApplied,
+    listingId: firstTarget.listing_id,
+    packDays: firstTarget.pack_days,
+    listingCount: targets.length,
+    alreadyApplied: allAlreadyApplied,
   };
 }

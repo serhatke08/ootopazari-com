@@ -57,8 +57,8 @@ export default async function IlanOneCikarPage({ searchParams }: Props) {
           İlanını öne çıkar
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600 sm:text-base">
-          İlanını seç, paketini belirle, PayTR ile güvenli ödeme yap. Paket
-          onaylandıktan sonra ilanına otomatik tanımlanır.
+          Bir veya birden fazla ilan seçin, paket belirleyin, PayTR ile ödeme
+          yapın. Aktif öne çıkarmaya alınan paket süreyi üstüne ekler.
         </p>
       </header>
 

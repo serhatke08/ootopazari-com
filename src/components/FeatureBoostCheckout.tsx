@@ -17,17 +17,18 @@ type Props = {
   initialListingNumber?: string | null;
 };
 
-function pickInitialListingId(
+function pickInitialListingIds(
   listings: FeatureBoostListingOption[],
   initialListingNumber?: string | null
-): string | null {
+): string[] {
   if (initialListingNumber) {
     const fromUrl = listings.find(
       (l) => l.listingNumber === initialListingNumber && l.canBoost
     );
-    if (fromUrl) return fromUrl.id;
+    if (fromUrl) return [fromUrl.id];
   }
-  return listings.find((l) => l.canBoost)?.id ?? null;
+  const first = listings.find((l) => l.canBoost);
+  return first ? [first.id] : [];
 }
 
 function formatListingPrice(price: number | null): string {
@@ -44,16 +45,16 @@ export function FeatureBoostCheckout({
   initialListingNumber,
 }: Props) {
   const router = useRouter();
-  const [selectedListingId, setSelectedListingId] = useState<string | null>(() =>
-    pickInitialListingId(listings, initialListingNumber)
+  const [selectedListingIds, setSelectedListingIds] = useState<string[]>(() =>
+    pickInitialListingIds(listings, initialListingNumber)
   );
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedListing = useMemo(
-    () => listings.find((l) => l.id === selectedListingId) ?? null,
-    [listings, selectedListingId]
+  const selectedListings = useMemo(
+    () => listings.filter((l) => selectedListingIds.includes(l.id)),
+    [listings, selectedListingIds]
   );
 
   const selectedPack = useMemo(
@@ -63,9 +64,20 @@ export function FeatureBoostCheckout({
   );
 
   const boostableCount = listings.filter((l) => l.canBoost).length;
+  const totalPrice =
+    selectedPack && selectedListings.length > 0
+      ? selectedPack.fallbackPriceTry * selectedListings.length
+      : 0;
+
+  function toggleListing(id: string) {
+    setSelectedListingIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+    setError(null);
+  }
 
   async function handleCheckout() {
-    if (!selectedListing || !selectedPack) return;
+    if (selectedListings.length === 0 || !selectedPack) return;
 
     setSubmitting(true);
     setError(null);
@@ -75,7 +87,7 @@ export function FeatureBoostCheckout({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          listingId: selectedListing.id,
+          listingIds: selectedListings.map((l) => l.id),
           productId: selectedPack.productId,
         }),
       });
@@ -138,17 +150,19 @@ export function FeatureBoostCheckout({
           <div>
             <h2 className="text-lg font-black text-zinc-950">1. İlan seç</h2>
             <p className="mt-1 text-sm text-zinc-600">
-              Öne çıkarmak istediğiniz onaylı ilanı seçin.
+              Birden fazla ilan seçebilirsiniz. Aktif öne çıkarmaya ek paket
+              süreyi üstüne ekler.
             </p>
           </div>
           <p className="text-xs font-semibold text-zinc-500">
-            {boostableCount} / {listings.length} ilan uygun
+            {selectedListingIds.length} seçili · {boostableCount} /{" "}
+            {listings.length} uygun
           </p>
         </div>
 
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((listing) => {
-            const selected = selectedListingId === listing.id;
+            const selected = selectedListingIds.includes(listing.id);
             const disabled = !listing.canBoost;
 
             return (
@@ -158,8 +172,7 @@ export function FeatureBoostCheckout({
                   disabled={disabled}
                   onClick={() => {
                     if (disabled) return;
-                    setSelectedListingId(listing.id);
-                    setError(null);
+                    toggleListing(listing.id);
                   }}
                   className={`w-full overflow-hidden rounded-xl border text-left transition ${
                     disabled
@@ -188,6 +201,11 @@ export function FeatureBoostCheckout({
                         Seçili
                       </span>
                     ) : null}
+                    {listing.isBoostActive ? (
+                      <span className="absolute left-2 top-2 rounded-full bg-black/75 px-2 py-0.5 text-[10px] font-bold text-[#ffc400]">
+                        Öne çıkıyor
+                      </span>
+                    ) : null}
                   </div>
                   <div className="p-3">
                     <p className="line-clamp-2 text-sm font-bold text-zinc-900">
@@ -203,6 +221,13 @@ export function FeatureBoostCheckout({
                     {listing.blockReason ? (
                       <p className="mt-2 text-[11px] leading-snug text-amber-800">
                         {listing.blockReason}
+                      </p>
+                    ) : listing.isBoostActive && listing.boostEndLabel ? (
+                      <p className="mt-2 text-[11px] font-semibold leading-snug text-amber-900">
+                        Bitiş: {listing.boostEndLabel}
+                        {listing.packDays > 0
+                          ? ` · ${listing.packDays} gün paket`
+                          : ""}
                       </p>
                     ) : (
                       <p className="mt-2 text-[11px] font-semibold text-emerald-700">
@@ -227,12 +252,12 @@ export function FeatureBoostCheckout({
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-lg font-black text-zinc-950">2. Paket seç</h2>
         <p className="mt-1 text-sm text-zinc-600">
-          {selectedListing
-            ? `${selectedListing.title} için paket seçin.`
-            : "Önce yukarıdan uygun bir ilan seçin."}
+          {selectedListings.length > 0
+            ? `${selectedListings.length} ilan için paket seçin. Aktif ilana alınan paket mevcut sürenin üzerine eklenir.`
+            : "Önce yukarıdan en az bir ilan seçin."}
         </p>
 
-        {!selectedListing ? (
+        {selectedListings.length === 0 ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Paketleri görmek için önce onaylı ve uygun bir ilan seçmelisiniz.
           </p>
@@ -241,15 +266,15 @@ export function FeatureBoostCheckout({
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURE_BOOST_PACKS.map((pack: Pack) => {
             const selected = selectedPackId === pack.productId;
-            const inactive = !selectedListing;
+            const inactive = selectedListings.length === 0;
 
             return (
               <button
                 key={pack.productId}
                 type="button"
                 onClick={() => {
-                  if (!selectedListing) {
-                    setError("Önce bir ilan seçin.");
+                  if (selectedListings.length === 0) {
+                    setError("Önce en az bir ilan seçin.");
                     return;
                   }
                   setSelectedPackId(pack.productId);
@@ -269,6 +294,11 @@ export function FeatureBoostCheckout({
                 <p className="mt-1 text-xs text-zinc-600">{pack.subtitle}</p>
                 <p className="mt-3 text-xl font-black tabular-nums text-zinc-950">
                   {formatTryPrice(pack.fallbackPriceTry)}
+                  {selectedListings.length > 1 ? (
+                    <span className="ml-1 text-xs font-semibold text-zinc-500">
+                      / ilan
+                    </span>
+                  ) : null}
                 </p>
               </button>
             );
@@ -282,26 +312,52 @@ export function FeatureBoostCheckout({
         ) : null}
       </section>
 
-      {selectedListing && selectedPack ? (
+      {selectedListings.length > 0 && selectedPack ? (
         <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-lg font-black text-zinc-950">Özet</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-zinc-600">İlan</dt>
-              <dd className="text-right font-semibold text-zinc-900">
-                #{selectedListing.listingNumber} · {selectedListing.title}
+              <dt className="text-zinc-600">İlanlar</dt>
+              <dd className="max-w-[60%] text-right font-semibold text-zinc-900">
+                {selectedListings.length === 1 ? (
+                  <>
+                    #{selectedListings[0].listingNumber} ·{" "}
+                    {selectedListings[0].title}
+                  </>
+                ) : (
+                  `${selectedListings.length} ilan seçildi`
+                )}
               </dd>
             </div>
+            {selectedListings.length > 1 ? (
+              <ul className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
+                {selectedListings.map((listing) => (
+                  <li key={listing.id} className="py-0.5">
+                    #{listing.listingNumber} · {listing.title}
+                    {listing.isBoostActive && listing.boostEndLabel
+                      ? ` (bitiş: ${listing.boostEndLabel})`
+                      : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-600">Paket</dt>
               <dd className="font-semibold text-zinc-900">
                 {selectedPack.label} — {selectedPack.subtitle}
               </dd>
             </div>
+            {selectedListings.some((l) => l.isBoostActive) ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                Seçili ilanlardan en az biri zaten öne çıkıyor. Bu ödeme
+                paketi mevcut kampanyanın üzerine eklenecek; kalan süre
+                kaybolmaz.
+              </p>
+            ) : null}
             <div className="flex justify-between gap-4 border-t border-zinc-100 pt-3">
               <dt className="font-bold text-zinc-900">Toplam</dt>
               <dd className="text-xl font-black tabular-nums text-zinc-950">
-                {formatTryPrice(selectedPack.fallbackPriceTry)}
+                {formatTryPrice(totalPrice)}
               </dd>
             </div>
           </dl>

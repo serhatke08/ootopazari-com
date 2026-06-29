@@ -90,8 +90,13 @@ export async function POST(req: Request) {
     alreadyApplied: result.alreadyApplied,
     packDays: result.packDays,
     listingId: result.listingId,
+    listingCount: result.listingCount,
     message: result.alreadyApplied
-      ? "Paket zaten aktif."
-      : `${result.packDays} günlük öne çıkarma paketi ilanınıza tanımlandı.`,
+      ? result.listingCount > 1
+        ? "Paketler zaten aktif."
+        : "Paket zaten aktif."
+      : result.listingCount > 1
+        ? `${result.listingCount} ilana ${result.packDays} günlük öne çıkarma paketi tanımlandı.`
+        : `${result.packDays} günlük öne çıkarma paketi ilanınıza tanımlandı.`,
   });
 }

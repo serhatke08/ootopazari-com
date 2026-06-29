@@ -1,6 +1,8 @@
 import type { ListingRow } from "@/lib/listings-data";
 import { isListingSuspended } from "@/lib/listings-data";
 import {
+  formatFeatureBoostDate,
+  listingFeatureBoostFields,
   listingFeatureBoostOwnerPhase,
   type FeatureBoostOwnerPhase,
 } from "@/lib/listing-feature-boost";
@@ -16,6 +18,10 @@ export type FeatureBoostListingOption = {
   canBoost: boolean;
   blockReason: string | null;
   boostPhase: FeatureBoostOwnerPhase;
+  featuredUntil: string | null;
+  packDays: number;
+  boostEndLabel: string | null;
+  isBoostActive: boolean;
 };
 
 function moderationLabel(status: string): string {
@@ -52,11 +58,6 @@ export function featureBoostBlockReason(
     return `İlan durumu: ${moderationLabel(status)}`;
   }
 
-  const phase = listingFeatureBoostOwnerPhase(listing, now);
-  if (phase === "pulseActive" || phase === "legacyActive") {
-    return "Bu ilan zaten öne çıkarılıyor.";
-  }
-
   return null;
 }
 
@@ -72,6 +73,12 @@ export function buildFeatureBoostListingOption(
 
   const blockReason = featureBoostBlockReason(listing, now);
   const boostPhase = listingFeatureBoostOwnerPhase(listing, now);
+  const { featuredUntil, packDays } = listingFeatureBoostFields(listing);
+  const isBoostActive =
+    boostPhase === "pulseActive" ||
+    boostPhase === "legacyActive" ||
+    boostPhase === "waitingNextPulse" ||
+    boostPhase === "packDaysDone";
   const priceRaw = Number(listing.price);
 
   return {
@@ -88,5 +95,9 @@ export function buildFeatureBoostListingOption(
     canBoost: blockReason == null,
     blockReason,
     boostPhase,
+    featuredUntil: featuredUntil?.toISOString() ?? null,
+    packDays,
+    boostEndLabel: featuredUntil ? formatFeatureBoostDate(featuredUntil) : null,
+    isBoostActive,
   };
 }
