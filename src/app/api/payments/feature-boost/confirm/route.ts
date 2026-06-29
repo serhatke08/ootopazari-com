@@ -70,6 +70,11 @@ export async function POST(req: Request) {
       listing_not_found: "İlan bulunamadı.",
       invalid_merchant_oid: "Geçersiz sipariş numarası.",
       listing_update_failed: "Paket ilana yazılamadı.",
+      invalid_pack: "Geçersiz paket.",
+      rpc_not_deployed:
+        "Ödeme alındı ancak veritabanı güncellemesi eksik. Lütfen destek ile iletişime geçin.",
+      rpc_failed: "Paket ilana yazılamadı.",
+      listing_not_approved: "İlan onaylı değil; öne çıkarma uygulanamadı.",
     };
     return NextResponse.json(
       {

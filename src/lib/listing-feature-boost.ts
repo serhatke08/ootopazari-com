@@ -48,6 +48,11 @@ export const FEATURE_BOOST_PACKS = [
   },
 ] as const;
 
+export function featureBoostProductIdForPackDays(packDays: number): string | null {
+  const pack = FEATURE_BOOST_PACKS.find((p) => p.days === packDays);
+  return pack?.productId ?? null;
+}
+
 export type FeatureBoostOwnerPhase =
   | "pulseActive"
   | "waitingNextPulse"

@@ -1,7 +1,10 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeFeatureBoostListingUpdate } from "@/lib/apply-feature-boost";
 import { parseFeatureBoostMerchantOid } from "@/lib/paytr-merchant-oid";
+import {
+  FEATURE_BOOST_HOURS_BETWEEN,
+  featureBoostProductIdForPackDays,
+} from "@/lib/listing-feature-boost";
 
 export type FulfillFeatureBoostInput = {
   merchantOid: string;
@@ -15,6 +18,14 @@ export type FulfillFeatureBoostInput = {
 export type FulfillFeatureBoostResult =
   | { ok: true; listingId: string; packDays: number; alreadyApplied: boolean }
   | { ok: false; reason: string };
+
+type RpcBoostResult = {
+  ok?: boolean;
+  already_applied?: boolean;
+  error?: string;
+  listing_id?: string;
+  days?: number;
+};
 
 export async function findListingByNumber(
   admin: SupabaseClient,
@@ -40,6 +51,48 @@ export async function findListingByNumber(
 
   if (!data?.id) return null;
   return { id: String(data.id), user_id: String(data.user_id) };
+}
+
+async function applyFeatureBoostViaRpc(
+  admin: SupabaseClient,
+  input: {
+    userId: string;
+    listingId: string;
+    merchantOid: string;
+    packDays: number;
+  }
+): Promise<{ ok: true; alreadyApplied: boolean } | { ok: false; reason: string }> {
+  const productId = featureBoostProductIdForPackDays(input.packDays);
+  if (!productId) {
+    return { ok: false, reason: "invalid_pack" };
+  }
+
+  const { data, error } = await admin.rpc("register_feature_boost_paytr_purchase", {
+    p_user_id: input.userId,
+    p_listing_id: input.listingId,
+    p_product_id: productId,
+    p_transaction_id: input.merchantOid,
+    p_days: input.packDays,
+    p_hours_between: FEATURE_BOOST_HOURS_BETWEEN,
+  });
+
+  if (error) {
+    const message = error.message ?? "";
+    if (message.includes("Could not find the function")) {
+      console.error("register_feature_boost_paytr_purchase missing — run Supabase migration");
+      return { ok: false, reason: "rpc_not_deployed" };
+    }
+    console.error("applyFeatureBoostViaRpc:", message);
+    return { ok: false, reason: "rpc_failed" };
+  }
+
+  const result = (data ?? {}) as RpcBoostResult;
+  if (!result.ok) {
+    const rpcError = result.error ?? "rpc_rejected";
+    return { ok: false, reason: rpcError };
+  }
+
+  return { ok: true, alreadyApplied: Boolean(result.already_applied) };
 }
 
 /** PayTR ödemesi sonrası ilana paketi tanımlar (idempotent). */
@@ -89,19 +142,23 @@ export async function fulfillFeatureBoostPayment(
     return { ok: false, reason: "missing_listing_or_pack" };
   }
 
-  if (input.userId && userId && input.userId !== userId) {
+  if (!userId) {
+    return { ok: false, reason: "missing_user" };
+  }
+
+  if (input.userId && input.userId !== userId) {
     return { ok: false, reason: "forbidden" };
   }
 
-  const boostUpdate = computeFeatureBoostListingUpdate(packDays);
-  const { error: listingErr } = await admin
-    .from("listings")
-    .update(boostUpdate)
-    .eq("id", listingId);
+  const rpcResult = await applyFeatureBoostViaRpc(admin, {
+    userId,
+    listingId,
+    merchantOid,
+    packDays,
+  });
 
-  if (listingErr) {
-    console.error("fulfillFeatureBoostPayment listing update:", listingErr.message);
-    return { ok: false, reason: "listing_update_failed" };
+  if (!rpcResult.ok) {
+    return { ok: false, reason: rpcResult.reason };
   }
 
   const paidAt = new Date().toISOString();
@@ -109,10 +166,6 @@ export async function fulfillFeatureBoostPayment(
     input.totalAmountKurus ??
     Number(paymentRow?.amount_kurus) ??
     1;
-
-  if (!userId) {
-    return { ok: false, reason: "missing_user" };
-  }
 
   const paymentPayload = {
     merchant_oid: merchantOid,
@@ -138,6 +191,6 @@ export async function fulfillFeatureBoostPayment(
     ok: true,
     listingId,
     packDays,
-    alreadyApplied: false,
+    alreadyApplied: rpcResult.alreadyApplied,
   };
 }
