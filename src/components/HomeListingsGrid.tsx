@@ -114,7 +114,7 @@ export function HomeListingsGrid({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
         {items.map((item) => (
           <ListingCard
             key={item.listing.id ?? String(item.listing.listing_number)}
