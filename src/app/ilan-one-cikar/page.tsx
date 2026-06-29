@@ -48,7 +48,7 @@ export default function IlanOneCikarPage() {
         </div>
       </section>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURE_BOOST_PACKS.map((pack) => (
           <article
             key={pack.productId}
