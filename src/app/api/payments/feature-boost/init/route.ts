@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { FEATURE_BOOST_PACKS } from "@/lib/listing-feature-boost";
 import { isListingSuspended } from "@/lib/listings-data";
 import { buildFeatureBoostMerchantOid } from "@/lib/paytr-merchant-oid";
+import { getRequestOrigin } from "@/lib/request-origin";
 import { createPaytrIframeToken, tryGetPaytrConfig } from "@/lib/paytr";
-import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
   const email = user.email?.trim() || "musteri@otopazari.com";
   const listingNumber = String(listing.listing_number ?? "");
   const merchantOid = buildFeatureBoostMerchantOid(listingNumber, pack.days);
-  const origin = getSiteOrigin();
+  const origin = getRequestOrigin(req);
   const paymentAmountKurus = Math.round(pack.fallbackPriceTry * 100);
   const basketName = `İlan öne çıkarma · ${pack.label} · #${listingNumber}`;
   const basketPriceTry = pack.fallbackPriceTry.toFixed(2);
