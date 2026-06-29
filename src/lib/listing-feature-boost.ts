@@ -48,6 +48,24 @@ export const FEATURE_BOOST_PACKS = [
   },
 ] as const;
 
+/** Web sitesinde satılan paketler (mobil uygulamadaki kısa paketler hariç). */
+export const WEBSITE_FEATURE_BOOST_PACKS = [
+  {
+    productId: "feature_boost_15d_24h",
+    days: 15,
+    label: "15 gün",
+    subtitle: "Günde 24 saat öne çıkar",
+    fallbackPriceTry: 279,
+  },
+  {
+    productId: "feature_boost_30d_24h",
+    days: 30,
+    label: "30 gün",
+    subtitle: "Günde 24 saat öne çıkar",
+    fallbackPriceTry: 399,
+  },
+] as const;
+
 export type FeatureBoostOwnerPhase =
   | "pulseActive"
   | "waitingNextPulse"

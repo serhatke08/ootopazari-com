@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ListingRow } from "@/lib/listings-data";
 import {
-  FEATURE_BOOST_PACKS,
+  WEBSITE_FEATURE_BOOST_PACKS,
   featureBoostOwnerStatusCopy,
   formatTryPrice,
   listingFeatureBoostOwnerPhase,
@@ -68,7 +68,7 @@ export function ListingFeatureBoostPanel({
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         listingLabel={listingLabel}
-        packs={FEATURE_BOOST_PACKS.map((pack) => ({
+        packs={WEBSITE_FEATURE_BOOST_PACKS.map((pack) => ({
           ...pack,
           priceLabel: formatTryPrice(pack.fallbackPriceTry),
         }))}
