@@ -1,15 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { DealerType, BayiApplication } from "@/lib/bayi-types";
 import { DEALER_TYPE_LABELS } from "@/lib/bayi-types";
 import {
   normalizeDealerState,
   isDealerPanelLocked,
-  getDealerStateMessage,
   getMonthlyFeeForType,
 } from "@/lib/bayi-application-status";
+import { formatFeatureBoostDate, parseListingDate } from "@/lib/listing-feature-boost";
 import { getAddProductButtonText } from "@/lib/dealer-listing-tables";
+import { BayiMembershipPayButton } from "@/components/BayiMembershipPayButton";
 
 type Tab = "home" | "messages" | "products" | "analytics" | "store";
 
@@ -29,6 +31,11 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
   );
   const isPanelLocked = isDealerPanelLocked(dealerState);
   const monthlyFee = getMonthlyFeeForType(dealerType);
+  const membershipExpiresLabel = application.membership_expires_at
+    ? formatFeatureBoostDate(parseListingDate(application.membership_expires_at))
+    : null;
+  const needsPayment =
+    dealerState === "approved_awaiting_payment" || dealerState === "overdue";
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     {
@@ -121,10 +128,20 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
       </div>
 
       {/* Payment Warning Banner */}
-      {isPanelLocked && dealerState === "approved_awaiting_payment" ? (
-        <div className="mb-6 overflow-hidden rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-6">
+      {needsPayment ? (
+        <div
+          className={`mb-6 overflow-hidden rounded-xl border-2 p-6 ${
+            dealerState === "overdue"
+              ? "border-red-200 bg-gradient-to-r from-red-50 to-red-100"
+              : "border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100"
+          }`}
+        >
           <div className="flex items-start gap-4">
-            <div className="shrink-0 rounded-full bg-blue-500 p-3">
+            <div
+              className={`shrink-0 rounded-full p-3 ${
+                dealerState === "overdue" ? "bg-red-500" : "bg-blue-500"
+              }`}
+            >
               <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -135,28 +152,57 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-blue-900">
-                Bayi Panelinizi Aktifleştirin
+              <h3
+                className={`text-lg font-bold ${
+                  dealerState === "overdue" ? "text-red-900" : "text-blue-900"
+                }`}
+              >
+                {dealerState === "overdue"
+                  ? "Üyelik süreniz doldu"
+                  : "Bayi panelinizi aktifleştirin"}
               </h3>
-              <p className="mt-1 text-blue-800">
-                Başvurunuz onaylandı! Tüm özelliklere erişmek için aylık üyelik ücretini ödeyin.
+              <p
+                className={`mt-1 ${
+                  dealerState === "overdue" ? "text-red-800" : "text-blue-800"
+                }`}
+              >
+                {dealerState === "overdue"
+                  ? "Panel özelliklerine devam etmek için aylık üyeliğinizi yenileyin."
+                  : "Başvurunuz onaylandı! Tüm özelliklere erişmek için aylık üyelik ücretini ödeyin."}
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-4">
                 <div className="rounded-lg bg-white px-4 py-2 shadow-sm">
-                  <p className="text-sm font-medium text-zinc-600">Aylık Ücret</p>
+                  <p className="text-sm font-medium text-zinc-600">Aylık ücret (30 gün)</p>
                   <p className="text-2xl font-bold text-zinc-900">
                     ₺{monthlyFee.toLocaleString("tr-TR")}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white transition hover:bg-blue-700"
-                >
-                  Ödeme Yap
-                </button>
+                <BayiMembershipPayButton
+                  dealerType={dealerType}
+                  label={dealerState === "overdue" ? "Üyeliği yenile" : "Ödeme yap"}
+                />
               </div>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {dealerState === "active" && membershipExpiresLabel ? (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p>
+            <span className="font-bold">Üyelik aktif</span>
+            {" · "}
+            Bitiş: {membershipExpiresLabel}
+            {" · "}
+            <Link href="/profil/odemeler" className="font-semibold underline">
+              Ödeme geçmişi
+            </Link>
+          </p>
+          <BayiMembershipPayButton
+            dealerType={dealerType}
+            label="Süre ekle"
+            className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+          />
         </div>
       ) : null}
 
