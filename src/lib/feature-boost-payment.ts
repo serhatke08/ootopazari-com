@@ -165,9 +165,8 @@ export async function fulfillFeatureBoostPayment(
   if (targets.length === 0) {
     let listingId =
       input.listingId ?? (paymentRow?.listing_id as string | undefined);
-    packDays = packDays || undefined;
 
-    if (!listingId || !packDays) {
+    if (!listingId || !packDays || packDays <= 0) {
       const parsed = parseFeatureBoostMerchantOid(merchantOid);
       if (!parsed) {
         return { ok: false, reason: "invalid_merchant_oid" };
