@@ -52,8 +52,8 @@ export function PaymentHistoryList({ entries }: Props) {
                 {entry.detail ? (
                   <p className="mt-1 text-sm opacity-90">{entry.detail}</p>
                 ) : null}
-                <p className="mt-2 text-xs opacity-75">
-                  Sipariş: {entry.merchantOid}
+                <p className="mt-2 break-all font-mono text-[10px] opacity-60 sm:text-xs">
+                  {entry.merchantOid}
                 </p>
               </div>
               <div className="text-right">

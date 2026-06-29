@@ -9,6 +9,10 @@ import { getRequestOrigin } from "@/lib/request-origin";
 import { createPaytrIframeToken, tryGetPaytrConfig } from "@/lib/paytr";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import {
+  findReusablePendingBoostPayment,
+  supersedePendingBoostPayments,
+} from "@/lib/feature-boost-payment";
 
 const MAX_LISTINGS_PER_CHECKOUT = 20;
 
@@ -169,10 +173,6 @@ export async function POST(req: Request) {
 
   const email = user.email?.trim() || "musteri@otopazari.com";
   const isMulti = validated.length > 1;
-  const merchantOid = isMulti
-    ? buildMultiFeatureBoostMerchantOid(validated.length, pack.days)
-    : buildFeatureBoostMerchantOid(validated[0].listingNumber, pack.days);
-
   const origin = getRequestOrigin(req);
   const unitPriceKurus = Math.round(pack.fallbackPriceTry * 100);
   const paymentAmountKurus = unitPriceKurus * validated.length;
@@ -183,28 +183,59 @@ export async function POST(req: Request) {
   ]) as [string, string, number][];
 
   const admin = createSupabaseServiceClient();
+  let merchantOid = isMulti
+    ? buildMultiFeatureBoostMerchantOid(validated.length, pack.days)
+    : buildFeatureBoostMerchantOid(validated[0].listingNumber, pack.days);
+  let reusePayment = false;
+
   if (admin) {
-    const { error: orderErr } = await admin.from("feature_boost_payments").insert({
-      merchant_oid: merchantOid,
-      listing_id: validated[0].id,
-      user_id: user.id,
-      pack_days: pack.days,
-      amount_kurus: paymentAmountKurus,
-      status: "pending",
-    });
-    if (orderErr) {
-      console.warn("feature_boost_payments insert:", orderErr.message);
-    } else if (isMulti) {
-      const { error: itemsErr } = await admin.from("feature_boost_payment_items").insert(
-        validated.map((listing) => ({
-          merchant_oid: merchantOid,
-          listing_id: listing.id,
-          listing_number: listing.listingNumber,
-          pack_days: pack.days,
-        }))
+    if (!isMulti) {
+      const reusable = await findReusablePendingBoostPayment(
+        admin,
+        user.id,
+        validated[0].id,
+        pack.days
       );
-      if (itemsErr) {
-        console.warn("feature_boost_payment_items insert:", itemsErr.message);
+      if (reusable) {
+        merchantOid = reusable;
+        reusePayment = true;
+      }
+    }
+
+    if (!reusePayment) {
+      await supersedePendingBoostPayments(
+        admin,
+        user.id,
+        validated.map((l) => l.id)
+      );
+      merchantOid = isMulti
+        ? buildMultiFeatureBoostMerchantOid(validated.length, pack.days)
+        : buildFeatureBoostMerchantOid(validated[0].listingNumber, pack.days);
+
+      const { error: orderErr } = await admin.from("feature_boost_payments").insert({
+        merchant_oid: merchantOid,
+        listing_id: validated[0].id,
+        user_id: user.id,
+        pack_days: pack.days,
+        amount_kurus: paymentAmountKurus,
+        status: "pending",
+      });
+      if (orderErr) {
+        console.warn("feature_boost_payments insert:", orderErr.message);
+      } else if (isMulti) {
+        const { error: itemsErr } = await admin
+          .from("feature_boost_payment_items")
+          .insert(
+            validated.map((listing) => ({
+              merchant_oid: merchantOid,
+              listing_id: listing.id,
+              listing_number: listing.listingNumber,
+              pack_days: pack.days,
+            }))
+          );
+        if (itemsErr) {
+          console.warn("feature_boost_payment_items insert:", itemsErr.message);
+        }
       }
     }
   }

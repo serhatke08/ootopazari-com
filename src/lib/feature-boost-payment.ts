@@ -270,3 +270,56 @@ export async function fulfillFeatureBoostPayment(
     alreadyApplied: allAlreadyApplied,
   };
 }
+
+/** Yeni ödeme başlamadan önceki bekleyen siparişleri iptal eder. */
+export async function supersedePendingBoostPayments(
+  admin: SupabaseClient,
+  userId: string,
+  listingIds: string[],
+  exceptMerchantOid?: string | null
+): Promise<void> {
+  if (listingIds.length === 0) return;
+
+  let query = admin
+    .from("feature_boost_payments")
+    .update({ status: "failed", paytr_status: "superseded" })
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .in("listing_id", listingIds);
+
+  if (exceptMerchantOid) {
+    query = query.neq("merchant_oid", exceptMerchantOid);
+  }
+
+  const { error } = await query;
+  if (error) {
+    console.warn("supersedePendingBoostPayments:", error.message);
+  }
+}
+
+/** Aynı ilan + paket için devam eden bekleyen sipariş varsa yeniden kullan. */
+export async function findReusablePendingBoostPayment(
+  admin: SupabaseClient,
+  userId: string,
+  listingId: string,
+  packDays: number
+): Promise<string | null> {
+  const { data } = await admin
+    .from("feature_boost_payments")
+    .select("merchant_oid,created_at")
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .eq("listing_id", listingId)
+    .eq("pack_days", packDays)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data?.merchant_oid) return null;
+
+  const created = new Date(String(data.created_at)).getTime();
+  const maxAgeMs = 2 * 60 * 60 * 1000;
+  if (Date.now() - created > maxAgeMs) return null;
+
+  return String(data.merchant_oid);
+}
