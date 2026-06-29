@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { WEBSITE_FEATURE_BOOST_PACKS, formatTryPrice } from "@/lib/listing-feature-boost";
+import { FEATURE_BOOST_PACKS, formatTryPrice } from "@/lib/listing-feature-boost";
 
 export const metadata: Metadata = {
   title: "İlan Öne Çıkarma",
@@ -48,8 +48,8 @@ export default function IlanOneCikarPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-6 grid max-w-3xl gap-4 sm:grid-cols-2">
-        {WEBSITE_FEATURE_BOOST_PACKS.map((pack) => (
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {FEATURE_BOOST_PACKS.map((pack) => (
           <article
             key={pack.productId}
             className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
