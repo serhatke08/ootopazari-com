@@ -113,7 +113,7 @@ export function MobileBottomNav({
     <nav
       data-mobile-bottom-nav="true"
       className="fixed bottom-0 left-0 right-0 z-50 block overflow-visible border-0 bg-transparent md:hidden"
-      style={{ paddingBottom: "max(0.2rem, env(safe-area-inset-bottom))" }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Alt menü"
     >
       {/* Sadece çizginin ALTINDA beyaz bar — üstteki beyaz şerit yok */}
@@ -138,7 +138,7 @@ export function MobileBottomNav({
         <IconPlus />
       </Link>
 
-      <div className="relative z-10 mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-7">
+      <div className="relative z-10 mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-0 pt-7">
         <Link
           href="/"
           className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}
