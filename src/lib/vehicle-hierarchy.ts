@@ -607,6 +607,57 @@ export async function fetchPackageIdsForEngine(
   return [];
 }
 
+export async function fetchPackageIdsForBrandModel(
+  supabase: SupabaseClient,
+  modelId: string
+): Promise<string[]> {
+  const bodyStyles = await fetchBodyStylesForModel(supabase, modelId);
+  const bodyStyleIds = bodyStyles.map((row) => row.id).filter(Boolean);
+  if (bodyStyleIds.length === 0) return [];
+
+  const { data: engines, error: engineError } = await supabase
+    .from("vehicle_body_style_engines")
+    .select("id")
+    .in("body_style_id", bodyStyleIds);
+  if (engineError || !engines?.length) return [];
+
+  const engineIds = (engines as { id?: string | null }[])
+    .map((row) => row.id)
+    .filter((id): id is string => Boolean(id));
+  if (engineIds.length === 0) return [];
+
+  const { data: packages, error: packageError } = await supabase
+    .from("vehicle_engine_packages")
+    .select("id")
+    .in("engine_id", engineIds);
+  if (packageError || !packages?.length) return [];
+
+  return (packages as { id?: string | null }[])
+    .map((row) => row.id)
+    .filter((id): id is string => Boolean(id));
+}
+
+export async function fetchEngineLabelsForBrandModel(
+  supabase: SupabaseClient,
+  modelId: string
+): Promise<string[]> {
+  const bodyStyles = await fetchBodyStylesForModel(supabase, modelId);
+  const bodyStyleIds = bodyStyles.map((row) => row.id).filter(Boolean);
+  if (bodyStyleIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("vehicle_body_style_engines")
+    .select("name")
+    .in("body_style_id", bodyStyleIds);
+  if (error || !data?.length) return [];
+
+  return [...new Set(
+    (data as { name?: string | null }[])
+      .map((row) => row.name?.trim())
+      .filter((name): name is string => Boolean(name))
+  )];
+}
+
 /** İlan formunda motor seçilince yakıt / güç otomatik doldurmak için. */
 export async function fetchBodyStyleEngineRow(
   supabase: SupabaseClient,

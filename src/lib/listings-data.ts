@@ -281,6 +281,10 @@ export type ListingListParams = {
   vehicleEnginePackageId?: string;
   /** Motor altındaki tüm paketler (engine seçili, paket seçili değil) */
   vehicleEnginePackageIds?: string[];
+  /** Model altındaki paket/motor hiyerarşisine bağlanmamış ilanlar */
+  vehicleEngineOther?: boolean;
+  vehicleEngineOtherExcludedPackageIds?: string[];
+  vehicleEngineOtherExcludedModelTerms?: string[];
   minPrice?: number;
   maxPrice?: number;
   minYear?: number;
@@ -311,7 +315,16 @@ function applyListingListFilters(
   if (params.bodyType?.trim()) {
     query = query.eq("body_type", params.bodyType.trim());
   }
-  if (params.vehicleEnginePackageId?.trim()) {
+  if (params.vehicleEngineOther) {
+    const excluded = params.vehicleEngineOtherExcludedPackageIds ?? [];
+    if (excluded.length > 0) {
+      query = query.or(
+        `vehicle_engine_package_id.is.null,vehicle_engine_package_id.not.in.(${excluded.join(",")})`
+      );
+    } else {
+      query = query.is("vehicle_engine_package_id", null);
+    }
+  } else if (params.vehicleEnginePackageId?.trim()) {
     query = query.eq(
       "vehicle_engine_package_id",
       params.vehicleEnginePackageId.trim()
@@ -370,7 +383,29 @@ async function fetchAllApprovedListingsForFeedSort(
     from += batchSize;
   }
 
-  return sortListingsByFeedNewest(out);
+  const filtered = params.vehicleEngineOther
+    ? out.filter((row) => {
+        const pkg = row.vehicle_engine_package_id
+          ? String(row.vehicle_engine_package_id)
+          : "";
+        if (
+          pkg &&
+          (params.vehicleEngineOtherExcludedPackageIds ?? []).includes(pkg)
+        ) {
+          return false;
+        }
+        const modelKey = normalizeListingModelKey(row.vehicle_model);
+        const hasKnownEngine = (
+          params.vehicleEngineOtherExcludedModelTerms ?? []
+        ).some((term) => {
+          const key = normalizeListingModelKey(term);
+          return key && modelKey.includes(key);
+        });
+        return !hasKnownEngine;
+      })
+    : out;
+
+  return sortListingsByFeedNewest(filtered);
 }
 
 export async function fetchListingsPage(
@@ -838,57 +873,93 @@ export async function fetchApprovedListingCountsByVehicleModel(
 
 export async function fetchApprovedListingCountsByEnginePackages(
   supabase: SupabaseClient,
-  engineIds: string[]
+  engineIds: string[],
+  options?: {
+    categoryId: string;
+    vehicleBrandId: string;
+    vehicleModel: string;
+  }
 ): Promise<Map<string, number>> {
   if (engineIds.length === 0) return new Map();
-  
-  // Her engine için package ID'lerini fetch et
+
   const engineToPackages = new Map<string, string[]>();
+  const packageToEngine = new Map<string, string>();
   for (const engineId of engineIds) {
     const { data } = await supabase
       .from("vehicle_engine_packages")
       .select("id")
       .eq("engine_id", engineId);
-    
+
     if (data && data.length > 0) {
-      engineToPackages.set(engineId, data.map(p => p.id));
+      const ids = data.map((p) => p.id).filter(Boolean);
+      engineToPackages.set(engineId, ids);
+      for (const id of ids) packageToEngine.set(id, engineId);
     }
   }
-  
-  // Tüm package ID'leri topla
+
   const allPackageIds = Array.from(engineToPackages.values()).flat();
-  if (allPackageIds.length === 0) return new Map();
-  
-  // Package ID'lerine göre ilan sayılarını fetch et
-  const { data, error } = await supabase
-    .from("listings")
-    .select("vehicle_engine_package_id")
-    .eq("moderation_status", "approved")
-    .in("vehicle_engine_package_id", allPackageIds);
-  
-  if (error || !data) return new Map();
-  
-  // Package sayılarını hesapla
-  const packageCounts = new Map<string, number>();
-  for (const row of data) {
-    const pkgId = row.vehicle_engine_package_id;
-    if (pkgId) {
-      packageCounts.set(pkgId, (packageCounts.get(pkgId) ?? 0) + 1);
-    }
-  }
-  
-  // Engine bazlı topla
+
   const engineCounts = new Map<string, number>();
-  for (const [engineId, packageIds] of engineToPackages) {
-    let total = 0;
-    for (const pkgId of packageIds) {
-      total += packageCounts.get(pkgId) ?? 0;
-    }
-    if (total > 0) {
-      engineCounts.set(engineId, total);
+  if (allPackageIds.length > 0) {
+    const { data, error } = await supabase
+      .from("listings")
+      .select("vehicle_engine_package_id")
+      .eq("moderation_status", "approved")
+      .in("vehicle_engine_package_id", allPackageIds);
+
+    if (!error && data) {
+      for (const row of data as { vehicle_engine_package_id?: string | null }[]) {
+        const pkgId = row.vehicle_engine_package_id;
+        const engineId = pkgId ? packageToEngine.get(pkgId) : undefined;
+        if (!engineId) continue;
+        engineCounts.set(engineId, (engineCounts.get(engineId) ?? 0) + 1);
+      }
     }
   }
-  
+
+  if (!options) return engineCounts;
+
+  const { data: engineRows } = await supabase
+    .from("vehicle_body_style_engines")
+    .select("id,name")
+    .in("id", engineIds);
+  const engines = ((engineRows ?? []) as { id?: string | null; name?: string | null }[])
+    .map((row) => ({
+      id: row.id ?? "",
+      label: row.name?.trim() ?? "",
+      key: normalizeListingModelKey(row.name),
+    }))
+    .filter((row) => row.id && row.key)
+    .sort((a, b) => b.key.length - a.key.length);
+  if (engines.length === 0) return engineCounts;
+
+  const escModel = options.vehicleModel
+    .trim()
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
+  const { data: legacyRows, error: legacyError } = await supabase
+    .from("listings")
+    .select("vehicle_model,vehicle_engine_package_id")
+    .eq("moderation_status", "approved")
+    .eq("category_id", options.categoryId)
+    .eq("vehicle_brand_id", options.vehicleBrandId)
+    .ilike("vehicle_model", `%${escModel}%`);
+
+  if (legacyError || !legacyRows) return engineCounts;
+
+  for (const row of legacyRows as {
+    vehicle_model?: string | null;
+    vehicle_engine_package_id?: string | null;
+  }[]) {
+    if (row.vehicle_engine_package_id) continue;
+    const listingKey = normalizeListingModelKey(row.vehicle_model);
+    if (!listingKey) continue;
+    const match = engines.find((engine) => listingKey.includes(engine.key));
+    if (!match) continue;
+    engineCounts.set(match.id, (engineCounts.get(match.id) ?? 0) + 1);
+  }
+
   return engineCounts;
 }
 

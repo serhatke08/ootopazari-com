@@ -31,6 +31,9 @@ export type HomeListingsFeedFilters = {
   bodyType?: string;
   vehicleEnginePackageId?: string;
   vehicleEnginePackageIds?: string[];
+  vehicleEngineOther?: boolean;
+  vehicleEngineOtherExcludedPackageIds?: string[];
+  vehicleEngineOtherExcludedModelTerms?: string[];
   /** Sayfalama isteğinde URL'yi yeniden kurmak için */
   vehicleBrandModelId?: string;
   bodyStyleId?: string;

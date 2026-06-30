@@ -40,6 +40,7 @@ function filtersToQuery(filters: HomeListingsFeedFilters | undefined): string {
   if (filters.bodyType) p.set("body_type", filters.bodyType);
   if (filters.bodyStyleId) p.set("body_style_id", filters.bodyStyleId);
   if (filters.engineId) p.set("engine_id", filters.engineId);
+  if (filters.vehicleEngineOther) p.set("engine_other", "1");
   if (filters.vehicleEnginePackageId) {
     p.set("vehicle_engine_package_id", filters.vehicleEnginePackageId);
   }

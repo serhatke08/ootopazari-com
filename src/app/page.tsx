@@ -254,6 +254,7 @@ export default async function AnaSayfa({
                 ? ` · ${listFilters.vehicleModel}`
                 : ""}
               {listFilters.bodyType ? ` · ${listFilters.bodyType}` : ""}
+              {listFilters.vehicleEngineOther ? " · Diğer motor" : ""}
               {listFilters.vehicleEnginePackageId ? " · paket filtresi" : ""}
               {listFilters.q ? ` · “${listFilters.q}”` : ""}
             </p>

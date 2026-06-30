@@ -167,6 +167,7 @@ function VehicleCascadeSidebarInner({
   const [modelId, setModelId] = useState("");
   const [bodyStyleId, setBodyStyleId] = useState("");
   const [engineId, setEngineId] = useState("");
+  const [engineOther, setEngineOther] = useState(false);
   const [packageId, setPackageId] = useState("");
 
   const [brands, setBrands] = useState<IdNameRow[]>([]);
@@ -231,8 +232,9 @@ function VehicleCascadeSidebarInner({
     const mid = searchParams.get("vehicle_brand_model_id");
     const bsid = searchParams.get("body_style_id");
     const eid = searchParams.get("engine_id");
+    const otherEngine = searchParams.get("engine_other") === "1";
     const pkid = searchParams.get("vehicle_engine_package_id");
-    if (!cid && !bid && !mid && !bsid && !eid && !pkid) {
+    if (!cid && !bid && !mid && !bsid && !eid && !otherEngine && !pkid) {
       setCategoryId("");
       setExpandedCategoryId(null);
       setBrandId("");
@@ -240,6 +242,7 @@ function VehicleCascadeSidebarInner({
       setModelId("");
       setBodyStyleId("");
       setEngineId("");
+      setEngineOther(false);
       setPackageId("");
       return;
     }
@@ -260,6 +263,7 @@ function VehicleCascadeSidebarInner({
     if (eid) {
       setEngineId(eid);
     }
+    setEngineOther(otherEngine);
     if (pkid) {
       setPackageId(pkid);
     }
@@ -345,13 +349,24 @@ function VehicleCascadeSidebarInner({
     let cancelled = false;
     void (async () => {
       const engineIds = engines.map(e => e.id);
-      const m = await fetchApprovedListingCountsByEnginePackages(supabase, engineIds);
+      const model = allModelsForNav.find((row) => row.id === modelId);
+      const m = await fetchApprovedListingCountsByEnginePackages(
+        supabase,
+        engineIds,
+        categoryId && brandId && model
+          ? {
+              categoryId,
+              vehicleBrandId: brandId,
+              vehicleModel: rowLabel(model),
+            }
+          : undefined
+      );
       if (!cancelled) setEngineIdCounts(m);
     })();
     return () => {
       cancelled = true;
     };
-  }, [engines, supabase]);
+  }, [allModelsForNav, brandId, categoryId, engines, modelId, supabase]);
 
   useEffect(() => {
     if (packages.length === 0) {
@@ -490,6 +505,7 @@ function VehicleCascadeSidebarInner({
     setModelId("");
     setBodyStyleId("");
     setEngineId("");
+    setEngineOther(false);
     setPackageId("");
   }, []);
 
@@ -497,17 +513,20 @@ function VehicleCascadeSidebarInner({
     setModelId("");
     setBodyStyleId("");
     setEngineId("");
+    setEngineOther(false);
     setPackageId("");
   }, []);
 
   const resetBelowModel = useCallback(() => {
     setBodyStyleId("");
     setEngineId("");
+    setEngineOther(false);
     setPackageId("");
   }, []);
 
   const resetBelowEngine = useCallback(() => {
     setPackageId("");
+    setEngineOther(false);
   }, []);
 
   type NavPatch = Partial<{
@@ -516,6 +535,7 @@ function VehicleCascadeSidebarInner({
     modelId: string;
     bodyStyleId: string;
     engineId: string;
+    engineOther: boolean;
     packageId: string;
   }>;
 
@@ -527,6 +547,8 @@ function VehicleCascadeSidebarInner({
       const bsid =
         patch?.bodyStyleId !== undefined ? patch.bodyStyleId : bodyStyleId;
       const eid = patch?.engineId !== undefined ? patch.engineId : engineId;
+      const other =
+        patch?.engineOther !== undefined ? patch.engineOther : engineOther;
       const pkid =
         patch?.packageId !== undefined ? patch.packageId : packageId;
 
@@ -546,8 +568,9 @@ function VehicleCascadeSidebarInner({
       if (bs?.name?.trim()) p.set("body_type", bs.name.trim());
 
       if (eid) p.set("engine_id", eid);
+      if (other && !eid) p.set("engine_other", "1");
 
-      if (pkid) p.set("vehicle_engine_package_id", pkid);
+      if (pkid && !other) p.set("vehicle_engine_package_id", pkid);
 
       const qs = p.toString();
       router.push(qs ? `/?${qs}` : "/");
@@ -559,6 +582,7 @@ function VehicleCascadeSidebarInner({
       modelId,
       bodyStyleId,
       engineId,
+      engineOther,
       packageId,
       allModelsForNav,
       bodyStyles,
@@ -590,6 +614,11 @@ function VehicleCascadeSidebarInner({
       : seriesIdCounts.get(selectedModel.id) ??
         modelNameCounts.get(normalizeListingModelKey(rowLabel(selectedModel))) ??
         0;
+  const engineCountsTotal = engines.reduce(
+    (sum, eng) => sum + (engineIdCounts.get(eng.id) ?? 0),
+    0
+  );
+  const otherEngineCount = Math.max(0, selectedModelCount - engineCountsTotal);
   const selectedCategoryRow = selectedCategory ? (
     <li className="min-w-0">
       <button
@@ -713,7 +742,7 @@ function VehicleCascadeSidebarInner({
         onClick={() => {
           setEngineId("");
           resetBelowEngine();
-          navigateToListings({ engineId: "", packageId: "" });
+          navigateToListings({ engineId: "", engineOther: false, packageId: "" });
         }}
         className="flex w-full items-center justify-between gap-2 rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-1.5 text-left text-[11px] font-semibold text-zinc-900 shadow-sm ring-1 ring-amber-400/70"
       >
@@ -766,7 +795,7 @@ function VehicleCascadeSidebarInner({
           onClick: () => {
             setEngineId("");
             resetBelowEngine();
-            navigateToListings({ engineId: "", packageId: "" });
+            navigateToListings({ engineId: "", engineOther: false, packageId: "" });
           },
         }
       : null,
@@ -995,7 +1024,13 @@ function VehicleCascadeSidebarInner({
               <button
                 type="button"
                 className="w-full rounded-md border border-amber-500 bg-[#ffcc00] px-2 py-2 text-[11px] font-bold text-zinc-900 hover:bg-amber-300"
-                onClick={() => navigateToListings({ engineId: "", packageId: "" })}
+                onClick={() =>
+                  navigateToListings({
+                    engineId: "",
+                    engineOther: false,
+                    packageId: "",
+                  })
+                }
               >
                 İlanları göster
               </button>
@@ -1009,8 +1044,13 @@ function VehicleCascadeSidebarInner({
                         type="button"
                         onClick={() => {
                           setEngineId(eng.id);
+                          setEngineOther(false);
                           resetBelowEngine();
-                          navigateToListings({ engineId: eng.id, packageId: "" });
+                          navigateToListings({
+                            engineId: eng.id,
+                            engineOther: false,
+                            packageId: "",
+                          });
                         }}
                         className="flex w-full items-center justify-between gap-2 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
                       >
@@ -1025,6 +1065,32 @@ function VehicleCascadeSidebarInner({
                     </li>
                   );
                 })}
+                <li className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEngineId("");
+                      setEngineOther(true);
+                      setPackageId("");
+                      navigateToListings({
+                        engineId: "",
+                        engineOther: true,
+                        packageId: "",
+                      });
+                    }}
+                    className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                      engineOther
+                        ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                        : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1 truncate">Diğer</span>
+                    {listingCountBadge(otherEngineCount, compact)}
+                    <span className="shrink-0 text-[8px] text-zinc-400" aria-hidden>
+                      ▶
+                    </span>
+                  </button>
+                </li>
               </ul>
             )}
           </li>

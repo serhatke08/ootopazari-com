@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
 import {
+  fetchEngineLabelsForBrandModel,
   fetchHierarchyRowName,
+  fetchPackageIdsForBrandModel,
   fetchPackageIdsForEngine,
 } from "@/lib/vehicle-hierarchy";
 
@@ -46,10 +48,19 @@ export async function resolveHomeListingsFeedFilters(
   const vehicleEnginePackageId =
     get("vehicle_engine_package_id")?.trim() || undefined;
   const engineId = get("engine_id")?.trim();
+  const vehicleEngineOther = get("engine_other") === "1";
   let vehicleEnginePackageIds: string[] | undefined;
-  if (!vehicleEnginePackageId && engineId) {
+  let vehicleEngineOtherExcludedPackageIds: string[] | undefined;
+  let vehicleEngineOtherExcludedModelTerms: string[] | undefined;
+  if (!vehicleEnginePackageId && !vehicleEngineOther && engineId) {
     const ids = await fetchPackageIdsForEngine(supabase, engineId);
     if (ids.length > 0) vehicleEnginePackageIds = ids;
+  }
+  if (vehicleEngineOther && brandModelId) {
+    const ids = await fetchPackageIdsForBrandModel(supabase, brandModelId);
+    if (ids.length > 0) vehicleEngineOtherExcludedPackageIds = ids;
+    const terms = await fetchEngineLabelsForBrandModel(supabase, brandModelId);
+    if (terms.length > 0) vehicleEngineOtherExcludedModelTerms = terms;
   }
 
   return {
@@ -67,6 +78,9 @@ export async function resolveHomeListingsFeedFilters(
     bodyType,
     vehicleEnginePackageId,
     vehicleEnginePackageIds,
+    vehicleEngineOther,
+    vehicleEngineOtherExcludedPackageIds,
+    vehicleEngineOtherExcludedModelTerms,
     vehicleBrandModelId: brandModelId || undefined,
     bodyStyleId: bodyStyleId || undefined,
     engineId: engineId || undefined,
@@ -85,6 +99,7 @@ export function homeListingsFeedHasFilters(
     filters.bodyType ||
     filters.vehicleEnginePackageId ||
     (filters.vehicleEnginePackageIds?.length ?? 0) > 0 ||
+    filters.vehicleEngineOther ||
     filters.minPrice != null ||
     filters.maxPrice != null ||
     filters.minYear != null ||

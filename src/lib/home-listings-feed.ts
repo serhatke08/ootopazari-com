@@ -131,6 +131,11 @@ export async function fetchHomeListingsFeed(
       bodyType: filters.bodyType,
       vehicleEnginePackageId: filters.vehicleEnginePackageId,
       vehicleEnginePackageIds: filters.vehicleEnginePackageIds,
+      vehicleEngineOther: filters.vehicleEngineOther,
+      vehicleEngineOtherExcludedPackageIds:
+        filters.vehicleEngineOtherExcludedPackageIds,
+      vehicleEngineOtherExcludedModelTerms:
+        filters.vehicleEngineOtherExcludedModelTerms,
     }),
   ]);
 
