@@ -183,7 +183,9 @@ async function fetchCitiesTurkeyViaJoin(
   return null;
 }
 
-export async function fetchCities(supabase: SupabaseClient): Promise<CityRow[]> {
+export const fetchCities = cache(async function fetchCities(
+  supabase: SupabaseClient
+): Promise<CityRow[]> {
   const turkeyId = await resolveTurkeyCountryId(supabase);
 
   if (turkeyId) {
@@ -216,7 +218,7 @@ export async function fetchCities(supabase: SupabaseClient): Promise<CityRow[]> 
     return [];
   }
   return (data ?? []) as CityRow[];
-}
+});
 
 export async function fetchVehicleBrands(
   supabase: SupabaseClient,
@@ -294,6 +296,72 @@ export type ListingListParams = {
   q?: string;
 };
 
+function escapeIlikePattern(raw: string): string {
+  return raw
+    .trim()
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
+}
+
+/** Türkçe klavye (ı/i vb.) ile DB’deki Latin yazımı eşleştirmek için arama varyantları. */
+function turkishSearchTermVariants(term: string): string[] {
+  const base = term.trim();
+  if (!base) return [];
+  const folded = base
+    .replace(/ı/g, "i")
+    .replace(/İ/g, "I")
+    .replace(/ğ/g, "g")
+    .replace(/Ğ/g, "G")
+    .replace(/ü/g, "u")
+    .replace(/Ü/g, "U")
+    .replace(/ş/g, "s")
+    .replace(/Ş/g, "S")
+    .replace(/ö/g, "o")
+    .replace(/Ö/g, "O")
+    .replace(/ç/g, "c")
+    .replace(/Ç/g, "C");
+  if (folded === base) return [base];
+  return [base, folded];
+}
+
+function buildTextSearchOrClause(term: string): string | null {
+  const variants = turkishSearchTermVariants(term);
+  if (variants.length === 0) return null;
+  const fields = ["title", "description", "vehicle_model", "city_name"] as const;
+  const parts: string[] = [];
+  for (const v of variants) {
+    const t = `%${escapeIlikePattern(v)}%`;
+    for (const field of fields) {
+      parts.push(`${field}.ilike.${t}`);
+    }
+  }
+  return parts.join(",");
+}
+
+/** Pulse sıralaması için tüm onaylı ilanları belleğe almak gerekir mi? */
+function listingListNeedsFullFeedSort(
+  params: Omit<ListingListParams, "page" | "pageSize">
+): boolean {
+  if (params.vehicleEngineOther) return true;
+  return !(
+    params.categoryId ||
+    params.cityId ||
+    params.vehicleBrandId ||
+    params.q?.trim() ||
+    params.vehicleModel?.trim() ||
+    params.bodyType?.trim() ||
+    params.vehicleEnginePackageId?.trim() ||
+    (params.vehicleEnginePackageIds?.length ?? 0) > 0 ||
+    params.minPrice != null ||
+    params.maxPrice != null ||
+    params.minYear != null ||
+    params.maxYear != null ||
+    params.minKm != null ||
+    params.maxKm != null
+  );
+}
+
 function applyListingListFilters(
   q: any,
   params: Omit<ListingListParams, "page" | "pageSize">
@@ -305,12 +373,10 @@ function applyListingListFilters(
     query = query.eq("vehicle_brand_id", params.vehicleBrandId);
   }
   if (params.vehicleModel?.trim()) {
-    const esc = params.vehicleModel
-      .trim()
-      .replace(/\\/g, "\\\\")
-      .replace(/%/g, "\\%")
-      .replace(/_/g, "\\_");
-    query = query.ilike("vehicle_model", `%${esc}%`);
+    query = query.ilike(
+      "vehicle_model",
+      `%${escapeIlikePattern(params.vehicleModel)}%`
+    );
   }
   if (params.bodyType?.trim()) {
     query = query.eq("body_type", params.bodyType.trim());
@@ -342,15 +408,49 @@ function applyListingListFilters(
   if (params.minKm != null) query = query.gte("vehicle_km", params.minKm);
   if (params.maxKm != null) query = query.lte("vehicle_km", params.maxKm);
   if (params.q?.trim()) {
-    const esc = params.q
-      .trim()
-      .replace(/\\/g, "\\\\")
-      .replace(/%/g, "\\%")
-      .replace(/_/g, "\\_");
-    const t = `%${esc}%`;
-    query = query.or(`title.ilike.${t},description.ilike.${t}`);
+    const clause = buildTextSearchOrClause(params.q);
+    if (clause) query = query.or(clause);
   }
   return query;
+}
+
+/** Filtreli arama — SQL sayfalama (tüm tabloyu belleğe almaz). */
+async function fetchListingsPageFast(
+  supabase: SupabaseClient,
+  params: ListingListParams
+): Promise<{ rows: ListingRow[]; total: number }> {
+  const { page, pageSize, ...filterParams } = params;
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+
+  let countQ = supabase
+    .from("listings")
+    .select("id", { count: "exact", head: true })
+    .eq("moderation_status", "approved");
+  countQ = applyListingListFilters(countQ, filterParams);
+
+  let dataQ = supabase
+    .from("listings")
+    .select(LISTING_SELECT)
+    .eq("moderation_status", "approved")
+    .order("created_at", { ascending: false, nullsFirst: false });
+  dataQ = applyListingListFilters(dataQ, filterParams);
+
+  const [{ count, error: countErr }, { data, error: dataErr }] =
+    await Promise.all([countQ, dataQ.range(start, end)]);
+
+  if (countErr) {
+    console.warn("fetchListingsPageFast count:", countErr.message);
+  }
+  if (dataErr) {
+    console.warn("fetchListingsPageFast:", dataErr.message);
+    return { rows: [], total: count ?? 0 };
+  }
+
+  const rows = sortListingsByFeedNewest(
+    (data ?? []) as unknown as ListingRow[]
+  );
+  return { rows, total: count ?? rows.length };
 }
 
 /** Onaylı ilanlar — pulse + created_at birleşik sıralama için (sayfalı). */
@@ -413,6 +513,10 @@ export async function fetchListingsPage(
   params: ListingListParams
 ): Promise<{ rows: ListingRow[]; total: number }> {
   const { page, pageSize, ...filterParams } = params;
+
+  if (!listingListNeedsFullFeedSort(filterParams)) {
+    return fetchListingsPageFast(supabase, { page, pageSize, ...filterParams });
+  }
 
   const sorted = await fetchAllApprovedListingsForFeedSort(
     supabase,

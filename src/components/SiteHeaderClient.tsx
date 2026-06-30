@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, Suspense, useEffect, useRef, useState, useTransition } from "react";
 import type { CategoryRow } from "@/lib/listings-data";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
@@ -52,23 +52,50 @@ type HeaderNotification = {
   created_at: string;
 };
 
+function NavSearchFallback({ id }: { id: string }) {
+  return (
+    <form role="search" className={navSearchFormClass}>
+      <label htmlFor={id} className="sr-only">
+        İlan ara
+      </label>
+      <input
+        id={id}
+        type="search"
+        name="q"
+        placeholder="Ara…"
+        disabled
+        className={`${navSearchInputClass} opacity-70`}
+      />
+    </form>
+  );
+}
+
 function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [pending, startTransition] = useTransition();
+  const defaultQuery = pathname === "/" ? (searchParams.get("q") ?? "") : "";
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const raw = String(fd.get("q") ?? "").trim();
     const listingNo = listingNumberFromSearchQuery(raw);
     if (listingNo) {
-      e.preventDefault();
       router.push(`/ilan/${listingNo}`);
+      return;
     }
+    const p = new URLSearchParams();
+    if (raw) p.set("q", raw);
+    const href = p.toString() ? `/?${p}` : "/";
+    startTransition(() => {
+      router.push(href);
+    });
   }
 
   return (
     <form
-      action="/"
-      method="get"
       role="search"
       className={navSearchFormClass}
       onSubmit={handleSubmit}
@@ -80,10 +107,13 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
         id={id}
         type="search"
         name="q"
+        key={`${id}-${defaultQuery}`}
+        defaultValue={defaultQuery}
         placeholder="Ara…"
         autoComplete="off"
         enterKeyHint="search"
-        className={navSearchInputClass}
+        disabled={pending}
+        className={`${navSearchInputClass}${pending ? " opacity-70" : ""}`}
       />
     </form>
   );
@@ -297,7 +327,9 @@ export function SiteHeaderClient({
               className="text-zinc-900 hover:bg-black/10 focus:ring-zinc-900/30"
             />
             <div className="hidden min-w-0 flex-1 sm:block sm:max-w-[280px] md:max-w-[340px] lg:max-w-[420px]">
-              <NavSearchForm id="site-nav-search-desktop" />
+              <Suspense fallback={<NavSearchFallback id="site-nav-search-desktop" />}>
+                <NavSearchForm id="site-nav-search-desktop" />
+              </Suspense>
             </div>
           </div>
 
@@ -474,7 +506,9 @@ export function SiteHeaderClient({
           </nav>
           </div>
           <div className="mt-2 sm:hidden">
-            <NavSearchForm id="site-nav-search-mobile" />
+            <Suspense fallback={<NavSearchFallback id="site-nav-search-mobile" />}>
+              <NavSearchForm id="site-nav-search-mobile" />
+            </Suspense>
           </div>
         </div>
       </header>

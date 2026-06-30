@@ -191,16 +191,20 @@ export default async function AnaSayfa({
     );
   }
 
-  const brands = await fetchVehicleBrands(supabase, categoryId ?? null);
-  const brandMap = buildBrandMap(brands);
-
-  const { items, total, loggedIn } = await fetchHomeListingsFeed(
+  const brandsPromise = fetchVehicleBrands(supabase, categoryId ?? null);
+  const feedPromise = fetchHomeListingsFeed(
     supabase,
     env,
     1,
     HOME_LISTINGS_PAGE_SIZE,
     listFilters
   );
+
+  const [brands, { items, total, loggedIn }] = await Promise.all([
+    brandsPromise,
+    feedPromise,
+  ]);
+  const brandMap = buildBrandMap(brands);
 
   return (
     <>
