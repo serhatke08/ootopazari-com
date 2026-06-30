@@ -134,16 +134,36 @@ export function HomePageListings({
   const [items, setItems] = useState(initialItems);
   const [total, setTotal] = useState(initialTotal);
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
-  const [loading, setLoading] = useState(false);
+  const [settledQuery, setSettledQuery] = useState(serverQuery);
   const [error, setError] = useState<string | null>(null);
   const fetchGen = useRef(0);
-  const settledQueryRef = useRef(serverQuery);
+
+  const serverSnapshotRef = useRef({
+    items: initialItems,
+    total: initialTotal,
+    loggedIn: initialLoggedIn,
+  });
 
   const catMap = useMemo(() => buildCategoryMap(categories), [categories]);
   const cityMap = useMemo(() => buildCityMap(cities), [cities]);
   const brandMap = useMemo(() => buildBrandMap(brands), [brands]);
   const hasFilters = homeListingsFeedHasFilters(activeFilters);
-  const showSkeleton = activeQuery !== settledQueryRef.current;
+  const showSkeleton = activeQuery !== settledQuery;
+
+  useEffect(() => {
+    serverSnapshotRef.current = {
+      items: initialItems,
+      total: initialTotal,
+      loggedIn: initialLoggedIn,
+    };
+    if (activeQuery === serverQuery) {
+      setSettledQuery(serverQuery);
+      setItems(initialItems);
+      setTotal(initialTotal);
+      setLoggedIn(initialLoggedIn);
+      setError(null);
+    }
+  }, [initialItems, initialTotal, initialLoggedIn, serverQuery, activeQuery]);
 
   useEffect(() => {
     if (prevSpRef.current === spString) return;
@@ -152,18 +172,9 @@ export function HomePageListings({
   }, [spString, resetHomeTextQuery]);
 
   useEffect(() => {
-    if (activeQuery === serverQuery) {
-      settledQueryRef.current = serverQuery;
-      setItems(initialItems);
-      setTotal(initialTotal);
-      setLoggedIn(initialLoggedIn);
-      setLoading(false);
-      setError(null);
-      return;
-    }
+    if (activeQuery === serverQuery) return;
 
     const gen = ++fetchGen.current;
-    setLoading(true);
     setError(null);
 
     void (async () => {
@@ -183,24 +194,16 @@ export function HomePageListings({
         setItems(data.items ?? []);
         setTotal(data.total ?? 0);
         if (data.loggedIn != null) setLoggedIn(data.loggedIn);
-        settledQueryRef.current = activeQuery;
+        setSettledQuery(activeQuery);
       } catch (e) {
         if (gen !== fetchGen.current) return;
         setError(e instanceof Error ? e.message : "Yükleme başarısız");
         setItems([]);
         setTotal(0);
-        settledQueryRef.current = activeQuery;
-      } finally {
-        if (gen === fetchGen.current) setLoading(false);
+        setSettledQuery(activeQuery);
       }
     })();
-  }, [
-    activeQuery,
-    serverQuery,
-    initialItems,
-    initialTotal,
-    initialLoggedIn,
-  ]);
+  }, [activeQuery, serverQuery]);
 
   const categoryId = activeFilters.categoryId;
   const cityId = activeFilters.cityId;
@@ -235,7 +238,7 @@ export function HomePageListings({
 
           {hasFilters ? (
             <p className="mb-4 text-sm text-zinc-600">
-              {showSkeleton || loading ? "Aranıyor…" : `${total} sonuç`}
+              {showSkeleton ? "Aranıyor…" : `${total} sonuç`}
               {cityId && cityMap.get(cityId)?.name
                 ? ` · ${cityMap.get(cityId)?.name}`
                 : ""}

@@ -94,6 +94,7 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
     const raw = value.trim();
     const listingNo = listingNumberFromSearchQuery(raw);
     if (listingNo) {
+      router.prefetch(`/ilan/${listingNo}`);
       router.push(`/ilan/${listingNo}`);
       return;
     }

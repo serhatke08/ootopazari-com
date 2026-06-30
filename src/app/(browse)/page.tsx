@@ -94,6 +94,7 @@ export default async function AnaSayfa({
 
   const supabase = await createSupabaseServerClient();
   const listFilters = await resolveHomeListingsFeedFilters(supabase, get);
+  const useLiteFeed = homeListingsFeedHasFilters(listFilters);
 
   const [categories, cities, brands, feed] = await Promise.all([
     fetchCategories(supabase),
@@ -106,7 +107,8 @@ export default async function AnaSayfa({
       env,
       1,
       HOME_LISTINGS_PAGE_SIZE,
-      listFilters
+      listFilters,
+      { lite: useLiteFeed }
     ),
   ]);
 
