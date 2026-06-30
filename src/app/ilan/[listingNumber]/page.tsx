@@ -58,8 +58,6 @@ import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
 import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
-import { ListingDetailReadyMarker } from "@/components/ListingDetailReadyMarker";
-
 type Props = { params: Promise<{ listingNumber: string }> };
 
 export const dynamic = "force-dynamic";
@@ -1152,8 +1150,6 @@ export default async function IlanDetayPage({ params }: Props) {
           </details>
         </section>
       ) : null}
-
-      <ListingDetailReadyMarker />
     </article>
   );
 }

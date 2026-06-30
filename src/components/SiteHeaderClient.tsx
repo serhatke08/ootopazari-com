@@ -14,7 +14,7 @@ import { useUnreadMessageCount } from "@/hooks/useUnreadMessageCount";
 import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
 import { useUserHasListings } from "@/hooks/useUserHasListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
-import { useHomeSearch } from "@/components/HomeSearchProvider";
+import { useSiteSearch } from "@/components/SiteSearchProvider";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 
 const linkClass =
@@ -75,38 +75,33 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const homeSearch = useHomeSearch();
+  const siteSearch = useSiteSearch();
   const onHome = pathname === "/";
-  const urlQuery = onHome ? (searchParams.get("q") ?? "") : "";
-  const displayQuery =
-    onHome && homeSearch?.queryOverride != null
-      ? homeSearch.queryOverride
-      : urlQuery;
-  const [value, setValue] = useState(displayQuery);
+  const urlQ = onHome ? (searchParams.get("q") ?? "") : "";
+  const [value, setValue] = useState(urlQ);
 
   useEffect(() => {
-    setValue(displayQuery);
-  }, [displayQuery]);
+    if (!onHome) return;
+    if (siteSearch?.homeTextQuery !== undefined) {
+      setValue(siteSearch.homeTextQuery);
+    } else {
+      setValue(urlQ);
+    }
+  }, [onHome, urlQ, siteSearch?.homeTextQuery]);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const raw = value.trim();
     const listingNo = listingNumberFromSearchQuery(raw);
-    if (listingNo && homeSearch) {
-      homeSearch.navigateToListing(router, listingNo);
-      return;
-    }
     if (listingNo) {
       router.push(`/ilan/${listingNo}`);
       return;
     }
-    if (onHome && homeSearch) {
-      homeSearch.applySearch(raw);
+    if (onHome && siteSearch) {
+      siteSearch.setHomeTextQuery(raw);
       return;
     }
-    const p = new URLSearchParams();
-    if (raw) p.set("q", raw);
-    router.push(p.toString() ? `/?${p}` : "/");
+    router.push(raw ? `/?q=${encodeURIComponent(raw)}` : "/");
   }
 
   return (

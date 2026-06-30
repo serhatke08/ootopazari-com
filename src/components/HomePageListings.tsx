@@ -22,7 +22,7 @@ import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton"
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { TopCitySelect } from "@/components/TopCitySelect";
 import { ListingFilters } from "@/components/ListingFilters";
-import { useHomeSearch } from "@/components/HomeSearchProvider";
+import { useSiteSearch } from "@/components/SiteSearchProvider";
 import { ADSENSE_HOME_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
 
@@ -37,10 +37,7 @@ type Props = {
   initialFilters: HomeListingsFeedFilters;
 };
 
-function filtersToApiQuery(
-  filters: HomeListingsFeedFilters,
-  qOverride: string | null
-): string {
+function filtersToQueryString(filters: HomeListingsFeedFilters): string {
   const p = new URLSearchParams();
   if (filters.categoryId) p.set("category_id", filters.categoryId);
   if (filters.cityId) p.set("city_id", filters.cityId);
@@ -51,8 +48,7 @@ function filtersToApiQuery(
   if (filters.maxYear != null) p.set("max_year", String(filters.maxYear));
   if (filters.minKm != null) p.set("min_km", String(filters.minKm));
   if (filters.maxKm != null) p.set("max_km", String(filters.maxKm));
-  const q = qOverride ?? filters.q;
-  if (q) p.set("q", q);
+  if (filters.q) p.set("q", filters.q);
   if (filters.vehicleModel) p.set("vehicle_model", filters.vehicleModel);
   if (filters.vehicleBrandModelId) {
     p.set("vehicle_brand_model_id", filters.vehicleBrandModelId);
@@ -67,9 +63,9 @@ function filtersToApiQuery(
   return p.toString();
 }
 
-function filtersFromSearchParams(
+function filtersFromUrl(
   sp: URLSearchParams,
-  qOverride: string | null
+  textQ: string | undefined
 ): HomeListingsFeedFilters {
   const get = (k: string) => sp.get(k)?.trim() || undefined;
   const num = (k: string) => {
@@ -88,7 +84,7 @@ function filtersFromSearchParams(
     maxYear: num("max_year"),
     minKm: num("min_km"),
     maxKm: num("max_km"),
-    q: qOverride ?? get("q"),
+    q: textQ !== undefined ? textQ || undefined : get("q"),
     vehicleModel: get("vehicle_model"),
     vehicleBrandModelId: get("vehicle_brand_model_id"),
     bodyType: get("body_type"),
@@ -110,67 +106,69 @@ export function HomePageListings({
   initialFilters,
 }: Props) {
   const searchParams = useSearchParams();
-  const homeSearch = useHomeSearch();
-  const clearOverrideRef = useRef(homeSearch?.clearOverride);
-  clearOverrideRef.current = homeSearch?.clearOverride;
-
-  const qOverride = homeSearch?.queryOverride ?? null;
-  const isSearching = homeSearch?.isSearching ?? false;
-  const listingNavigationActive = homeSearch?.listingNavigationActive ?? false;
+  const siteSearch = useSiteSearch();
+  const resetHomeTextQuery = siteSearch?.resetHomeTextQuery;
 
   const spString = searchParams.toString();
+  const prevSpRef = useRef(spString);
+
+  const textQ =
+    siteSearch?.homeTextQuery !== undefined
+      ? siteSearch.homeTextQuery
+      : undefined;
+
   const activeFilters = useMemo(
-    () => filtersFromSearchParams(new URLSearchParams(spString), qOverride),
-    [spString, qOverride]
+    () => filtersFromUrl(new URLSearchParams(spString), textQ),
+    [spString, textQ]
   );
-  const apiQuery = useMemo(
-    () => filtersToApiQuery(activeFilters, qOverride),
-    [activeFilters, qOverride]
+
+  const activeQuery = useMemo(
+    () => filtersToQueryString(activeFilters),
+    [activeFilters]
   );
   const serverQuery = useMemo(
-    () => filtersToApiQuery(initialFilters, null),
+    () => filtersToQueryString(initialFilters),
     [initialFilters]
   );
 
   const [items, setItems] = useState(initialItems);
   const [total, setTotal] = useState(initialTotal);
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
-  const [fetching, setFetching] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchGen = useRef(0);
-  const prevSpRef = useRef(spString);
+  const settledQueryRef = useRef(serverQuery);
 
   const catMap = useMemo(() => buildCategoryMap(categories), [categories]);
   const cityMap = useMemo(() => buildCityMap(cities), [cities]);
   const brandMap = useMemo(() => buildBrandMap(brands), [brands]);
   const hasFilters = homeListingsFeedHasFilters(activeFilters);
-  const showGridSkeleton =
-    !listingNavigationActive && (isSearching || fetching);
+  const showSkeleton = activeQuery !== settledQueryRef.current;
 
   useEffect(() => {
-    if (prevSpRef.current !== spString) {
-      prevSpRef.current = spString;
-      clearOverrideRef.current?.();
-    }
-  }, [spString]);
+    if (prevSpRef.current === spString) return;
+    prevSpRef.current = spString;
+    resetHomeTextQuery?.();
+  }, [spString, resetHomeTextQuery]);
 
   useEffect(() => {
-    if (apiQuery === serverQuery) {
+    if (activeQuery === serverQuery) {
+      settledQueryRef.current = serverQuery;
       setItems(initialItems);
       setTotal(initialTotal);
       setLoggedIn(initialLoggedIn);
-      setFetching(false);
+      setLoading(false);
       setError(null);
       return;
     }
 
     const gen = ++fetchGen.current;
-    setFetching(true);
+    setLoading(true);
     setError(null);
 
     void (async () => {
       try {
-        const qs = apiQuery ? `&${apiQuery}` : "";
+        const qs = activeQuery ? `&${activeQuery}` : "";
         const res = await fetch(
           `/api/listings/feed?page=1&page_size=${HOME_LISTINGS_PAGE_SIZE}${qs}`
         );
@@ -185,25 +183,23 @@ export function HomePageListings({
         setItems(data.items ?? []);
         setTotal(data.total ?? 0);
         if (data.loggedIn != null) setLoggedIn(data.loggedIn);
+        settledQueryRef.current = activeQuery;
       } catch (e) {
         if (gen !== fetchGen.current) return;
         setError(e instanceof Error ? e.message : "Yükleme başarısız");
         setItems([]);
         setTotal(0);
+        settledQueryRef.current = activeQuery;
       } finally {
-        if (gen === fetchGen.current) {
-          setFetching(false);
-          homeSearch?.finishSearch();
-        }
+        if (gen === fetchGen.current) setLoading(false);
       }
     })();
   }, [
-    apiQuery,
+    activeQuery,
     serverQuery,
     initialItems,
     initialTotal,
     initialLoggedIn,
-    homeSearch,
   ]);
 
   const categoryId = activeFilters.categoryId;
@@ -239,7 +235,7 @@ export function HomePageListings({
 
           {hasFilters ? (
             <p className="mb-4 text-sm text-zinc-600">
-              {showGridSkeleton ? "Aranıyor…" : `${total} sonuç`}
+              {showSkeleton || loading ? "Aranıyor…" : `${total} sonuç`}
               {cityId && cityMap.get(cityId)?.name
                 ? ` · ${cityMap.get(cityId)?.name}`
                 : ""}
@@ -262,7 +258,7 @@ export function HomePageListings({
             label="Sponsorlu"
           />
 
-          {showGridSkeleton ? (
+          {showSkeleton ? (
             <HomeListingsGridSkeleton count={10} />
           ) : error ? (
             <p className="text-sm text-red-600" role="alert">
@@ -276,7 +272,7 @@ export function HomePageListings({
             </p>
           ) : (
             <HomeListingsGrid
-              key={apiQuery}
+              key={activeQuery}
               initialItems={items}
               total={total}
               env={env}
