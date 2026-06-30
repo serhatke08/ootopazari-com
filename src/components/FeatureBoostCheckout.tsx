@@ -9,6 +9,7 @@ import { FeatureBoostPackPicker } from "@/components/FeatureBoostPackPicker";
 import type { FeatureBoostListingOption } from "@/lib/feature-boost-listing";
 import type { ListingBoostPaymentInfo } from "@/lib/feature-boost-payment-status";
 import { FEATURE_BOOST_PACKS } from "@/lib/listing-feature-boost";
+import { PaymentLegalNotice } from "@/components/PaymentLegalNotice";
 
 type Props = {
   listings: FeatureBoostListingOption[];
@@ -226,6 +227,7 @@ export function FeatureBoostCheckout({
               {error}
             </p>
           ) : null}
+          <PaymentLegalNotice className="mx-auto mt-2 max-w-lg text-center" />
         </div>
       ) : null}
     </div>

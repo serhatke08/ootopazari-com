@@ -83,13 +83,21 @@ export default async function IlanOneCikarPage({ searchParams }: Props) {
         />
 
         <p className="mt-8 text-center text-[10px] leading-relaxed text-zinc-400 sm:text-xs">
-          KDV dahil · Dijital hizmet{" "}
-          <Link href="/iade-iptal-politikasi" className="underline">
-            İade
+          KDV dahil dijital hizmet · Fiziksel kargo yok ·{" "}
+          <Link href="/on-bilgilendirme-formu" className="underline">
+            Ön bilgilendirme
           </Link>
           {" · "}
           <Link href="/mesafeli-satis-sozlesmesi" className="underline">
             Mesafeli satış
+          </Link>
+          {" · "}
+          <Link href="/teslimat-kosullari" className="underline">
+            Teslimat
+          </Link>
+          {" · "}
+          <Link href="/iade-iptal-politikasi" className="underline">
+            İade
           </Link>
         </p>
       </div>

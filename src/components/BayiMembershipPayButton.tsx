@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { PaymentLegalNotice } from "@/components/PaymentLegalNotice";
 import type { DealerType } from "@/lib/bayi-types";
 
 type Props = {
@@ -62,6 +63,7 @@ export function BayiMembershipPayButton({
       {error ? (
         <p className="mt-2 text-sm text-red-700">{error}</p>
       ) : null}
+      <PaymentLegalNotice className="mt-3" />
     </div>
   );
 }

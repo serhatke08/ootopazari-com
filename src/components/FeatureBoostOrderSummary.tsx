@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { FeatureBoostListingOption } from "@/lib/feature-boost-listing";
+import { PaymentLegalNotice } from "@/components/PaymentLegalNotice";
 import {
   FEATURE_BOOST_PACKS,
   computeFeatureBoostEndAfterPurchase,
@@ -120,9 +121,10 @@ export function FeatureBoostOrderSummary({
           >
             {submitting ? "Yönlendiriliyor…" : "Güvenli ödemeye geç"}
           </button>
-          <p className="mt-2 text-center text-[10px] text-zinc-400">
-            PayTR güvenli ödeme
-          </p>
+      <p className="mt-2 text-center text-[10px] text-zinc-400">
+        PayTR güvenli ödeme
+      </p>
+      <PaymentLegalNotice className="mt-3" />
         </>
       )}
     </aside>

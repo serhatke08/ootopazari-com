@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LegalPageLinks } from "@/components/LegalPageLinks";
 
 const quickLinks = (hasListings: boolean) =>
   [
@@ -62,6 +63,14 @@ export function SiteFooter({
                 {link.label}
               </Link>
             ))}
+          </div>
+
+          {/* Legal */}
+          <div className="mb-6 border-t border-zinc-200 pt-4">
+            <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+              Yasal
+            </p>
+            <LegalPageLinks className="justify-center" />
           </div>
 
           {/* Copyright */}
@@ -139,10 +148,12 @@ export function SiteFooter({
               <p className="site-footer-col-title">Kurumsal</p>
               <Link href="/hakkimizda">Hakkımızda</Link>
               <Link href="/iletisim">İletişim</Link>
+              <Link href="/on-bilgilendirme-formu">Ön Bilgilendirme</Link>
+              <Link href="/teslimat-kosullari">Teslimat Koşulları</Link>
+              <Link href="/mesafeli-satis-sozlesmesi">Mesafeli Satış</Link>
+              <Link href="/iade-iptal-politikasi">İade ve İptal</Link>
               <Link href="/gizlilik-politikasi">Gizlilik Politikası</Link>
               <Link href="/kullanim-kosullari">Kullanım Koşulları</Link>
-              <Link href="/iade-iptal-politikasi">İade ve İptal</Link>
-              <Link href="/mesafeli-satis-sozlesmesi">Mesafeli Satış</Link>
             </div>
           </div>
 

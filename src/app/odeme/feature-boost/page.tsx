@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { PaymentLegalNotice } from "@/components/PaymentLegalNotice";
 
 function PaytrIframe() {
   const searchParams = useSearchParams();
@@ -45,7 +46,8 @@ export default function FeatureBoostPaymentPage() {
         <div>
           <h1 className="text-2xl font-black text-zinc-950">Güvenli ödeme</h1>
           <p className="mt-1 text-sm text-zinc-600">
-            Kart bilgileriniz PayTR altyapısı üzerinden işlenir.
+            Dijital hizmet — fiziksel kargo yok. Kart bilgileriniz PayTR
+            altyapısı üzerinden işlenir.
           </p>
         </div>
         <Image
@@ -67,6 +69,12 @@ export default function FeatureBoostPaymentPage() {
           <PaytrIframe />
         </Suspense>
       </div>
+      <PaymentLegalNotice className="mt-6" />
+      <p className="mt-4 text-center text-xs text-zinc-500">
+        <Link href="/iletisim" className="underline">
+          İletişim ve satıcı bilgileri
+        </Link>
+      </p>
     </div>
   );
 }
