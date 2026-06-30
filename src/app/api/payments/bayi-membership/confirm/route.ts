@@ -74,10 +74,17 @@ export async function POST(req: Request) {
       application_update_failed: "Üyelik güncellenemedi.",
       missing_payment_record: "Ödeme kaydı bulunamadı.",
     };
+    if (result.detail) {
+      console.warn("bayi-membership confirm detail:", result.detail);
+    }
     return NextResponse.json(
       {
         ok: false,
-        message: messages[result.reason] ?? "Üyelik tanımlanamadı.",
+        message:
+          messages[result.reason] ??
+          (result.detail
+            ? `Üyelik tanımlanamadı: ${result.detail}`
+            : "Üyelik tanımlanamadı."),
       },
       { status: 400 }
     );

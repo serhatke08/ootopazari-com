@@ -20,7 +20,7 @@ export type FulfillBayiMembershipResult =
       membershipExpiresAt: string;
       alreadyApplied: boolean;
     }
-  | { ok: false; reason: string };
+  | { ok: false; reason: string; detail?: string };
 
 export async function fulfillBayiMembershipPayment(
   admin: SupabaseClient,
@@ -80,7 +80,11 @@ export async function fulfillBayiMembershipPayment(
     .maybeSingle();
 
   if (appErr || !application) {
-    return { ok: false, reason: "application_not_found" };
+    return {
+      ok: false,
+      reason: "application_not_found",
+      detail: appErr?.message,
+    };
   }
 
   if (String(application.user_id) !== userId) {
@@ -107,22 +111,44 @@ export async function fulfillBayiMembershipPayment(
   const paidAt = now.toISOString();
   const monthlyFee = getMonthlyFeeForType(dealerType);
 
+  const fullUpdatePayload = {
+    payment_status: "paid",
+    payment_paid_at: paidAt,
+    membership_starts_at: application.membership_starts_at ?? paidAt,
+    membership_expires_at: newExpires.toISOString(),
+    monthly_fee_amount: monthlyFee,
+    updated_at: paidAt,
+  };
+
   const { error: updateErr } = await admin
     .from("bayi_applications")
-    .update({
-      payment_status: "paid",
-      payment_paid_at: paidAt,
-      membership_starts_at:
-        application.membership_starts_at ?? paidAt,
-      membership_expires_at: newExpires.toISOString(),
-      monthly_fee_amount: monthlyFee,
-      updated_at: paidAt,
-    })
+    .update(fullUpdatePayload)
     .eq("id", applicationId);
 
-  if (updateErr) {
-    console.error("fulfillBayiMembership application update:", updateErr.message);
-    return { ok: false, reason: "application_update_failed" };
+  if (updateErr?.message) {
+    console.warn(
+      "fulfillBayiMembership full update failed, trying fallback:",
+      updateErr.message
+    );
+    const { error: fallbackErr } = await admin
+      .from("bayi_applications")
+      .update({
+        payment_status: "paid",
+        membership_starts_at: application.membership_starts_at ?? paidAt,
+        membership_expires_at: newExpires.toISOString(),
+      })
+      .eq("id", applicationId);
+    if (fallbackErr) {
+      console.error(
+        "fulfillBayiMembership application update fallback:",
+        fallbackErr.message
+      );
+      return {
+        ok: false,
+        reason: "application_update_failed",
+        detail: fallbackErr.message,
+      };
+    }
   }
 
   const amountKurus =
