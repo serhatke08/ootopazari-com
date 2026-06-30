@@ -38,10 +38,10 @@ export function ListingDetailSkeleton() {
           <Pulse className="h-8 w-full max-w-2xl sm:h-9 lg:h-10" />
         </div>
 
-        <p className="listing-detail-meta -mt-2 mb-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="listing-detail-meta -mt-2 mb-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           <Pulse className="h-4 w-24" />
           <Pulse className="h-4 w-20" />
-        </p>
+        </div>
 
         <div className="listing-detail-gallery min-w-0">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
