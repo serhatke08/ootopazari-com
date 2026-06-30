@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { HomeSearchProvider } from "@/components/HomeSearchProvider";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -135,17 +136,19 @@ export default async function RootLayout({
             __html: `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>`,
           }}
         />
-        <Suspense
-          fallback={
-            <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />
-          }
-        >
-          <SiteHeader />
-        </Suspense>
-        <div className="layout-with-mobile-nav flex flex-1 flex-col">
-          <main className="flex flex-1 flex-col bg-zinc-50">{children}</main>
-          <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />
-        </div>
+        <HomeSearchProvider>
+          <Suspense
+            fallback={
+              <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />
+            }
+          >
+            <SiteHeader />
+          </Suspense>
+          <div className="layout-with-mobile-nav flex flex-1 flex-col">
+            <main className="flex flex-1 flex-col bg-zinc-50">{children}</main>
+            <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />
+          </div>
+        </HomeSearchProvider>
         <Analytics />
         <SpeedInsights />
       </body>

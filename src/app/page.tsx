@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { HomeQuickLinksStrip } from "@/components/HomeQuickLinksStrip";
 import {
-  buildCategoryMap,
-  buildCityMap,
-  buildBrandMap,
   type CategoryRow,
   type CityRow,
   fetchCategories,
@@ -23,15 +21,11 @@ import {
   homeListingsFeedHasFilters,
   resolveHomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-filters";
-import { HomeListingsGrid } from "@/components/HomeListingsGrid";
-import { HomeSidebar } from "@/components/HomeSidebar";
-import { TopCitySelect } from "@/components/TopCitySelect";
-import { ListingFilters } from "@/components/ListingFilters";
+import { HomePageListings } from "@/components/HomePageListings";
+import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
-import { ADSENSE_HOME_SLOT } from "@/lib/adsense";
-import { AdSenseUnit } from "@/components/AdSenseUnit";
 
 /** Geçici: ana sayfa hero bölümü (kaldırılmadı, devre dışı). */
 const SHOW_HOME_HERO = false;
@@ -43,10 +37,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const sp = await searchParams;
   const origin = getSiteOrigin();
-  
-  // Query parametreli sayfalar için canonical tag'i ana sayfaya yönlendir
+
   const hasQuery = sp.q || sp.category_id || sp.city_id || sp.vehicle_brand_id;
-  
+
   return {
     title: {
       absolute: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
@@ -102,188 +95,73 @@ export default async function AnaSayfa({
   }
 
   const supabase = await createSupabaseServerClient();
-  const listFilters = await resolveHomeListingsFeedFilters(supabase, (k) =>
-    get(k)
-  );
-  const hasListFilters = homeListingsFeedHasFilters(listFilters);
+  const listFilters = await resolveHomeListingsFeedFilters(supabase, get);
 
-  const categoryId = listFilters.categoryId;
-  const cityId = listFilters.cityId;
-  const vehicleBrandId = listFilters.vehicleBrandId;
-
-  const [categories, cities] = await Promise.all([
+  const [categories, cities, brands, feed] = await Promise.all([
     fetchCategories(supabase),
     fetchCities(supabase),
-  ]);
-  const catMap = buildCategoryMap(categories);
-  const cityMap = buildCityMap(cities);
-
-  if (!hasListFilters) {
-    const { items, total, loggedIn } = await fetchHomeListingsFeed(
+    listFilters.categoryId
+      ? fetchVehicleBrands(supabase, listFilters.categoryId)
+      : Promise.resolve([]),
+    fetchHomeListingsFeed(
       supabase,
       env,
       1,
-      HOME_LISTINGS_PAGE_SIZE
-    );
-
-    const seoJsonLdWithListings = buildHomeSeoJsonLd({
-      siteOrigin,
-      listings: items.slice(0, 12).map((item) => ({
-        listingNumber: String(item.listing.listing_number ?? ""),
-        title: String(item.listing.title ?? "Araç ilanı"),
-      })),
-    });
-
-    return (
-      <>
-        <script
-          type="application/ld+json"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(seoJsonLdWithListings),
-          }}
-        />
-        {SHOW_HOME_HERO ? (
-          <HomeHero
-            categories={categories}
-            cities={cities}
-            selectedCategoryId={categoryId}
-            selectedCityId={cityId}
-            q={q}
-          />
-        ) : null}
-        <HomeQuickLinksStrip />
-        <div
-          id="ilanlar"
-          className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6"
-        >
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
-            <aside className="hidden w-full shrink-0 lg:sticky lg:top-[5.5rem] lg:flex lg:h-[calc(100dvh-5.5rem)] lg:max-h-[calc(100dvh-5.5rem)] lg:min-h-0 lg:w-[min(280px,22vw)] lg:min-w-[240px] lg:max-w-[300px] lg:flex-col lg:overflow-hidden lg:self-start">
-              <HomeSidebar categories={categories} />
-            </aside>
-
-            <div className="min-w-0 flex-1">
-              <div className="mb-4 flex items-center justify-end gap-2">
-                <TopCitySelect cities={cities} />
-                <ListingFilters />
-              </div>
-              <AdSenseUnit
-                slot={ADSENSE_HOME_SLOT}
-                className="mb-4 hidden sm:block"
-                label="Sponsorlu"
-              />
-              {items.length === 0 ? (
-                <p className="text-sm text-zinc-500">
-                  Henüz ilan yok veya RLS engelliyor.
-                </p>
-              ) : (
-                <HomeListingsGrid
-                  initialItems={items}
-                  total={total}
-                  env={env}
-                  loggedIn={loggedIn}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  const brandsPromise = fetchVehicleBrands(supabase, categoryId ?? null);
-  const feedPromise = fetchHomeListingsFeed(
-    supabase,
-    env,
-    1,
-    HOME_LISTINGS_PAGE_SIZE,
-    listFilters
-  );
-
-  const [brands, { items, total, loggedIn }] = await Promise.all([
-    brandsPromise,
-    feedPromise,
+      HOME_LISTINGS_PAGE_SIZE,
+      listFilters
+    ),
   ]);
-  const brandMap = buildBrandMap(brands);
+
+  const { items, total, loggedIn } = feed;
+  const hasListFilters = homeListingsFeedHasFilters(listFilters);
+
+  const seoJsonLdPayload = hasListFilters
+    ? seoJsonLd
+    : buildHomeSeoJsonLd({
+        siteOrigin,
+        listings: items.slice(0, 12).map((item) => ({
+          listingNumber: String(item.listing.listing_number ?? ""),
+          title: String(item.listing.title ?? "Araç ilanı"),
+        })),
+      });
 
   return (
     <>
       <script
         type="application/ld+json"
         suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(seoJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(seoJsonLdPayload),
+        }}
       />
       {SHOW_HOME_HERO ? (
         <HomeHero
           categories={categories}
           cities={cities}
-          selectedCategoryId={categoryId}
-          selectedCityId={cityId}
+          selectedCategoryId={listFilters.categoryId}
+          selectedCityId={listFilters.cityId}
           q={q}
         />
       ) : null}
       <HomeQuickLinksStrip />
-      <div
-        id="ilanlar"
-        className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6"
-      >
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-6">
-          <aside className="hidden w-full shrink-0 lg:sticky lg:top-[5.5rem] lg:flex lg:h-[calc(100dvh-5.5rem)] lg:max-h-[calc(100dvh-5.5rem)] lg:min-h-0 lg:w-[min(240px,18vw)] lg:min-w-[200px] lg:max-w-[260px] lg:flex-col lg:overflow-hidden lg:self-start">
-            <HomeSidebar categories={categories} />
-          </aside>
-
-          <div className="min-w-0 flex-1">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-              {categoryId && catMap.get(categoryId)?.name ? (
-                <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
-                  {catMap.get(categoryId)?.name}
-                </h1>
-              ) : (
-                <div />
-              )}
-              <div className="flex items-center gap-2">
-                <TopCitySelect cities={cities} />
-                <ListingFilters />
-              </div>
-            </div>
-            <p className="mb-4 text-sm text-zinc-600">
-              {total} sonuç
-              {cityId && cityMap.get(cityId)?.name
-                ? ` · ${cityMap.get(cityId)?.name}`
-                : ""}
-              {vehicleBrandId && brandMap.get(vehicleBrandId)?.name
-                ? ` · ${brandMap.get(vehicleBrandId)?.name}`
-                : ""}
-              {listFilters.vehicleModel
-                ? ` · ${listFilters.vehicleModel}`
-                : ""}
-              {listFilters.bodyType ? ` · ${listFilters.bodyType}` : ""}
-              {listFilters.vehicleEngineOther ? " · Diğer motor" : ""}
-              {listFilters.vehicleEnginePackageId ? " · paket filtresi" : ""}
-              {listFilters.q ? ` · “${listFilters.q}”` : ""}
-            </p>
-            <AdSenseUnit
-              slot={ADSENSE_HOME_SLOT}
-              className="mb-4 hidden sm:block"
-              label="Sponsorlu"
-            />
-
-            {items.length === 0 ? (
-              <p className="text-sm text-zinc-500">
-                Bu filtrelere uygun ilan yok.
-              </p>
-            ) : (
-              <HomeListingsGrid
-                initialItems={items}
-                total={total}
-                env={env}
-                loggedIn={loggedIn}
-                filters={listFilters}
-              />
-            )}
+      <Suspense
+        fallback={
+          <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
+            <HomeListingsGridSkeleton count={10} />
           </div>
-        </div>
-      </div>
+        }
+      >
+        <HomePageListings
+          env={env}
+          categories={categories}
+          cities={cities}
+          brands={brands}
+          initialItems={items}
+          initialTotal={total}
+          initialLoggedIn={loggedIn}
+          initialFilters={listFilters}
+        />
+      </Suspense>
     </>
   );
 }

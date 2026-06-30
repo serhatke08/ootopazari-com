@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useEffect, useRef, useState, useTransition } from "react";
+import { type FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import type { CategoryRow } from "@/lib/listings-data";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
@@ -14,6 +14,7 @@ import { useUnreadMessageCount } from "@/hooks/useUnreadMessageCount";
 import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
 import { useUserHasListings } from "@/hooks/useUserHasListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
+import { useHomeSearch } from "@/components/HomeSearchProvider";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 
 const linkClass =
@@ -74,24 +75,34 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [pending, startTransition] = useTransition();
-  const defaultQuery = pathname === "/" ? (searchParams.get("q") ?? "") : "";
+  const homeSearch = useHomeSearch();
+  const onHome = pathname === "/";
+  const urlQuery = onHome ? (searchParams.get("q") ?? "") : "";
+  const displayQuery =
+    onHome && homeSearch?.queryOverride != null
+      ? homeSearch.queryOverride
+      : urlQuery;
+  const [value, setValue] = useState(displayQuery);
+
+  useEffect(() => {
+    setValue(displayQuery);
+  }, [displayQuery]);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const raw = String(fd.get("q") ?? "").trim();
+    const raw = value.trim();
     const listingNo = listingNumberFromSearchQuery(raw);
     if (listingNo) {
       router.push(`/ilan/${listingNo}`);
       return;
     }
+    if (onHome && homeSearch) {
+      homeSearch.applySearch(raw);
+      return;
+    }
     const p = new URLSearchParams();
     if (raw) p.set("q", raw);
-    const href = p.toString() ? `/?${p}` : "/";
-    startTransition(() => {
-      router.push(href);
-    });
+    router.push(p.toString() ? `/?${p}` : "/");
   }
 
   return (
@@ -107,13 +118,12 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
         id={id}
         type="search"
         name="q"
-        key={`${id}-${defaultQuery}`}
-        defaultValue={defaultQuery}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
         placeholder="Ara…"
         autoComplete="off"
         enterKeyHint="search"
-        disabled={pending}
-        className={`${navSearchInputClass}${pending ? " opacity-70" : ""}`}
+        className={navSearchInputClass}
       />
     </form>
   );
