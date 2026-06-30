@@ -5,14 +5,18 @@ import { useRouter } from "next/navigation";
 import { PaymentLegalNotice } from "@/components/PaymentLegalNotice";
 import type { DealerType } from "@/lib/bayi-types";
 
+type BayiMembershipPlan = "monthly" | "yearly";
+
 type Props = {
   dealerType: DealerType;
+  plan?: BayiMembershipPlan;
   label?: string;
   className?: string;
 };
 
 export function BayiMembershipPayButton({
   dealerType,
+  plan = "monthly",
   label = "Ödeme Yap",
   className = "rounded-lg bg-blue-600 px-6 py-3 font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60",
 }: Props) {
@@ -27,7 +31,7 @@ export function BayiMembershipPayButton({
       const res = await fetch("/api/payments/bayi-membership/init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dealerType }),
+        body: JSON.stringify({ dealerType, plan }),
       });
       const data = (await res.json()) as {
         ok?: boolean;

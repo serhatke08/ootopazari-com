@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import {
   normalizeDealerState,
-  getMonthlyFeeForType,
 } from "@/lib/bayi-application-status";
 import {
+  type BayiMembershipPlan,
   bayiMembershipAmountKurus,
+  bayiMembershipDays,
   buildBayiMembershipMerchantOid,
 } from "@/lib/bayi-paytr-oid";
-import { BAYI_MEMBERSHIP_DAYS } from "@/lib/bayi-membership-payment";
 import { DEALER_TYPES, DEALER_TYPE_LABELS, type DealerType } from "@/lib/bayi-types";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { createPaytrIframeToken, tryGetPaytrConfig } from "@/lib/paytr";
@@ -36,9 +36,9 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { dealerType?: unknown };
+  let body: { dealerType?: unknown; plan?: unknown };
   try {
-    body = (await req.json()) as { dealerType?: unknown };
+    body = (await req.json()) as { dealerType?: unknown; plan?: unknown };
   } catch {
     return NextResponse.json({ ok: false, message: "Geçersiz istek." }, { status: 400 });
   }
@@ -52,6 +52,8 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+  const planRaw = typeof body.plan === "string" ? body.plan.trim() : "monthly";
+  const plan: BayiMembershipPlan = planRaw === "yearly" ? "yearly" : "monthly";
 
   const { data: application, error: appErr } = await supabase
     .from("bayi_applications")
@@ -93,13 +95,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const monthlyFee = getMonthlyFeeForType(dealerType);
-  const paymentAmountKurus = bayiMembershipAmountKurus(dealerType);
-  const merchantOid = buildBayiMembershipMerchantOid(dealerType);
+  const membershipDays = bayiMembershipDays(plan);
+  const paymentAmountKurus = bayiMembershipAmountKurus(dealerType, plan);
+  const merchantOid = buildBayiMembershipMerchantOid(dealerType, plan);
   const origin = getRequestOrigin(req);
   const email = user.email?.trim() || "musteri@otopazari.com";
   const label = DEALER_TYPE_LABELS[dealerType];
-  const basketName = `${label} bayi aylık üyelik (${BAYI_MEMBERSHIP_DAYS} gün)`;
+  const basketName =
+    plan === "yearly"
+      ? `${label} bayi yıllık üyelik (${membershipDays} gün, %30 indirim)`
+      : `${label} bayi aylık üyelik (${membershipDays} gün)`;
 
   const admin = createSupabaseServiceClient();
   if (admin) {
@@ -109,7 +114,7 @@ export async function POST(req: Request) {
       user_id: user.id,
       dealer_type: dealerType,
       amount_kurus: paymentAmountKurus,
-      membership_days: BAYI_MEMBERSHIP_DAYS,
+      membership_days: membershipDays,
       status: "pending",
     });
     if (orderErr) {
@@ -122,7 +127,7 @@ export async function POST(req: Request) {
     merchantOid,
     email,
     paymentAmountKurus,
-    basket: [[basketName, monthlyFee.toFixed(2), 1]],
+    basket: [[basketName, (paymentAmountKurus / 100).toFixed(2), 1]],
     okUrl: `${origin}/odeme/basarili?type=bayi_membership&oid=${encodeURIComponent(merchantOid)}&dealerType=${encodeURIComponent(dealerType)}`,
     failUrl: `${origin}/odeme/basarisiz?type=bayi_membership&dealerType=${encodeURIComponent(dealerType)}`,
     userName: email.split("@")[0] || "Müşteri",

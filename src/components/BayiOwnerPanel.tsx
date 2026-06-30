@@ -21,6 +21,8 @@ type Props = {
   children?: React.ReactNode;
 };
 
+const BAYI_MEMBERSHIP_YEARLY_DISCOUNT_RATE = 0.3;
+
 export function BayiOwnerPanel({ dealerType, application, children }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("home");
 
@@ -31,6 +33,9 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
   );
   const isPanelLocked = isDealerPanelLocked(dealerState);
   const monthlyFee = getMonthlyFeeForType(dealerType);
+  const yearlyRaw = monthlyFee * 12;
+  const yearlyDiscounted = yearlyRaw * (1 - BAYI_MEMBERSHIP_YEARLY_DISCOUNT_RATE);
+  const yearlySavings = yearlyRaw - yearlyDiscounted;
   const membershipExpiresLabel = application.membership_expires_at
     ? formatFeatureBoostDate(parseListingDate(application.membership_expires_at))
     : null;
@@ -170,17 +175,36 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
                   ? "Panel özelliklerine devam etmek için aylık üyeliğinizi yenileyin."
                   : "Başvurunuz onaylandı! Tüm özelliklere erişmek için aylık üyelik ücretini ödeyin."}
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-4">
-                <div className="rounded-lg bg-white px-4 py-2 shadow-sm">
-                  <p className="text-sm font-medium text-zinc-600">Aylık ücret (30 gün)</p>
+              <div className="mt-4 grid w-full gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-white px-4 py-3 shadow-sm">
+                  <p className="text-sm font-medium text-zinc-600">Aylık plan (30 gün)</p>
                   <p className="text-2xl font-bold text-zinc-900">
                     ₺{monthlyFee.toLocaleString("tr-TR")}
                   </p>
+                  <BayiMembershipPayButton
+                    dealerType={dealerType}
+                    plan="monthly"
+                    label={dealerState === "overdue" ? "Aylık yenile" : "Aylık ödeme"}
+                    className="mt-3 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
                 </div>
-                <BayiMembershipPayButton
-                  dealerType={dealerType}
-                  label={dealerState === "overdue" ? "Üyeliği yenile" : "Ödeme yap"}
-                />
+                <div className="rounded-lg border-2 border-emerald-300 bg-emerald-50 px-4 py-3 shadow-sm">
+                  <p className="text-sm font-medium text-emerald-800">
+                    Yıllık plan (360 gün) · %30 indirim
+                  </p>
+                  <p className="text-2xl font-bold text-emerald-900">
+                    ₺{Math.round(yearlyDiscounted).toLocaleString("tr-TR")}
+                  </p>
+                  <p className="text-xs text-emerald-700">
+                    Normal: ₺{Math.round(yearlyRaw).toLocaleString("tr-TR")} · Tasarruf: ₺{Math.round(yearlySavings).toLocaleString("tr-TR")}
+                  </p>
+                  <BayiMembershipPayButton
+                    dealerType={dealerType}
+                    plan="yearly"
+                    label={dealerState === "overdue" ? "Yıllık yenile" : "Yıllık ödeme"}
+                    className="mt-3 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -198,11 +222,20 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
               Ödeme geçmişi
             </Link>
           </p>
-          <BayiMembershipPayButton
-            dealerType={dealerType}
-            label="Süre ekle"
-            className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-          />
+          <div className="flex items-center gap-2">
+            <BayiMembershipPayButton
+              dealerType={dealerType}
+              plan="monthly"
+              label="Aylık ekle"
+              className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+            <BayiMembershipPayButton
+              dealerType={dealerType}
+              plan="yearly"
+              label="%30 indirimli yıllık"
+              className="rounded-lg bg-emerald-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-950 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </div>
         </div>
       ) : null}
 
