@@ -183,59 +183,74 @@ export async function POST(req: Request) {
   ]) as [string, string, number][];
 
   const admin = createSupabaseServiceClient();
+  if (!admin) {
+    return NextResponse.json(
+      { ok: false, message: "Ödeme kaydı oluşturulamadı. Sunucu yapılandırmasını kontrol edin." },
+      { status: 500 }
+    );
+  }
+
   let merchantOid = isMulti
     ? buildMultiFeatureBoostMerchantOid(validated.length, pack.days)
     : buildFeatureBoostMerchantOid(validated[0].listingNumber, pack.days);
   let reusePayment = false;
 
-  if (admin) {
-    if (!isMulti) {
-      const reusable = await findReusablePendingBoostPayment(
-        admin,
-        user.id,
-        validated[0].id,
-        pack.days
+  if (!isMulti) {
+    const reusable = await findReusablePendingBoostPayment(
+      admin,
+      user.id,
+      validated[0].id,
+      pack.days
+    );
+    if (reusable) {
+      merchantOid = reusable;
+      reusePayment = true;
+    }
+  }
+
+  if (!reusePayment) {
+    await supersedePendingBoostPayments(
+      admin,
+      user.id,
+      validated.map((l) => l.id)
+    );
+    merchantOid = isMulti
+      ? buildMultiFeatureBoostMerchantOid(validated.length, pack.days)
+      : buildFeatureBoostMerchantOid(validated[0].listingNumber, pack.days);
+
+    const { error: orderErr } = await admin.from("feature_boost_payments").insert({
+      merchant_oid: merchantOid,
+      listing_id: validated[0].id,
+      user_id: user.id,
+      pack_days: pack.days,
+      amount_kurus: paymentAmountKurus,
+      status: "pending",
+    });
+    if (orderErr) {
+      console.error("feature_boost_payments insert:", orderErr.message);
+      return NextResponse.json(
+        { ok: false, message: "Ödeme kaydı oluşturulamadı. Lütfen tekrar deneyin." },
+        { status: 500 }
       );
-      if (reusable) {
-        merchantOid = reusable;
-        reusePayment = true;
-      }
     }
 
-    if (!reusePayment) {
-      await supersedePendingBoostPayments(
-        admin,
-        user.id,
-        validated.map((l) => l.id)
-      );
-      merchantOid = isMulti
-        ? buildMultiFeatureBoostMerchantOid(validated.length, pack.days)
-        : buildFeatureBoostMerchantOid(validated[0].listingNumber, pack.days);
-
-      const { error: orderErr } = await admin.from("feature_boost_payments").insert({
-        merchant_oid: merchantOid,
-        listing_id: validated[0].id,
-        user_id: user.id,
-        pack_days: pack.days,
-        amount_kurus: paymentAmountKurus,
-        status: "pending",
-      });
-      if (orderErr) {
-        console.warn("feature_boost_payments insert:", orderErr.message);
-      } else if (isMulti) {
-        const { error: itemsErr } = await admin
-          .from("feature_boost_payment_items")
-          .insert(
-            validated.map((listing) => ({
-              merchant_oid: merchantOid,
-              listing_id: listing.id,
-              listing_number: listing.listingNumber,
-              pack_days: pack.days,
-            }))
-          );
-        if (itemsErr) {
-          console.warn("feature_boost_payment_items insert:", itemsErr.message);
-        }
+    if (isMulti) {
+      const { error: itemsErr } = await admin
+        .from("feature_boost_payment_items")
+        .insert(
+          validated.map((listing) => ({
+            merchant_oid: merchantOid,
+            listing_id: listing.id,
+            listing_number: listing.listingNumber,
+            pack_days: pack.days,
+          }))
+        );
+      if (itemsErr) {
+        console.error("feature_boost_payment_items insert:", itemsErr.message);
+        return NextResponse.json(
+          { ok: false, message: "Ödeme kalemleri oluşturulamadı. Lütfen tekrar deneyin." },
+          { status: 500 }
+        );
       }
     }
   }

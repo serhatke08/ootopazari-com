@@ -47,7 +47,10 @@ export function BayiMembershipSuccessActivator({ merchantOid }: Props) {
           return;
         }
 
-        setMessage(data.message ?? "Bayi üyeliğiniz aktifleştirildi.");
+        setMessage(
+          data.message ??
+            "Bayi üyeliğiniz aktifleştirildi. Ödemeniz için teşekkür ederiz."
+        );
         sessionStorage.removeItem("bayi_membership_merchant_oid");
       } catch {
         if (!cancelled) {

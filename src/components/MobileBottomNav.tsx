@@ -112,8 +112,7 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed bottom-0 left-0 right-0 z-50 block overflow-visible border-0 bg-transparent md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 z-50 block overflow-visible border-0 bg-transparent pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="Alt menü"
     >
       {/* Sadece çizginin ALTINDA beyaz bar — üstteki beyaz şerit yok */}

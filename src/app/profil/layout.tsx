@@ -11,6 +11,8 @@ import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { ProfilHeader } from "@/components/ProfilHeader";
 import { ProfilSubnav } from "@/components/ProfilSubnav";
+import { PaymentServiceCompactSummary } from "@/components/PaymentHistoryList";
+import { fetchUserPaymentServiceSummaries } from "@/lib/payment-history";
 
 export const metadata: Metadata = {
   title: "Profilim",
@@ -71,10 +73,11 @@ export default async function ProfilLayout({
     redirect(`/giris?next=${encodeURIComponent("/profil")}`);
   }
 
-  const [profile, adminProfile, followCounts] = await Promise.all([
+  const [profile, adminProfile, followCounts, serviceSummaries] = await Promise.all([
     user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
     user.id ? fetchAdminProfileByUserId(supabase, user.id) : Promise.resolve(null),
     user.id ? fetchFollowCounts(supabase, user.id) : Promise.resolve({ followers: 0, following: 0 }),
+    user.id ? fetchUserPaymentServiceSummaries(supabase, user.id) : Promise.resolve([]),
   ]);
 
   const meta = readNamesAndAvatar(user);
@@ -126,6 +129,8 @@ export default async function ProfilLayout({
         followerCount={followCounts.followers}
         followingCount={followCounts.following}
       />
+
+      <PaymentServiceCompactSummary summaries={serviceSummaries} />
 
       <ProfilSubnav />
 

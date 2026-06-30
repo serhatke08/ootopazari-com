@@ -100,8 +100,6 @@ export async function POST(req: Request) {
     alreadyApplied: result.alreadyApplied,
     dealerType: result.dealerType,
     membershipExpiresAt: result.membershipExpiresAt,
-    message: result.alreadyApplied
-      ? "Bayi üyeliğiniz zaten aktif."
-      : `${dealerLabel} bayi üyeliğiniz aktifleştirildi${expiresLabel ? ` · Bitiş: ${expiresLabel}` : ""}.`,
+    message: `${dealerLabel} bayi üyeliğiniz aktifleştirildi. Ödemeniz için teşekkür ederiz${expiresLabel ? ` · Bitiş: ${expiresLabel}` : ""}.`,
   });
 }

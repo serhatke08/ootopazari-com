@@ -107,19 +107,28 @@ export async function POST(req: Request) {
       : `${label} bayi aylık üyelik (${membershipDays} gün)`;
 
   const admin = createSupabaseServiceClient();
-  if (admin) {
-    const { error: orderErr } = await admin.from("bayi_membership_payments").insert({
-      merchant_oid: merchantOid,
-      application_id: application.id,
-      user_id: user.id,
-      dealer_type: dealerType,
-      amount_kurus: paymentAmountKurus,
-      membership_days: membershipDays,
-      status: "pending",
-    });
-    if (orderErr) {
-      console.warn("bayi_membership_payments insert:", orderErr.message);
-    }
+  if (!admin) {
+    return NextResponse.json(
+      { ok: false, message: "Ödeme kaydı oluşturulamadı. Sunucu yapılandırmasını kontrol edin." },
+      { status: 500 }
+    );
+  }
+
+  const { error: orderErr } = await admin.from("bayi_membership_payments").insert({
+    merchant_oid: merchantOid,
+    application_id: application.id,
+    user_id: user.id,
+    dealer_type: dealerType,
+    amount_kurus: paymentAmountKurus,
+    membership_days: membershipDays,
+    status: "pending",
+  });
+  if (orderErr) {
+    console.error("bayi_membership_payments insert:", orderErr.message);
+    return NextResponse.json(
+      { ok: false, message: "Ödeme kaydı oluşturulamadı. Lütfen tekrar deneyin." },
+      { status: 500 }
+    );
   }
 
   const tokenResult = await createPaytrIframeToken(paytr, {
