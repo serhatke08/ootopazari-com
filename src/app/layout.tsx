@@ -6,6 +6,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { HomeSearchProvider } from "@/components/HomeSearchProvider";
+import { MainContentOverlay } from "@/components/MainContentOverlay";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -145,7 +146,9 @@ export default async function RootLayout({
             <SiteHeader />
           </Suspense>
           <div className="layout-with-mobile-nav flex flex-1 flex-col">
-            <main className="flex flex-1 flex-col bg-zinc-50">{children}</main>
+            <main className="flex min-h-0 flex-1 flex-col bg-zinc-50">
+              <MainContentOverlay>{children}</MainContentOverlay>
+            </main>
             <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />
           </div>
         </HomeSearchProvider>

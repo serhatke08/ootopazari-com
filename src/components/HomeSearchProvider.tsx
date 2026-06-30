@@ -4,18 +4,21 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 type HomeSearchContextValue = {
   queryOverride: string | null;
-  /** Arama başlar başlamaz true — skeleton anında gösterilir */
   isSearching: boolean;
-  pendingListingNo: string | null;
+  /** İlan detayına giderken tam sayfa detay iskeleti */
+  listingNavigationActive: boolean;
   applySearch: (q: string) => void;
-  beginListingNumberSearch: (no: string) => void;
+  navigateToListing: (router: AppRouterInstance, no: string) => void;
+  endListingNavigation: () => void;
   finishSearch: () => void;
   clearOverride: () => void;
 };
@@ -34,17 +37,29 @@ function scrollToListings() {
 export function HomeSearchProvider({ children }: { children: ReactNode }) {
   const [queryOverride, setQueryOverride] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [pendingListingNo, setPendingListingNo] = useState<string | null>(null);
+  const [listingNavigationActive, setListingNavigationActive] = useState(false);
+
+  const endListingNavigation = useCallback(() => {
+    setListingNavigationActive(false);
+  }, []);
 
   const finishSearch = useCallback(() => {
     setIsSearching(false);
-    setPendingListingNo(null);
   }, []);
+
+  const navigateToListing = useCallback(
+    (router: AppRouterInstance, no: string) => {
+      setListingNavigationActive(true);
+      setIsSearching(false);
+      setQueryOverride(null);
+      router.push(`/ilan/${no}`);
+    },
+    []
+  );
 
   const applySearch = useCallback((q: string) => {
     const trimmed = q.trim();
     setIsSearching(true);
-    setPendingListingNo(null);
     setQueryOverride(trimmed);
     const href = trimmed
       ? `/?q=${encodeURIComponent(trimmed)}`
@@ -53,40 +68,35 @@ export function HomeSearchProvider({ children }: { children: ReactNode }) {
     scrollToListings();
   }, []);
 
-  const beginListingNumberSearch = useCallback((no: string) => {
-    setIsSearching(true);
-    setPendingListingNo(no);
-    setQueryOverride(no);
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `/?q=${encodeURIComponent(no)}`
-    );
-    scrollToListings();
-  }, []);
-
   const clearOverride = useCallback(() => {
     setQueryOverride(null);
     setIsSearching(false);
-    setPendingListingNo(null);
   }, []);
+
+  useEffect(() => {
+    if (!listingNavigationActive) return;
+    const t = window.setTimeout(() => setListingNavigationActive(false), 15000);
+    return () => window.clearTimeout(t);
+  }, [listingNavigationActive]);
 
   const value = useMemo(
     () => ({
       queryOverride,
       isSearching,
-      pendingListingNo,
+      listingNavigationActive,
       applySearch,
-      beginListingNumberSearch,
+      navigateToListing,
+      endListingNavigation,
       finishSearch,
       clearOverride,
     }),
     [
       queryOverride,
       isSearching,
-      pendingListingNo,
+      listingNavigationActive,
       applySearch,
-      beginListingNumberSearch,
+      navigateToListing,
+      endListingNavigation,
       finishSearch,
       clearOverride,
     ]

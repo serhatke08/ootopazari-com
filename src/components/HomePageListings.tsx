@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { SupabasePublicEnv } from "@/lib/env";
 import type {
   HomeListingCardItem,
@@ -109,12 +109,14 @@ export function HomePageListings({
   initialLoggedIn,
   initialFilters,
 }: Props) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const homeSearch = useHomeSearch();
+  const clearOverrideRef = useRef(homeSearch?.clearOverride);
+  clearOverrideRef.current = homeSearch?.clearOverride;
+
   const qOverride = homeSearch?.queryOverride ?? null;
   const isSearching = homeSearch?.isSearching ?? false;
-  const pendingListingNo = homeSearch?.pendingListingNo ?? null;
+  const listingNavigationActive = homeSearch?.listingNavigationActive ?? false;
 
   const spString = searchParams.toString();
   const activeFilters = useMemo(
@@ -135,7 +137,6 @@ export function HomePageListings({
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notFoundMsg, setNotFoundMsg] = useState<string | null>(null);
   const fetchGen = useRef(0);
   const prevSpRef = useRef(spString);
 
@@ -143,72 +144,29 @@ export function HomePageListings({
   const cityMap = useMemo(() => buildCityMap(cities), [cities]);
   const brandMap = useMemo(() => buildBrandMap(brands), [brands]);
   const hasFilters = homeListingsFeedHasFilters(activeFilters);
-  const showSkeleton = isSearching || fetching;
+  const showGridSkeleton =
+    !listingNavigationActive && (isSearching || fetching);
 
   useEffect(() => {
     if (prevSpRef.current !== spString) {
       prevSpRef.current = spString;
-      homeSearch?.clearOverride();
+      clearOverrideRef.current?.();
     }
-  }, [spString, homeSearch]);
+  }, [spString]);
 
   useEffect(() => {
-    if (!pendingListingNo) return;
-
-    const gen = ++fetchGen.current;
-    setNotFoundMsg(null);
-    setFetching(true);
-    setError(null);
-
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/listings/lookup?no=${encodeURIComponent(pendingListingNo)}`
-        );
-        const data = (await res.json()) as {
-          ok?: boolean;
-          path?: string;
-          error?: string;
-        };
-        if (gen !== fetchGen.current) return;
-        if (data.ok && data.path) {
-          router.push(data.path);
-          return;
-        }
-        setNotFoundMsg(
-          `${pendingListingNo} numaralı ilan bulunamadı. Farklı bir arama deneyin.`
-        );
-        setItems([]);
-        setTotal(0);
-      } catch (e) {
-        if (gen !== fetchGen.current) return;
-        setError(e instanceof Error ? e.message : "Arama başarısız");
-      } finally {
-        if (gen === fetchGen.current) {
-          setFetching(false);
-          homeSearch?.finishSearch();
-        }
-      }
-    })();
-  }, [pendingListingNo, router, homeSearch]);
-
-  useEffect(() => {
-    if (pendingListingNo) return;
-
     if (apiQuery === serverQuery) {
       setItems(initialItems);
       setTotal(initialTotal);
       setLoggedIn(initialLoggedIn);
       setFetching(false);
       setError(null);
-      setNotFoundMsg(null);
       return;
     }
 
     const gen = ++fetchGen.current;
     setFetching(true);
     setError(null);
-    setNotFoundMsg(null);
 
     void (async () => {
       try {
@@ -245,7 +203,6 @@ export function HomePageListings({
     initialItems,
     initialTotal,
     initialLoggedIn,
-    pendingListingNo,
     homeSearch,
   ]);
 
@@ -282,7 +239,7 @@ export function HomePageListings({
 
           {hasFilters ? (
             <p className="mb-4 text-sm text-zinc-600">
-              {showSkeleton ? "Aranıyor…" : `${total} sonuç`}
+              {showGridSkeleton ? "Aranıyor…" : `${total} sonuç`}
               {cityId && cityMap.get(cityId)?.name
                 ? ` · ${cityMap.get(cityId)?.name}`
                 : ""}
@@ -305,14 +262,12 @@ export function HomePageListings({
             label="Sponsorlu"
           />
 
-          {showSkeleton ? (
+          {showGridSkeleton ? (
             <HomeListingsGridSkeleton count={10} />
           ) : error ? (
             <p className="text-sm text-red-600" role="alert">
               {error}
             </p>
-          ) : notFoundMsg ? (
-            <p className="text-sm text-zinc-600">{notFoundMsg}</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-zinc-600">
               {hasFilters

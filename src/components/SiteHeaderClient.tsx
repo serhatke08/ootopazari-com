@@ -92,8 +92,8 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
     e.preventDefault();
     const raw = value.trim();
     const listingNo = listingNumberFromSearchQuery(raw);
-    if (listingNo && onHome && homeSearch) {
-      homeSearch.beginListingNumberSearch(listingNo);
+    if (listingNo && homeSearch) {
+      homeSearch.navigateToListing(router, listingNo);
       return;
     }
     if (listingNo) {
