@@ -36,7 +36,8 @@ export async function GET(req: Request) {
       env,
       page,
       pageSize,
-      filters
+      filters,
+      { lite: !!filters.q?.trim() }
     );
 
     return NextResponse.json({

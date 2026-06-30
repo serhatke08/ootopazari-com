@@ -107,12 +107,15 @@ export async function fetchHomeListingsFeed(
   env: SupabasePublicEnv,
   page: number,
   pageSize: number,
-  filters: HomeListingsFeedFilters = {}
+  filters: HomeListingsFeedFilters = {},
+  options?: { lite?: boolean }
 ): Promise<{
   items: HomeListingCardItem[];
   total: number;
   loggedIn: boolean;
 }> {
+  const lite = options?.lite ?? false;
+
   const [categories, cities, { rows, total }] = await Promise.all([
     fetchCategories(supabase),
     fetchCities(supabase),
@@ -139,15 +142,37 @@ export async function fetchHomeListingsFeed(
     }),
   ]);
 
-  await enrichListingRowsCoverImages(
-    supabase,
-    env,
-    rows as Record<string, unknown>[]
-  );
+  if (!lite) {
+    await enrichListingRowsCoverImages(
+      supabase,
+      env,
+      rows as Record<string, unknown>[]
+    );
+  }
 
   const catMap = buildCategoryMap(categories);
   const cityMap = buildCityMap(cities);
   const ids = rows.map((r) => r.id).filter(Boolean) as string[];
+
+  if (lite) {
+    const sessionFav = await getSessionAndFavoriteSet(supabase, ids);
+    const emptyStats = new Map<string, ListingPublicStats>();
+    const emptyOwners = new Map<string, OwnerMini>();
+    const emptyRatings = new Map<string, PriceRatingSummary>();
+    return {
+      items: buildCardItems(
+        rows,
+        catMap,
+        cityMap,
+        emptyStats,
+        sessionFav.favoriteIds,
+        emptyOwners,
+        emptyRatings
+      ),
+      total,
+      loggedIn: !!sessionFav.user,
+    };
+  }
 
   const [statsMap, sessionFav, owners] = await Promise.all([
     fetchListingPublicStatsMap(supabase, ids),

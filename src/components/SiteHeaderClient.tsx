@@ -92,6 +92,10 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
     e.preventDefault();
     const raw = value.trim();
     const listingNo = listingNumberFromSearchQuery(raw);
+    if (listingNo && onHome && homeSearch) {
+      homeSearch.beginListingNumberSearch(listingNo);
+      return;
+    }
     if (listingNo) {
       router.push(`/ilan/${listingNo}`);
       return;

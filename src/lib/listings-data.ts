@@ -335,6 +335,12 @@ function buildTextSearchOrClause(term: string): string | null {
     for (const field of fields) {
       parts.push(`${field}.ilike.${t}`);
     }
+    if (/^\d+$/.test(v)) {
+      const n = Number(v);
+      if (Number.isFinite(n)) {
+        parts.push(`listing_number.eq.${n}`);
+      }
+    }
   }
   return parts.join(",");
 }
