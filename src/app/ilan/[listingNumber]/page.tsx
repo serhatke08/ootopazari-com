@@ -28,11 +28,11 @@ import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingImageGallery } from "@/components/ListingImageGallery";
 import { ListingViewTracker } from "@/components/ListingViewTracker";
-import { StatsBadges } from "@/components/StatsBadges";
+import { ListingDetailSellerStats } from "@/components/ListingDetailSellerStats";
 import {
+  parseDescriptionSpecLine,
   parseDescriptionVehicleSpecs,
   resolveListingModelDisplay,
-  specValue,
   type ListingSpecRow,
 } from "@/lib/listing-vehicle-display";
 import { CopyListingNumber } from "@/components/CopyListingNumber";
@@ -42,6 +42,8 @@ import { mergeExpertizWithDefaults, parseExpertizPanels } from "@/lib/expertiz";
 import {
   fetchVehicleBrandModelSeriCode,
   fetchListingEnginePackageLabels,
+  formatListingSeriesLine,
+  resolveListingVehicleCatalogParts,
 } from "@/lib/vehicle-hierarchy";
 import {
   fetchAdminProfileByUserId,
@@ -85,6 +87,33 @@ function fmtKm(n: unknown): string | undefined {
   return `${x.toLocaleString("tr-TR")} km`;
 }
 
+function fmtEngineCapacity(v: unknown): string | undefined {
+  if (v == null || v === "") return undefined;
+  if (typeof v === "string") {
+    const raw = v.trim();
+    if (!raw) return undefined;
+    if (/(cc|cm3|cm³|lt|litre|liter|l)$/i.test(raw)) return raw;
+    const n = Number(raw.replace(",", "."));
+    if (!Number.isFinite(n)) return raw;
+    return n > 20
+      ? `${Math.round(n).toLocaleString("tr-TR")} cc`
+      : `${String(n).replace(".", ",")} L`;
+  }
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return n > 20
+    ? `${Math.round(n).toLocaleString("tr-TR")} cc`
+    : `${String(n).replace(".", ",")} L`;
+}
+
+function fmtHorsepower(v: unknown): string | undefined {
+  if (v == null || v === "") return undefined;
+  if (typeof v === "string" && /hp|bg|ps/i.test(v)) return v.trim();
+  const n = Number(String(v).replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return `${Math.round(n).toLocaleString("tr-TR")} HP`;
+}
+
 function fmtListingDate(v: unknown): string | undefined {
   if (v == null || v === "") return undefined;
   const d = v instanceof Date ? v : new Date(String(v));
@@ -100,6 +129,70 @@ function strCell(v: unknown): string | undefined {
   if (v == null || v === "") return undefined;
   const s = String(v).trim();
   return s || undefined;
+}
+
+function firstSpecLine(text: string, labels: string[]): string | undefined {
+  for (const label of labels) {
+    const value = parseDescriptionSpecLine(text, label);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function optionalSpecValue(
+  value: string | number | boolean | null | undefined
+): string | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  if (typeof value === "boolean") return value ? "Evet" : "Hayır";
+  const text = String(value).trim();
+  return text || undefined;
+}
+
+function specRow(
+  label: string,
+  value: string | number | boolean | null | undefined
+): ListingSpecRow | null {
+  const v = optionalSpecValue(value);
+  return v ? { label, value: v } : null;
+}
+
+function compactRows(rows: Array<ListingSpecRow | null | undefined>): ListingSpecRow[] {
+  return rows.filter((row): row is ListingSpecRow => Boolean(row));
+}
+
+function stripKnownParts(
+  text: string | null | undefined,
+  parts: Array<string | null | undefined>
+): string | undefined {
+  let out = text?.trim() ?? "";
+  if (!out) return undefined;
+  for (const part of parts) {
+    const p = part?.trim();
+    if (!p) continue;
+    const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out
+      .replace(new RegExp(`\\b${escaped}\\b`, "i"), "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+  return out || undefined;
+}
+
+function inferModelOnlyFromVehicleModel(
+  vehicleModel: string | null | undefined
+): string | undefined {
+  const raw = vehicleModel?.trim();
+  if (!raw) return undefined;
+  const parts = raw.split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return raw;
+  const numericIndex = parts.findIndex((part, index) => {
+    if (index === 0) return false;
+    return /\d/.test(part);
+  });
+  if (numericIndex > 0) {
+    return parts.slice(0, numericIndex).join(" ");
+  }
+  return parts[0];
 }
 
 function trimOnlyFromRow(row: Record<string, unknown>): string | undefined {
@@ -451,9 +544,6 @@ export default async function IlanDetayPage({ params }: Props) {
       ? mergeExpertizWithDefaults(expertizPanelsParsed)
       : null;
 
-  const plaka = pick(row, ["plate_number", "plaka", "license_plate"]);
-  const uyruk = pick(row, ["nationality", "uyruk", "country_name", "country"]);
-
   const brandModelFk = pick(row, [
     "vehicle_brand_model_id",
     "brand_model_id",
@@ -526,100 +616,159 @@ export default async function IlanDetayPage({ params }: Props) {
   const packageId = pick(row, ["vehicle_engine_package_id"]) as string | undefined;
   const hierarchyLabels = packageId
     ? await fetchListingEnginePackageLabels(supabase, String(packageId))
-    : { motor: null, paket: null };
+    : { motor: null, paket: null, horsepower: null, engineCapacityCc: null };
+  const rawVehicleModel = listing.vehicle_model as string | null | undefined;
+  const catalogParts = !packageId
+    ? await resolveListingVehicleCatalogParts(supabase, {
+        brandId: listing.vehicle_brand_id,
+        rawModel: rawVehicleModel,
+      })
+    : {
+        model: null,
+        motor: null,
+        paket: null,
+        horsepower: null,
+        engineCapacityCc: null,
+        variantRemainder: null,
+      };
 
   const motorDisplay =
     motorNote?.trim() ||
     hierarchyLabels.motor ||
+    catalogParts.motor ||
     descSpecs.motor ||
     labelFromEquipmentLines(equipmentLines, "Motor") ||
     strCell(pick(row, ["engine_name", "motor_name", "engine_label"]));
   const paketDisplay =
     paketNote?.trim() ||
     hierarchyLabels.paket ||
+    catalogParts.paket ||
     descSpecs.paket ||
     labelFromEquipmentLines(equipmentLines, "Paket") ||
     strCell(pick(row, ["package_name", "paket_name", "package_label"]));
 
-  const modelForDisplay = resolveListingModelDisplay({
+  const legacyModelForDisplay = resolveListingModelDisplay({
     trimModel: modelDisplay,
     motor: motorDisplay,
     paket: paketDisplay,
     vehicleModel: listing.vehicle_model as string | null | undefined,
     seri: seriDisplay,
   });
-  
+  const strippedModel = stripKnownParts(rawVehicleModel, [
+    motorDisplay,
+    paketDisplay,
+    legacyModelForDisplay,
+  ]);
+  const modelForDisplay =
+    catalogParts.model ||
+    seriDisplay ||
+    (strippedModel && strippedModel !== rawVehicleModel?.trim()
+      ? strippedModel
+      : inferModelOnlyFromVehicleModel(rawVehicleModel)) ||
+    legacyModelForDisplay;
+  const detailVehicleSeries = formatListingSeriesLine({
+    engine: motorDisplay,
+    package: paketDisplay,
+    variantRemainder: catalogParts.variantRemainder,
+    rawModel: rawVehicleModel,
+    resolvedModel: modelForDisplay,
+  });
+
   const kasaDisplay =
     listing.body_type?.toString().trim() ||
     kasaNote?.trim() ||
     descSpecs.kasa;
 
-  const vehicleSpecRows: ListingSpecRow[] = [
-    { label: "Marka", value: specValue(brandName) },
-    { label: "Seri", value: specValue(seriDisplay) },
-    {
-      label: "Model",
-      value: specValue(modelForDisplay),
-    },
-    { label: "Yıl", value: specValue(listing.vehicle_year as number | null) },
-    { label: "Yakıt Tipi", value: specValue(listing.fuel_type as string) },
-    {
-      label: isMotorcycle ? "Şanzıman" : "Vites",
-      value: specValue(listing.transmission_type as string),
-    },
-    {
-      label: "Kilometre",
-      value: specValue(
-        fmtKm(listing.vehicle_mileage ?? pick(row, ["km"])) ?? null
-      ),
-    },
-    ...(isCarLike
-      ? [{ label: "Kasa", value: specValue(kasaDisplay) }]
-      : []),
-    { label: "Kategori", value: specValue(categoryName) },
-    {
-      label: isMotorcycle ? "Renk / Kaplama" : "Renk",
-      value: specValue(listing.color as string),
-    },
-    {
-      label: "Hasar",
-      value: specValue(
-        listing.is_damaged === true
-          ? "Evet"
-          : listing.is_damaged === false
-            ? "Hayır"
-            : null
-      ),
-    },
-    {
-      label: isMotorcycle ? "Ekspertiz / kontrol raporu" : "Ekspertiz raporu",
-      value: specValue(
-        listing.has_expertise === true
-          ? "Var"
-          : listing.has_expertise === false
-            ? "Yok"
-            : null
-      ),
-    },
-    {
-      label: "Takas",
-      value: specValue(
-        listing.is_tradeable === true
-          ? "Evet"
-          : listing.is_tradeable === false
-            ? "Hayır"
-            : null
-      ),
-    },
-    ...(isCarLike
-      ? [{ label: "Çekiş", value: specValue(listing.drive_type as string) }]
-      : []),
-  ];
+  const vehicleConditionFromDesc = firstSpecLine(rawDesc, [
+    "Araç durumu",
+    "Araç Durumu",
+  ]);
+  const warrantyFromDesc = firstSpecLine(rawDesc, ["Garanti"]);
+  const heavyDamageFromDesc = firstSpecLine(rawDesc, [
+    "Ağır hasar kayıtlı",
+    "Ağır hasar kaydı",
+    "Ağır hasar",
+  ]);
+  const plateNationalityFromDesc = firstSpecLine(rawDesc, [
+    "Plaka/Uyruk",
+    "Plaka / Uyruk",
+    "Uyruk",
+    "Plaka",
+  ]);
+  const vehiclePlate = strCell(
+    pick(row, ["vehicle_plate", "plate_number", "plaka", "license_plate"])
+  );
+  const engineCapacityDisplay = fmtEngineCapacity(
+    pick(row, [
+      "vehicle_engine_cc",
+      "engine_capacity",
+      "motor_hacmi",
+      "engine_cc",
+    ]) ?? hierarchyLabels.engineCapacityCc ?? catalogParts.engineCapacityCc
+  );
+  const enginePowerDisplay = fmtHorsepower(
+    pick(row, [
+      "vehicle_engine_hp",
+      "engine_power",
+      "motor_gucu",
+      "motor_power",
+    ]) ?? hierarchyLabels.horsepower ?? catalogParts.horsepower
+  );
+
+  const vehicleSpecRows = compactRows([
+    specRow("İlan No", num != null ? `#${String(num)}` : null),
+    specRow("Konum", cityDisplayResolved),
+    specRow("Marka", brandName),
+    specRow("Model", modelForDisplay),
+    specRow("Seri", detailVehicleSeries),
+    specRow("Üretim yılı", listing.vehicle_year as number | null),
+    specRow(
+      "Kilometre",
+      fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))
+    ),
+    specRow("Yakıt", listing.fuel_type as string),
+    specRow(isMotorcycle ? "Şanzıman" : "Vites", listing.transmission_type as string),
+    specRow("Motor hacmi", engineCapacityDisplay),
+    specRow("Motor gücü (HP)", enginePowerDisplay),
+    specRow(isMotorcycle ? "Renk / Kaplama" : "Renk", listing.color as string),
+    specRow("Kasa tipi", kasaDisplay),
+    specRow("Çekiş", listing.drive_type as string),
+    specRow("Araç durumu", vehicleConditionFromDesc),
+    specRow("Garanti", warrantyFromDesc),
+    specRow("Ağır hasar kayıtlı", heavyDamageFromDesc),
+    specRow("Plaka/Uyruk", plateNationalityFromDesc),
+    specRow("Plaka", vehiclePlate),
+    specRow(
+      isMotorcycle ? "Ekspertiz / kontrol raporu" : "Ekspertiz raporu",
+      listing.has_expertise === true
+        ? "Var"
+        : listing.has_expertise === false
+          ? "Yok"
+          : null
+    ),
+    specRow(
+      "Hasarlı",
+      listing.is_damaged === true
+        ? "Evet"
+        : listing.is_damaged === false
+          ? "Hayır"
+          : null
+    ),
+    specRow(
+      "Takaslı",
+      listing.is_tradeable === true
+        ? "Evet"
+        : listing.is_tradeable === false
+          ? "Hayır"
+          : null
+    ),
+  ]);
 
   const vehicleBreadcrumb = [
+    categoryName?.trim(),
     brandName?.trim(),
-    seriDisplay?.trim(),
     modelForDisplay?.trim(),
+    detailVehicleSeries?.trim(),
   ].filter((p): p is string => !!p);
 
   const equipmentTabContent =
@@ -923,14 +1072,12 @@ export default async function IlanDetayPage({ params }: Props) {
                     {adminProfile ? <AdminVerifiedBadge /> : null}
                   </div>
                 </Link>
-                {stats ? (
-                  <div className="mt-3 border-t border-black/10 pt-3">
-                    <StatsBadges
-                      variant="inline"
-                      views={stats.views}
-                      favorites={stats.favorites}
-                    />
-                  </div>
+                {stats && id ? (
+                  <ListingDetailSellerStats
+                    listingId={id}
+                    initialViews={stats.views}
+                    initialFavorites={stats.favorites}
+                  />
                 ) : null}
                 {showMessageButton && id ? (
                   <div className="mt-3 flex gap-2">

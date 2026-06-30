@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { incrementListingView } from "@/lib/increment-listing-view";
+import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 
 /** Detay sayfası her açıldığında çağrılır; her çağrı +1 hedefler. */
 export async function POST(req: Request) {
@@ -28,5 +29,11 @@ export async function POST(req: Request) {
     listingId,
     user?.id ?? null
   );
-  return NextResponse.json({ ok });
+  const stats = await fetchListingPublicStatsMap(supabase, [listingId]);
+  const current = stats.get(listingId);
+  return NextResponse.json({
+    ok,
+    views: current?.views,
+    favorites: current?.favorites,
+  });
 }

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 export type ListingPublicStats = {
   listingId: string;
@@ -47,6 +48,41 @@ async function fetchFavoriteCountsMap(
   return { map: out, ok };
 }
 
+async function fetchViewCountsMapWithServiceRole(
+  ids: string[]
+): Promise<Map<string, number> | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !serviceKey) return null;
+
+  const admin = createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const out = new Map<string, number>();
+
+  for (let i = 0; i < ids.length; i += CHUNK_IDS) {
+    const chunk = ids.slice(i, i + CHUNK_IDS);
+    const { data, error } = await admin
+      .from("listing_views")
+      .select("listing_id")
+      .in("listing_id", chunk);
+
+    if (error) {
+      console.warn("listing_views stats:", error.message);
+      return null;
+    }
+
+    for (const raw of data ?? []) {
+      const row = raw as { listing_id?: string };
+      if (row.listing_id == null) continue;
+      const lid = String(row.listing_id);
+      out.set(lid, (out.get(lid) ?? 0) + 1);
+    }
+  }
+
+  return out;
+}
+
 function rowToStatsRpc(row: Record<string, unknown>): ListingPublicStats | null {
   const id =
     row.listing_id ?? row.listingId ?? row.id;
@@ -82,7 +118,7 @@ export async function fetchListingPublicStatsMap(
   const unique = [...new Set(listingIds.filter(Boolean))];
   if (unique.length === 0) return map;
 
-  const { map: favMap, ok: favQueryOk } = await fetchFavoriteCountsMap(
+  const { map: favMap } = await fetchFavoriteCountsMap(
     supabase,
     unique
   );
@@ -110,11 +146,14 @@ export async function fetchListingPublicStatsMap(
     }
   }
 
+  const serviceViewMap = await fetchViewCountsMapWithServiceRole(unique);
+
   for (const id of unique) {
-    const favorites = favQueryOk
-      ? (favMap.get(id) ?? 0)
-      : (rpcFavById.get(id) ?? favMap.get(id) ?? 0);
-    const views = rpcViewById.get(id) ?? 0;
+    const favorites = Math.max(
+      favMap.get(id) ?? 0,
+      rpcFavById.get(id) ?? 0
+    );
+    const views = serviceViewMap?.get(id) ?? rpcViewById.get(id) ?? 0;
     map.set(id, {
       listingId: id,
       favorites,

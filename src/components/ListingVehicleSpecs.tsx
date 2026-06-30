@@ -5,7 +5,9 @@ type Props = {
 };
 
 export function ListingVehicleSpecs({ rows }: Props) {
-  const visible = rows.filter((r) => r.label.trim() !== "");
+  const visible = rows.filter(
+    (r) => r.label.trim() !== "" && r.value.trim() !== "" && r.value !== "—"
+  );
   if (visible.length === 0) {
     return (
       <p className="px-4 py-6 text-sm text-black/55">Araç bilgisi girilmemiş.</p>
@@ -13,18 +15,22 @@ export function ListingVehicleSpecs({ rows }: Props) {
   }
 
   return (
-    <dl className="grid grid-cols-1 sm:grid-cols-2">
-      {visible.map((row) => (
-        <div
-          key={row.label}
-          className="border-b border-black/8 px-4 py-3.5 sm:odd:border-r sm:odd:border-black/8"
-        >
-          <dt className="text-xs font-medium text-black/50">{row.label}</dt>
-          <dd className="mt-1 text-[15px] font-semibold leading-snug text-black">
-            {row.value}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <table className="w-full table-fixed border-collapse text-left">
+      <tbody>
+        {visible.map((row) => (
+          <tr key={row.label} className="border-b border-black/8 last:border-b-0">
+            <th
+              scope="row"
+              className="w-[38%] bg-zinc-50 px-3 py-2.5 align-top text-[13px] font-semibold leading-snug text-black/55 sm:w-[32%] sm:px-4"
+            >
+              {row.label}
+            </th>
+            <td className="px-3 py-2.5 align-top text-[14px] font-semibold leading-snug text-black sm:px-4">
+              {row.value}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
