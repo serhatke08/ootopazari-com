@@ -172,6 +172,7 @@ export function SiteHeaderClient({
   email,
   hasEnv,
   hasListings: serverHasListings,
+  isParcaciDealerActive,
 }: {
   categories: CategoryRow[];
   dealerApplications: BayiApplicationMenuRow[];
@@ -179,6 +180,7 @@ export function SiteHeaderClient({
   email: string | null;
   hasEnv: boolean;
   hasListings: boolean;
+  isParcaciDealerActive: boolean;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -360,7 +362,13 @@ export function SiteHeaderClient({
                   href="/ilan-ver"
                   className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-extrabold text-[#ffcc00] hover:bg-zinc-800 md:inline-flex lg:px-3 lg:py-2 lg:text-sm"
                 >
-                  İlan ver
+                  {isParcaciDealerActive ? "Urun ekle" : "Ilan ver"}
+                </Link>
+                <Link
+                  href={isParcaciDealerActive ? "/bayi/panel/parcaci" : "/parca"}
+                  className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white lg:inline-flex lg:px-3 lg:py-2 lg:text-sm"
+                >
+                  {isParcaciDealerActive ? "Magaza paneli" : "Parca pazari"}
                 </Link>
                 {hasListings ? (
                   <Link

@@ -1,4 +1,5 @@
 import { SiteHeaderClient } from "@/components/SiteHeaderClient";
+import { normalizeDealerState } from "@/lib/bayi-application-status";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import {
   fetchBayiApplicationsForMenu,
@@ -18,6 +19,7 @@ export async function SiteHeader() {
   let drawerProfile: { displayName: string; avatarUrl: string | null } | null =
     null;
   let hasListings = false;
+  let isParcaciDealerActive = false;
 
   if (env) {
     try {
@@ -57,6 +59,24 @@ export async function SiteHeader() {
             : publicAvatarUrl(env, raw.replace(/^\/+/, ""));
         }
         drawerProfile = { displayName, avatarUrl };
+
+        const { data: parcaciApplication } = await supabase
+          .from("bayi_applications")
+          .select("status,payment_status,membership_expires_at")
+          .eq("user_id", user.id)
+          .eq("dealer_type", "parcaci")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (parcaciApplication) {
+          const state = normalizeDealerState(
+            parcaciApplication.status,
+            parcaciApplication.payment_status,
+            parcaciApplication.membership_expires_at
+          );
+          isParcaciDealerActive = state === "active";
+        }
       }
     } catch {
       categories = [];
@@ -72,6 +92,7 @@ export async function SiteHeader() {
       email={email}
       hasEnv={!!env}
       hasListings={hasListings}
+      isParcaciDealerActive={isParcaciDealerActive}
     />
   );
 }

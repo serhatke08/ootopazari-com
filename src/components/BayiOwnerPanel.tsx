@@ -73,7 +73,7 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
     },
     {
       key: "products",
-      label: getAddProductButtonText(dealerType),
+      label: dealerType === "parcaci" ? "Urun Yonetimi" : getAddProductButtonText(dealerType),
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -101,7 +101,7 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
     },
     {
       key: "store",
-      label: "Bayim",
+      label: dealerType === "parcaci" ? "Magaza Bilgileri" : "Bayim",
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -235,6 +235,42 @@ export function BayiOwnerPanel({ dealerType, application, children }: Props) {
               label="%30 indirimli yıllık"
               className="rounded-lg bg-emerald-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-950 disabled:cursor-not-allowed disabled:opacity-60"
             />
+          </div>
+        </div>
+      ) : null}
+
+      {dealerType === "parcaci" && dealerState === "active" ? (
+        <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-white">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-300">
+                Parcaci Hizli Islem
+              </p>
+              <p className="text-sm font-bold">Musteri ve bayi gorunumleri ayrildi</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("products")}
+                className="rounded-lg bg-[#ffcc00] px-3 py-2 text-xs font-extrabold text-black hover:bg-[#ffd84d]"
+              >
+                Urun ekle / duzenle
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("store")}
+                className="rounded-lg border border-zinc-500 px-3 py-2 text-xs font-bold text-white hover:bg-zinc-800"
+              >
+                Magaza bilgisi duzenle
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("messages")}
+                className="rounded-lg border border-zinc-500 px-3 py-2 text-xs font-bold text-white hover:bg-zinc-800"
+              >
+                Musteri mesajlari
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
