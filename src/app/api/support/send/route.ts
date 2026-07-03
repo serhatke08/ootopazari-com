@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import { isSupportAgentUserId } from "@/lib/support-agent";
+import {
+  canAccessSupportThread,
+  fetchSupportThreadServer,
+  insertSupportMessageServer,
+  notifySupportAgentOfMessage,
+  notifyUserOfSupportReply,
+} from "@/lib/support-chat-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Body = {
@@ -33,37 +40,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Mesaj çok uzun." }, { status: 400 });
   }
 
-  const { data: thread, error: threadErr } = await supabase
-    .from("support_threads")
-    .select("id,user_id")
-    .eq("id", threadId)
-    .maybeSingle();
-
-  if (threadErr || !thread) {
+  const thread = await fetchSupportThreadServer(threadId);
+  if (!thread) {
     return NextResponse.json({ error: "Sohbet bulunamadı." }, { status: 404 });
   }
 
-  const isOwner = String(thread.user_id) === user.id;
-  const isSupportAgent = isSupportAgentUserId(user.id);
-  if (!isOwner && !isSupportAgent) {
+  if (!canAccessSupportThread(thread, user.id)) {
     return NextResponse.json({ error: "Yetkisiz." }, { status: 403 });
   }
 
-  const { data: message, error: insertErr } = await supabase
-    .from("support_messages")
-    .insert({
-      thread_id: threadId,
-      sender_id: user.id,
-      content,
-    })
-    .select("id,thread_id,sender_id,content,created_at")
-    .single();
+  const message = await insertSupportMessageServer({
+    threadId,
+    senderId: user.id,
+    content,
+  });
 
-  if (insertErr || !message) {
+  if (!message) {
     return NextResponse.json(
-      { error: insertErr?.message ?? "Mesaj gönderilemedi." },
+      {
+        error:
+          "Mesaj gönderilemedi. Supabase'de support_messages tablosu kurulu mu kontrol edin.",
+      },
       { status: 500 }
     );
+  }
+
+  const isSupportAgent = isSupportAgentUserId(user.id);
+  if (isSupportAgent) {
+    await notifyUserOfSupportReply({
+      userId: thread.user_id,
+      content,
+    });
+  } else {
+    await notifySupportAgentOfMessage({
+      threadUserId: thread.user_id,
+      content,
+    });
   }
 
   return NextResponse.json({ message });

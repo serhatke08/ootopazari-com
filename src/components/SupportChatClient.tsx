@@ -53,6 +53,22 @@ export function SupportChatClient({
   useEffect(() => {
     if (!threadId) return;
 
+    let cancelled = false;
+
+    async function refreshMessages() {
+      try {
+        const res = await fetch(
+          `/api/support/messages?threadId=${encodeURIComponent(threadId)}`
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { messages?: SupportMessageRow[] };
+        if (cancelled || !data.messages) return;
+        setMessages(data.messages);
+      } catch {
+        // Sessiz yenileme
+      }
+    }
+
     const channel = supabase
       .channel(`support:${threadId}`)
       .on(
@@ -73,7 +89,13 @@ export function SupportChatClient({
       )
       .subscribe();
 
+    const poll = window.setInterval(() => {
+      void refreshMessages();
+    }, 4000);
+
     return () => {
+      cancelled = true;
+      window.clearInterval(poll);
       void supabase.removeChannel(channel);
     };
   }, [supabase, threadId]);
@@ -83,18 +105,21 @@ export function SupportChatClient({
     setLoadingThread(true);
     setError(null);
     try {
-      const { data, error: fetchErr } = await supabase
-        .from("support_messages")
-        .select("id,thread_id,sender_id,content,created_at")
-        .eq("thread_id", nextThreadId)
-        .order("created_at", { ascending: true });
-
-      if (fetchErr) {
-        setError(fetchErr.message);
+      const res = await fetch(
+        `/api/support/messages?threadId=${encodeURIComponent(nextThreadId)}`
+      );
+      const data = (await res.json()) as {
+        error?: string;
+        messages?: SupportMessageRow[];
+      };
+      if (!res.ok) {
+        setError(data.error ?? "Mesajlar yüklenemedi.");
         return;
       }
       setThreadId(nextThreadId);
-      setMessages((data ?? []) as SupportMessageRow[]);
+      setMessages(data.messages ?? []);
+    } catch {
+      setError("Bağlantı hatası. Tekrar deneyin.");
     } finally {
       setLoadingThread(false);
     }
