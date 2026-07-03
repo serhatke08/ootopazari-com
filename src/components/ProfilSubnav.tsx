@@ -13,6 +13,7 @@ export function ProfilSubnav() {
   const pathname = usePathname();
   const isIlanlarim = pathname.startsWith("/profil/ilanlarim");
   const isOdemeler = pathname.startsWith("/profil/odemeler");
+  const isDestek = pathname.startsWith("/profil/destek");
   const isAyarlar = pathname.startsWith("/profil/ayarlar");
 
   return (
@@ -32,6 +33,12 @@ export function ProfilSubnav() {
           className={`${tabClass} ${isOdemeler ? active : inactive}`}
         >
           Ödemeler
+        </Link>
+        <Link
+          href="/profil/destek"
+          className={`${tabClass} ${isDestek ? active : inactive}`}
+        >
+          Destek
         </Link>
         <Link
           href="/profil/ayarlar"

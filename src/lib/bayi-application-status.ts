@@ -13,6 +13,13 @@ import { DEALER_MONTHLY_FEES } from "./bayi-types";
 /**
  * Bayi başvuru durumunu normalize eder
  */
+function membershipIsActive(membershipExpiresAt: string | null): boolean {
+  if (!membershipExpiresAt) return false;
+  const expiresAt = new Date(membershipExpiresAt);
+  if (Number.isNaN(expiresAt.getTime())) return false;
+  return expiresAt.getTime() > Date.now();
+}
+
 export function normalizeDealerState(
   status: ApplicationStatus,
   paymentStatus: PaymentStatus,
@@ -27,16 +34,12 @@ export function normalizeDealerState(
   }
 
   // approved
-  if (paymentStatus === "paid") {
-    // Üyelik süresi dolmuş mu kontrol et
-    if (membershipExpiresAt) {
-      const expiresAt = new Date(membershipExpiresAt);
-      const now = new Date();
-      if (expiresAt < now) {
-        return "overdue";
-      }
-    }
+  if (membershipIsActive(membershipExpiresAt)) {
     return "active";
+  }
+
+  if (paymentStatus === "paid") {
+    return "overdue";
   }
 
   if (paymentStatus === "overdue") {

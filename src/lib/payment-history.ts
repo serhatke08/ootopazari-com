@@ -359,14 +359,16 @@ export async function fetchUserPaymentServiceSummaries(
       : null;
     const dealerType = String(row.dealer_type) as DealerType;
     const isPaid = String(row.payment_status) === "paid";
-    if (!expiresAt && !isPaid) continue;
+    const isActive =
+      expiresAt != null && new Date(expiresAt).getTime() > now;
+    if (!isActive && !isPaid) continue;
     if (expiresAt && new Date(expiresAt).getTime() <= now) continue;
 
     summaries.push({
       id: `bayi-service:${row.id}`,
       kind: "bayi_membership",
       title: `${DEALER_TYPE_LABELS[dealerType] ?? dealerType} bayi aboneliği`,
-      detail: isPaid ? "Aktif bayi üyeliği" : "Üyelik ödeme bekliyor",
+      detail: isActive ? "Aktif bayi üyeliği" : "Üyelik ödeme bekliyor",
       href: `/bayi/panel/${dealerType}`,
       expiresAt,
     });
