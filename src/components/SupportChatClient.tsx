@@ -2,14 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  getSupportAgentUserId,
+  SUPPORT_AGENT_DISPLAY_NAME,
+} from "@/lib/support-agent";
 import type { SupportMessageRow, SupportThreadSummary } from "@/lib/support-chat";
 
 type Props = {
   currentUserId: string;
-  isAdmin: boolean;
+  isSupportAgent: boolean;
   initialThreadId: string;
   initialMessages: SupportMessageRow[];
-  adminThreads?: SupportThreadSummary[];
+  supportThreads?: SupportThreadSummary[];
 };
 
 function formatWhen(value: string): string {
@@ -23,11 +27,12 @@ function formatWhen(value: string): string {
 
 export function SupportChatClient({
   currentUserId,
-  isAdmin,
+  isSupportAgent,
   initialThreadId,
   initialMessages,
-  adminThreads = [],
+  supportThreads = [],
 }: Props) {
+  const supportAgentUserId = getSupportAgentUserId();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [threadId, setThreadId] = useState(initialThreadId);
   const [messages, setMessages] = useState(initialMessages);
@@ -74,7 +79,7 @@ export function SupportChatClient({
   }, [supabase, threadId]);
 
   async function loadThread(nextThreadId: string) {
-    if (!isAdmin || nextThreadId === threadId) return;
+    if (!isSupportAgent || nextThreadId === threadId) return;
     setLoadingThread(true);
     setError(null);
     try {
@@ -128,19 +133,19 @@ export function SupportChatClient({
   }
 
   return (
-    <div className={isAdmin ? "grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]" : ""}>
-      {isAdmin ? (
+    <div className={isSupportAgent ? "grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]" : ""}>
+      {isSupportAgent ? (
         <aside className="rounded-xl border border-zinc-200 bg-white p-2">
           <p className="px-2 py-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Destek sohbetleri
+            Gelen destek mesajları
           </p>
           <ul className="mt-1 max-h-[28rem] space-y-1 overflow-y-auto">
-            {adminThreads.length === 0 ? (
+            {supportThreads.length === 0 ? (
               <li className="px-2 py-4 text-center text-xs text-zinc-500">
                 Henüz destek mesajı yok.
               </li>
             ) : (
-              adminThreads.map((thread) => {
+              supportThreads.map((thread) => {
                 const active = thread.id === threadId;
                 return (
                   <li key={thread.id}>
@@ -175,12 +180,12 @@ export function SupportChatClient({
       <div className="flex min-h-[28rem] flex-col rounded-xl border border-zinc-200 bg-white">
         <div className="border-b border-zinc-200 px-4 py-3">
           <p className="text-sm font-bold text-zinc-900">
-            {isAdmin ? "Destek yanıtı" : "Destek"}
+            {isSupportAgent ? "Destek yanıtı" : SUPPORT_AGENT_DISPLAY_NAME}
           </p>
           <p className="mt-0.5 text-xs text-zinc-600">
-            {isAdmin
+            {isSupportAgent
               ? "Kullanıcı mesajlarına buradan yanıt verin."
-              : "Mesajlarınız doğrudan destek ekibine iletilir."}
+              : "Mesajlarınız destek ekibine iletilir; yanıtlar burada görünür."}
           </p>
         </div>
 
@@ -194,6 +199,8 @@ export function SupportChatClient({
           ) : (
             messages.map((message) => {
               const mine = message.sender_id === currentUserId;
+              const fromSupportAgent =
+                !mine && message.sender_id === supportAgentUserId;
               return (
                 <div
                   key={message.id}
@@ -206,6 +213,11 @@ export function SupportChatClient({
                         : "border border-zinc-200 bg-zinc-50 text-zinc-900"
                     }`}
                   >
+                    {fromSupportAgent ? (
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                        {SUPPORT_AGENT_DISPLAY_NAME}
+                      </p>
+                    ) : null}
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                     <p
                       className={`mt-1 text-[10px] ${

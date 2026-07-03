@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
+import { isSupportAgentUserId } from "@/lib/support-agent";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Body = {
@@ -43,9 +43,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sohbet bulunamadı." }, { status: 404 });
   }
 
-  const admin = await fetchAdminProfileByUserId(supabase, user.id);
   const isOwner = String(thread.user_id) === user.id;
-  if (!isOwner && !admin) {
+  const isSupportAgent = isSupportAgentUserId(user.id);
+  if (!isOwner && !isSupportAgent) {
     return NextResponse.json({ error: "Yetkisiz." }, { status: 403 });
   }
 

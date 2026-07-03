@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupportAgentUserId } from "@/lib/support-agent";
 
 export type SupportThreadRow = {
   id: string;
@@ -98,10 +99,12 @@ export async function fetchAllSupportThreadsForAdmin(
   }
 
   const rows = (threads ?? []) as SupportThreadRow[];
-  if (rows.length === 0) return [];
+  const supportAgentId = getSupportAgentUserId();
+  const filteredRows = rows.filter((t) => t.user_id !== supportAgentId);
+  if (filteredRows.length === 0) return [];
 
-  const threadIds = rows.map((t) => t.id);
-  const userIds = [...new Set(rows.map((t) => t.user_id))];
+  const threadIds = filteredRows.map((t) => t.id);
+  const userIds = [...new Set(filteredRows.map((t) => t.user_id))];
 
   const [{ data: messages }, { data: profiles }] = await Promise.all([
     supabase
@@ -129,7 +132,7 @@ export async function fetchAllSupportThreadsForAdmin(
     });
   }
 
-  return rows.map((thread) => {
+  return filteredRows.map((thread) => {
     const last = lastByThread.get(thread.id);
     return {
       ...thread,

@@ -1,4 +1,4 @@
--- Destek sohbeti: kullanıcı <-> admin (admin_profiles)
+-- Destek sohbeti: kullanıcı <-> destek hesabı (1f244457-3a09-41ae-85ca-0e354fc85505)
 -- Supabase SQL Editor'da bir kez çalıştırın.
 
 create table if not exists public.support_threads (
@@ -22,18 +22,14 @@ create index if not exists support_threads_updated_at_idx
 create index if not exists support_messages_thread_id_created_at_idx
   on public.support_messages (thread_id, created_at asc);
 
-create or replace function public.is_admin_user()
+create or replace function public.is_support_agent_user()
 returns boolean
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select exists (
-    select 1
-    from public.admin_profiles
-    where user_id = auth.uid()
-  );
+  select auth.uid() = '1f244457-3a09-41ae-85ca-0e354fc85505'::uuid;
 $$;
 
 create or replace function public.touch_support_thread_updated_at()
@@ -60,11 +56,12 @@ alter table public.support_threads enable row level security;
 alter table public.support_messages enable row level security;
 
 drop policy if exists "support_threads_select_own_or_admin" on public.support_threads;
-create policy "support_threads_select_own_or_admin"
+drop policy if exists "support_threads_select_own_or_agent" on public.support_threads;
+create policy "support_threads_select_own_or_agent"
   on public.support_threads
   for select
   to authenticated
-  using (user_id = auth.uid() or public.is_admin_user());
+  using (user_id = auth.uid() or public.is_support_agent_user());
 
 drop policy if exists "support_threads_insert_own" on public.support_threads;
 create policy "support_threads_insert_own"
@@ -74,7 +71,8 @@ create policy "support_threads_insert_own"
   with check (user_id = auth.uid());
 
 drop policy if exists "support_messages_select_own_or_admin" on public.support_messages;
-create policy "support_messages_select_own_or_admin"
+drop policy if exists "support_messages_select_own_or_agent" on public.support_messages;
+create policy "support_messages_select_own_or_agent"
   on public.support_messages
   for select
   to authenticated
@@ -83,7 +81,7 @@ create policy "support_messages_select_own_or_admin"
       select 1
       from public.support_threads t
       where t.id = thread_id
-        and (t.user_id = auth.uid() or public.is_admin_user())
+        and (t.user_id = auth.uid() or public.is_support_agent_user())
     )
   );
 
@@ -100,7 +98,7 @@ create policy "support_messages_insert_participant"
       where t.id = thread_id
         and (
           t.user_id = auth.uid()
-          or public.is_admin_user()
+          or public.is_support_agent_user()
         )
     )
   );

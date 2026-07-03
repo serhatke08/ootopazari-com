@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SupportChatClient } from "@/components/SupportChatClient";
-import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
+import { isSupportAgentUserId } from "@/lib/support-agent";
 import {
   fetchAllSupportThreadsForAdmin,
   fetchSupportMessages,
@@ -23,10 +23,9 @@ export default async function ProfilDestekPage() {
     return null;
   }
 
-  const adminProfile = await fetchAdminProfileByUserId(supabase, user.id);
-  const isAdmin = !!adminProfile;
+  const isSupportAgent = isSupportAgentUserId(user.id);
 
-  if (isAdmin) {
+  if (isSupportAgent) {
     const adminThreads = await fetchAllSupportThreadsForAdmin(supabase);
     const activeThreadId = adminThreads[0]?.id ?? "";
     const messages = activeThreadId
@@ -38,7 +37,7 @@ export default async function ProfilDestekPage() {
         <div>
           <h2 className="text-lg font-semibold text-zinc-900">Destek</h2>
           <p className="mt-1 text-sm text-zinc-600">
-            Kullanıcı destek mesajlarını yanıtlayın.
+            Kullanıcı destek mesajları bu hesabın kutusuna düşer; yanıtlar buradan gider.
           </p>
         </div>
         {adminThreads.length === 0 ? (
@@ -49,10 +48,10 @@ export default async function ProfilDestekPage() {
           <div className="mt-6">
             <SupportChatClient
               currentUserId={user.id}
-              isAdmin
+              isSupportAgent
               initialThreadId={activeThreadId}
               initialMessages={messages}
-              adminThreads={adminThreads}
+              supportThreads={adminThreads}
             />
           </div>
         )}
@@ -76,14 +75,14 @@ export default async function ProfilDestekPage() {
       <div>
         <h2 className="text-lg font-semibold text-zinc-900">Destek</h2>
         <p className="mt-1 text-sm text-zinc-600">
-          Sorun, ödeme veya hesap taleplerinizi buradan destek ekibine iletebilirsiniz.
-          Yanıtlar aynı sohbette görünür.
+          Mesajlarınız doğrudan Oto Pazarı destek ekibine iletilir. Yanıtlar aynı
+          sohbette görünür.
         </p>
       </div>
       <div className="mt-6">
         <SupportChatClient
           currentUserId={user.id}
-          isAdmin={false}
+          isSupportAgent={false}
           initialThreadId={thread.id}
           initialMessages={messages}
         />
