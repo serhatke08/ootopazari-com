@@ -362,14 +362,16 @@ export function SiteHeaderClient({
                   href="/ilan-ver"
                   className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-extrabold text-[#ffcc00] hover:bg-zinc-800 md:inline-flex lg:px-3 lg:py-2 lg:text-sm"
                 >
-                  {isParcaciDealerActive ? "Urun ekle" : "Ilan ver"}
+                  {isParcaciDealerActive ? "Urun ekle" : "İlan ver"}
                 </Link>
-                <Link
-                  href={isParcaciDealerActive ? "/bayi/panel/parcaci" : "/parca"}
-                  className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white lg:inline-flex lg:px-3 lg:py-2 lg:text-sm"
-                >
-                  {isParcaciDealerActive ? "Magaza paneli" : "Parca pazari"}
-                </Link>
+                {isParcaciDealerActive ? (
+                  <Link
+                    href="/bayi/panel/parcaci"
+                    className="hidden whitespace-nowrap rounded-md border border-zinc-900/25 bg-white/90 px-2.5 py-1.5 text-xs font-bold text-zinc-900 hover:bg-white lg:inline-flex lg:px-3 lg:py-2 lg:text-sm"
+                  >
+                    Mağaza paneli
+                  </Link>
+                ) : null}
                 {hasListings ? (
                   <Link
                     href="/ilan-one-cikar"
