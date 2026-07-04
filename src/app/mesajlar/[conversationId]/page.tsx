@@ -25,6 +25,11 @@ import {
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 import { publicAvatarUrl, resolveListingImageUrl } from "@/lib/storage";
+import {
+  isSupportAgentUserId,
+  isSupportConversation,
+  SUPPORT_AGENT_DISPLAY_NAME,
+} from "@/lib/support-agent";
 
 type Props = { params: Promise<{ conversationId: string }> };
 
@@ -84,18 +89,29 @@ export default async function MesajConversationPage({ params }: Props) {
     fetchAdminProfilesByUserIds(supabase, otherIds),
   ]);
 
+  const supportChat = isSupportConversation(conv);
   const listing = listingMap.get(conv.listing_id);
-  const listingTitle = listing?.title?.trim() || null;
+  const listingTitle = supportChat
+    ? SUPPORT_AGENT_DISPLAY_NAME
+    : listing?.title?.trim() || null;
   const num = listing?.listing_number;
-  const listingHref = buildListingSeoPath(
-    num != null ? String(num) : null,
-    listingTitle
-  );
-  const listingImageUrl = resolveListingImageUrl(env, listing?.image_url ?? null);
-  const listingStatus = listingConversationStatus(listing);
+  const listingHref = supportChat
+    ? null
+    : buildListingSeoPath(
+        num != null ? String(num) : null,
+        listingTitle
+      );
+  const listingImageUrl = supportChat
+    ? null
+    : resolveListingImageUrl(env, listing?.image_url ?? null);
+  const listingStatus = supportChat
+    ? ({ active: true } as const)
+    : listingConversationStatus(listing);
   const otherProfile = profileMap.get(otherId) ?? null;
-  const otherIsAdmin = adminMap.has(otherId);
-  const otherName = profileDisplayName(otherProfile);
+  const otherIsAdmin = adminMap.has(otherId) || isSupportAgentUserId(otherId);
+  const otherName = isSupportAgentUserId(otherId)
+    ? SUPPORT_AGENT_DISPLAY_NAME
+    : profileDisplayName(otherProfile);
   const otherAvatarRaw =
     sanitizeUserAvatarUrl(
       otherProfile?.avatar_url != null ? String(otherProfile.avatar_url).trim() : null
@@ -159,7 +175,9 @@ export default async function MesajConversationPage({ params }: Props) {
                     <AdminVerifiedBadge className="shrink-0" size={16} />
                   ) : null}
                 </div>
-                <p className="mt-0.5 text-xs text-zinc-600">İlan üzerinden sohbet</p>
+                <p className="mt-0.5 text-xs text-zinc-600">
+                  {supportChat ? "Destek sohbeti" : "İlan üzerinden sohbet"}
+                </p>
               </div>
             </Link>
           </div>

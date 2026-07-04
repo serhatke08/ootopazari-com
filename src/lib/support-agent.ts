@@ -16,3 +16,14 @@ export function isSupportAgentUserId(userId: string | null | undefined): boolean
   if (!userId) return false;
   return userId === getSupportAgentUserId();
 }
+
+/** Destek sohbeti: taraflardan biri destek hesabı (skeklik098 / sabit id). */
+export function isSupportConversation(conversation: {
+  sender_id: string;
+  receiver_id: string;
+}): boolean {
+  return (
+    isSupportAgentUserId(conversation.sender_id) ||
+    isSupportAgentUserId(conversation.receiver_id)
+  );
+}

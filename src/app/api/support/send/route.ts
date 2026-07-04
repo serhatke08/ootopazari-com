@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import { isSupportAgentUserId } from "@/lib/support-agent";
 import {
-  canAccessSupportThread,
-  fetchSupportThreadServer,
-  insertSupportMessageServer,
-  notifySupportAgentOfMessage,
-  notifyUserOfSupportReply,
+  findOrCreateSupportConversation,
+  sendSupportMessage,
 } from "@/lib/support-chat-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Body = {
-  threadId?: string;
+  conversationId?: string;
   content?: string;
 };
 
@@ -24,6 +21,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Giriş gerekli." }, { status: 401 });
   }
 
+  if (isSupportAgentUserId(user.id)) {
+    return NextResponse.json(
+      { error: "Destek hesabı yanıtları Mesajlar üzerinden gönderilir." },
+      { status: 400 }
+    );
+  }
+
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -31,52 +35,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
   }
 
-  const threadId = body.threadId?.trim();
   const content = body.content?.trim();
-  if (!threadId || !content) {
+  if (!content) {
     return NextResponse.json({ error: "Mesaj boş olamaz." }, { status: 400 });
   }
   if (content.length > 4000) {
     return NextResponse.json({ error: "Mesaj çok uzun." }, { status: 400 });
   }
 
-  const thread = await fetchSupportThreadServer(threadId);
-  if (!thread) {
-    return NextResponse.json({ error: "Sohbet bulunamadı." }, { status: 404 });
+  let conversationId = body.conversationId?.trim();
+  if (!conversationId) {
+    const conversation = await findOrCreateSupportConversation(user.id);
+    conversationId = conversation?.id;
   }
 
-  if (!canAccessSupportThread(thread, user.id)) {
-    return NextResponse.json({ error: "Yetkisiz." }, { status: 403 });
+  if (!conversationId) {
+    return NextResponse.json(
+      { error: "Destek sohbeti oluşturulamadı." },
+      { status: 500 }
+    );
   }
 
-  const message = await insertSupportMessageServer({
-    threadId,
+  const message = await sendSupportMessage({
+    conversationId,
     senderId: user.id,
     content,
   });
 
   if (!message) {
-    return NextResponse.json(
-      {
-        error:
-          "Mesaj gönderilemedi. Supabase'de support_messages tablosu kurulu mu kontrol edin.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Mesaj gönderilemedi." }, { status: 500 });
   }
 
-  const isSupportAgent = isSupportAgentUserId(user.id);
-  if (isSupportAgent) {
-    await notifyUserOfSupportReply({
-      userId: thread.user_id,
-      content,
-    });
-  } else {
-    await notifySupportAgentOfMessage({
-      threadUserId: thread.user_id,
-      content,
-    });
-  }
-
-  return NextResponse.json({ message });
+  return NextResponse.json({ message, conversationId });
 }

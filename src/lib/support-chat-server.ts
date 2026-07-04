@@ -1,8 +1,14 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSupportAgentUserId, isSupportAgentUserId } from "@/lib/support-agent";
+import {
+  getSupportAgentUserId,
+  isSupportConversation,
+  SUPPORT_AGENT_DISPLAY_NAME,
+} from "@/lib/support-agent";
+import type { ConversationRow, MessageRow } from "@/lib/messages";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import type { SupportMessageRow, SupportThreadRow } from "@/lib/support-chat";
+
+export { isSupportConversation };
 
 function serviceClient() {
   const client = createSupabaseServiceClient();
@@ -12,215 +18,178 @@ function serviceClient() {
   return client;
 }
 
-export async function ensureSupportThreadServer(
-  userId: string
-): Promise<SupportThreadRow | null> {
-  const admin = serviceClient();
-
-  const { data: existing, error: existingErr } = await admin
-    .from("support_threads")
-    .select("id,user_id,created_at,updated_at")
-    .eq("user_id", userId)
+async function findConversationBetweenPair(
+  admin: SupabaseClient,
+  userA: string,
+  userB: string
+): Promise<ConversationRow | null> {
+  const { data: one } = await admin
+    .from("conversations")
+    .select("id,listing_id,sender_id,receiver_id,updated_at,created_at")
+    .eq("sender_id", userA)
+    .eq("receiver_id", userB)
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(1)
     .maybeSingle();
 
-  if (existingErr) {
-    console.error("ensureSupportThread select:", existingErr.message);
-    return null;
-  }
-  if (existing) return existing as SupportThreadRow;
+  if (one) return one as ConversationRow;
 
-  const { data: inserted, error: insertErr } = await admin
-    .from("support_threads")
-    .insert({ user_id: userId })
-    .select("id,user_id,created_at,updated_at")
+  const { data: two } = await admin
+    .from("conversations")
+    .select("id,listing_id,sender_id,receiver_id,updated_at,created_at")
+    .eq("sender_id", userB)
+    .eq("receiver_id", userA)
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  return (two as ConversationRow | null) ?? null;
+}
+
+/**
+ * Destek konuşması için anchor ilan (conversations.listing_id zorunluysa).
+ * Destek hesabına ait gizli "Destek" ilanı oluşturur / bulur.
+ */
+async function ensureSupportListingId(admin: SupabaseClient): Promise<string | null> {
+  const agentId = getSupportAgentUserId();
+
+  const { data: existing } = await admin
+    .from("listings")
+    .select("id")
+    .eq("user_id", agentId)
+    .eq("title", SUPPORT_AGENT_DISPLAY_NAME)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) return String(existing.id);
+
+  const { data: inserted, error } = await admin
+    .from("listings")
+    .insert({
+      user_id: agentId,
+      title: SUPPORT_AGENT_DISPLAY_NAME,
+      description: "Uygulama içi destek sohbeti",
+      moderation_status: "approved",
+      price: 0,
+    })
+    .select("id")
     .single();
 
-  if (insertErr) {
-    console.error("ensureSupportThread insert:", insertErr.message);
+  if (error || !inserted?.id) {
+    console.error("ensureSupportListingId:", error?.message);
     return null;
   }
-  return inserted as SupportThreadRow;
+  return String(inserted.id);
 }
 
-export async function fetchSupportThreadServer(
-  threadId: string
-): Promise<SupportThreadRow | null> {
-  const admin = serviceClient();
-  const { data, error } = await admin
-    .from("support_threads")
-    .select("id,user_id,created_at,updated_at")
-    .eq("id", threadId)
-    .maybeSingle();
-
-  if (error || !data) {
-    if (error) console.error("fetchSupportThread:", error.message);
-    return null;
-  }
-  return data as SupportThreadRow;
-}
-
-export function canAccessSupportThread(
-  thread: SupportThreadRow,
+/**
+ * Kullanıcı ile destek hesabı arasında uygulama içi konuşma bulur / oluşturur.
+ * Mesajlar normal `conversations` + `messages` tablolarına yazılır.
+ */
+export async function findOrCreateSupportConversation(
   userId: string
-): boolean {
-  return thread.user_id === userId || isSupportAgentUserId(userId);
+): Promise<ConversationRow | null> {
+  const agentId = getSupportAgentUserId();
+  if (userId === agentId) {
+    return null;
+  }
+
+  const admin = serviceClient();
+  const existing = await findConversationBetweenPair(admin, userId, agentId);
+  if (existing) return existing;
+
+  const listingId = await ensureSupportListingId(admin);
+
+  const attempts: Record<string, string>[] = [
+    {
+      sender_id: userId,
+      receiver_id: agentId,
+      ...(listingId ? { listing_id: listingId } : {}),
+    },
+  ];
+
+  // listing_id zorunluysa ve anchor ilan yoksa yine dene (bazı şemalarda null kabul edilir)
+  if (listingId) {
+    attempts.push({ sender_id: userId, receiver_id: agentId });
+  }
+
+  for (const payload of attempts) {
+    const { data: inserted, error } = await admin
+      .from("conversations")
+      .insert(payload)
+      .select("id,listing_id,sender_id,receiver_id,updated_at,created_at")
+      .single();
+
+    if (!error && inserted) {
+      return inserted as ConversationRow;
+    }
+    console.error("findOrCreateSupportConversation:", error?.message);
+  }
+
+  return null;
 }
 
-export async function fetchSupportMessagesServer(
-  threadId: string
-): Promise<SupportMessageRow[]> {
+export async function fetchSupportMessages(
+  conversationId: string
+): Promise<MessageRow[]> {
   const admin = serviceClient();
   const { data, error } = await admin
-    .from("support_messages")
-    .select("id,thread_id,sender_id,content,created_at")
-    .eq("thread_id", threadId)
+    .from("messages")
+    .select("id,conversation_id,sender_id,content,is_read,created_at")
+    .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
 
   if (error) {
     console.error("fetchSupportMessages:", error.message);
     return [];
   }
-  return (data ?? []) as SupportMessageRow[];
+  return (data ?? []) as MessageRow[];
 }
 
-export async function insertSupportMessageServer(input: {
-  threadId: string;
+export async function sendSupportMessage(input: {
+  conversationId: string;
   senderId: string;
   content: string;
-}): Promise<SupportMessageRow | null> {
+}): Promise<MessageRow | null> {
   const admin = serviceClient();
-  const { data, error } = await admin
-    .from("support_messages")
-    .insert({
-      thread_id: input.threadId,
-      sender_id: input.senderId,
-      content: input.content,
-    })
-    .select("id,thread_id,sender_id,content,created_at")
-    .single();
 
-  if (error || !data) {
-    console.error("insertSupportMessage:", error?.message);
+  const { data: conv, error: convErr } = await admin
+    .from("conversations")
+    .select("id,sender_id,receiver_id")
+    .eq("id", input.conversationId)
+    .maybeSingle();
+
+  if (convErr || !conv) {
+    console.error("sendSupportMessage conv:", convErr?.message);
     return null;
   }
-  return data as SupportMessageRow;
-}
 
-export async function notifySupportAgentOfMessage(input: {
-  threadUserId: string;
-  content: string;
-}): Promise<void> {
-  const admin = serviceClient();
-  const supportAgentId = getSupportAgentUserId();
-  if (input.threadUserId === supportAgentId) return;
-
-  const preview =
-    input.content.length > 120
-      ? `${input.content.slice(0, 117)}…`
-      : input.content;
-
-  const { error } = await admin.from("user_notifications").insert({
-    user_id: supportAgentId,
-    type: "support_message",
-    title: "Yeni destek mesajı",
-    body: preview,
-    listing_id: null,
-  });
-
-  if (error) {
-    console.warn("support notification:", error.message);
-  }
-}
-
-export async function notifyUserOfSupportReply(input: {
-  userId: string;
-  content: string;
-}): Promise<void> {
-  const admin = serviceClient();
-  const preview =
-    input.content.length > 120
-      ? `${input.content.slice(0, 117)}…`
-      : input.content;
-
-  const { error } = await admin.from("user_notifications").insert({
-    user_id: input.userId,
-    type: "support_reply",
-    title: "Destek yanıtı",
-    body: preview,
-    listing_id: null,
-  });
-
-  if (error) {
-    console.warn("support reply notification:", error.message);
-  }
-}
-
-export async function fetchSupportThreadsForAgentServer(
-  supabase: SupabaseClient
-): Promise<
-  Array<
-    SupportThreadRow & {
-      userDisplayName: string;
-      lastMessage: string | null;
-      lastMessageAt: string | null;
-    }
-  >
-> {
-  const admin = serviceClient();
-  const supportAgentId = getSupportAgentUserId();
-
-  const { data: threads, error } = await admin
-    .from("support_threads")
-    .select("id,user_id,created_at,updated_at")
-    .neq("user_id", supportAgentId)
-    .order("updated_at", { ascending: false });
-
-  if (error) {
-    console.error("fetchSupportThreadsForAgent:", error.message);
-    return [];
+  const isParticipant =
+    conv.sender_id === input.senderId || conv.receiver_id === input.senderId;
+  if (!isParticipant || !isSupportConversation(conv as ConversationRow)) {
+    return null;
   }
 
-  const rows = (threads ?? []) as SupportThreadRow[];
-  if (rows.length === 0) return [];
+  const { data: message, error } = await admin
+    .from("messages")
+    .insert({
+      conversation_id: input.conversationId,
+      sender_id: input.senderId,
+      content: input.content,
+      is_read: false,
+    })
+    .select("id,conversation_id,sender_id,content,is_read,created_at")
+    .single();
 
-  const threadIds = rows.map((t) => t.id);
-  const userIds = [...new Set(rows.map((t) => t.user_id))];
-
-  const [{ data: messages }, { data: profiles }] = await Promise.all([
-    admin
-      .from("support_messages")
-      .select("thread_id,content,created_at")
-      .in("thread_id", threadIds)
-      .order("created_at", { ascending: false }),
-    supabase.from("profiles").select("id,full_name,username").in("id", userIds),
-  ]);
-
-  const profileMap = new Map<string, string>();
-  for (const row of profiles ?? []) {
-    const full = row.full_name != null ? String(row.full_name).trim() : "";
-    const username = row.username != null ? String(row.username).trim() : "";
-    profileMap.set(String(row.id), full || username || "Kullanıcı");
+  if (error || !message) {
+    console.error("sendSupportMessage:", error?.message);
+    return null;
   }
 
-  const lastByThread = new Map<string, { content: string; created_at: string }>();
-  for (const row of messages ?? []) {
-    const threadId = String(row.thread_id);
-    if (lastByThread.has(threadId)) continue;
-    lastByThread.set(threadId, {
-      content: String(row.content),
-      created_at: String(row.created_at),
-    });
-  }
+  await admin
+    .from("conversations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", input.conversationId);
 
-  return rows
-    .filter((thread) => lastByThread.has(thread.id))
-    .map((thread) => {
-      const last = lastByThread.get(thread.id)!;
-      return {
-        ...thread,
-        userDisplayName: profileMap.get(thread.user_id) ?? "Kullanıcı",
-        lastMessage: last.content,
-        lastMessageAt: last.created_at,
-      };
-    });
+  return message as MessageRow;
 }

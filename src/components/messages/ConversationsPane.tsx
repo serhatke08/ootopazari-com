@@ -10,6 +10,10 @@ import {
   type ListingMessageSummary,
   type ProfileMessageSummary,
 } from "@/lib/messages";
+import {
+  isSupportAgentUserId,
+  SUPPORT_AGENT_DISPLAY_NAME,
+} from "@/lib/support-agent";
 import { resolveListingImageUrl } from "@/lib/storage";
 
 function previewText(
@@ -96,11 +100,20 @@ export function ConversationsPane({
           const last = lastMap.get(c.id);
           const unread = unreadMap.get(c.id) ?? 0;
           const otherId = otherParticipantId(c, userId);
-          const title = listing?.title?.trim() || "İlan";
+          const isSupportChat =
+            isSupportAgentUserId(otherId) || isSupportAgentUserId(userId);
+          const title = isSupportChat
+            ? "Destek"
+            : listing?.title?.trim() || "İlan";
           const imgSrc = resolveListingImageUrl(env, listing?.image_url ?? null);
-          const listingStatus = listingConversationStatus(listing);
-          const otherName = profileDisplayName(otherProfile ?? null);
-          const isAdminUser = adminUserIds.has(otherId);
+          const listingStatus = isSupportChat
+            ? ({ active: true } as const)
+            : listingConversationStatus(listing);
+          const otherName = isSupportAgentUserId(otherId)
+            ? SUPPORT_AGENT_DISPLAY_NAME
+            : profileDisplayName(otherProfile ?? null);
+          const isAdminUser =
+            adminUserIds.has(otherId) || isSupportAgentUserId(otherId);
           const active = activeConversationId === c.id;
           const timeStr = formatTime(last?.created_at ?? null);
           

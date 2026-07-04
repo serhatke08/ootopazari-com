@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import { SupportChatClient } from "@/components/SupportChatClient";
-import { isSupportAgentUserId } from "@/lib/support-agent";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ChatThreadClient } from "@/components/messages/ChatThreadClient";
 import {
-  ensureSupportThreadServer,
-  fetchSupportMessagesServer,
-  fetchSupportThreadsForAgentServer,
+  isSupportAgentUserId,
+  SUPPORT_AGENT_DISPLAY_NAME,
+} from "@/lib/support-agent";
+import {
+  fetchSupportMessages,
+  findOrCreateSupportConversation,
 } from "@/lib/support-chat-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -23,77 +27,62 @@ export default async function ProfilDestekPage() {
     return null;
   }
 
-  const isSupportAgent = isSupportAgentUserId(user.id);
-
-  if (isSupportAgent) {
-    const supportThreads = await fetchSupportThreadsForAgentServer(supabase);
-    const activeThreadId = supportThreads[0]?.id ?? "";
-    const messages = activeThreadId
-      ? await fetchSupportMessagesServer(activeThreadId)
-      : [];
-
-    return (
-      <div className="mx-auto mt-8 w-full max-w-4xl">
-        <div>
-          <h2 className="text-lg font-semibold text-zinc-900">Destek</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Kullanıcı destek mesajları bu hesabın kutusuna düşer; yanıtlar buradan gider.
-          </p>
-        </div>
-        {supportThreads.length === 0 ? (
-          <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
-            Henüz kullanıcı destek mesajı yok.
-          </div>
-        ) : (
-          <div className="mt-6">
-            <SupportChatClient
-              currentUserId={user.id}
-              isSupportAgent
-              initialThreadId={activeThreadId}
-              initialMessages={messages}
-              supportThreads={supportThreads}
-            />
-          </div>
-        )}
-      </div>
-    );
+  // Destek hesabı mesajları kendi Mesajlar kutusundan yönetir
+  if (isSupportAgentUserId(user.id)) {
+    redirect("/mesajlar");
   }
 
-  let thread = null;
+  let conversation = null;
   try {
-    thread = await ensureSupportThreadServer(user.id);
+    conversation = await findOrCreateSupportConversation(user.id);
   } catch (error) {
-    console.error("ensureSupportThread:", error);
+    console.error("findOrCreateSupportConversation:", error);
   }
 
-  if (!thread) {
+  if (!conversation) {
     return (
       <div className="mx-auto mt-8 max-w-2xl rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-800">
-        Destek sohbeti başlatılamadı. Supabase&apos;de{" "}
-        <code className="text-xs">support_messages.sql</code> dosyasını çalıştırdığınızdan
-        ve <code className="text-xs">SUPABASE_SERVICE_ROLE_KEY</code> tanımlı olduğundan emin
-        olun.
+        Destek sohbeti açılamadı. Lütfen daha sonra tekrar deneyin.
       </div>
     );
   }
 
-  const messages = await fetchSupportMessagesServer(thread.id);
+  const messages = await fetchSupportMessages(conversation.id);
 
   return (
     <div className="mx-auto mt-8 w-full max-w-2xl">
-      <div>
-        <h2 className="text-lg font-semibold text-zinc-900">Destek</h2>
-        <p className="mt-1 text-sm text-zinc-600">
-          Mesajlarınız doğrudan Oto Pazarı destek ekibine iletilir. Yanıtlar aynı
-          sohbette görünür.
-        </p>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900">Destek</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Mesajlarınız uygulama içi mesajlaşmaya gider. Yanıtlar burada ve{" "}
+            <Link href="/mesajlar" className="font-semibold underline">
+              Mesajlar
+            </Link>{" "}
+            kutusunda görünür.
+          </p>
+        </div>
+        <Link
+          href={`/mesajlar/${conversation.id}`}
+          className="text-xs font-semibold text-zinc-700 underline"
+        >
+          Mesajlarda aç
+        </Link>
       </div>
-      <div className="mt-6">
-        <SupportChatClient
+
+      <div className="min-h-[28rem] rounded-xl border border-zinc-200 bg-white p-4">
+        <ChatThreadClient
+          conversationId={conversation.id}
           currentUserId={user.id}
-          isSupportAgent={false}
-          initialThreadId={thread.id}
           initialMessages={messages}
+          listingTitle={SUPPORT_AGENT_DISPLAY_NAME}
+          listingHref={null}
+          listingImageUrl={null}
+          listingActive
+          listingInactiveMessage=""
+          otherUserName={SUPPORT_AGENT_DISPLAY_NAME}
+          otherUserAvatarUrl={null}
+          blocked={false}
         />
       </div>
     </div>
