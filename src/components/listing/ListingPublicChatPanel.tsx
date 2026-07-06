@@ -81,6 +81,44 @@ function ChatAvatar({
   );
 }
 
+function AuthorLabel({
+  name,
+  isSeller,
+  isSelf,
+  align,
+}: {
+  name: string;
+  isSeller: boolean;
+  isSelf: boolean;
+  align: "left" | "right";
+}) {
+  return (
+    <div
+      className={`mb-1 flex flex-wrap items-center gap-1.5 ${
+        align === "right" ? "justify-end" : ""
+      }`}
+    >
+      <span
+        className={`text-xs font-semibold ${
+          isSeller ? "text-emerald-800" : isSelf ? "text-emerald-900" : "text-black/80"
+        }`}
+      >
+        {name}
+      </span>
+      {isSeller ? (
+        <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm">
+          Satıcı
+        </span>
+      ) : null}
+      {isSelf && !isSeller ? (
+        <span className="rounded-full bg-emerald-700/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-800">
+          Siz
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function MessageBubble({
   comment,
   viewerId,
@@ -90,22 +128,34 @@ function MessageBubble({
 }) {
   const isSeller = comment.isSeller;
   const isSelf = viewerId != null && comment.user_id === viewerId;
+  const avatarVariant = isSeller ? "seller" : isSelf ? "self" : "other";
 
   if (isSelf && !isSeller) {
     return (
-      <li className="flex justify-end">
-        <div className="flex max-w-[88%] flex-col items-end gap-1">
+      <li className="flex items-end justify-end gap-2">
+        <div className="flex min-w-0 max-w-[88%] flex-col items-end">
+          <AuthorLabel
+            name={comment.authorName}
+            isSeller={false}
+            isSelf
+            align="right"
+          />
           <div className="rounded-2xl rounded-br-md bg-emerald-700 px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-sm">
             <p className="whitespace-pre-wrap break-words">{comment.body}</p>
           </div>
           <time
-            className="pr-1 text-[10px] text-black/40"
+            className="mt-1 pr-0.5 text-[10px] text-black/40"
             dateTime={comment.created_at}
             suppressHydrationWarning
           >
-            {fmtTime(comment.created_at)} · Siz
+            {fmtTime(comment.created_at)}
           </time>
         </div>
+        <ChatAvatar
+          url={comment.authorAvatarUrl}
+          name={comment.authorName}
+          variant={avatarVariant}
+        />
       </li>
     );
   }
@@ -115,23 +165,15 @@ function MessageBubble({
       <ChatAvatar
         url={comment.authorAvatarUrl}
         name={comment.authorName}
-        variant={isSeller ? "seller" : "other"}
+        variant={avatarVariant}
       />
       <div className="min-w-0 max-w-[88%]">
-        <div className="mb-1 flex flex-wrap items-center gap-1.5">
-          <span
-            className={`text-xs font-semibold ${
-              isSeller ? "text-emerald-800" : "text-black/80"
-            }`}
-          >
-            {comment.authorName}
-          </span>
-          {isSeller ? (
-            <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm">
-              Satıcı
-            </span>
-          ) : null}
-        </div>
+        <AuthorLabel
+          name={comment.authorName}
+          isSeller={isSeller}
+          isSelf={isSelf}
+          align="left"
+        />
         <div
           className={`rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
             isSeller
