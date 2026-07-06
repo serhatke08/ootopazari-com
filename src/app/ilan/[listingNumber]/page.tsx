@@ -1154,9 +1154,6 @@ export default async function IlanDetayPage({ params }: Props) {
             <ListingPublicChatPanelLoader
               listingId={id}
               listingPath={expectedSeoPath ?? `/ilan/${listingNumber}`}
-              listingTitle={listingTitle}
-              listingImageUrl={primaryImage}
-              listingDescription={descBody}
               sellerUserId={sellerUserId}
               initialComments={listingPublicComments}
               viewerId={viewer?.id ?? null}

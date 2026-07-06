@@ -11,9 +11,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 type Props = {
   listingId: string;
   listingPath: string;
-  listingTitle: string;
-  listingImageUrl: string | null;
-  listingDescription: string;
   sellerUserId: string;
   initialComments: ListingPublicCommentView[];
   viewerId: string | null;
@@ -21,13 +18,6 @@ type Props = {
   viewerAvatarUrl: string | null;
   canPost: boolean;
 };
-
-function truncateText(text: string, max = 120): string {
-  const t = text.trim();
-  if (!t) return "";
-  if (t.length <= max) return t;
-  return `${t.slice(0, max).trimEnd()}…`;
-}
 
 function fmtTime(iso: string): string {
   try {
@@ -88,55 +78,6 @@ function ChatAvatar({
     >
       {name.trim().slice(0, 1).toUpperCase() || "?"}
     </div>
-  );
-}
-
-function ListingMiniCard({
-  href,
-  title,
-  imageUrl,
-  description,
-}: {
-  href: string;
-  title: string;
-  imageUrl: string | null;
-  description: string;
-}) {
-  const desc = truncateText(description, 140);
-
-  return (
-    <Link
-      href={href}
-      className="group flex gap-2.5 rounded-xl border border-black/8 bg-white p-2.5 shadow-sm transition hover:border-emerald-300/60 hover:shadow-md"
-    >
-      <div className="relative h-14 w-[4.5rem] shrink-0 overflow-hidden rounded-md bg-zinc-100">
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="72px"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-[9px] font-medium text-black/35">
-            İlan
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-xs font-semibold leading-snug text-black group-hover:text-emerald-800">
-          {title}
-        </p>
-        {desc ? (
-          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-black/55">
-            {desc}
-          </p>
-        ) : (
-          <p className="mt-0.5 text-[10px] text-black/35">Açıklama yok</p>
-        )}
-      </div>
-    </Link>
   );
 }
 
@@ -292,9 +233,6 @@ function MessageBubble({
 export function ListingPublicChatPanel({
   listingId,
   listingPath,
-  listingTitle,
-  listingImageUrl,
-  listingDescription,
   sellerUserId,
   initialComments,
   viewerId,
@@ -512,15 +450,6 @@ export function ListingPublicChatPanel({
           </span>
         </div>
       </header>
-
-      <div className="border-b border-black/8 bg-zinc-50/90 px-3 py-2.5">
-        <ListingMiniCard
-          href={listingPath}
-          title={listingTitle}
-          imageUrl={listingImageUrl}
-          description={listingDescription}
-        />
-      </div>
 
       <div
         ref={scrollRef}
