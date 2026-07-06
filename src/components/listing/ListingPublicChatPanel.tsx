@@ -180,10 +180,6 @@ export function ListingPublicChatPanel({
   }, [comments, scrollToBottom]);
 
   useEffect(() => {
-    setComments(initialComments);
-  }, [initialComments]);
-
-  useEffect(() => {
     const channel = supabase
       .channel(`listing-public-comments:${listingId}`)
       .on(
@@ -234,17 +230,54 @@ export function ListingPublicChatPanel({
         return;
       }
 
-      const { error } = await supabase.from("listing_public_comments").insert({
-        listing_id: listingId,
-        user_id: user.id,
-        body: trimmed,
-      });
+      const { data, error } = await supabase
+        .from("listing_public_comments")
+        .insert({
+          listing_id: listingId,
+          user_id: user.id,
+          body: trimmed,
+        })
+        .select("id,listing_id,user_id,body,created_at")
+        .single();
 
       if (error) {
         setSendError(error.message || "Gönderilemedi.");
         return;
       }
+
+      const row = data as ListingPublicCommentView;
+      const local: ListingPublicCommentView = {
+        id: row.id,
+        listing_id: row.listing_id,
+        user_id: row.user_id,
+        body: row.body,
+        created_at: row.created_at ?? new Date().toISOString(),
+        authorName: viewerName ?? "Siz",
+        authorAvatarUrl: viewerAvatarUrl,
+        isSeller: row.user_id === sellerUserId,
+      };
+
+      setComments((prev) => {
+        if (prev.some((c) => c.id === local.id)) return prev;
+        return [...prev, local];
+      });
       setText("");
+
+      void enrichListingPublicComment(
+        supabase,
+        {
+          id: local.id,
+          listing_id: local.listing_id,
+          user_id: local.user_id,
+          body: local.body,
+          created_at: local.created_at,
+        },
+        sellerUserId
+      ).then((enriched) => {
+        setComments((prev) =>
+          prev.map((c) => (c.id === enriched.id ? enriched : c))
+        );
+      });
     } finally {
       setSending(false);
     }
