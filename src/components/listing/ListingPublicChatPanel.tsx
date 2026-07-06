@@ -96,38 +96,27 @@ function ListingMiniCard({
   title,
   imageUrl,
   description,
-  variant,
 }: {
   href: string;
   title: string;
   imageUrl: string | null;
   description: string;
-  variant: "header" | "inline";
 }) {
-  const desc = truncateText(description, variant === "header" ? 140 : 80);
-  const isHeader = variant === "header";
+  const desc = truncateText(description, 140);
 
   return (
     <Link
       href={href}
-      className={`group flex gap-2.5 transition ${
-        isHeader
-          ? "rounded-xl border border-black/8 bg-white p-2.5 shadow-sm hover:border-emerald-300/60 hover:shadow-md"
-          : "mt-2 rounded-lg border border-black/6 bg-black/[0.03] p-2 hover:bg-black/[0.05]"
-      }`}
+      className="group flex gap-2.5 rounded-xl border border-black/8 bg-white p-2.5 shadow-sm transition hover:border-emerald-300/60 hover:shadow-md"
     >
-      <div
-        className={`relative shrink-0 overflow-hidden rounded-md bg-zinc-100 ${
-          isHeader ? "h-14 w-[4.5rem]" : "h-10 w-14"
-        }`}
-      >
+      <div className="relative h-14 w-[4.5rem] shrink-0 overflow-hidden rounded-md bg-zinc-100">
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt=""
             fill
             className="object-cover"
-            sizes={isHeader ? "72px" : "56px"}
+            sizes="72px"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-[9px] font-medium text-black/35">
@@ -136,21 +125,11 @@ function ListingMiniCard({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p
-          className={`font-semibold text-black group-hover:text-emerald-800 ${
-            isHeader ? "line-clamp-2 text-xs leading-snug" : "truncate text-[10px]"
-          }`}
-        >
+        <p className="line-clamp-2 text-xs font-semibold leading-snug text-black group-hover:text-emerald-800">
           {title}
         </p>
         {desc ? (
-          <p
-            className={`text-black/55 ${
-              isHeader
-                ? "mt-1 line-clamp-2 text-[11px] leading-relaxed"
-                : "mt-0.5 line-clamp-2 text-[9px] leading-snug"
-            }`}
-          >
+          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-black/55">
             {desc}
           </p>
         ) : (
@@ -220,20 +199,12 @@ function MessageBubble({
   comment,
   viewerId,
   sellerUserId,
-  listingPath,
-  listingTitle,
-  listingImageUrl,
-  listingDescription,
   onDelete,
   deleting,
 }: {
   comment: ListingPublicCommentView;
   viewerId: string | null;
   sellerUserId: string;
-  listingPath: string;
-  listingTitle: string;
-  listingImageUrl: string | null;
-  listingDescription: string;
   onDelete: (id: string) => void;
   deleting: boolean;
 }) {
@@ -246,16 +217,6 @@ function MessageBubble({
     if (!window.confirm("Bu mesajı silmek istediğinize emin misiniz?")) return;
     onDelete(comment.id);
   };
-
-  const listingCard = (
-    <ListingMiniCard
-      href={listingPath}
-      title={listingTitle}
-      imageUrl={listingImageUrl}
-      description={listingDescription}
-      variant="inline"
-    />
-  );
 
   if (isSelf && !isSeller) {
     return (
@@ -272,9 +233,6 @@ function MessageBubble({
           />
           <div className="w-full rounded-2xl rounded-br-md bg-emerald-700 px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-sm">
             <p className="whitespace-pre-wrap break-words">{comment.body}</p>
-            <div className="mt-2 overflow-hidden rounded-lg bg-white/95">
-              {listingCard}
-            </div>
           </div>
           <time
             className="mt-1 pr-0.5 text-[10px] text-black/40"
@@ -318,7 +276,6 @@ function MessageBubble({
           }`}
         >
           <p className="whitespace-pre-wrap break-words">{comment.body}</p>
-          {listingCard}
         </div>
         <time
           className="mt-1 block pl-0.5 text-[10px] text-black/40"
@@ -562,7 +519,6 @@ export function ListingPublicChatPanel({
           title={listingTitle}
           imageUrl={listingImageUrl}
           description={listingDescription}
-          variant="header"
         />
       </div>
 
@@ -587,10 +543,6 @@ export function ListingPublicChatPanel({
                 comment={c}
                 viewerId={viewerId}
                 sellerUserId={sellerUserId}
-                listingPath={listingPath}
-                listingTitle={listingTitle}
-                listingImageUrl={listingImageUrl}
-                listingDescription={listingDescription}
                 onDelete={deleteComment}
                 deleting={deletingId === c.id}
               />
