@@ -1,2 +1,2 @@
--- Manuel çalıştırma: Supabase SQL Editor'da migration dosyasının içeriğini yapıştırın:
--- supabase/migrations/20260706120000_tofas_vehicle_hierarchy_seed.sql
+-- Supabase SQL Editor: bu dosyanın tamamını çalıştırın.
+-- supabase/migrations/20260706120000_tofas_vehicle_hierarchy_seed.sql ile aynı içerik.

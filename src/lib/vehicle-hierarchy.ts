@@ -230,7 +230,7 @@ export async function fetchBrandModelsHierarchy(
     if (rows.length > 0) {
       let anyChildren = false;
       for (const row of rows.slice(0, 8)) {
-        const children = await fetchChildBrandModels(supabase, row.id);
+        const children = await fetchChildBrandModels(supabase, row.id, brandId);
         if (children.length > 0) {
           anyChildren = true;
           break;
@@ -258,7 +258,7 @@ export async function fetchSelectableBrandModels(
 
   const leaves: IdNameRow[] = [];
   for (const parent of h.parents) {
-    const children = await fetchChildBrandModels(supabase, parent.id);
+    const children = await fetchChildBrandModels(supabase, parent.id, brandId);
     if (children.length > 0) {
       leaves.push(...children);
     } else {
@@ -271,16 +271,20 @@ export async function fetchSelectableBrandModels(
 /** Üst model satırına bağlı seriler (`vehicle_brand_models`). */
 export async function fetchChildBrandModels(
   supabase: SupabaseClient,
-  parentId: string
+  parentId: string,
+  brandId?: string | null
 ): Promise<IdNameRow[]> {
   const tries = [
-    () =>
-      supabase
+    () => {
+      let q = supabase
         .from("vehicle_brand_models")
         .select("id,name,code,sort_order")
-        .eq("parent_model_id", parentId)
+        .eq("parent_model_id", parentId);
+      if (brandId) q = q.eq("brand_id", brandId);
+      return q
         .order("sort_order", { ascending: true, nullsFirst: false })
-        .order("id", { ascending: true }),
+        .order("id", { ascending: true });
+    },
   ];
 
   for (const run of tries) {

@@ -424,12 +424,12 @@ export function CreateListingWizard({
     setChildren([]);
     if (!parentId || !hierarchical) return;
     void (async () => {
-      const ch = await fetchChildBrandModels(supabase, parentId);
+      const ch = await fetchChildBrandModels(supabase, parentId, brandId);
       // A-Z sıralama
       ch.sort((a, b) => (a.name || "").localeCompare(b.name || "", "tr-TR"));
       setChildren(ch);
     })();
-  }, [parentId, hierarchical, supabase]);
+  }, [parentId, hierarchical, brandId, supabase]);
 
   const resolvedModelId = useMemo(() => {
     if (brandOther || modelOther) return null;
