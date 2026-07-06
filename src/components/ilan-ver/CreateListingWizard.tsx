@@ -188,6 +188,7 @@ export function CreateListingWizard({
   const [children, setChildren] = useState<IdNameRow[]>([]);
   const [childId, setChildId] = useState<string | null>(null);
   const [flatModels, setFlatModels] = useState<IdNameRow[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
 
   const [modelOther, setModelOther] = useState(false);
   const [customModelText, setCustomModelText] = useState("");
@@ -399,14 +400,22 @@ export function CreateListingWizard({
     setPackageOther(false);
     setOtherPackageText("");
 
-    if (!brandId || brandOther) return;
+    if (!brandId || brandOther) {
+      setModelsLoading(false);
+      return;
+    }
 
+    setModelsLoading(true);
     void (async () => {
-      const h = await fetchBrandModelsHierarchy(supabase, brandId);
-      setHierarchical(h.hierarchical);
-      setParents(h.parents);
-      if (!h.hierarchical) {
-        setFlatModels(h.parents);
+      try {
+        const h = await fetchBrandModelsHierarchy(supabase, brandId);
+        setHierarchical(h.hierarchical);
+        setParents(h.parents);
+        if (!h.hierarchical) {
+          setFlatModels(h.parents);
+        }
+      } finally {
+        setModelsLoading(false);
       }
     })();
   }, [brandId, brandOther, supabase]);
@@ -518,15 +527,13 @@ export function CreateListingWizard({
   );
 
   const noModelsFromApi =
+    !modelsLoading &&
     isVehicle &&
     !!brandId &&
     !brandOther &&
     (hierarchical ? parents.length === 0 : flatModels.length === 0);
 
-  const useCustomModelText =
-    brandOther ||
-    modelOther ||
-    (isVehicle && !!brandId && !brandOther && noModelsFromApi);
+  const useCustomModelText = brandOther || modelOther;
 
   /** Kasa listesi boş → DB’den motor satırı yok; metin alanları kullanılır. */
   const noBodyStylesFromApi =
@@ -620,10 +627,8 @@ export function CreateListingWizard({
       return null;
     }
     if (!brandId) return "Marka seçin.";
-    if (noModelsFromApi) {
-      if (!customModelText.trim())
-        return "Seri / model (metin) zorunlu.";
-      return null;
+    if (noModelsFromApi && !modelOther) {
+      return "Seri / model seçin (listede yoksa Diğer).";
     }
     if (modelOther) {
       if (!customModelText.trim()) return "Seri / model (Diğer) metnini yazın.";
@@ -1313,16 +1318,18 @@ export function CreateListingWizard({
 
               {!brandOther && brandId ? (
                 <>
-                  {noModelsFromApi ? (
+                  {modelsLoading ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                        Seri / model (metin) *
+                        Seri / model *
                       </label>
-                      <input
-                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                        value={customModelText}
-                        onChange={(e) => setCustomModelText(e.target.value)}
-                      />
+                      <select
+                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-500"
+                        disabled
+                        value=""
+                      >
+                        <option value="">Modeller yükleniyor…</option>
+                      </select>
                     </div>
                   ) : hierarchical ? (
                     <>
