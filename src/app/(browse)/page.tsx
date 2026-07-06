@@ -24,6 +24,7 @@ import { HomePageListings } from "@/components/HomePageListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
+import { SITE_DISPLAY_NAME } from "@/lib/seo-brand";
 
 /** Geçici: ana sayfa hero bölümü (kaldırılmadı, devre dışı). */
 const SHOW_HOME_HERO = false;
@@ -40,19 +41,28 @@ export async function generateMetadata({
 
   return {
     title: {
-      absolute: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+      absolute: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
     },
     description:
       "Oto Pazarı ile ikinci el araba, sıfır otomobil ve araç ilanlarını keşfedin. Türkiye genelinde ücretsiz ilan ver, filtrele ve mesajlaş.",
+    applicationName: SITE_DISPLAY_NAME,
     alternates: {
       canonical: hasQuery ? origin : "/",
     },
     openGraph: {
-      title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+      type: "website",
+      locale: "tr_TR",
+      url: "/",
+      siteName: SITE_DISPLAY_NAME,
+      title: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
       description:
         "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
-      url: "/",
-      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
+      description:
+        "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
     },
   };
 }

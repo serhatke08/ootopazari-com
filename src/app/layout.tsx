@@ -8,15 +8,16 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { getSiteOrigin } from "@/lib/site-url";
+import { SITE_DISPLAY_NAME } from "@/lib/seo-brand";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ADSENSE_CLIENT_ID } from "@/lib/adsense";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
-  applicationName: "Oto Pazarı",
+  applicationName: SITE_DISPLAY_NAME,
   title: {
-    default: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
-    template: "%s | Oto Pazarı",
+    default: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
+    template: `%s | ${SITE_DISPLAY_NAME}`,
   },
   description:
     "Oto Pazarı — Türkiye'nin ikinci el araba ve sıfır otomobil ilan platformu. Ücretsiz ilan ver, filtrele, favorile ve satıcıyla mesajlaş.",
@@ -42,14 +43,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "tr_TR",
     url: "/",
-    siteName: "Oto Pazarı",
-    title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+    siteName: SITE_DISPLAY_NAME,
+    title: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
     description:
       "Oto Pazarı ile Türkiye genelinde ikinci el ve sıfır otomobil ilanlarını keşfedin. Ücretsiz ilan ver, filtrele ve mesajlaş.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
+    title: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
     description:
       "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
   },
@@ -71,6 +72,10 @@ export const metadata: Metadata = {
         },
       }
     : {}),
+  appleWebApp: {
+    title: SITE_DISPLAY_NAME,
+    capable: true,
+  },
   icons: {
     icon: [
       { url: "/menu/pazar.png?v=20260413", sizes: "32x32", type: "image/png" },

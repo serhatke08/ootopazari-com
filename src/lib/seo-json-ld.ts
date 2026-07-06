@@ -1,4 +1,9 @@
 import { buildListingSeoPath } from "@/lib/listing-seo";
+import {
+  SITE_ALTERNATE_NAMES,
+  SITE_DISPLAY_NAME,
+  canonicalSiteHomeUrl,
+} from "@/lib/seo-brand";
 
 const LOGO = "/menu/pazar.png?v=20260413";
 
@@ -7,41 +12,43 @@ export function buildHomeSeoJsonLd(opts: {
   listings?: Array<{ listingNumber: string; title: string }>;
 }) {
   const { siteOrigin, listings = [] } = opts;
+  const homeUrl = canonicalSiteHomeUrl(siteOrigin);
 
   const graph: Record<string, unknown>[] = [
     {
       "@type": "Organization",
-      "@id": `${siteOrigin}/#organization`,
-      name: "Oto Pazarı",
-      url: siteOrigin,
-      logo: `${siteOrigin}${LOGO}`,
+      "@id": `${homeUrl}#organization`,
+      name: SITE_DISPLAY_NAME,
+      legalName: SITE_DISPLAY_NAME,
+      url: homeUrl,
+      logo: `${siteOrigin.replace(/\/$/, "")}${LOGO}`,
       description:
         "Türkiye'nin ikinci el ve sıfır otomobil ilan platformu — Oto Pazarı.",
     },
     {
       "@type": "WebSite",
-      "@id": `${siteOrigin}/#website`,
-      name: "Oto Pazarı",
-      alternateName: ["oto pazarı", "Oto Pazari", "otomobil pazarı"],
-      url: siteOrigin,
-      publisher: { "@id": `${siteOrigin}/#organization` },
+      "@id": `${homeUrl}#website`,
+      name: SITE_DISPLAY_NAME,
+      alternateName: [...SITE_ALTERNATE_NAMES],
+      url: homeUrl,
+      publisher: { "@id": `${homeUrl}#organization` },
       inLanguage: "tr-TR",
       potentialAction: {
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: `${siteOrigin}/?q={search_term_string}`,
+          urlTemplate: `${homeUrl}?q={search_term_string}`,
         },
         "query-input": "required name=search_term_string",
       },
     },
     {
       "@type": "WebPage",
-      "@id": `${siteOrigin}/#webpage`,
-      url: siteOrigin,
-      name: "Oto Pazarı — İkinci El ve Sıfır Araç İlanları",
-      isPartOf: { "@id": `${siteOrigin}/#website` },
-      about: { "@id": `${siteOrigin}/#organization` },
+      "@id": `${homeUrl}#webpage`,
+      url: homeUrl,
+      name: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
+      isPartOf: { "@id": `${homeUrl}#website` },
+      about: { "@id": `${homeUrl}#organization` },
       inLanguage: "tr-TR",
       description:
         "Oto Pazarı ile ikinci el araba, sıfır otomobil ve araç ilanlarını keşfedin.",
@@ -147,7 +154,7 @@ export function buildListingVehicleJsonLd(opts: {
           {
             "@type": "ListItem",
             position: 1,
-            name: "Oto Pazarı",
+            name: SITE_DISPLAY_NAME,
             item: siteOrigin,
           },
           {
