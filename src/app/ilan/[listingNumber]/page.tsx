@@ -603,7 +603,7 @@ export default async function IlanDetayPage({ params }: Props) {
         sekmelerinde.
       </p>
     ) : (
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-black">
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-black lg:text-xs lg:leading-snug">
         {descBody}
       </p>
     );

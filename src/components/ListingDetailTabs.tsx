@@ -18,11 +18,12 @@ const TABS: Array<{ id: Tab; label: string }> = [
 ];
 
 const SHELL_CLASS =
-  "overflow-hidden rounded-xl border border-black/10 bg-white";
+  "overflow-hidden rounded-xl border border-black/10 bg-white md:flex md:max-h-[calc(100dvh-var(--header-offset,5.5rem)-9rem)] md:flex-col";
 
 const TAB_LIST_CLASS = "flex shrink-0 border-b border-black/10";
 
-const BODY_CLASS = "bg-white";
+const BODY_CLASS =
+  "bg-white md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain";
 
 const ACTIVE_TAB_CLASS =
   "border-b-2 border-black bg-white text-black font-semibold";
@@ -70,10 +71,10 @@ export function ListingDetailTabs({
       <div className={BODY_CLASS}>
         {activeTab === "info" && <div>{infoContent}</div>}
         {activeTab === "description" && (
-          <div className="p-4">{descriptionContent}</div>
+          <div className="p-3 sm:p-4">{descriptionContent}</div>
         )}
         {activeTab === "equipment" && (
-          <div className="p-4">{equipmentContent}</div>
+          <div className="p-3 sm:p-4">{equipmentContent}</div>
         )}
       </div>
     </div>
