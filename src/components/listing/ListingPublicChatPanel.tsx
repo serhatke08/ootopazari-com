@@ -101,6 +101,7 @@ function MessageBubble({
           <time
             className="pr-1 text-[10px] text-black/40"
             dateTime={comment.created_at}
+            suppressHydrationWarning
           >
             {fmtTime(comment.created_at)} · Siz
           </time>
@@ -143,6 +144,7 @@ function MessageBubble({
         <time
           className="mt-1 block pl-0.5 text-[10px] text-black/40"
           dateTime={comment.created_at}
+          suppressHydrationWarning
         >
           {fmtTime(comment.created_at)}
         </time>

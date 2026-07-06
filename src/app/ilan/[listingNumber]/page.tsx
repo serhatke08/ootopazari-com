@@ -59,7 +59,7 @@ import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
 import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
-import { ListingPublicChatPanel } from "@/components/listing/ListingPublicChatPanel";
+import { ListingPublicChatPanelLoader } from "@/components/listing/ListingPublicChatPanelLoader";
 import { fetchListingPublicComments } from "@/lib/listing-public-comments";
 import { displayNameFromAuthUser } from "@/lib/user-display-name";
 type Props = { params: Promise<{ listingNumber: string }> };
@@ -1151,7 +1151,7 @@ export default async function IlanDetayPage({ params }: Props) {
             )}
           </div>
           {showPublicChat && id ? (
-            <ListingPublicChatPanel
+            <ListingPublicChatPanelLoader
               listingId={id}
               listingPath={expectedSeoPath ?? `/ilan/${listingNumber}`}
               sellerUserId={sellerUserId}
