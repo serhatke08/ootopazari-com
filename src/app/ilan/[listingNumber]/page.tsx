@@ -59,6 +59,9 @@ import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
 import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
+import { ListingPublicChatPanel } from "@/components/listing/ListingPublicChatPanel";
+import { fetchListingPublicComments } from "@/lib/listing-public-comments";
+import { displayNameFromAuthUser } from "@/lib/user-display-name";
 type Props = { params: Promise<{ listingNumber: string }> };
 
 export const dynamic = "force-dynamic";
@@ -577,6 +580,33 @@ export default async function IlanDetayPage({ params }: Props) {
     ? sellerAvatarRaw.startsWith("http")
       ? sellerAvatarRaw
       : resolveListingImageUrl(env, sellerAvatarRaw)
+    : null;
+
+  const showPublicChat =
+    detailAccess === "public" && !!id && !!sellerUserId;
+
+  const [listingPublicComments, viewerProfile] = await Promise.all([
+    showPublicChat
+      ? fetchListingPublicComments(supabase, id!, sellerUserId)
+      : Promise.resolve([]),
+    viewer?.id
+      ? fetchProfilePublic(supabase, viewer.id)
+      : Promise.resolve(null),
+  ]);
+
+  const viewerDisplayName = viewer
+    ? viewerAdminProfile?.display_name?.trim() ||
+      displayNameFromAuthUser(viewer, viewerProfile)
+    : null;
+  const viewerAvatarRaw = sanitizeUserAvatarUrl(
+    viewerProfile && typeof viewerProfile.avatar_url === "string"
+      ? viewerProfile.avatar_url
+      : null
+  );
+  const viewerAvSrc = viewerAvatarRaw
+    ? viewerAvatarRaw.startsWith("http")
+      ? viewerAvatarRaw
+      : resolveListingImageUrl(env, viewerAvatarRaw)
     : null;
 
   const rawDesc =
@@ -1120,6 +1150,18 @@ export default async function IlanDetayPage({ params }: Props) {
               </>
             )}
           </div>
+          {showPublicChat && id ? (
+            <ListingPublicChatPanel
+              listingId={id}
+              listingPath={expectedSeoPath ?? `/ilan/${listingNumber}`}
+              sellerUserId={sellerUserId}
+              initialComments={listingPublicComments}
+              viewerId={viewer?.id ?? null}
+              viewerName={viewerDisplayName}
+              viewerAvatarUrl={viewerAvSrc}
+              canPost
+            />
+          ) : null}
           <AdSenseUnit
             slot={ADSENSE_LISTING_DETAIL_SLOT}
             className="mt-3 hidden lg:block"
