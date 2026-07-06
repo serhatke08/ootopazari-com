@@ -11,6 +11,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 type Props = {
   listingId: string;
   listingPath: string;
+  listingTitle: string;
+  listingImageUrl: string | null;
+  listingDescription: string;
   sellerUserId: string;
   initialComments: ListingPublicCommentView[];
   viewerId: string | null;
@@ -18,6 +21,13 @@ type Props = {
   viewerAvatarUrl: string | null;
   canPost: boolean;
 };
+
+function truncateText(text: string, max = 120): string {
+  const t = text.trim();
+  if (!t) return "";
+  if (t.length <= max) return t;
+  return `${t.slice(0, max).trimEnd()}…`;
+}
 
 function fmtTime(iso: string): string {
   try {
@@ -81,16 +91,92 @@ function ChatAvatar({
   );
 }
 
+function ListingMiniCard({
+  href,
+  title,
+  imageUrl,
+  description,
+  variant,
+}: {
+  href: string;
+  title: string;
+  imageUrl: string | null;
+  description: string;
+  variant: "header" | "inline";
+}) {
+  const desc = truncateText(description, variant === "header" ? 140 : 80);
+  const isHeader = variant === "header";
+
+  return (
+    <Link
+      href={href}
+      className={`group flex gap-2.5 transition ${
+        isHeader
+          ? "rounded-xl border border-black/8 bg-white p-2.5 shadow-sm hover:border-emerald-300/60 hover:shadow-md"
+          : "mt-2 rounded-lg border border-black/6 bg-black/[0.03] p-2 hover:bg-black/[0.05]"
+      }`}
+    >
+      <div
+        className={`relative shrink-0 overflow-hidden rounded-md bg-zinc-100 ${
+          isHeader ? "h-14 w-[4.5rem]" : "h-10 w-14"
+        }`}
+      >
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt=""
+            fill
+            className="object-cover"
+            sizes={isHeader ? "72px" : "56px"}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[9px] font-medium text-black/35">
+            İlan
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p
+          className={`font-semibold text-black group-hover:text-emerald-800 ${
+            isHeader ? "line-clamp-2 text-xs leading-snug" : "truncate text-[10px]"
+          }`}
+        >
+          {title}
+        </p>
+        {desc ? (
+          <p
+            className={`text-black/55 ${
+              isHeader
+                ? "mt-1 line-clamp-2 text-[11px] leading-relaxed"
+                : "mt-0.5 line-clamp-2 text-[9px] leading-snug"
+            }`}
+          >
+            {desc}
+          </p>
+        ) : (
+          <p className="mt-0.5 text-[10px] text-black/35">Açıklama yok</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 function AuthorLabel({
   name,
   isSeller,
   isSelf,
   align,
+  onDelete,
+  canDelete,
+  deleting,
 }: {
   name: string;
   isSeller: boolean;
   isSelf: boolean;
   align: "left" | "right";
+  onDelete?: () => void;
+  canDelete: boolean;
+  deleting: boolean;
 }) {
   return (
     <div
@@ -115,6 +201,17 @@ function AuthorLabel({
           Siz
         </span>
       ) : null}
+      {canDelete && onDelete ? (
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={deleting}
+          className="ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-medium text-red-600/80 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+          aria-label="Mesajı sil"
+        >
+          {deleting ? "Siliniyor…" : "Sil"}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -122,13 +219,43 @@ function AuthorLabel({
 function MessageBubble({
   comment,
   viewerId,
+  sellerUserId,
+  listingPath,
+  listingTitle,
+  listingImageUrl,
+  listingDescription,
+  onDelete,
+  deleting,
 }: {
   comment: ListingPublicCommentView;
   viewerId: string | null;
+  sellerUserId: string;
+  listingPath: string;
+  listingTitle: string;
+  listingImageUrl: string | null;
+  listingDescription: string;
+  onDelete: (id: string) => void;
+  deleting: boolean;
 }) {
   const isSeller = comment.isSeller;
   const isSelf = viewerId != null && comment.user_id === viewerId;
   const avatarVariant = isSeller ? "seller" : isSelf ? "self" : "other";
+  const canDelete =
+    !!viewerId && (isSelf || viewerId === sellerUserId);
+  const handleDelete = () => {
+    if (!window.confirm("Bu mesajı silmek istediğinize emin misiniz?")) return;
+    onDelete(comment.id);
+  };
+
+  const listingCard = (
+    <ListingMiniCard
+      href={listingPath}
+      title={listingTitle}
+      imageUrl={listingImageUrl}
+      description={listingDescription}
+      variant="inline"
+    />
+  );
 
   if (isSelf && !isSeller) {
     return (
@@ -139,9 +266,15 @@ function MessageBubble({
             isSeller={false}
             isSelf
             align="right"
+            canDelete={canDelete}
+            deleting={deleting}
+            onDelete={handleDelete}
           />
-          <div className="rounded-2xl rounded-br-md bg-emerald-700 px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-sm">
+          <div className="w-full rounded-2xl rounded-br-md bg-emerald-700 px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-sm">
             <p className="whitespace-pre-wrap break-words">{comment.body}</p>
+            <div className="mt-2 overflow-hidden rounded-lg bg-white/95">
+              {listingCard}
+            </div>
           </div>
           <time
             className="mt-1 pr-0.5 text-[10px] text-black/40"
@@ -173,6 +306,9 @@ function MessageBubble({
           isSeller={isSeller}
           isSelf={isSelf}
           align="left"
+          canDelete={canDelete}
+          deleting={deleting}
+          onDelete={handleDelete}
         />
         <div
           className={`rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
@@ -182,6 +318,7 @@ function MessageBubble({
           }`}
         >
           <p className="whitespace-pre-wrap break-words">{comment.body}</p>
+          {listingCard}
         </div>
         <time
           className="mt-1 block pl-0.5 text-[10px] text-black/40"
@@ -198,6 +335,9 @@ function MessageBubble({
 export function ListingPublicChatPanel({
   listingId,
   listingPath,
+  listingTitle,
+  listingImageUrl,
+  listingDescription,
   sellerUserId,
   initialComments,
   viewerId,
@@ -211,6 +351,7 @@ export function ListingPublicChatPanel({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -254,12 +395,46 @@ export function ListingPublicChatPanel({
           });
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "listing_public_comments",
+          filter: `listing_id=eq.${listingId}`,
+        },
+        (payload) => {
+          const old = payload.old as { id?: string };
+          if (!old?.id) return;
+          setComments((prev) => prev.filter((c) => c.id !== old.id));
+        }
+      )
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
   }, [listingId, sellerUserId, supabase]);
+
+  const deleteComment = useCallback(
+    async (commentId: string) => {
+      setDeletingId(commentId);
+      try {
+        const { error } = await supabase
+          .from("listing_public_comments")
+          .delete()
+          .eq("id", commentId);
+        if (error) {
+          window.alert(error.message || "Mesaj silinemedi.");
+          return;
+        }
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [supabase]
+  );
 
   async function submitMessage() {
     const trimmed = text.trim();
@@ -371,8 +546,7 @@ export function ListingPublicChatPanel({
                 Soru &amp; Yorum
               </h2>
               <p className="mt-0.5 text-xs leading-snug text-emerald-50/90">
-                Bu ilana özel herkese açık sohbet — fiyat, durum veya detay
-                sorabilirsiniz.
+                Bu ilana özel herkese açık sohbet
               </p>
             </div>
           </div>
@@ -382,40 +556,44 @@ export function ListingPublicChatPanel({
         </div>
       </header>
 
+      <div className="border-b border-black/8 bg-zinc-50/90 px-3 py-2.5">
+        <ListingMiniCard
+          href={listingPath}
+          title={listingTitle}
+          imageUrl={listingImageUrl}
+          description={listingDescription}
+          variant="header"
+        />
+      </div>
+
       <div
         ref={scrollRef}
         className="flex min-h-[18rem] max-h-[28rem] flex-1 flex-col overflow-y-auto bg-[linear-gradient(180deg,#f8faf9_0%,#f4f4f5_100%)] px-3 py-4 scroll-smooth"
       >
         {comments.length === 0 ? (
           <div className="m-auto flex max-w-[14rem] flex-col items-center px-4 text-center">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/8">
-              <svg
-                className="h-7 w-7 text-emerald-700/50"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M7.5 8.25h9m-9 3h12m-9 3h6m-6 3h3m-3-9V6.75A2.25 2.25 0 0 1 9.75 4.5h4.5A2.25 2.25 0 0 1 16.5 6.75v1.5M4.5 9.75v7.5A2.25 2.25 0 0 0 6.75 19.5h10.5A2.25 2.25 0 0 0 19.5 17.25v-7.5"
-                />
-              </svg>
-            </div>
             <p className="text-sm font-medium text-black/55">
               Sohbet henüz başlamadı
             </p>
             <p className="mt-1 text-xs leading-relaxed text-black/40">
-              İlk soruyu veya yorumu siz yazın; satıcı ve diğer ziyaretçiler
-              görebilir.
+              İlk soruyu veya yorumu siz yazın.
             </p>
           </div>
         ) : (
           <ul className="flex flex-col gap-4">
             {comments.map((c) => (
-              <MessageBubble key={c.id} comment={c} viewerId={viewerId} />
+              <MessageBubble
+                key={c.id}
+                comment={c}
+                viewerId={viewerId}
+                sellerUserId={sellerUserId}
+                listingPath={listingPath}
+                listingTitle={listingTitle}
+                listingImageUrl={listingImageUrl}
+                listingDescription={listingDescription}
+                onDelete={deleteComment}
+                deleting={deletingId === c.id}
+              />
             ))}
           </ul>
         )}
@@ -456,27 +634,7 @@ export function ListingPublicChatPanel({
                         disabled={sending || !text.trim()}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        {sending ? (
-                          "Gönderiliyor…"
-                        ) : (
-                          <>
-                            Gönder
-                            <svg
-                              className="h-3.5 w-3.5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={2}
-                              stroke="currentColor"
-                              aria-hidden
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
-                              />
-                            </svg>
-                          </>
-                        )}
+                        {sending ? "Gönderiliyor…" : "Gönder"}
                       </button>
                     </div>
                   </div>
