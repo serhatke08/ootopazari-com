@@ -364,6 +364,41 @@ export async function fetchEnginesForBodyStyle(
   return [];
 }
 
+/** Model altındaki tüm kasa kayıtlarından motorları tek listede döner (kasa seçimi yok). */
+export async function fetchEnginesForModel(
+  supabase: SupabaseClient,
+  modelId: string
+): Promise<IdNameRow[]> {
+  const bodies = await fetchBodyStylesForModel(supabase, modelId);
+  if (bodies.length === 0) return [];
+
+  const bodyIds = bodies.map((row) => row.id).filter(Boolean);
+  const { data, error } = await supabase
+    .from("vehicle_body_style_engines")
+    .select("id,name,fuel_type,horsepower,sort_order")
+    .in("body_style_id", bodyIds)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
+
+  if (error || !data) {
+    console.warn(
+      "vehicle_body_style_engines by model:",
+      error?.message ?? "sorgu başarısız"
+    );
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const rows: IdNameRow[] = [];
+  for (const row of data as IdNameRow[]) {
+    const key = (row.name ?? "").trim().toLocaleLowerCase("tr-TR");
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    rows.push(row);
+  }
+  return rows;
+}
+
 /**
  * `vehicle_body_style_engines.id` → `vehicle_engine_packages`
  * (Flutter: `engine_id` + sort_order; listede `name`).

@@ -5,11 +5,10 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   fetchBodyStyleEngineRow,
-  fetchBodyStylesForModel,
   fetchBrandModelsHierarchy,
   fetchBrandsByCategory,
   fetchChildBrandModels,
-  fetchEnginesForBodyStyle,
+  fetchEnginesForModel,
   fetchPackagesForEngine,
   type IdNameRow,
 } from "@/lib/vehicle-hierarchy";
@@ -459,26 +458,23 @@ export function CreateListingWizard({
   const modelSelectId = hierarchical ? null : parentId;
 
   useEffect(() => {
-    if (!resolvedModelId || modelOther || brandOther) {
-      setBodyStyles([]);
-      setBodyStyleId(null);
-      return;
-    }
-    void (async () => {
-      const bs = await fetchBodyStylesForModel(supabase, resolvedModelId);
-      setBodyStyles(bs);
-    })();
-  }, [resolvedModelId, modelOther, brandOther, supabase]);
+    setEngines([]);
+    setEngineId(null);
+    setEngineOther(false);
+    setOtherEngineText("");
+    setPackages([]);
+    setPackageId(null);
+    setPackageOther(false);
+    setOtherPackageText("");
+    setBodyStyles([]);
+    setBodyStyleId(null);
+    setBodyOther(false);
+    setOtherBodyText("");
 
-  useEffect(() => {
-    if (!bodyStyleId || bodyOther) {
-      setEngines([]);
-      setEngineId(null);
-      return;
-    }
+    if (!resolvedModelId || modelOther || brandOther) return;
+
     void (async () => {
-      const en = await fetchEnginesForBodyStyle(supabase, bodyStyleId);
-      // Motorları küçükten büyüğe sırala (sayısal)
+      const en = await fetchEnginesForModel(supabase, resolvedModelId);
       en.sort((a, b) => {
         const aNum = parseFloat((a.name || "").replace(/[^\d.]/g, "")) || 0;
         const bNum = parseFloat((b.name || "").replace(/[^\d.]/g, "")) || 0;
@@ -486,7 +482,7 @@ export function CreateListingWizard({
       });
       setEngines(en);
     })();
-  }, [bodyStyleId, bodyOther, supabase]);
+  }, [resolvedModelId, modelOther, brandOther, supabase]);
 
   useEffect(() => {
     if (!engineId || engineOther) {
@@ -535,15 +531,13 @@ export function CreateListingWizard({
 
   const useCustomModelText = brandOther || modelOther;
 
-  /** Kasa listesi boş → DB’den motor satırı yok; metin alanları kullanılır. */
-  const noBodyStylesFromApi =
+  /** DB’de motor satırı yok → metin alanları. */
+  const noEnginesFromApi =
     isVehicle &&
-    !!brandId &&
-    !brandOther &&
     !!resolvedModelId &&
     !modelOther &&
     !useCustomModelText &&
-    bodyStyles.length === 0;
+    engines.length === 0;
 
   const modelNameForVehicleModel = useMemo(() => {
     if (useCustomModelText) return null;
@@ -566,44 +560,32 @@ export function CreateListingWizard({
 
   const engineForVehicleModel = useMemo(() => {
     if (!isVehicle) return null;
-    if (bodyOther || noBodyStylesFromApi)
+    if (noEnginesFromApi || engineOther)
       return otherEngineText.trim() || null;
-    if (bodyStyleId && !engineOther && engineId)
-      return labelOf(engines, engineId);
-    if (engineOther) return otherEngineText.trim() || null;
+    if (engineId) return labelOf(engines, engineId);
     return null;
   }, [
     isVehicle,
-    bodyOther,
-    noBodyStylesFromApi,
-    otherEngineText,
-    bodyStyleId,
+    noEnginesFromApi,
     engineOther,
+    otherEngineText,
     engineId,
     engines,
   ]);
 
   const packageForVehicleModel = useMemo(() => {
     if (!isVehicle) return null;
-    if (bodyOther || noBodyStylesFromApi || engineOther)
+    if (noEnginesFromApi || engineOther)
       return otherPackageText.trim() || null;
-    if (
-      bodyStyleId &&
-      engineId &&
-      !engineOther &&
-      !packageOther &&
-      packageId
-    )
+    if (engineId && !engineOther && !packageOther && packageId)
       return labelOf(packages, packageId);
     if (packageOther) return otherPackageText.trim() || null;
     return null;
   }, [
     isVehicle,
-    bodyOther,
-    noBodyStylesFromApi,
+    noEnginesFromApi,
     engineOther,
     otherPackageText,
-    bodyStyleId,
     engineId,
     packageOther,
     packageId,
@@ -884,7 +866,7 @@ export function CreateListingWizard({
       ) {
         base.vehicle_brand_model_id = resolvedModelId;
       }
-      if (!bodyOther && !engineOther && !packageOther && packageId) {
+      if (!engineOther && !packageOther && packageId) {
         base.vehicle_engine_package_id = packageId;
       }
       base.has_expertise = hasExpertise;
@@ -1430,105 +1412,7 @@ export function CreateListingWizard({
               !modelOther &&
               !useCustomModelText ? (
                 <>
-                  {bodyStyles.length > 0 ? (
-                    <div>
-                      <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                        Kasa tipi
-                      </label>
-                      <select
-                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                        value={bodyOther ? OTHER : bodyStyleId ?? ""}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === OTHER) {
-                            setBodyOther(true);
-                            setBodyStyleId(null);
-                          } else {
-                            setBodyOther(false);
-                            setBodyStyleId(v || null);
-                          }
-                        }}
-                      >
-                        <option value="">Seçin</option>
-                        {bodyStyles.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name ?? p.code ?? p.id}
-                          </option>
-                        ))}
-                        <option value={OTHER}>Diğer</option>
-                      </select>
-                      {bodyOther ? (
-                        <>
-                          <input
-                            className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                            placeholder="Diğer kasa tipi (metin)"
-                            value={otherBodyText}
-                            onChange={(e) => setOtherBodyText(e.target.value)}
-                          />
-                          <p className="mt-3 text-[11px] text-zinc-500">
-                            Diğer kasada motor listesi yok; motor ve paketi metin
-                            ile girin (vehicle_model birleşiminde kullanılır).
-                          </p>
-                          <div className="mt-2">
-                            <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                              Motor (metin)
-                            </label>
-                            <input
-                              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                              placeholder="Örn. 1.5 TSI"
-                              value={otherEngineText}
-                              onChange={(e) =>
-                                setOtherEngineText(e.target.value)
-                              }
-                            />
-                          </div>
-                          <div className="mt-2">
-                            <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                              Paket (metin, isteğe bağlı)
-                            </label>
-                            <input
-                              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                              value={otherPackageText}
-                              onChange={(e) =>
-                                setOtherPackageText(e.target.value)
-                              }
-                            />
-                          </div>
-                        </>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-xs text-zinc-500">
-                        Bu model için veritabanında kasa listesi yok. Kasa tipini{" "}
-                        <strong>3. adımda</strong> sabit listeden veya &quot;Diğer
-                        (Yaz)&quot; ile girebilirsiniz.
-                      </p>
-                      <div className="mt-3">
-                        <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                          Motor (metin)
-                        </label>
-                        <input
-                          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                          placeholder="Örn. 1.5 TSI 150 HP"
-                          value={otherEngineText}
-                          onChange={(e) => setOtherEngineText(e.target.value)}
-                        />
-                      </div>
-                      <div className="mt-2">
-                        <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                          Paket (metin, isteğe bağlı)
-                        </label>
-                        <input
-                          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                          value={otherPackageText}
-                          onChange={(e) => setOtherPackageText(e.target.value)}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {bodyStyleId && !bodyOther ? (
+                  {engines.length > 0 ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
                         Motor
@@ -1579,7 +1463,31 @@ export function CreateListingWizard({
                         </>
                       ) : null}
                     </div>
-                  ) : null}
+                  ) : (
+                    <>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
+                          Motor (metin)
+                        </label>
+                        <input
+                          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                          placeholder="Örn. 1.6"
+                          value={otherEngineText}
+                          onChange={(e) => setOtherEngineText(e.target.value)}
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
+                          Paket (metin, isteğe bağlı)
+                        </label>
+                        <input
+                          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                          value={otherPackageText}
+                          onChange={(e) => setOtherPackageText(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {engineId && !engineOther ? (
                     <div>
