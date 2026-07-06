@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
-import { HomeSeoIntro } from "@/components/HomeSeoIntro";
 import { HomeQuickLinksStrip } from "@/components/HomeQuickLinksStrip";
 import {
   type CategoryRow,
@@ -156,9 +155,7 @@ export default async function AnaSayfa({
           selectedCityId={listFilters.cityId}
           q={q}
         />
-      ) : (
-        <HomeSeoIntro />
-      )}
+      ) : null}
       <HomeQuickLinksStrip />
       <HomePageListings
           env={env}
