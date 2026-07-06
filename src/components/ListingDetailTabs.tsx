@@ -18,12 +18,11 @@ const TABS: Array<{ id: Tab; label: string }> = [
 ];
 
 const SHELL_CLASS =
-  "overflow-hidden rounded-xl border border-black/10 bg-white md:flex md:max-h-[calc(100dvh-var(--header-offset,5.5rem)-9rem)] md:flex-col";
+  "overflow-hidden rounded-xl border border-black/10 bg-white";
 
 const TAB_LIST_CLASS = "flex shrink-0 border-b border-black/10";
 
-const BODY_CLASS =
-  "bg-white md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain";
+const BODY_CLASS = "bg-white";
 
 const ACTIVE_TAB_CLASS =
   "border-b-2 border-black bg-white text-black font-semibold";
@@ -31,7 +30,7 @@ const INACTIVE_TAB_CLASS =
   "border-b-2 border-transparent bg-white text-black/60 hover:text-black hover:border-black/30";
 
 function tabButtonClass(active: boolean) {
-  return `flex-1 px-3 py-2.5 text-sm transition sm:px-4 ${
+  return `flex-1 px-3 py-2 text-sm transition sm:px-4 lg:py-1.5 lg:text-xs ${
     active ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS
   }`;
 }
@@ -71,7 +70,7 @@ export function ListingDetailTabs({
       <div className={BODY_CLASS}>
         {activeTab === "info" && <div>{infoContent}</div>}
         {activeTab === "description" && (
-          <div className="p-3 sm:p-4">{descriptionContent}</div>
+          <div className="p-2.5 sm:p-3 lg:p-2">{descriptionContent}</div>
         )}
         {activeTab === "equipment" && (
           <div className="p-3 sm:p-4">{equipmentContent}</div>

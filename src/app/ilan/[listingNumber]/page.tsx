@@ -54,6 +54,7 @@ import { SuspendListingButton } from "@/components/SuspendListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
 import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
+import { ListingDescriptionText } from "@/components/ListingDescriptionText";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
 import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
@@ -603,9 +604,7 @@ export default async function IlanDetayPage({ params }: Props) {
         sekmelerinde.
       </p>
     ) : (
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-black lg:text-xs lg:leading-snug">
-        {descBody}
-      </p>
+      <ListingDescriptionText text={descBody} />
     );
 
   const motorNote = pick(row, ["engine_note", "motor_note"]) as string | undefined;
