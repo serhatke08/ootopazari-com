@@ -1,6 +1,11 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Oto Pazarı — İkinci el ve sıfır araç ilanları";
+import {
+  SITE_DISPLAY_NAME,
+  SITE_HOME_TITLE_SUFFIX,
+} from "@/lib/seo-brand";
+
+export const alt = `${SITE_DISPLAY_NAME} — İkinci el araba ve sıfır araba ilanları`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -46,7 +51,7 @@ export default function OpenGraphImage() {
             lineHeight: 1.1,
           }}
         >
-          Oto Pazarı
+          {SITE_DISPLAY_NAME}
         </div>
         <div
           style={{
@@ -57,7 +62,7 @@ export default function OpenGraphImage() {
             textAlign: "center",
           }}
         >
-          İkinci El ve Sıfır Araç İlanları
+          {SITE_HOME_TITLE_SUFFIX}
         </div>
         <div
           style={{
@@ -68,7 +73,8 @@ export default function OpenGraphImage() {
             maxWidth: 800,
           }}
         >
-          Türkiye genelinde otomobil ilanları · Ücretsiz ilan ver
+          Türkiye&apos;nin oto pazarı — ikinci el araba · sıfır araba · ücretsiz
+          ilan ver
         </div>
       </div>
     ),

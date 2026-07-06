@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
+import { SITE_DISPLAY_NAME, SITE_HOME_DESCRIPTION } from "@/lib/seo-brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Oto Pazarı",
-    short_name: "Oto Pazarı",
-    description:
-      "Oto Pazarı — Türkiye'nin ikinci el araba ve sıfır otomobil ilan platformu.",
+    name: SITE_DISPLAY_NAME,
+    short_name: SITE_DISPLAY_NAME,
+    description: SITE_HOME_DESCRIPTION,
     start_url: "/",
     display: "standalone",
     background_color: "#ffcc00",

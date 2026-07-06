@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
+import { HomeSeoIntro } from "@/components/HomeSeoIntro";
 import { HomeQuickLinksStrip } from "@/components/HomeQuickLinksStrip";
 import {
   type CategoryRow,
@@ -24,7 +25,13 @@ import { HomePageListings } from "@/components/HomePageListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
-import { SITE_DISPLAY_NAME } from "@/lib/seo-brand";
+import {
+  SITE_DISPLAY_NAME,
+  SITE_HOME_DESCRIPTION,
+  SITE_HOME_OG_DESCRIPTION,
+  SITE_HOME_TITLE,
+  SITE_HOME_TWITTER_DESCRIPTION,
+} from "@/lib/seo-brand";
 
 /** Geçici: ana sayfa hero bölümü (kaldırılmadı, devre dışı). */
 const SHOW_HOME_HERO = false;
@@ -41,10 +48,9 @@ export async function generateMetadata({
 
   return {
     title: {
-      absolute: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
+      absolute: SITE_HOME_TITLE,
     },
-    description:
-      "Oto Pazarı ile ikinci el araba, sıfır otomobil ve araç ilanlarını keşfedin. Türkiye genelinde ücretsiz ilan ver, filtrele ve mesajlaş.",
+    description: SITE_HOME_DESCRIPTION,
     applicationName: SITE_DISPLAY_NAME,
     alternates: {
       canonical: hasQuery ? origin : "/",
@@ -54,15 +60,13 @@ export async function generateMetadata({
       locale: "tr_TR",
       url: "/",
       siteName: SITE_DISPLAY_NAME,
-      title: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
-      description:
-        "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
+      title: SITE_HOME_TITLE,
+      description: SITE_HOME_OG_DESCRIPTION,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
-      description:
-        "Türkiye'nin oto pazarı — ikinci el araba ve sıfır otomobil ilanları.",
+      title: SITE_HOME_TITLE,
+      description: SITE_HOME_TWITTER_DESCRIPTION,
     },
   };
 }
@@ -152,7 +156,9 @@ export default async function AnaSayfa({
           selectedCityId={listFilters.cityId}
           q={q}
         />
-      ) : null}
+      ) : (
+        <HomeSeoIntro />
+      )}
       <HomeQuickLinksStrip />
       <HomePageListings
           env={env}
@@ -197,7 +203,7 @@ function HomeHero({
               <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/90">
                 Türkiye&apos;nin oto pazarı
                 <span className="h-1 w-1 rounded-full bg-[#ffc400]" />
-                İkinci el · Sıfır · Kiralık
+                İkinci el araba · Sıfır araba · Kiralık
               </p>
 
               <h1 className="mt-5 text-3xl font-extrabold leading-[1.06] tracking-tight sm:text-5xl">
@@ -206,8 +212,9 @@ function HomeHero({
               </h1>
 
               <p className="mt-4 text-sm leading-relaxed text-white/80 sm:text-base">
-                Oto Pazarı&apos;nda ikinci el araba ve sıfır otomobil ilanlarını
-                filtrele; favorile ve satıcıyla hızlıca iletişime geç.
+                Oto Pazarı&apos;nda ikinci el araba ve sıfır araba ilanlarını
+                filtrele; ikinci el otomobil ve sıfır otomobil ilanlarına
+                ücretsiz araba ilanı ver, favorile ve satıcıyla iletişime geç.
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">

@@ -2,6 +2,8 @@ import { buildListingSeoPath } from "@/lib/listing-seo";
 import {
   SITE_ALTERNATE_NAMES,
   SITE_DISPLAY_NAME,
+  SITE_HOME_DESCRIPTION,
+  SITE_HOME_TITLE,
   canonicalSiteHomeUrl,
 } from "@/lib/seo-brand";
 
@@ -23,7 +25,7 @@ export function buildHomeSeoJsonLd(opts: {
       url: homeUrl,
       logo: `${siteOrigin.replace(/\/$/, "")}${LOGO}`,
       description:
-        "Türkiye'nin ikinci el ve sıfır otomobil ilan platformu — Oto Pazarı.",
+        "Oto Pazarı — ikinci el araba ve sıfır araba ilanları. İkinci el otomobil ve sıfır otomobil ilan platformu.",
     },
     {
       "@type": "WebSite",
@@ -46,12 +48,11 @@ export function buildHomeSeoJsonLd(opts: {
       "@type": "WebPage",
       "@id": `${homeUrl}#webpage`,
       url: homeUrl,
-      name: `${SITE_DISPLAY_NAME} — İkinci El ve Sıfır Araç İlanları`,
+      name: SITE_HOME_TITLE,
       isPartOf: { "@id": `${homeUrl}#website` },
       about: { "@id": `${homeUrl}#organization` },
       inLanguage: "tr-TR",
-      description:
-        "Oto Pazarı ile ikinci el araba, sıfır otomobil ve araç ilanlarını keşfedin.",
+      description: SITE_HOME_DESCRIPTION,
     },
   ];
 

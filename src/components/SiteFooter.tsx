@@ -35,7 +35,7 @@ export function SiteFooter({
           <div className="mb-6 text-center">
             <h2 className="text-xl font-bold text-zinc-900">Oto Pazarı</h2>
             <p className="mt-1 text-xs text-zinc-600">
-              Türkiye'nin araç ilan platformu
+              İkinci el araba ve sıfır araba ilanları
             </p>
           </div>
 
@@ -86,33 +86,32 @@ export function SiteFooter({
             className="site-footer-seo"
           >
             <h2 id="footer-seo-heading">
-              Oto Pazarı — Türkiye&apos;nin araç ilan platformu
+              Oto Pazarı — İkinci el araba ve sıfır araba ilanları
             </h2>
             <div className="site-footer-seo-text">
               <p>
-                <strong>Oto Pazarı</strong>, ikinci el araba ve sıfır otomobil
+                <strong>Oto Pazarı</strong>, ikinci el araba ve sıfır araba
                 ilanlarını tek yerde toplayan Türkiye geneli bir{" "}
                 <strong>oto pazarı</strong>
-                dır. Marka, model, şehir ve fiyat filtreleriyle binlerce güncel
-                ilanı tarayın; favorilerinize ekleyin ve satıcıyla doğrudan
-                mesajlaşın.
+                dır. İkinci el otomobil ve sıfır otomobil ilanlarını marka,
+                model, şehir ve fiyat filtreleriyle tarayın; ücretsiz araba
+                ilanı verin ve satıcıyla doğrudan mesajlaşın.
               </p>
               <p>
-                Ücretsiz ilan vererek aracınızı Oto Pazarı&apos;nda yayınlayın.
-                Galeri, ekspertiz, parça ve kiralık kategorilerinde de ilan
-                oluşturabilir; güvenilir alıcı ve satıcılarla hızlıca iletişime
-                geçebilirsiniz.
+                Ücretsiz araba ilanı vererek ikinci el araba veya sıfır araba
+                ilanınızı Oto Pazarı&apos;nda yayınlayın. Galeri, ekspertiz,
+                parça ve kiralık kategorilerinde de ilan oluşturabilirsiniz.
               </p>
             </div>
             <nav aria-label="Oto Pazarı kategorileri" className="site-footer-tags">
-              <Link href="/?q=otomobil" className="site-footer-tag">
-                Otomobil ilanları
+              <Link href="/" className="site-footer-tag">
+                Oto pazarı
               </Link>
-              <Link href="/?q=ikinci+el" className="site-footer-tag">
+              <Link href="/?q=ikinci+el+araba" className="site-footer-tag">
                 İkinci el araba
               </Link>
-              <Link href="/?q=sıfır" className="site-footer-tag">
-                Sıfır araç
+              <Link href="/?q=sıfır+araba" className="site-footer-tag">
+                Sıfır araba
               </Link>
               <Link href="/ilan-ver" className="site-footer-tag">
                 Ücretsiz ilan ver
