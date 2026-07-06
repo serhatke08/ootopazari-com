@@ -748,7 +748,9 @@ export default async function IlanDetayPage({ params }: Props) {
     specRow("Konum", cityDisplayResolved),
     specRow("Marka", brandName),
     specRow("Model", modelForDisplay),
-    specRow("Seri", detailVehicleSeries),
+    isMotorcycle
+      ? specRow("CC", engineCapacityDisplay)
+      : specRow("Seri", detailVehicleSeries),
     specRow("Üretim yılı", listing.vehicle_year as number | null),
     specRow(
       "Kilometre",
@@ -756,7 +758,7 @@ export default async function IlanDetayPage({ params }: Props) {
     ),
     specRow("Yakıt", listing.fuel_type as string),
     specRow(isMotorcycle ? "Şanzıman" : "Vites", listing.transmission_type as string),
-    specRow("Motor hacmi", engineCapacityDisplay),
+    !isMotorcycle ? specRow("Motor hacmi", engineCapacityDisplay) : null,
     specRow("Motor gücü (HP)", enginePowerDisplay),
     specRow(isMotorcycle ? "Renk / Kaplama" : "Renk", listing.color as string),
     specRow("Kasa tipi", kasaDisplay),
@@ -1061,6 +1063,27 @@ export default async function IlanDetayPage({ params }: Props) {
             descriptionContent={descriptionTabContent}
             equipmentContent={equipmentTabContent}
           />
+          {expertizPanels ? (
+            <section className="mt-4">
+              <h2 className="mb-3 text-lg font-semibold text-black">
+                Ekspertiz bilgileri
+              </h2>
+              <ExpertizDiagram panels={expertizPanels} />
+            </section>
+          ) : expertizRaw != null ? (
+            <section className="mt-4 rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
+              Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile
+              eşleşmesi için panelleri JSON veya beklenen anahtarlarla kaydedin.
+              <details className="mt-2">
+                <summary className="cursor-pointer font-medium">Ham veri</summary>
+                <pre className="mt-2 max-h-64 overflow-auto rounded border border-black/10 bg-white p-2 text-xs text-black">
+                  {typeof expertizRaw === "string"
+                    ? expertizRaw
+                    : JSON.stringify(expertizRaw, null, 2)}
+                </pre>
+              </details>
+            </section>
+          ) : null}
         </div>
 
         <div className="listing-detail-aside min-w-0 max-md:mt-2">
@@ -1169,28 +1192,6 @@ export default async function IlanDetayPage({ params }: Props) {
           />
         </div>
       </div>
-
-      {expertizPanels ? (
-        <section className="mt-10">
-          <h2 className="mb-4 text-lg font-semibold text-black">
-            Ekspertiz bilgileri
-          </h2>
-          <ExpertizDiagram panels={expertizPanels} />
-        </section>
-      ) : expertizRaw != null ? (
-        <section className="mt-10 rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
-          Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile eşleşmesi için
-          panelleri JSON veya beklenen anahtarlarla kaydedin.
-          <details className="mt-2">
-            <summary className="cursor-pointer font-medium">Ham veri</summary>
-            <pre className="mt-2 max-h-64 overflow-auto rounded border border-black/10 bg-white p-2 text-xs text-black">
-              {typeof expertizRaw === "string"
-                ? expertizRaw
-                : JSON.stringify(expertizRaw, null, 2)}
-            </pre>
-          </details>
-        </section>
-      ) : null}
     </article>
   );
 }

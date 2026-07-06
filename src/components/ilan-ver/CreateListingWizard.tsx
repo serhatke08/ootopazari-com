@@ -10,6 +10,9 @@ import {
   fetchChildBrandModels,
   fetchEnginesForModel,
   fetchPackagesForEngine,
+  formatEngineCcLabel,
+  engineCapacityCcFromRow,
+  type EngineOptionRow,
   type IdNameRow,
 } from "@/lib/vehicle-hierarchy";
 import {
@@ -42,6 +45,7 @@ import {
   type PanelKey,
 } from "@/lib/expertiz";
 import { ExpertizCarPreview } from "@/components/ExpertizDiagram";
+import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
 
 const OTHER = "__other__";
 
@@ -137,6 +141,7 @@ const EXPERTIZ_OPTIONS: { value: ExpertizDurum; label: string }[] = [
 function pickEngineFuelHp(row: Record<string, unknown>): {
   fuel?: string;
   hp?: string;
+  cc?: string;
 } {
   const fuel =
     (row.fuel_type as string) ??
@@ -155,7 +160,22 @@ function pickEngineFuelHp(row: Record<string, unknown>): {
     hpRaw != null && hpRaw !== ""
       ? String(Math.trunc(Number(hpRaw)) || hpRaw)
       : undefined;
-  return { fuel, hp };
+  const ccRaw =
+    row.engine_capacity_cc ?? row.engine_cc ?? row.cc ?? row.engine_capacity;
+  let cc: string | undefined;
+  if (ccRaw != null && ccRaw !== "") {
+    const parsed = engineCapacityCcFromRow(
+      Number(ccRaw),
+      typeof row.name === "string" ? row.name : null
+    );
+    if (parsed != null) {
+      cc = String(parsed);
+    } else {
+      const n = Math.round(Number(ccRaw));
+      if (Number.isFinite(n) && n > 0) cc = String(n);
+    }
+  }
+  return { fuel, hp, cc };
 }
 
 export function CreateListingWizard({
@@ -197,7 +217,7 @@ export function CreateListingWizard({
   const [bodyOther, setBodyOther] = useState(false);
   const [otherBodyText, setOtherBodyText] = useState("");
 
-  const [engines, setEngines] = useState<IdNameRow[]>([]);
+  const [engines, setEngines] = useState<EngineOptionRow[]>([]);
   const [engineId, setEngineId] = useState<string | null>(null);
   const [engineOther, setEngineOther] = useState(false);
   const [otherEngineText, setOtherEngineText] = useState("");
@@ -252,6 +272,11 @@ export function CreateListingWizard({
   const categoryCode = selectedCategory?.code ?? null;
   const categoryName = selectedCategory?.name ?? null;
   const isVehicle = isVehicleCategoryCode(categoryCode);
+  const isMotorcycle = categoryId
+    ? categoryIdIsMotorcycle(categoryId, categories)
+    : false;
+  const modelFieldLabel = isMotorcycle ? "Model" : "Seri / model";
+  const engineFieldLabel = isMotorcycle ? "Motor (cc)" : "Motor";
   
   // Scooter kategorisi - plaka ve bazı özellikler zorunlu değil
   const isScooter = categoryName?.toLowerCase().includes("scooter") || 
@@ -501,11 +526,20 @@ export function CreateListingWizard({
     void (async () => {
       const row = await fetchBodyStyleEngineRow(supabase, engineId);
       if (!row) return;
-      const { fuel, hp } = pickEngineFuelHp(row);
+      const { fuel, hp, cc } = pickEngineFuelHp(row);
       if (fuel && !fuelType) setFuelType(fuel);
       if (hp && !enginePower) setEnginePower(hp);
+      if (isMotorcycle && cc && !engineCapacity) setEngineCapacity(cc);
     })();
-  }, [engineId, engineOther, supabase, fuelType, enginePower]);
+  }, [
+    engineId,
+    engineOther,
+    supabase,
+    fuelType,
+    enginePower,
+    engineCapacity,
+    isMotorcycle,
+  ]);
 
   const step1BodyStyleName = !bodyOther
     ? labelOf(bodyStyles, bodyStyleId)
@@ -562,10 +596,17 @@ export function CreateListingWizard({
     if (!isVehicle) return null;
     if (noEnginesFromApi || engineOther)
       return otherEngineText.trim() || null;
-    if (engineId) return labelOf(engines, engineId);
+    if (engineId) {
+      const eng = engines.find((e) => e.id === engineId);
+      if (isMotorcycle && eng) {
+        return formatEngineCcLabel(eng.name, eng.engine_capacity_cc);
+      }
+      return labelOf(engines, engineId);
+    }
     return null;
   }, [
     isVehicle,
+    isMotorcycle,
     noEnginesFromApi,
     engineOther,
     otherEngineText,
@@ -596,8 +637,8 @@ export function CreateListingWizard({
     customModelMode: useCustomModelText,
     customModelText,
     modelName: modelNameForVehicleModel,
-    engineName: engineForVehicleModel,
-    packageName: packageForVehicleModel,
+    engineName: isMotorcycle ? null : engineForVehicleModel,
+    packageName: isMotorcycle ? null : packageForVehicleModel,
   });
 
   const validateStep1 = useCallback((): string | null => {
@@ -605,19 +646,21 @@ export function CreateListingWizard({
     if (!isVehicle) return null;
     if (brandOther) {
       if (!otherBrandText.trim()) return "Diğer marka adını yazın.";
-      if (!customModelText.trim()) return "Seri / model bilgisini yazın.";
+      if (!customModelText.trim())
+        return `${modelFieldLabel} bilgisini yazın.`;
       return null;
     }
     if (!brandId) return "Marka seçin.";
     if (noModelsFromApi && !modelOther) {
-      return "Seri / model seçin (listede yoksa Diğer).";
+      return `${modelFieldLabel} seçin (listede yoksa Diğer).`;
     }
     if (modelOther) {
-      if (!customModelText.trim()) return "Seri / model (Diğer) metnini yazın.";
+      if (!customModelText.trim())
+        return `${modelFieldLabel} (Diğer) metnini yazın.`;
       return null;
     }
     if (hierarchical) {
-      if (!parentId) return "Seri / model seçin.";
+      if (!parentId) return `${modelFieldLabel} seçin.`;
       if (children.length > 0 && !childId)
         return "Alt model seçin veya listeyi tamamlayın.";
     } else {
@@ -627,6 +670,7 @@ export function CreateListingWizard({
   }, [
     categoryId,
     isVehicle,
+    modelFieldLabel,
     brandOther,
     otherBrandText,
     customModelText,
@@ -800,6 +844,7 @@ export function CreateListingWizard({
     const descParts = composeListingDescription({
       userDescription,
       isVehicle,
+      isMotorcycle,
       otherBrandNote: brandOther ? otherBrandText.trim() : null,
       seriModelNote:
         useCustomModelText
@@ -1303,7 +1348,7 @@ export function CreateListingWizard({
                   {modelsLoading ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                        Seri / model *
+                        {modelFieldLabel} *
                       </label>
                       <select
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-500"
@@ -1317,7 +1362,7 @@ export function CreateListingWizard({
                     <>
                       <div>
                         <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                          Seri / model *
+                          {modelFieldLabel} *
                         </label>
                         <select
                           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
@@ -1394,7 +1439,7 @@ export function CreateListingWizard({
                   {modelOther || brandOther ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                        Seri / model (Diğer) *
+                        {modelFieldLabel} (Diğer) *
                       </label>
                       <input
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
@@ -1415,7 +1460,7 @@ export function CreateListingWizard({
                   {engines.length > 0 ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                        Motor
+                        {engineFieldLabel}
                       </label>
                       <select
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
@@ -1428,13 +1473,26 @@ export function CreateListingWizard({
                           } else {
                             setEngineOther(false);
                             setEngineId(v || null);
+                            if (isMotorcycle && v) {
+                              const eng = engines.find((row) => row.id === v);
+                              const cc = engineCapacityCcFromRow(
+                                eng?.engine_capacity_cc,
+                                eng?.name
+                              );
+                              if (cc != null) setEngineCapacity(String(cc));
+                            }
                           }
                         }}
                       >
                         <option value="">Seçin</option>
                         {engines.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.name ?? p.code ?? p.id}
+                            {isMotorcycle
+                              ? formatEngineCcLabel(
+                                  p.name,
+                                  p.engine_capacity_cc
+                                )
+                              : (p.name ?? p.code ?? p.id)}
                           </option>
                         ))}
                         <option value={OTHER}>Diğer</option>
@@ -1443,23 +1501,27 @@ export function CreateListingWizard({
                         <>
                           <input
                             className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                            placeholder="Motor (metin)"
+                            placeholder={
+                              isMotorcycle ? "Motor hacmi (cc)" : "Motor (metin)"
+                            }
                             value={otherEngineText}
                             onChange={(e) => setOtherEngineText(e.target.value)}
                           />
-                          <div className="mt-2">
-                            <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                              Paket (metin, isteğe bağlı)
-                            </label>
-                            <input
-                              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                              placeholder="Liste yok veya diğer paket"
-                              value={otherPackageText}
-                              onChange={(e) =>
-                                setOtherPackageText(e.target.value)
-                              }
-                            />
-                          </div>
+                          {!isMotorcycle ? (
+                            <div className="mt-2">
+                              <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
+                                Paket (metin, isteğe bağlı)
+                              </label>
+                              <input
+                                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                                placeholder="Liste yok veya diğer paket"
+                                value={otherPackageText}
+                                onChange={(e) =>
+                                  setOtherPackageText(e.target.value)
+                                }
+                              />
+                            </div>
+                          ) : null}
                         </>
                       ) : null}
                     </div>
@@ -1489,7 +1551,7 @@ export function CreateListingWizard({
                     </>
                   )}
 
-                  {engineId && !engineOther ? (
+                  {engineId && !engineOther && !isMotorcycle ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
                         Paket
@@ -1876,7 +1938,7 @@ export function CreateListingWizard({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-zinc-700">
-                    Motor hacmi (L)
+                    {isMotorcycle ? "Motor hacmi (cc)" : "Motor hacmi (L)"}
                   </label>
                   <input
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"

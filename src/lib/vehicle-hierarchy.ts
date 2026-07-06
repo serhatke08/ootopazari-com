@@ -7,6 +7,42 @@ export type IdNameRow = {
   sort_order?: number | null;
 };
 
+export type EngineOptionRow = IdNameRow & {
+  engine_capacity_cc?: number | null;
+  fuel_type?: string | null;
+  horsepower?: number | null;
+};
+
+/** Motosiklet motor seçiminde cc etiketi (ör. `125 cc`). */
+export function engineCapacityCcFromRow(
+  engineCapacityCc: number | null | undefined,
+  name?: string | null
+): number | null {
+  if (engineCapacityCc != null && Number.isFinite(Number(engineCapacityCc))) {
+    const n = Math.round(Number(engineCapacityCc));
+    if (n > 0) return n;
+  }
+  const trimmed = name?.trim();
+  if (!trimmed) return null;
+  const ccMatch =
+    trimmed.match(/\b(\d{2,4})\s*cc\b/i) ?? trimmed.match(/^(\d{2,4})$/);
+  if (ccMatch) {
+    const n = parseInt(ccMatch[1], 10);
+    if (n > 0 && n < 5000) return n;
+  }
+  return null;
+}
+
+export function formatEngineCcLabel(
+  name: string | null | undefined,
+  engineCapacityCc: number | null | undefined
+): string {
+  const cc = engineCapacityCcFromRow(engineCapacityCc, name);
+  if (cc != null) return `${cc} cc`;
+  const trimmed = name?.trim();
+  return trimmed || "—";
+}
+
 type EnginePackageLabels = {
   motor: string | null;
   paket: string | null;
@@ -349,16 +385,16 @@ export async function fetchBodyStylesForModel(
 export async function fetchEnginesForBodyStyle(
   supabase: SupabaseClient,
   modelBodyStyleId: string
-): Promise<IdNameRow[]> {
+): Promise<EngineOptionRow[]> {
   const { data, error } = await supabase
     .from("vehicle_body_style_engines")
-    .select("id,name,fuel_type,horsepower,sort_order")
+    .select("id,name,fuel_type,horsepower,engine_capacity_cc,sort_order")
     .eq("body_style_id", modelBodyStyleId)
     .order("sort_order", { ascending: true, nullsFirst: false })
     .order("name", { ascending: true });
 
   if (!error && data) {
-    return (data ?? []) as IdNameRow[];
+    return (data ?? []) as EngineOptionRow[];
   }
 
   console.warn(
@@ -372,14 +408,14 @@ export async function fetchEnginesForBodyStyle(
 export async function fetchEnginesForModel(
   supabase: SupabaseClient,
   modelId: string
-): Promise<IdNameRow[]> {
+): Promise<EngineOptionRow[]> {
   const bodies = await fetchBodyStylesForModel(supabase, modelId);
   if (bodies.length === 0) return [];
 
   const bodyIds = bodies.map((row) => row.id).filter(Boolean);
   const { data, error } = await supabase
     .from("vehicle_body_style_engines")
-    .select("id,name,fuel_type,horsepower,sort_order")
+    .select("id,name,fuel_type,horsepower,engine_capacity_cc,sort_order")
     .in("body_style_id", bodyIds)
     .order("sort_order", { ascending: true, nullsFirst: false })
     .order("name", { ascending: true });
@@ -393,8 +429,8 @@ export async function fetchEnginesForModel(
   }
 
   const seen = new Set<string>();
-  const rows: IdNameRow[] = [];
-  for (const row of data as IdNameRow[]) {
+  const rows: EngineOptionRow[] = [];
+  for (const row of data as EngineOptionRow[]) {
     const key = (row.name ?? "").trim().toLocaleLowerCase("tr-TR");
     if (key && seen.has(key)) continue;
     if (key) seen.add(key);

@@ -110,6 +110,8 @@ export type ComposeDescriptionInput = {
   warranty?: boolean | null;
   heavyDamageRecorded?: boolean | null;
   plakaUyruk?: string | null;
+  /** Motosiklet: Seri/Paket yerine Model + CC satırları */
+  isMotorcycle?: boolean;
 };
 
 function fmtBool(v: boolean | null | undefined): string {
@@ -135,10 +137,15 @@ export function composeListingDescription(
 
   if (input.isVehicle) {
     line("Marka", input.otherBrandNote);
-    line("Seri/Model", input.seriModelNote);
-    line("Kasa Tipi", input.kasaTipiNote);
-    line("Motor", input.motorNote);
-    line("Paket", input.paketNote);
+    if (input.isMotorcycle) {
+      line("Model", input.seriModelNote);
+      line("CC", input.motorNote);
+    } else {
+      line("Seri/Model", input.seriModelNote);
+      line("Kasa Tipi", input.kasaTipiNote);
+      line("Motor", input.motorNote);
+      line("Paket", input.paketNote);
+    }
     const yvt = [
       input.fuelType?.trim() && `Yakıt: ${input.fuelType.trim()}`,
       input.transmissionType?.trim() && `Vites: ${input.transmissionType.trim()}`,

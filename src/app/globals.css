@@ -290,6 +290,7 @@ body {
     grid-column: 3;
     grid-row: 2;
     margin-top: 0;
+    align-self: start;
   }
 }
 

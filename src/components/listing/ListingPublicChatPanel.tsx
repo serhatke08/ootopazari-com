@@ -409,10 +409,10 @@ export function ListingPublicChatPanel({
 
   return (
     <section
-      className="listing-public-chat mt-4 hidden min-[80rem]:flex min-[80rem]:flex-col overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+      className="listing-public-chat mt-4 hidden min-[80rem]:flex min-[80rem]:h-[30.5rem] min-[80rem]:flex-col overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
       aria-label="İlan sohbeti"
     >
-      <header className="relative border-b border-emerald-900/10 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-600 px-4 py-3.5 text-white">
+      <header className="relative shrink-0 border-b border-emerald-900/10 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-600 px-4 py-3.5 text-white">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
@@ -453,7 +453,7 @@ export function ListingPublicChatPanel({
 
       <div
         ref={scrollRef}
-        className="flex min-h-[18rem] max-h-[28rem] flex-1 flex-col overflow-y-auto bg-[linear-gradient(180deg,#f8faf9_0%,#f4f4f5_100%)] px-3 py-4 scroll-smooth"
+        className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8faf9_0%,#f4f4f5_100%)] px-3 py-4 scroll-smooth"
       >
         {comments.length === 0 ? (
           <div className="m-auto flex max-w-[14rem] flex-col items-center px-4 text-center">
@@ -480,7 +480,7 @@ export function ListingPublicChatPanel({
         )}
       </div>
 
-      <footer className="border-t border-black/8 bg-white p-3.5">
+      <footer className="shrink-0 border-t border-black/8 bg-white p-3.5">
         {canPost ? (
           viewerId ? (
             <form onSubmit={send}>
