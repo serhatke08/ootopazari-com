@@ -627,9 +627,9 @@ export default async function IlanDetayPage({ params }: Props) {
   const descBody = rawDesc.trim() ? extractDescriptionBody(rawDesc) : "";
   const descriptionTabContent =
     !rawDesc.trim() ? (
-      <p className="text-sm text-black/55">Açıklama yok.</p>
+      <p className="text-base text-black/55">Açıklama yok.</p>
     ) : !descBody ? (
-      <p className="text-sm text-black/55">
+      <p className="text-base text-black/55">
         Ayrı açıklama metni yok; teknik bilgiler Genel Bilgiler ve Donanım
         sekmelerinde.
       </p>

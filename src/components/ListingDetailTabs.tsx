@@ -68,11 +68,11 @@ export function ListingDetailTabs({
       </div>
 
       <div className={BODY_CLASS}>
-        {activeTab === "info" && <div>{infoContent}</div>}
+        {activeTab === "info" && (
+          <div className="listing-detail-vehicle-specs-panel">{infoContent}</div>
+        )}
         {activeTab === "description" && (
-          <div className="listing-detail-description-panel p-3 sm:p-4">
-            {descriptionContent}
-          </div>
+          <div className="p-4 sm:p-5">{descriptionContent}</div>
         )}
         {activeTab === "equipment" && (
           <div className="p-3 sm:p-4">{equipmentContent}</div>
