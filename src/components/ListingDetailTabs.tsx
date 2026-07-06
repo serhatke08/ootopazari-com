@@ -30,7 +30,7 @@ const INACTIVE_TAB_CLASS =
   "border-b-2 border-transparent bg-white text-black/60 hover:text-black hover:border-black/30";
 
 function tabButtonClass(active: boolean) {
-  return `flex-1 px-3 py-2 text-sm transition sm:px-4 lg:py-1.5 lg:text-xs ${
+  return `flex-1 px-3 py-2.5 text-sm transition sm:px-4 ${
     active ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS
   }`;
 }
@@ -70,7 +70,9 @@ export function ListingDetailTabs({
       <div className={BODY_CLASS}>
         {activeTab === "info" && <div>{infoContent}</div>}
         {activeTab === "description" && (
-          <div className="p-2.5 sm:p-3 lg:p-2">{descriptionContent}</div>
+          <div className="listing-detail-description-panel p-3 sm:p-4">
+            {descriptionContent}
+          </div>
         )}
         {activeTab === "equipment" && (
           <div className="p-3 sm:p-4">{equipmentContent}</div>

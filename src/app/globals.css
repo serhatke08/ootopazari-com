@@ -292,3 +292,21 @@ body {
     margin-top: 0;
   }
 }
+
+/* PC: açıklama sekmesi — kutu + metin aynı oranda küçültülür */
+@media (min-width: 80rem) {
+  .listing-detail-description-panel {
+    zoom: 0.78;
+    padding: 0.65rem 0.85rem;
+  }
+}
+
+@supports not (zoom: 1) {
+  @media (min-width: 80rem) {
+    .listing-detail-description-panel {
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      padding: 0.65rem 0.85rem;
+    }
+  }
+}
