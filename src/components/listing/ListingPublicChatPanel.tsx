@@ -19,6 +19,14 @@ type Props = {
   canPost: boolean;
 };
 
+const COMMENT_REPORT_REASONS = [
+  "Spam / reklam",
+  "Hakaret / uygunsuz dil",
+  "Aldatıcı / yanıltıcı bilgi",
+  "Taciz",
+  "Diğer",
+] as const;
+
 function fmtTime(iso: string): string {
   try {
     return new Intl.DateTimeFormat("tr-TR", {
@@ -141,22 +149,30 @@ function MessageBubble({
   viewerId,
   sellerUserId,
   onDelete,
+  onReport,
   deleting,
+  reporting,
 }: {
   comment: ListingPublicCommentView;
   viewerId: string | null;
   sellerUserId: string;
   onDelete: (id: string) => void;
+  onReport: (comment: ListingPublicCommentView) => void;
   deleting: boolean;
+  reporting: boolean;
 }) {
   const isSeller = comment.isSeller;
   const isSelf = viewerId != null && comment.user_id === viewerId;
   const avatarVariant = isSeller ? "seller" : isSelf ? "self" : "other";
   const canDelete =
     !!viewerId && (isSelf || viewerId === sellerUserId);
+  const canReport = !!viewerId && !isSelf;
   const handleDelete = () => {
     if (!window.confirm("Bu mesajı silmek istediğinize emin misiniz?")) return;
     onDelete(comment.id);
+  };
+  const handleReport = () => {
+    onReport(comment);
   };
 
   if (isSelf && !isSeller) {
@@ -182,6 +198,16 @@ function MessageBubble({
           >
             {fmtTime(comment.created_at)}
           </time>
+          {canReport ? (
+            <button
+              type="button"
+              onClick={handleReport}
+              disabled={reporting}
+              className="mt-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-red-700/85 transition hover:bg-red-50 hover:text-red-800 disabled:opacity-50"
+            >
+              {reporting ? "Şikayet gönderiliyor…" : "Şikayet et"}
+            </button>
+          ) : null}
         </div>
         <ChatAvatar
           url={comment.authorAvatarUrl}
@@ -225,6 +251,16 @@ function MessageBubble({
         >
           {fmtTime(comment.created_at)}
         </time>
+        {canReport ? (
+          <button
+            type="button"
+            onClick={handleReport}
+            disabled={reporting}
+            className="mt-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-red-700/85 transition hover:bg-red-50 hover:text-red-800 disabled:opacity-50"
+          >
+            {reporting ? "Şikayet gönderiliyor…" : "Şikayet et"}
+          </button>
+        ) : null}
       </div>
     </li>
   );
@@ -247,6 +283,7 @@ export function ListingPublicChatPanel({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reportingId, setReportingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -329,6 +366,71 @@ export function ListingPublicChatPanel({
       }
     },
     [supabase]
+  );
+
+  const reportComment = useCallback(
+    async (comment: ListingPublicCommentView) => {
+      if (!viewerId) {
+        window.location.href = `/giris?next=${encodeURIComponent(listingPath)}`;
+        return;
+      }
+      if (comment.user_id === viewerId) {
+        window.alert("Kendi mesajınızı şikayet edemezsiniz.");
+        return;
+      }
+      const reason = window.prompt(
+        `Şikayet sebebi seçin:\n${COMMENT_REPORT_REASONS.map(
+          (r, i) => `${i + 1}) ${r}`
+        ).join("\n")}\n\nSebep numarası veya kısa açıklama yazın:`,
+        "1"
+      );
+      if (!reason) return;
+      const reasonNum = Number(reason.trim());
+      const reasonText =
+        Number.isFinite(reasonNum) &&
+        reasonNum >= 1 &&
+        reasonNum <= COMMENT_REPORT_REASONS.length
+          ? COMMENT_REPORT_REASONS[reasonNum - 1]
+          : reason.trim().slice(0, 120);
+      const detail = window.prompt(
+        "Kısa açıklama (isteğe bağlı):",
+        ""
+      )?.trim();
+
+      const reportBody =
+        `Soru-cevap mesaj şikayeti\n` +
+        `İlan: ${listingPath}\n` +
+        `İlan ID: ${listingId}\n` +
+        `Mesaj ID: ${comment.id}\n` +
+        `Yazan: ${comment.authorName} (${comment.user_id})\n` +
+        `Sebep: ${reasonText}\n` +
+        `Mesaj: ${comment.body}\n` +
+        (detail ? `Ek açıklama: ${detail}\n` : "");
+
+      setReportingId(comment.id);
+      try {
+        const res = await fetch("/api/support/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: reportBody }),
+        });
+        const payload = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.location.href = `/giris?next=${encodeURIComponent(listingPath)}`;
+            return;
+          }
+          window.alert(payload.error || "Şikayet gönderilemedi.");
+          return;
+        }
+        window.alert("Şikayetiniz desteğe gönderildi.");
+      } finally {
+        setReportingId(null);
+      }
+    },
+    [viewerId, listingPath, listingId]
   );
 
   async function submitMessage() {
@@ -473,7 +575,9 @@ export function ListingPublicChatPanel({
                 viewerId={viewerId}
                 sellerUserId={sellerUserId}
                 onDelete={deleteComment}
+                onReport={reportComment}
                 deleting={deletingId === c.id}
+                reporting={reportingId === c.id}
               />
             ))}
           </ul>

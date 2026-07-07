@@ -583,7 +583,10 @@ export default async function IlanDetayPage({ params }: Props) {
     : null;
 
   const showPublicChat =
-    detailAccess === "public" && !!id && !!sellerUserId;
+    detailAccess === "public" &&
+    !!id &&
+    !!sellerUserId &&
+    !!viewer?.id;
 
   const [listingPublicComments, viewerProfile] = await Promise.all([
     showPublicChat
