@@ -5,11 +5,11 @@ function Pulse({ className }: { className: string }) {
 function SpecRowSkeleton() {
   return (
     <div className="flex border-b border-black/8 last:border-b-0">
-      <div className="w-[38%] bg-zinc-50 px-3 py-2.5 sm:w-[32%] sm:px-4">
-        <Pulse className="h-4 w-20" />
+      <div className="w-[38%] bg-zinc-50 px-2.5 py-1.5 sm:w-[32%] sm:px-3">
+        <Pulse className="h-3 w-16" />
       </div>
-      <div className="flex-1 px-3 py-2.5 sm:px-4">
-        <Pulse className="h-4 w-28" />
+      <div className="flex-1 px-2.5 py-1.5 sm:px-3">
+        <Pulse className="h-3 w-24" />
       </div>
     </div>
   );
@@ -51,19 +51,17 @@ export function ListingDetailSkeleton() {
         </div>
 
         <div className="listing-detail-tabs min-w-0 px-4 md:px-0">
-          <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
-            <div className="flex border-b border-black/10">
-              <div className="flex-1 px-4 py-2.5">
-                <Pulse className="mx-auto h-4 w-24" />
-              </div>
-              <div className="flex-1 px-4 py-2.5">
-                <Pulse className="mx-auto h-4 w-16" />
-              </div>
-              <div className="flex-1 px-4 py-2.5">
-                <Pulse className="mx-auto h-4 w-16" />
-              </div>
+          <div className="space-y-2">
+            <div className="flex gap-1.5">
+              <Pulse className="h-8 flex-1 rounded-lg" />
+              <Pulse className="h-8 flex-1 rounded-lg" />
+              <Pulse className="h-8 flex-1 rounded-lg" />
             </div>
-            <div>
+            <div className="flex justify-between">
+              <Pulse className="h-4 w-24" />
+              <Pulse className="h-3 w-28" />
+            </div>
+            <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
               {Array.from({ length: 8 }, (_, i) => (
                 <SpecRowSkeleton key={i} />
               ))}

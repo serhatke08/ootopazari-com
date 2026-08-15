@@ -10,7 +10,7 @@ export function ListingVehicleSpecs({ rows }: Props) {
   );
   if (visible.length === 0) {
     return (
-      <p className="px-4 py-6 text-sm text-black/55">Araç bilgisi girilmemiş.</p>
+      <p className="px-3 py-4 text-xs text-black/55">Araç bilgisi girilmemiş.</p>
     );
   }
 
@@ -21,11 +21,11 @@ export function ListingVehicleSpecs({ rows }: Props) {
           <tr key={row.label} className="border-b border-black/8 last:border-b-0">
             <th
               scope="row"
-              className="w-[38%] bg-zinc-50 px-3 py-2.5 align-top text-[13px] font-semibold leading-snug text-black/55 sm:w-[32%] sm:px-4"
+              className="w-[38%] bg-zinc-50 px-2.5 py-1.5 align-top text-[11px] font-medium leading-snug text-black/55 sm:w-[32%] sm:px-3"
             >
               {row.label}
             </th>
-            <td className="px-3 py-2.5 align-top text-[14px] font-semibold leading-snug text-black sm:px-4">
+            <td className="px-2.5 py-1.5 align-top text-xs font-medium leading-snug text-black sm:px-3">
               {row.value}
             </td>
           </tr>

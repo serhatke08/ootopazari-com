@@ -299,20 +299,3 @@ body {
   }
 }
 
-/* PC: araç bilgileri tablosu — hafif küçültme (açıklama değil) */
-@media (min-width: 80rem) {
-  .listing-detail-vehicle-specs-panel {
-    zoom: 0.92;
-  }
-}
-
-@supports not (zoom: 1) {
-  @media (min-width: 80rem) {
-    .listing-detail-vehicle-specs-panel th {
-      font-size: 0.75rem;
-    }
-    .listing-detail-vehicle-specs-panel td {
-      font-size: 0.8125rem;
-    }
-  }
-}

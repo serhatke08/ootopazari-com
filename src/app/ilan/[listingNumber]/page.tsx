@@ -662,9 +662,9 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   const descBody = rawDesc.trim() ? extractDescriptionBody(rawDesc) : "";
   const descriptionTabContent =
     !rawDesc.trim() ? (
-      <p className="text-base text-black/55">Açıklama yok.</p>
+      <p className="text-xs text-black/55">Açıklama yok.</p>
     ) : !descBody ? (
-      <p className="text-base text-black/55">
+      <p className="text-xs text-black/55">
         Ayrı açıklama metni yok; teknik bilgiler Genel Bilgiler ve Donanım
         sekmelerinde.
       </p>
@@ -744,7 +744,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
   const vehicleSpecRows = compactRows([
     specRow("İlan No", num != null ? `#${String(num)}` : null),
-    specRow("İlan tarihi", fmtListingDate(row.created_at)),
     specRow("Konum", cityDisplayResolved),
     specRow("Marka", brandName),
     specRow("Model", modelForDisplay),
@@ -805,11 +804,11 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
   const equipmentTabContent =
     equipmentLines.length > 0 ? (
-      <ul className="space-y-2 text-sm text-black">
+      <ul className="space-y-1 text-xs text-black">
         {equipmentLines.map((line) => (
           <li
             key={line}
-            className="rounded-md border border-black/8 bg-black/[0.02] px-3 py-2"
+            className="rounded-md border border-black/8 bg-black/[0.02] px-2 py-1.5"
           >
             {line}
           </li>
@@ -836,7 +835,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
         !paketDisplay &&
         !pick(row, ["engine_capacity", "motor_hacmi"]) &&
         !listing.drive_type ? (
-          <p className="py-2 text-sm text-black/55">Donanım bilgisi girilmemiş.</p>
+          <p className="py-2 text-xs text-black/55">Donanım bilgisi girilmemiş.</p>
         ) : null}
       </dl>
     );
@@ -1048,6 +1047,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
         <div className="listing-detail-tabs min-w-0 px-4 md:px-0">
           <ListingDetailTabs
+            publishedAt={fmtListingDate(row.created_at)}
             infoContent={<ListingVehicleSpecs rows={vehicleSpecRows} />}
             descriptionContent={descriptionTabContent}
             equipmentContent={equipmentTabContent}

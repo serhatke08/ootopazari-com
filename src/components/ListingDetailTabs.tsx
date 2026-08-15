@@ -5,10 +5,10 @@ import { useState, type ReactNode } from "react";
 type Tab = "info" | "description" | "equipment";
 
 type Props = {
-  header?: ReactNode;
   infoContent: ReactNode;
   descriptionContent: ReactNode;
   equipmentContent: ReactNode;
+  publishedAt?: string | null;
 };
 
 const TABS: Array<{ id: Tab; label: string }> = [
@@ -17,39 +17,27 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "equipment", label: "Donanım" },
 ];
 
-const SHELL_CLASS =
-  "overflow-hidden rounded-xl border border-black/10 bg-white";
-
-const TAB_LIST_CLASS = "flex shrink-0 border-b border-black/10";
-
-const BODY_CLASS = "bg-white";
-
-const ACTIVE_TAB_CLASS =
-  "border-b-2 border-black bg-white text-black font-semibold";
-const INACTIVE_TAB_CLASS =
-  "border-b-2 border-transparent bg-white text-black/60 hover:text-black hover:border-black/30";
-
 function tabButtonClass(active: boolean) {
-  return `flex-1 px-3 py-2.5 text-sm transition sm:px-4 ${
-    active ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS
+  return `min-w-0 flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold leading-tight transition sm:text-xs ${
+    active
+      ? "bg-[#7c3aed] text-white shadow-sm"
+      : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-800"
   }`;
 }
 
 export function ListingDetailTabs({
-  header,
   infoContent,
   descriptionContent,
   equipmentContent,
+  publishedAt,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("info");
+  const activeLabel = TABS.find((t) => t.id === activeTab)?.label ?? "Araç bilgileri";
 
   return (
-    <div className={SHELL_CLASS}>
-      {header ? (
-        <div className="shrink-0 border-b border-black/10">{header}</div>
-      ) : null}
+    <div className="space-y-2">
       <div
-        className={TAB_LIST_CLASS}
+        className="flex gap-1.5"
         role="tablist"
         aria-label="İlan detay sekmeleri"
       >
@@ -67,16 +55,27 @@ export function ListingDetailTabs({
         ))}
       </div>
 
-      <div className={BODY_CLASS}>
-        {activeTab === "info" && (
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="min-w-0 truncate text-sm font-semibold text-zinc-900">
+          {activeLabel}
+        </h2>
+        {publishedAt ? (
+          <p className="shrink-0 text-[11px] tabular-nums text-zinc-500">
+            {publishedAt}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
+        {activeTab === "info" ? (
           <div className="listing-detail-vehicle-specs-panel">{infoContent}</div>
-        )}
-        {activeTab === "description" && (
-          <div className="p-4 sm:p-5">{descriptionContent}</div>
-        )}
-        {activeTab === "equipment" && (
-          <div className="p-3 sm:p-4">{equipmentContent}</div>
-        )}
+        ) : null}
+        {activeTab === "description" ? (
+          <div className="p-3">{descriptionContent}</div>
+        ) : null}
+        {activeTab === "equipment" ? (
+          <div className="p-2.5 sm:p-3">{equipmentContent}</div>
+        ) : null}
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ export function ListingDescriptionText({ text }: { text: string }) {
   return (
     <div>
       <p
-        className={`whitespace-pre-wrap text-base leading-relaxed text-black ${
+        className={`whitespace-pre-wrap text-xs leading-relaxed text-black sm:text-[13px] ${
           !expanded && longText ? "line-clamp-[12]" : ""
         }`}
       >
@@ -22,7 +22,7 @@ export function ListingDescriptionText({ text }: { text: string }) {
         <button
           type="button"
           onClick={() => setExpanded((open) => !open)}
-          className="mt-2 text-sm font-semibold text-black/70 underline hover:text-black"
+          className="mt-2 text-xs font-semibold text-black/70 underline hover:text-black"
         >
           {expanded ? "Daha az göster" : "Daha fazla göster"}
         </button>
