@@ -10,15 +10,15 @@ export const QUICK_ACCESS_LINKS: {
     image: "/menu/pazar.png",
   },
   {
-    href: "/bayi/expertiz",
-    label: "Ekspertiz",
-    image: "/menu/expertiz.png",
-  },
-  { href: "/bayi/galeri", label: "Galeri", image: "/menu/galeri.png" },
-  { href: "/bayi/parcaci", label: "Parça", image: "/menu/parca.png" },
-  {
     href: "/bayi/kiralama",
     label: "Kiralama",
     image: "/menu/kiralama.png",
+  },
+  { href: "/bayi/parcaci", label: "Parça", image: "/menu/parca.png" },
+  { href: "/bayi/galeri", label: "Galeri", image: "/menu/galeri.png" },
+  {
+    href: "/bayi/expertiz",
+    label: "Ekspertiz",
+    image: "/menu/expertiz.png",
   },
 ];

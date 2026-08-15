@@ -323,7 +323,7 @@ export function ListingCard({
             </p>
           )
         ) : null}
-        {!stats ? (
+        {!isHomeGrid && !stats ? (
           <div className="mt-0 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:gap-x-1.5 sm:text-[10px]">
             {cityText ? <span>{cityText}</span> : null}
             {!hideCategoryAndYear && listing.vehicle_year != null ? (
@@ -335,7 +335,7 @@ export function ListingCard({
               </>
             ) : null}
           </div>
-        ) : stats && !cityOnStatsRow ? (
+        ) : !isHomeGrid && stats && !cityOnStatsRow ? (
           <div className="mt-0 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:gap-x-1.5 sm:text-[10px]">
             {cityText ? <span>{cityText}</span> : null}
             {!hideCategoryAndYear && listing.vehicle_year != null ? (
@@ -347,47 +347,41 @@ export function ListingCard({
               </>
             ) : null}
           </div>
-        ) : !hideCategoryAndYear && listing.vehicle_year != null ? (
+        ) : !isHomeGrid && !hideCategoryAndYear && listing.vehicle_year != null ? (
           <div className="mt-0 text-[10px] text-zinc-500 sm:mt-0.5 sm:text-[10px]">
             {String(listing.vehicle_year)}
           </div>
         ) : null}
-        {stats ? (
-          isHomeGrid ? (
-            <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-100 pt-2 text-[11px] text-zinc-500 max-sm:mt-1 max-sm:pt-1.5 max-sm:text-[10px]">
-              {cityText ? (
-                <span
-                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-left text-[10px] font-medium leading-tight text-zinc-600 max-sm:text-[9px]"
-                  title="Şehir"
-                >
-                  <LocationPinIcon className="h-[11px] w-[11px] shrink-0 text-zinc-600" />
-                  <span className="truncate">
-                    {cityText}
-                  </span>
-                </span>
-              ) : (
-                <span className="min-w-0 flex-1" aria-hidden />
-              )}
+        {isHomeGrid ? (
+          <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-100 pt-2 text-[11px] text-zinc-500 max-sm:mt-1 max-sm:pt-1.5 max-sm:text-[10px]">
+            {cityText ? (
               <span
-                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-right font-semibold tabular-nums text-zinc-700"
-                title="Kilometre"
+                className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-left text-[10px] font-medium leading-tight text-zinc-600 max-sm:text-[9px]"
+                title="Şehir"
               >
-                <SpeedIcon className="h-[11px] w-[11px] shrink-0 text-zinc-700" />
-                <span>
-                  {maskedMileage ?? "Km belirtilmedi"}
-                </span>
+                <LocationPinIcon className="h-[11px] w-[11px] shrink-0 text-zinc-600" />
+                <span className="truncate">{cityText}</span>
               </span>
-            </div>
-          ) : (
-            <StatsBadges
-              variant="card"
-              views={stats.views}
-              favorites={stats.favorites}
-              rightSlot={
-                cityOnStatsRow && cityText ? cityText : undefined
-              }
-            />
-          )
+            ) : (
+              <span className="min-w-0 flex-1" aria-hidden />
+            )}
+            <span
+              className="inline-flex shrink-0 items-center justify-end gap-0.5 text-right font-semibold tabular-nums text-zinc-700"
+              title="Kilometre"
+            >
+              <SpeedIcon className="h-[11px] w-[11px] shrink-0 text-zinc-700" />
+              <span>{maskedMileage ?? "Km belirtilmedi"}</span>
+            </span>
+          </div>
+        ) : stats ? (
+          <StatsBadges
+            variant="card"
+            views={stats.views}
+            favorites={stats.favorites}
+            rightSlot={
+              cityOnStatsRow && cityText ? cityText : undefined
+            }
+          />
         ) : null}
         {ownerActions ? (
           <div className="mt-2 flex flex-wrap gap-2 border-t border-zinc-100 pt-2">

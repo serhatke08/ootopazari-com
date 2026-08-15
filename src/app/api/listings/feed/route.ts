@@ -4,10 +4,7 @@ import {
   fetchHomeListingsFeed,
   HOME_LISTINGS_PAGE_SIZE,
 } from "@/lib/home-listings-feed";
-import {
-  homeListingsFeedHasFilters,
-  resolveHomeListingsFeedFilters,
-} from "@/lib/home-listings-feed-filters";
+import { resolveHomeListingsFeedFilters } from "@/lib/home-listings-feed-filters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function parseNum(s: string | null): number | undefined {
@@ -34,14 +31,12 @@ export async function GET(req: Request) {
     const filters = await resolveHomeListingsFeedFilters(supabase, (key) =>
       sp.get(key)?.trim() || undefined
     );
-    const useLite = homeListingsFeedHasFilters(filters);
     const { items, total, loggedIn } = await fetchHomeListingsFeed(
       supabase,
       env,
       page,
       pageSize,
-      filters,
-      { lite: useLite }
+      filters
     );
 
     return NextResponse.json({
