@@ -14,6 +14,7 @@ import { useUnreadMessageCount } from "@/hooks/useUnreadMessageCount";
 import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
 import { useUserHasListings } from "@/hooks/useUserHasListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
+import { isListingDetailPath } from "@/lib/listing-seo";
 import { useSiteSearch } from "@/components/SiteSearchProvider";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 import { initialFromName } from "@/lib/user-display-name";
@@ -390,6 +391,8 @@ export function SiteHeaderClient({
     const now = new Date().toISOString();
     setNotifications((prev) => prev.map((n) => ({ ...n, read_at: now })));
   }
+
+  if (isListingDetailPath(pathname)) return null;
 
   return (
     <>

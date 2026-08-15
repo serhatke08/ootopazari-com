@@ -71,7 +71,7 @@ export function ListingNavSkeletonGate() {
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="min-h-[100dvh] bg-white pt-14 md:pt-[4.25rem]">
+      <div className="min-h-[100dvh] bg-white">
         <ListingDetailSkeleton />
       </div>
     </div>,

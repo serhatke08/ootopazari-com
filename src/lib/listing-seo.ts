@@ -52,6 +52,10 @@ export function isNonCanonicalListingPath(
   }
 }
 
+export function isListingDetailPath(pathname: string | null | undefined): boolean {
+  return Boolean(pathname && pathname.startsWith("/ilan/"));
+}
+
 /** `/ilan/12300024-250-nk-temiz` -> `12300024` */
 export function extractListingNumberFromSeoParam(
   param: string | null | undefined
