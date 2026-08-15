@@ -6,6 +6,7 @@ import { MissingEnv } from "@/components/MissingEnv";
 import { fetchCategories } from "@/lib/listings-data";
 import { CreateListingWizard } from "@/components/ilan-ver/CreateListingWizard";
 import { expireDueListings, fetchListingQuota } from "@/lib/listing-quota";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = {
   title: "İlan Ver",
@@ -33,6 +34,7 @@ export default async function IlanVerPage() {
 
   await expireDueListings(supabase, { userId: user.id });
 
+  const quotaClient = createSupabaseServiceClient() ?? supabase;
   const [categories, profileRes, quota] = await Promise.all([
     fetchCategories(supabase),
     supabase
@@ -40,7 +42,7 @@ export default async function IlanVerPage() {
       .select("id,full_name,username,phone,country_id")
       .eq("id", user.id)
       .maybeSingle(),
-    fetchListingQuota(supabase, user.id),
+    fetchListingQuota(quotaClient, user.id),
   ]);
 
   const profile = profileRes.data as {

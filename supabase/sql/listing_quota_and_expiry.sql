@@ -30,6 +30,12 @@ alter table public.listings
 comment on column public.listings.activated_at is
   'Yayına alındığı / yeniden aktif edildiği an. 30 gün sonra pasife (expired) düşer.';
 
+alter table public.listings
+  add column if not exists expired_at timestamptz;
+
+comment on column public.listings.expired_at is
+  'Pasife alındığı an. 5 gün sonra ilan kalıcı silinir.';
+
 create table if not exists public.listing_quota_uses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -72,6 +78,17 @@ where l.user_id is not null
   );
 
 update public.listings
-set moderation_status = 'expired'
+set
+  moderation_status = 'expired',
+  expired_at = coalesce(expired_at, now()),
+  suspension_reason = coalesce(
+    nullif(suspension_reason, ''),
+    'İlan süresi (30 gün) doldu.'
+  )
 where lower(coalesce(moderation_status, '')) = 'approved'
   and coalesce(activated_at, created_at, now()) < now() - interval '30 days';
+
+update public.listings
+set expired_at = coalesce(expired_at, now())
+where lower(coalesce(moderation_status, '')) = 'expired'
+  and expired_at is null;

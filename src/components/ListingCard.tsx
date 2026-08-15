@@ -15,6 +15,7 @@ import { ListingCoverImage } from "@/components/ListingCoverImage";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
 import { listingHomeBoostChromeActive } from "@/lib/listing-feature-boost";
+import { formatListingPurgeCountdown } from "@/lib/listing-quota";
 import { initialFromName } from "@/lib/user-display-name";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import { EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
@@ -210,7 +211,8 @@ export function ListingCard({
             Süresi doldu · pasif
           </p>
           <p className="mt-0.5 text-center text-[10px] text-amber-900/80 sm:text-[11px]">
-            1 aylık yayın süresi bitti. Tekrar aktif etmek 1 ilan hakkı kullanır.
+            30 günlük yayın bitti. {formatListingPurgeCountdown(listing)} Tekrar
+            aktif etmek 1 ilan hakkı kullanır.
           </p>
         </div>
       ) : suspended ? (

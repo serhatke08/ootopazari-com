@@ -52,7 +52,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const quota = await fetchListingQuota(supabase, user.id);
+  const admin = createSupabaseServiceClient() ?? supabase;
+  const quota = await fetchListingQuota(admin, user.id);
   if (!quota.unlimited && quota.remaining <= 0) {
     return NextResponse.json(
       {
@@ -64,7 +65,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const admin = createSupabaseServiceClient() ?? supabase;
   const used = await recordListingQuotaUse(admin, user.id, listingId, "reactivate");
   if (!used.ok) {
     return NextResponse.json(
@@ -74,16 +74,26 @@ export async function POST(req: Request) {
   }
 
   const now = new Date().toISOString();
-  const { error: updErr } = await admin
+  const payload = {
+    moderation_status: "approved",
+    activated_at: now,
+    expired_at: null,
+    suspension_reason: null,
+    suspended_at: null,
+  };
+  let { error: updErr } = await admin
     .from("listings")
-    .update({
-      moderation_status: "approved",
-      activated_at: now,
-      suspension_reason: null,
-      suspended_at: null,
-    })
+    .update(payload)
     .eq("id", listingId)
     .eq("user_id", user.id);
+  if (updErr && /expired_at/i.test(updErr.message)) {
+    const { expired_at: _drop, ...withoutExpiredAt } = payload;
+    ({ error: updErr } = await admin
+      .from("listings")
+      .update(withoutExpiredAt)
+      .eq("id", listingId)
+      .eq("user_id", user.id));
+  }
 
   if (updErr) {
     return NextResponse.json(
@@ -92,6 +102,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const next = await fetchListingQuota(supabase, user.id);
+  const next = await fetchListingQuota(admin, user.id);
   return NextResponse.json({ ok: true, quota: next });
 }

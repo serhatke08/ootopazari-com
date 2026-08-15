@@ -3,6 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   sortListingsByFeedNewest,
 } from "@/lib/listing-feature-boost";
+import {
+  listingActiveCutoffIso,
+  listingIsPastActiveWindow,
+} from "@/lib/listing-quota";
 import { fetchBrandModels } from "@/lib/vehicle-hierarchy";
 import type { HomeListingsSort } from "@/lib/home-listings-feed-types";
 
@@ -34,6 +38,8 @@ export type ListingRow = Record<string, unknown> & {
   featured_started_at?: string | null;
   feature_boost_campaign_start_at?: string | null;
   feature_boost_pack_days?: number | null;
+  activated_at?: string | null;
+  expired_at?: string | null;
 };
 
 export type CategoryRow = {
@@ -89,6 +95,7 @@ const LISTING_SELECT = [
   "contact_phone",
   "contact_via_phone",
   "contact_via_message",
+  "activated_at",
 ].join(", ");
 
 const LISTING_EDIT_EXTRA = [
@@ -447,6 +454,38 @@ function applyListingListFilters(
   return query;
 }
 
+let publicLiveFilterMode: "activated" | "created" = "activated";
+
+function applyApprovedLiveFilter(q: any): any {
+  const cutoff = listingActiveCutoffIso();
+  const quoted = `"${cutoff}"`;
+  let query = q.eq("moderation_status", "approved");
+  if (publicLiveFilterMode === "created") {
+    return query.gte("created_at", cutoff);
+  }
+  return query.or(
+    `activated_at.gte.${quoted},and(activated_at.is.null,created_at.gte.${quoted})`
+  );
+}
+
+function noteApprovedLiveFilterError(message: string): boolean {
+  if (
+    publicLiveFilterMode === "activated" &&
+    /activated_at/i.test(message)
+  ) {
+    publicLiveFilterMode = "created";
+    return true;
+  }
+  return false;
+}
+
+function isPubliclyLiveListing(row: {
+  created_at?: unknown;
+  activated_at?: unknown;
+}): boolean {
+  return !listingIsPastActiveWindow(row);
+}
+
 function applyListingOrder(q: any, sort: HomeListingsSort | undefined): any {
   const nulls = { nullsFirst: false } as const;
   switch (sort) {
@@ -479,21 +518,28 @@ async function fetchListingsPageFast(
     filterParams.sort && filterParams.sort !== "newest"
   );
 
-  let countQ = supabase
-    .from("listings")
-    .select("id", { count: "exact", head: true })
-    .eq("moderation_status", "approved");
-  countQ = applyListingListFilters(countQ, filterParams);
+  const runPage = async () => {
+    let countQ = applyApprovedLiveFilter(
+      supabase.from("listings").select("id", { count: "exact", head: true })
+    );
+    countQ = applyListingListFilters(countQ, filterParams);
 
-  let dataQ = supabase
-    .from("listings")
-    .select(LISTING_SELECT)
-    .eq("moderation_status", "approved");
-  dataQ = applyListingListFilters(dataQ, filterParams);
-  dataQ = applyListingOrder(dataQ, filterParams.sort);
+    let dataQ = applyApprovedLiveFilter(
+      supabase.from("listings").select(LISTING_SELECT)
+    );
+    dataQ = applyListingListFilters(dataQ, filterParams);
+    dataQ = applyListingOrder(dataQ, filterParams.sort);
 
-  const [{ count, error: countErr }, { data, error: dataErr }] =
-    await Promise.all([countQ, dataQ.range(start, end)]);
+    return Promise.all([countQ, dataQ.range(start, end)]);
+  };
+
+  let [{ count, error: countErr }, { data, error: dataErr }] = await runPage();
+  if (
+    (countErr && noteApprovedLiveFilterError(countErr.message)) ||
+    (dataErr && noteApprovedLiveFilterError(dataErr.message))
+  ) {
+    [{ count, error: countErr }, { data, error: dataErr }] = await runPage();
+  }
 
   if (countErr) {
     console.warn("fetchListingsPageFast count:", countErr.message);
@@ -518,14 +564,19 @@ async function fetchAllApprovedListingsForFeedSort(
   const out: ListingRow[] = [];
 
   for (;;) {
-    let q = supabase
-      .from("listings")
-      .select(LISTING_SELECT)
-      .eq("moderation_status", "approved")
-      .order("created_at", { ascending: false, nullsFirst: false });
+    let q = applyApprovedLiveFilter(
+      supabase.from("listings").select(LISTING_SELECT)
+    ).order("created_at", { ascending: false, nullsFirst: false });
 
     q = applyListingListFilters(q, params);
-    const { data, error } = await q.range(from, from + batchSize - 1);
+    let { data, error } = await q.range(from, from + batchSize - 1);
+    if (error && noteApprovedLiveFilterError(error.message)) {
+      q = applyApprovedLiveFilter(
+        supabase.from("listings").select(LISTING_SELECT)
+      ).order("created_at", { ascending: false, nullsFirst: false });
+      q = applyListingListFilters(q, params);
+      ({ data, error } = await q.range(from, from + batchSize - 1));
+    }
 
     if (error) {
       console.warn("fetchAllApprovedListingsForFeedSort:", error.message);
@@ -589,12 +640,19 @@ export async function fetchRecentListings(
   supabase: SupabaseClient,
   limit: number
 ): Promise<ListingRow[]> {
-  const { data, error } = await supabase
-    .from("listings")
-    .select(LISTING_SELECT)
-    .eq("moderation_status", "approved")
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select(LISTING_SELECT)
+  )
     .order("created_at", { ascending: false, nullsFirst: false })
     .limit(limit);
+  let { data, error } = await q;
+  if (error && noteApprovedLiveFilterError(error.message)) {
+    ({ data, error } = await applyApprovedLiveFilter(
+      supabase.from("listings").select(LISTING_SELECT)
+    )
+      .order("created_at", { ascending: false, nullsFirst: false })
+      .limit(limit));
+  }
 
   if (error) {
     console.warn("recent listings:", error.message);
@@ -611,12 +669,17 @@ export async function fetchListingByNumber(
   const n = Number(listingNumber);
   if (!Number.isFinite(n)) return null;
 
-  const { data, error } = await supabase
-    .from("listings")
-    .select("*")
-    .eq("moderation_status", "approved")
+  let q = applyApprovedLiveFilter(supabase.from("listings").select("*"))
     .eq("listing_number", n)
     .maybeSingle();
+  let { data, error } = await q;
+  if (error && noteApprovedLiveFilterError(error.message)) {
+    ({ data, error } = await applyApprovedLiveFilter(
+      supabase.from("listings").select("*")
+    )
+      .eq("listing_number", n)
+      .maybeSingle());
+  }
 
   if (error) {
     console.warn("listing by number:", error.message);
@@ -664,6 +727,15 @@ export async function fetchListingForDetailPage(
   const viewerIsAdmin = options?.viewerIsAdmin === true;
 
   if (status === "approved") {
+    if (listingIsPastActiveWindow(row)) {
+      if (viewer && ownerId && viewer === ownerId) {
+        return { listing: row, access: "expired_owner" };
+      }
+      if (viewerIsAdmin) {
+        return { listing: row, access: "expired_admin" };
+      }
+      return null;
+    }
     return { listing: row, access: "public" };
   }
 
@@ -703,11 +775,15 @@ export async function fetchListingsByIds(
   ids: string[]
 ): Promise<ListingRow[]> {
   if (ids.length === 0) return [];
-  const { data, error } = await supabase
-    .from("listings")
-    .select(LISTING_SELECT)
-    .eq("moderation_status", "approved")
-    .in("id", ids);
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select(LISTING_SELECT)
+  ).in("id", ids);
+  let { data, error } = await q;
+  if (error && noteApprovedLiveFilterError(error.message)) {
+    ({ data, error } = await applyApprovedLiveFilter(
+      supabase.from("listings").select(LISTING_SELECT)
+    ).in("id", ids));
+  }
 
   if (error) {
     console.warn("fetchListingsByIds:", error.message);
@@ -740,13 +816,21 @@ export async function fetchApprovedListingsForUserPublic(
   userId: string,
   limit = 60
 ): Promise<ListingRow[]> {
-  const { data, error } = await supabase
-    .from("listings")
-    .select(LISTING_SELECT)
-    .eq("moderation_status", "approved")
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select(LISTING_SELECT)
+  )
     .eq("user_id", userId)
     .order("created_at", { ascending: false, nullsFirst: false })
     .limit(limit);
+  let { data, error } = await q;
+  if (error && noteApprovedLiveFilterError(error.message)) {
+    ({ data, error } = await applyApprovedLiveFilter(
+      supabase.from("listings").select(LISTING_SELECT)
+    )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false, nullsFirst: false })
+      .limit(limit));
+  }
 
   if (error) {
     console.warn("fetchApprovedListingsForUserPublic:", error.message);
@@ -832,10 +916,15 @@ export function formatListingCount(n: number): string {
 export async function fetchApprovedListingsTotal(
   supabase: SupabaseClient
 ): Promise<number> {
-  const { count, error } = await supabase
-    .from("listings")
-    .select("*", { count: "exact", head: true })
-    .eq("moderation_status", "approved");
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select("*", { count: "exact", head: true })
+  );
+  let { count, error } = await q;
+  if (error && noteApprovedLiveFilterError(error.message)) {
+    ({ count, error } = await applyApprovedLiveFilter(
+      supabase.from("listings").select("*", { count: "exact", head: true })
+    ));
+  }
 
   if (error) {
     console.warn("approved listings total:", error.message);
@@ -866,18 +955,31 @@ export async function fetchApprovedListingCountsByField(
   for (;;) {
     let q = supabase
       .from("listings")
-      .select(field)
+      .select(`${field},created_at,activated_at`)
       .eq("moderation_status", "approved");
     if (options?.categoryId) {
       q = q.eq("category_id", options.categoryId);
     }
-    const { data, error } = await q.range(from, from + pageSize - 1);
+    let { data, error } = await q.range(from, from + pageSize - 1);
+    if (error && /activated_at/i.test(error.message)) {
+      let retry = supabase
+        .from("listings")
+        .select(`${field},created_at`)
+        .eq("moderation_status", "approved");
+      if (options?.categoryId) {
+        retry = retry.eq("category_id", options.categoryId);
+      }
+      const fallback = await retry.range(from, from + pageSize - 1);
+      data = fallback.data as typeof data;
+      error = fallback.error;
+    }
     if (error) {
       console.warn("listing counts by field:", field, error.message);
       return map;
     }
     const rows = (data ?? []) as Record<string, string | null>[];
     for (const row of rows) {
+      if (!isPubliclyLiveListing(row)) continue;
       const key = row[field];
       if (key == null || key === "") continue;
       map.set(key, (map.get(key) ?? 0) + 1);
@@ -1022,20 +1124,36 @@ export async function fetchApprovedListingCountsByVehicleModel(
   let from = 0;
 
   for (;;) {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("listings")
-      .select("vehicle_model")
+      .select("vehicle_model,created_at,activated_at")
       .eq("moderation_status", "approved")
       .eq("category_id", options.categoryId)
       .eq("vehicle_brand_id", options.vehicleBrandId)
       .range(from, from + pageSize - 1);
+    if (error && /activated_at/i.test(error.message)) {
+      const fallback = await supabase
+        .from("listings")
+        .select("vehicle_model,created_at")
+        .eq("moderation_status", "approved")
+        .eq("category_id", options.categoryId)
+        .eq("vehicle_brand_id", options.vehicleBrandId)
+        .range(from, from + pageSize - 1);
+      data = fallback.data as typeof data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.warn("listing counts by vehicle_model:", error.message);
       return map;
     }
-    const rows = (data ?? []) as { vehicle_model?: string | null }[];
+    const rows = (data ?? []) as {
+      vehicle_model?: string | null;
+      created_at?: unknown;
+      activated_at?: unknown;
+    }[];
     for (const row of rows) {
+      if (!isPubliclyLiveListing(row)) continue;
       const key = normalizeListingModelKey(row.vehicle_model);
       if (!key) continue;
       map.set(key, (map.get(key) ?? 0) + 1);
@@ -1076,14 +1194,28 @@ export async function fetchApprovedListingCountsByEnginePackages(
 
   const engineCounts = new Map<string, number>();
   if (allPackageIds.length > 0) {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("listings")
-      .select("vehicle_engine_package_id")
+      .select("vehicle_engine_package_id,created_at,activated_at")
       .eq("moderation_status", "approved")
       .in("vehicle_engine_package_id", allPackageIds);
+    if (error && /activated_at/i.test(error.message)) {
+      const fallback = await supabase
+        .from("listings")
+        .select("vehicle_engine_package_id,created_at")
+        .eq("moderation_status", "approved")
+        .in("vehicle_engine_package_id", allPackageIds);
+      data = fallback.data as typeof data;
+      error = fallback.error;
+    }
 
     if (!error && data) {
-      for (const row of data as { vehicle_engine_package_id?: string | null }[]) {
+      for (const row of data as {
+        vehicle_engine_package_id?: string | null;
+        created_at?: unknown;
+        activated_at?: unknown;
+      }[]) {
+        if (!isPubliclyLiveListing(row)) continue;
         const pkgId = row.vehicle_engine_package_id;
         const engineId = pkgId ? packageToEngine.get(pkgId) : undefined;
         if (!engineId) continue;
@@ -1113,20 +1245,34 @@ export async function fetchApprovedListingCountsByEnginePackages(
     .replace(/\\/g, "\\\\")
     .replace(/%/g, "\\%")
     .replace(/_/g, "\\_");
-  const { data: legacyRows, error: legacyError } = await supabase
+  let { data: legacyRows, error: legacyError } = await supabase
     .from("listings")
-    .select("vehicle_model,vehicle_engine_package_id")
+    .select("vehicle_model,vehicle_engine_package_id,created_at,activated_at")
     .eq("moderation_status", "approved")
     .eq("category_id", options.categoryId)
     .eq("vehicle_brand_id", options.vehicleBrandId)
     .ilike("vehicle_model", `%${escModel}%`);
+  if (legacyError && /activated_at/i.test(legacyError.message)) {
+    const fallback = await supabase
+      .from("listings")
+      .select("vehicle_model,vehicle_engine_package_id,created_at")
+      .eq("moderation_status", "approved")
+      .eq("category_id", options.categoryId)
+      .eq("vehicle_brand_id", options.vehicleBrandId)
+      .ilike("vehicle_model", `%${escModel}%`);
+    legacyRows = fallback.data as typeof legacyRows;
+    legacyError = fallback.error;
+  }
 
   if (legacyError || !legacyRows) return engineCounts;
 
   for (const row of legacyRows as {
     vehicle_model?: string | null;
     vehicle_engine_package_id?: string | null;
+    created_at?: unknown;
+    activated_at?: unknown;
   }[]) {
+    if (!isPubliclyLiveListing(row)) continue;
     if (row.vehicle_engine_package_id) continue;
     const listingKey = normalizeListingModelKey(row.vehicle_model);
     if (!listingKey) continue;
@@ -1153,12 +1299,19 @@ export async function fetchApprovedListingsForSitemap(
   const out: SitemapListingRow[] = [];
 
   for (;;) {
-    const { data, error } = await supabase
-      .from("listings")
-      .select("listing_number,title,updated_at")
-      .eq("moderation_status", "approved")
+    let q = applyApprovedLiveFilter(
+      supabase.from("listings").select("listing_number,title,updated_at")
+    )
       .order("listing_number", { ascending: true })
       .range(from, from + pageSize - 1);
+    let { data, error } = await q;
+    if (error && noteApprovedLiveFilterError(error.message)) {
+      ({ data, error } = await applyApprovedLiveFilter(
+        supabase.from("listings").select("listing_number,title,updated_at")
+      )
+        .order("listing_number", { ascending: true })
+        .range(from, from + pageSize - 1));
+    }
 
     if (error) {
       console.warn("sitemap listings:", error.message);

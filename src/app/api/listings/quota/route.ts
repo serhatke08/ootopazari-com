@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { expireDueListings, fetchListingQuota } from "@/lib/listing-quota";
 
 export async function GET() {
@@ -12,6 +13,7 @@ export async function GET() {
   }
 
   await expireDueListings(supabase, { userId: user.id });
-  const quota = await fetchListingQuota(supabase, user.id);
+  const quotaClient = createSupabaseServiceClient() ?? supabase;
+  const quota = await fetchListingQuota(quotaClient, user.id);
   return NextResponse.json({ ok: true, ...quota });
 }

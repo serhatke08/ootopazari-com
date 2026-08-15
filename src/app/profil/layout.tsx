@@ -15,6 +15,7 @@ import { PaymentServiceCompactSummary } from "@/components/PaymentHistoryList";
 import { fetchUserPaymentServiceSummaries } from "@/lib/payment-history";
 import { initialFromName } from "@/lib/user-display-name";
 import { expireDueListings, fetchListingQuota } from "@/lib/listing-quota";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = {
   title: "Profilim",
@@ -64,6 +65,7 @@ export default async function ProfilLayout({
     await expireDueListings(supabase, { userId: user.id });
   }
 
+  const quotaClient = createSupabaseServiceClient() ?? supabase;
   const [profile, adminProfile, followCounts, serviceSummaries, listingQuota] =
     await Promise.all([
       user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
@@ -74,7 +76,7 @@ export default async function ProfilLayout({
       user.id
         ? fetchUserPaymentServiceSummaries(supabase, user.id)
         : Promise.resolve([]),
-      user.id ? fetchListingQuota(supabase, user.id) : Promise.resolve(null),
+      user.id ? fetchListingQuota(quotaClient, user.id) : Promise.resolve(null),
     ]);
 
   const meta = readNamesAndAvatar(user);

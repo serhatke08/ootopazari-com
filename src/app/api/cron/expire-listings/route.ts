@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { expireDueListings } from "@/lib/listing-quota";
+import { maintainListingLifecycle } from "@/lib/listing-quota";
 
 function cronAuthorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -23,6 +23,6 @@ export async function GET(req: Request) {
     );
   }
 
-  const expired = await expireDueListings(admin);
-  return NextResponse.json({ ok: true, expired });
+  const result = await maintainListingLifecycle(admin);
+  return NextResponse.json({ ok: true, ...result });
 }

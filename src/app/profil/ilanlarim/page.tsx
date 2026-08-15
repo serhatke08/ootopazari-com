@@ -12,6 +12,7 @@ import {
   isListingSuspended,
 } from "@/lib/listings-data";
 import { fetchListingQuota } from "@/lib/listing-quota";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { ReactivateListingButton } from "@/components/ReactivateListingButton";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import { fetchBoostPaymentInfoByListing } from "@/lib/feature-boost-payment-status";
@@ -30,10 +31,11 @@ export default async function ProfilIlanlarimPage() {
     return null;
   }
 
+  const quotaClient = createSupabaseServiceClient() ?? supabase;
   const [rows, categories, quota] = await Promise.all([
     fetchListingsForUser(supabase, user.id),
     fetchCategories(supabase),
-    fetchListingQuota(supabase, user.id),
+    fetchListingQuota(quotaClient, user.id),
   ]);
 
   const catMap = buildCategoryMap(categories);

@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { MissingEnv } from "@/components/MissingEnv";
 import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
 import { loadListingDetailRequest } from "@/lib/listing-detail-request";
+import { formatListingPurgeCountdown } from "@/lib/listing-quota";
 import {
   buildCategoryMap,
   buildCityMap,
@@ -936,9 +937,9 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
         >
           <p className="font-semibold">İlan süresi doldu</p>
           <p className="mt-1 text-sm text-amber-900/90">
-            1 aylık yayın süresi bittiği için ilan pasife alındı. Profil →
-            İlanlarım üzerinden tekrar aktif edebilirsiniz; bu 1 ilan hakkı
-            kullanır.
+            30 günlük yayın süresi bittiği için ilan pasife alındı.{" "}
+            {formatListingPurgeCountdown(listing)} Profil → İlanlarım üzerinden
+            tekrar aktif edebilirsiniz; bu 1 ilan hakkı kullanır.
           </p>
         </div>
       ) : null}

@@ -186,9 +186,11 @@ function VehicleCascadeSidebarInner({
   const [categoryCounts, setCategoryCounts] = useState<Map<string, number>>(
     () => new Map()
   );
+  const [categoryCountsReady, setCategoryCountsReady] = useState(false);
   const [brandCounts, setBrandCounts] = useState<Map<string, number>>(
     () => new Map()
   );
+  const [brandCountsReady, setBrandCountsReady] = useState(false);
   const [modelNameCounts, setModelNameCounts] = useState<Map<string, number>>(
     () => new Map()
   );
@@ -203,6 +205,14 @@ function VehicleCascadeSidebarInner({
   );
 
   const allModelsForNav = selectableModels;
+
+  const visibleCategorySlots = useMemo(() => {
+    if (!categoryCountsReady) return categorySlots;
+    return categorySlots.filter(
+      (slot) =>
+        slot.id === categoryId || (categoryCounts.get(slot.id) ?? 0) > 0
+    );
+  }, [categoryCounts, categoryCountsReady, categoryId, categorySlots]);
 
   const brandIdRef = useRef(brandId);
   const modelIdRef = useRef(modelId);
@@ -276,7 +286,10 @@ function VehicleCascadeSidebarInner({
         supabase,
         "category_id"
       );
-      if (!cancelled) setCategoryCounts(m);
+      if (!cancelled) {
+        setCategoryCounts(m);
+        setCategoryCountsReady(true);
+      }
     })();
     return () => {
       cancelled = true;
@@ -286,16 +299,21 @@ function VehicleCascadeSidebarInner({
   useEffect(() => {
     if (!categoryId) {
       setBrandCounts(new Map());
+      setBrandCountsReady(false);
       return;
     }
     let cancelled = false;
+    setBrandCountsReady(false);
     void (async () => {
       const m = await fetchApprovedListingCountsByField(
         supabase,
         "vehicle_brand_id",
         { categoryId }
       );
-      if (!cancelled) setBrandCounts(m);
+      if (!cancelled) {
+        setBrandCounts(m);
+        setBrandCountsReady(true);
+      }
     })();
     return () => {
       cancelled = true;
@@ -832,7 +850,7 @@ function VehicleCascadeSidebarInner({
           ))}
         </div>
       ) : null}
-      {categorySlots.length === 0 ? (
+      {visibleCategorySlots.length === 0 ? (
         <p className="text-xs text-zinc-500">
           Kategori listesi boş (Supabase `categories` tablosu).
         </p>
@@ -840,7 +858,7 @@ function VehicleCascadeSidebarInner({
         <>
           {label("Kategori", compact)}
           <ul className={cascadeListClass(fillColumn, compact)}>
-            {categorySlots.map((slot) => (
+            {visibleCategorySlots.map((slot) => (
               <li key={slot.id} className="min-w-0">
                 <button
                   type="button"
@@ -903,7 +921,14 @@ function VehicleCascadeSidebarInner({
               </p>
             ) : (
               <ul className={compact ? "space-y-0.5" : "space-y-1"}>
-                {brands.map((b) => {
+                {brands
+                  .filter(
+                    (b) =>
+                      !brandCountsReady ||
+                      b.id === brandId ||
+                      (brandCounts.get(b.id) ?? 0) > 0
+                  )
+                  .map((b) => {
                   const brandHint =
                     [b.name, b.code].filter(Boolean).join(" ") || null;
                   const carLogo = getBrandLogoUrl(b.name ?? null, b.code ?? null);

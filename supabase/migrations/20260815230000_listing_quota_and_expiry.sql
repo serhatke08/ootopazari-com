@@ -41,6 +41,9 @@ create unique index if not exists listing_quota_uses_create_once
   on public.listing_quota_uses (listing_id)
   where kind = 'create' and listing_id is not null;
 
+alter table public.listings
+  add column if not exists expired_at timestamptz;
+
 alter table public.listing_quota_uses enable row level security;
 
 drop policy if exists listing_quota_uses_select_own on public.listing_quota_uses;

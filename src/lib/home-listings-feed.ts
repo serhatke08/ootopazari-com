@@ -26,7 +26,7 @@ import type {
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
 import { enrichListingRowsCoverImages } from "@/lib/listing-images";
-import { expireDueListings } from "@/lib/listing-quota";
+import { maintainListingLifecycle } from "@/lib/listing-quota";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export type { HomeListingCardItem, HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
@@ -119,7 +119,7 @@ export async function fetchHomeListingsFeed(
   const lite = options?.lite ?? false;
   const admin = createSupabaseServiceClient();
   if (admin) {
-    await expireDueListings(admin);
+    await maintainListingLifecycle(admin);
   }
 
   const [categories, cities, { rows, total }] = await Promise.all([
