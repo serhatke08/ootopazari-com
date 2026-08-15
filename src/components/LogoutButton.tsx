@@ -4,7 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export function LogoutButton() {
+export function LogoutButton({
+  className,
+  label = "Çıkış",
+}: {
+  className?: string;
+  label?: string;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -25,9 +31,12 @@ export function LogoutButton() {
       type="button"
       onClick={() => void logout()}
       disabled={pending}
-      className="rounded-md border border-zinc-900/30 bg-zinc-900/10 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-900/20 disabled:opacity-50"
+      className={
+        className ??
+        "rounded-md border border-zinc-900/30 bg-zinc-900/10 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-900/20 disabled:opacity-50"
+      }
     >
-      {pending ? "…" : "Çıkış"}
+      {pending ? "…" : label}
     </button>
   );
 }

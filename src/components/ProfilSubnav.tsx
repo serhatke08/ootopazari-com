@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogoutButton } from "@/components/LogoutButton";
 
 const tabClass =
   "inline-flex items-center border-b-2 px-1 pb-3 text-sm font-medium transition-colors";
@@ -11,45 +10,37 @@ const active = "border-zinc-900 text-zinc-900";
 
 export function ProfilSubnav() {
   const pathname = usePathname();
+  if (pathname.startsWith("/profil/ayarlar")) {
+    return null;
+  }
+
   const isIlanlarim = pathname.startsWith("/profil/ilanlarim");
   const isOdemeler = pathname.startsWith("/profil/odemeler");
   const isDestek = pathname.startsWith("/profil/destek");
-  const isAyarlar = pathname.startsWith("/profil/ayarlar");
 
   return (
     <nav
-      className="mt-2 flex flex-wrap items-end justify-between gap-4 border-b border-zinc-200"
+      className="mt-2 flex flex-wrap items-end gap-6 border-b border-zinc-200"
       aria-label="Profil bölümleri"
     >
-      <div className="flex gap-6">
-        <Link
-          href="/profil/ilanlarim"
-          className={`${tabClass} ${isIlanlarim ? active : inactive}`}
-        >
-          İlanlarım
-        </Link>
-        <Link
-          href="/profil/odemeler"
-          className={`${tabClass} ${isOdemeler ? active : inactive}`}
-        >
-          Ödemeler
-        </Link>
-        <Link
-          href="/profil/destek"
-          className={`${tabClass} ${isDestek ? active : inactive}`}
-        >
-          Destek
-        </Link>
-        <Link
-          href="/profil/ayarlar"
-          className={`${tabClass} ${isAyarlar ? active : inactive}`}
-        >
-          Ayarlar
-        </Link>
-      </div>
-      <div className="pb-2">
-        <LogoutButton />
-      </div>
+      <Link
+        href="/profil/ilanlarim"
+        className={`${tabClass} ${isIlanlarim ? active : inactive}`}
+      >
+        İlanlarım
+      </Link>
+      <Link
+        href="/profil/odemeler"
+        className={`${tabClass} ${isOdemeler ? active : inactive}`}
+      >
+        Ödemeler
+      </Link>
+      <Link
+        href="/profil/destek"
+        className={`${tabClass} ${isDestek ? active : inactive}`}
+      >
+        Destek
+      </Link>
     </nav>
   );
 }

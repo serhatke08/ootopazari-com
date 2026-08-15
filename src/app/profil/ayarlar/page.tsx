@@ -30,12 +30,12 @@ export default async function ProfilAyarlarPage() {
   }
 
   return (
-    <div className="mt-8">
+    <div className="mt-6">
       <h2 className="text-xl font-semibold tracking-tight text-zinc-900">
-        Hesap ayarları
+        Ayarlar
       </h2>
       <p className="mt-1 text-sm text-zinc-600">
-        Güvenlik ve hesap yönetimi seçeneklerini buradan yönetebilirsin.
+        Hesap, güvenlik ve çıkış işlemlerini sekmelerden yönetebilirsin.
       </p>
       <AccountSettingsPanel email={user.email} />
     </div>

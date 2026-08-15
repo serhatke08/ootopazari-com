@@ -11,6 +11,7 @@ import { avatarUrlFromAuthUser, sanitizeUserAvatarUrl } from "@/lib/oauth-avatar
 import { resolveListingImageUrl } from "@/lib/storage";
 import { ProfilHeader } from "@/components/ProfilHeader";
 import { ProfilSubnav } from "@/components/ProfilSubnav";
+import { ProfilTitleRow } from "@/components/ProfilTitleRow";
 import { PaymentServiceCompactSummary } from "@/components/PaymentHistoryList";
 import { fetchUserPaymentServiceSummaries } from "@/lib/payment-history";
 import { initialFromName } from "@/lib/user-display-name";
@@ -110,9 +111,7 @@ export default async function ProfilLayout({
 
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-        Profilim
-      </h1>
+      <ProfilTitleRow />
 
       <ProfilHeader
         displayName={displayName}
