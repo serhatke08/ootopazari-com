@@ -29,6 +29,8 @@ export type ListingRow = Record<string, unknown> & {
   vehicle_engine_package_id?: string | null;
   vehicle_year?: number | null;
   vehicle_mileage?: number | string | null;
+  fuel_type?: string | null;
+  transmission_type?: string | null;
   moderation_status?: string | null;
   created_at?: string | null;
   user_id?: string | null;
@@ -300,8 +302,14 @@ export type ListingListParams = {
   cityIds?: string[];
   sort?: HomeListingsSort;
   vehicleBrandId?: string;
+  vehicleBrandIds?: string[];
   /** `listings.vehicle_model` üzerinde kısmi eşleşme (seri adı / kodu) */
   vehicleModel?: string;
+  vehicleModels?: string[];
+  fuelType?: string;
+  transmissionType?: string;
+  hasPhoto?: boolean;
+  vehiclesOnly?: boolean;
   /** `listings.body_type` — kasa adı */
   bodyType?: string;
   /** Tek paket filtresi */
@@ -320,6 +328,16 @@ export type ListingListParams = {
   maxKm?: number;
   q?: string;
 };
+
+function applyFuelTypeFilter(q: any, fuel: string): any {
+  const key = fuel.trim().toLocaleLowerCase("tr");
+  if (key.includes("lpg")) {
+    return q.or(
+      "fuel_type.ilike.%LPG%,fuel_type.ilike.%lpg%"
+    );
+  }
+  return q.ilike("fuel_type", fuel.trim());
+}
 
 function escapeIlikePattern(raw: string): string {
   return raw
@@ -381,7 +399,13 @@ function listingListNeedsFullFeedSort(
     params.cityId ||
     (params.cityIds?.length ?? 0) > 0 ||
     params.vehicleBrandId ||
+    (params.vehicleBrandIds?.length ?? 0) > 0 ||
     params.q?.trim() ||
+    (params.vehicleModels?.length ?? 0) > 0 ||
+    params.fuelType ||
+    params.transmissionType ||
+    params.hasPhoto ||
+    params.vehiclesOnly ||
     params.vehicleModel?.trim() ||
     params.bodyType?.trim() ||
     params.vehicleEnginePackageId?.trim() ||
@@ -409,13 +433,37 @@ function applyListingListFilters(
         : [];
   if (cityIds.length === 1) query = query.eq("city_id", cityIds[0]);
   else if (cityIds.length > 1) query = query.in("city_id", cityIds);
-  if (params.vehicleBrandId) {
-    query = query.eq("vehicle_brand_id", params.vehicleBrandId);
-  }
-  if (params.vehicleModel?.trim()) {
+  const brandIds = [
+    ...new Set(
+      [
+        ...(params.vehicleBrandIds ?? []),
+        params.vehicleBrandId ? params.vehicleBrandId : "",
+      ].filter(Boolean)
+    ),
+  ];
+  if (brandIds.length === 1) query = query.eq("vehicle_brand_id", brandIds[0]);
+  else if (brandIds.length > 1) query = query.in("vehicle_brand_id", brandIds);
+
+  const modelTerms = [
+    ...new Set(
+      [
+        ...(params.vehicleModels ?? []),
+        params.vehicleModel?.trim() ?? "",
+      ]
+        .map((s) => s.trim())
+        .filter(Boolean)
+    ),
+  ];
+  if (modelTerms.length === 1) {
     query = query.ilike(
       "vehicle_model",
-      `%${escapeIlikePattern(params.vehicleModel)}%`
+      `%${escapeIlikePattern(modelTerms[0])}%`
+    );
+  } else if (modelTerms.length > 1) {
+    query = query.or(
+      modelTerms
+        .map((m) => `vehicle_model.ilike.%${escapeIlikePattern(m)}%`)
+        .join(",")
     );
   }
   if (params.bodyType?.trim()) {
@@ -447,6 +495,18 @@ function applyListingListFilters(
   if (params.maxYear != null) query = query.lte("vehicle_year", params.maxYear);
   if (params.minKm != null) query = query.gte("vehicle_mileage", params.minKm);
   if (params.maxKm != null) query = query.lte("vehicle_mileage", params.maxKm);
+  if (params.fuelType?.trim()) {
+    query = applyFuelTypeFilter(query, params.fuelType.trim());
+  }
+  if (params.transmissionType?.trim()) {
+    query = query.eq("transmission_type", params.transmissionType.trim());
+  }
+  if (params.hasPhoto) {
+    query = query.not("image_url", "is", null).neq("image_url", "");
+  }
+  if (params.vehiclesOnly) {
+    query = query.not("vehicle_year", "is", null);
+  }
   if (params.q?.trim()) {
     const clause = buildTextSearchOrClause(params.q);
     if (clause) query = query.or(clause);

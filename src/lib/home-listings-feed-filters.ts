@@ -50,7 +50,29 @@ export function homeFeedFiltersToQueryString(
     filters.cityIds?.length ? filters.cityIds : filters.cityId ? [filters.cityId] : [];
   if (cityIds.length > 0) p.set("city_id", cityIds.join(","));
   if (filters.sort && filters.sort !== "newest") p.set("sort", filters.sort);
-  if (filters.vehicleBrandId) p.set("vehicle_brand_id", filters.vehicleBrandId);
+  const brandIds = [
+    ...new Set(
+      [
+        ...(filters.vehicleBrandIds ?? []),
+        filters.vehicleBrandId ?? "",
+      ].filter(Boolean)
+    ),
+  ];
+  if (brandIds.length > 0) p.set("vehicle_brand_id", brandIds.join(","));
+  const models = [
+    ...new Set(
+      [
+        ...(filters.vehicleModels ?? []),
+        filters.vehicleModel?.trim() ?? "",
+      ].filter(Boolean)
+    ),
+  ];
+  if (models.length === 1) p.set("vehicle_model", models[0]);
+  else if (models.length > 1) p.set("vehicle_models", models.join(","));
+  if (filters.fuelType) p.set("fuel", filters.fuelType);
+  if (filters.transmissionType) p.set("transmission", filters.transmissionType);
+  if (filters.hasPhoto) p.set("has_photo", "1");
+  if (filters.vehiclesOnly) p.set("vehicles_only", "1");
   if (filters.minPrice != null) p.set("min_price", String(filters.minPrice));
   if (filters.maxPrice != null) p.set("max_price", String(filters.maxPrice));
   if (filters.minYear != null) p.set("min_year", String(filters.minYear));
@@ -58,7 +80,6 @@ export function homeFeedFiltersToQueryString(
   if (filters.minKm != null) p.set("min_km", String(filters.minKm));
   if (filters.maxKm != null) p.set("max_km", String(filters.maxKm));
   if (filters.q) p.set("q", filters.q);
-  if (filters.vehicleModel) p.set("vehicle_model", filters.vehicleModel);
   if (filters.vehicleBrandModelId) {
     p.set("vehicle_brand_model_id", filters.vehicleBrandModelId);
   }
@@ -79,11 +100,19 @@ export async function resolveHomeListingsFeedFilters(
 ): Promise<HomeListingsFeedFilters> {
   const categoryId = get("category_id")?.trim() || undefined;
   const cityIds = parseCityIdsParam(get("city_id"));
-  const vehicleBrandId = get("vehicle_brand_id")?.trim() || undefined;
+  const brandIds = parseCityIdsParam(get("vehicle_brand_id"));
+  const vehicleBrandId = brandIds[0];
+  const vehicleBrandIds = brandIds.length > 1 ? brandIds : brandIds.length === 1 ? brandIds : undefined;
   const q = get("q")?.trim() || undefined;
   const sort = parseHomeListingsSort(get("sort"));
 
+  const extraModels = parseCityIdsParam(get("vehicle_models"));
   let vehicleModel = get("vehicle_model")?.trim() || undefined;
+  const vehicleModels = [
+    ...new Set(
+      [...extraModels, vehicleModel ?? ""].map((s) => s.trim()).filter(Boolean)
+    ),
+  ];
   const brandModelId = get("vehicle_brand_model_id")?.trim();
   if (!vehicleModel && brandModelId) {
     vehicleModel =
@@ -129,6 +158,12 @@ export async function resolveHomeListingsFeedFilters(
     cityIds: cityIds.length > 0 ? cityIds : undefined,
     sort: sort === "newest" ? undefined : sort,
     vehicleBrandId,
+    vehicleBrandIds,
+    vehicleModels: vehicleModels.length > 0 ? vehicleModels : undefined,
+    fuelType: get("fuel")?.trim() || undefined,
+    transmissionType: get("transmission")?.trim() || undefined,
+    hasPhoto: get("has_photo") === "1",
+    vehiclesOnly: get("vehicles_only") === "1",
     minPrice: parseFilterNum(get("min_price")),
     maxPrice: parseFilterNum(get("max_price")),
     minYear: parseFilterNum(get("min_year")),
@@ -157,6 +192,12 @@ export function homeListingsFeedHasFilters(
     filters.cityId ||
     (filters.cityIds?.length ?? 0) > 0 ||
     filters.vehicleBrandId ||
+    (filters.vehicleBrandIds?.length ?? 0) > 0 ||
+    (filters.vehicleModels?.length ?? 0) > 0 ||
+    filters.fuelType ||
+    filters.transmissionType ||
+    filters.hasPhoto ||
+    filters.vehiclesOnly ||
     filters.q ||
     filters.vehicleModel ||
     filters.bodyType ||

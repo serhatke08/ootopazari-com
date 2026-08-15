@@ -164,15 +164,6 @@ export function ListingCard({
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
-      {listingId ? (
-        <div className="absolute right-2 top-2 z-10">
-          <FavoriteHeart
-            listingId={listingId}
-            initialFavorited={favorited}
-            loggedIn={loggedIn}
-          />
-        </div>
-      ) : null}
       {hasImage ? (
         <ListingCoverImage
           env={env}
@@ -190,13 +181,26 @@ export function ListingCard({
     </div>
   );
 
-  const imageArea = isHomeGrid ? (
+  const imageArea = (
     <div className="relative">
-      {boostActive ? <ListingBoostChrome /> : null}
-      {href ? <Link href={href}>{imageFrame}</Link> : imageFrame}
+      {isHomeGrid && boostActive ? <ListingBoostChrome /> : null}
+      {href ? (
+        <Link href={href} className="block">
+          {imageFrame}
+        </Link>
+      ) : (
+        imageFrame
+      )}
+      {listingId ? (
+        <div className="absolute right-2 top-2 z-20">
+          <FavoriteHeart
+            listingId={listingId}
+            initialFavorited={favorited}
+            loggedIn={loggedIn}
+          />
+        </div>
+      ) : null}
     </div>
-  ) : (
-    imageFrame
   );
 
   return (
@@ -227,7 +231,7 @@ export function ListingCard({
           ) : null}
         </div>
       ) : null}
-      {href && !isHomeGrid ? <Link href={href}>{imageArea}</Link> : imageArea}
+      {imageArea}
       <div className="flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3">
         {ownerName ? (
           ownerHref ? (

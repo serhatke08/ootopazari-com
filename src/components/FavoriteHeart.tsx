@@ -139,9 +139,13 @@ export function FavoriteHeart({
   return (
     <button
       type="button"
+      onPointerDown={(e) => {
+        e.stopPropagation();
+      }}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
         void toggle();
       }}
       disabled={pending}

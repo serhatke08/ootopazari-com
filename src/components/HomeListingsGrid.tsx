@@ -8,6 +8,7 @@ import type {
 } from "@/lib/home-listings-feed-types";
 import { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
 import { homeFeedFiltersToQueryString } from "@/lib/home-listings-feed-filters";
+import { filterHomeListingItems } from "@/lib/home-filter-client";
 import { ListingCard } from "@/components/ListingCard";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 
@@ -46,6 +47,7 @@ export function HomeListingsGrid({
     setPage(1);
   }, [initialItems]);
 
+  const visible = filterHomeListingItems(items, filters ?? {});
   const hasMore = items.length < total;
 
   const loadMore = useCallback(async () => {
@@ -92,8 +94,15 @@ export function HomeListingsGrid({
 
   return (
     <div className="space-y-6">
+      {visible.length === 0 ? (
+        <p className="text-sm text-zinc-600">
+          {hasMore
+            ? "Bu sayfada eşleşen ilan yok. Daha fazla yükleyin."
+            : "Aradığınız kriterlere uygun ilan bulunamadı."}
+        </p>
+      ) : (
       <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-        {items.map((item) => (
+        {visible.map((item) => (
           <ListingCard
             key={item.listing.id ?? String(item.listing.listing_number)}
             listing={item.listing}
@@ -117,6 +126,7 @@ export function HomeListingsGrid({
           />
         ))}
       </div>
+      )}
 
       {hasMore ? (
         <div className="flex flex-col items-center gap-2">

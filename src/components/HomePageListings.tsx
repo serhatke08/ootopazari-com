@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { SupabasePublicEnv } from "@/lib/env";
 import type {
   HomeListingCardItem,
@@ -22,12 +22,19 @@ import {
   parseCityIdsParam,
   parseHomeListingsSort,
 } from "@/lib/home-listings-feed-filters";
+import {
+  countHomeFilterBadges,
+  formatHomeFilterRangeChip,
+} from "@/lib/home-filter-client";
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { TopCitySelect } from "@/components/TopCitySelect";
 import { ListingSortSelect } from "@/components/ListingSortSelect";
-import { ListingFilters } from "@/components/ListingFilters";
+import {
+  ListingFilters,
+  pushHomeFeedFilters,
+} from "@/components/ListingFilters";
 import { useSiteSearch } from "@/components/SiteSearchProvider";
 import { ADSENSE_HOME_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
@@ -55,13 +62,28 @@ function filtersFromUrl(
     return Number.isFinite(n) ? n : undefined;
   };
   const cityIds = parseCityIdsParam(get("city_id"));
+  const brandIds = parseCityIdsParam(get("vehicle_brand_id"));
+  const extraModels = parseCityIdsParam(get("vehicle_models"));
+  const vehicleModel = get("vehicle_model");
+  const vehicleModels = [
+    ...new Set(
+      [...extraModels, vehicleModel ?? ""].map((s) => s.trim()).filter(Boolean)
+    ),
+  ];
   const sort = parseHomeListingsSort(get("sort"));
   return {
     categoryId: get("category_id"),
     cityId: cityIds[0],
     cityIds: cityIds.length > 0 ? cityIds : undefined,
     sort: sort === "newest" ? undefined : sort,
-    vehicleBrandId: get("vehicle_brand_id"),
+    vehicleBrandId: brandIds[0],
+    vehicleBrandIds: brandIds.length > 0 ? brandIds : undefined,
+    vehicleModel,
+    vehicleModels: vehicleModels.length > 0 ? vehicleModels : undefined,
+    fuelType: get("fuel"),
+    transmissionType: get("transmission"),
+    hasPhoto: get("has_photo") === "1" || undefined,
+    vehiclesOnly: get("vehicles_only") === "1" || undefined,
     minPrice: num("min_price"),
     maxPrice: num("max_price"),
     minYear: num("min_year"),
@@ -69,12 +91,11 @@ function filtersFromUrl(
     minKm: num("min_km"),
     maxKm: num("max_km"),
     q: textQ !== undefined ? textQ || undefined : get("q"),
-    vehicleModel: get("vehicle_model"),
     vehicleBrandModelId: get("vehicle_brand_model_id"),
     bodyType: get("body_type"),
     bodyStyleId: get("body_style_id"),
     engineId: get("engine_id"),
-    vehicleEngineOther: get("engine_other") === "1",
+    vehicleEngineOther: get("engine_other") === "1" || undefined,
     vehicleEnginePackageId: get("vehicle_engine_package_id"),
   };
 }
@@ -89,6 +110,7 @@ export function HomePageListings({
   initialLoggedIn,
   initialFilters,
 }: Props) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const siteSearch = useSiteSearch();
   const resetHomeTextQuery = siteSearch?.resetHomeTextQuery;
@@ -132,6 +154,7 @@ export function HomePageListings({
   const cityMap = useMemo(() => buildCityMap(cities), [cities]);
   const brandMap = useMemo(() => buildBrandMap(brands), [brands]);
   const hasFilters = homeListingsFeedHasFilters(activeFilters);
+  const sheetBadge = countHomeFilterBadges(activeFilters);
   const showSkeleton = activeQuery !== settledQuery;
 
   useEffect(() => {
@@ -224,12 +247,12 @@ export function HomePageListings({
             <div className="flex min-w-0 items-center gap-1">
               <TopCitySelect cities={cities} />
               <ListingSortSelect />
-              <ListingFilters />
+              <ListingFilters categories={categories} applied={activeFilters} />
             </div>
           </div>
 
           {hasFilters ? (
-            <p className="mb-4 text-sm text-zinc-600">
+            <p className="mb-3 text-sm text-zinc-600">
               {showSkeleton ? "Aranıyor…" : `${total} sonuç`}
               {citySummary ? ` · ${citySummary}` : ""}
               {vehicleBrandId && brandMap.get(vehicleBrandId)?.name
@@ -243,6 +266,15 @@ export function HomePageListings({
               {activeFilters.vehicleEnginePackageId ? " · paket filtresi" : ""}
               {activeFilters.q ? ` · “${activeFilters.q}”` : ""}
             </p>
+          ) : null}
+
+          {sheetBadge > 0 && !showSkeleton ? (
+            <HomeFilterChips
+              filters={activeFilters}
+              categories={categories}
+              brands={brands}
+              onChange={(next) => pushHomeFeedFilters(router, next)}
+            />
           ) : null}
 
           <AdSenseUnit
@@ -275,6 +307,170 @@ export function HomePageListings({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function Chip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onRemove}
+      className="inline-flex max-w-full items-center gap-1 rounded-full border border-zinc-300 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-800 hover:border-zinc-400 hover:bg-zinc-100"
+    >
+      <span className="truncate">{label}</span>
+      <span className="text-zinc-400" aria-hidden>
+        ×
+      </span>
+    </button>
+  );
+}
+
+function HomeFilterChips({
+  filters,
+  categories,
+  brands,
+  onChange,
+}: {
+  filters: HomeListingsFeedFilters;
+  categories: CategoryRow[];
+  brands: VehicleBrandRow[];
+  onChange: (next: HomeListingsFeedFilters) => void;
+}) {
+  const brandIds = [
+    ...new Set(
+      [...(filters.vehicleBrandIds ?? []), filters.vehicleBrandId ?? ""].filter(
+        Boolean
+      )
+    ),
+  ];
+  const models = [
+    ...new Set(
+      [...(filters.vehicleModels ?? []), filters.vehicleModel ?? ""]
+        .map((s) => s.trim())
+        .filter(Boolean)
+    ),
+  ];
+  const catName =
+    categories.find((c) => c.id === filters.categoryId)?.name ?? "Kategori";
+  const brandNames = brandIds
+    .map((id) => brands.find((b) => b.id === id)?.name)
+    .filter((n): n is string => Boolean(n));
+  const brandLabel =
+    brandNames.length === 1
+      ? brandNames[0]
+      : brandNames.length > 1
+        ? brandNames.join(", ")
+        : brandIds.length > 0
+          ? `${brandIds.length} marka`
+          : "";
+  const priceLabel = formatHomeFilterRangeChip(
+    filters.minPrice,
+    filters.maxPrice,
+    "₺"
+  );
+  const yearLabel = formatHomeFilterRangeChip(filters.minYear, filters.maxYear);
+  const kmLabel = formatHomeFilterRangeChip(filters.minKm, filters.maxKm, "km");
+
+  return (
+    <div className="mb-4 flex flex-wrap gap-1.5">
+      {filters.categoryId ? (
+        <Chip
+          label={catName}
+          onRemove={() =>
+            onChange({
+              ...filters,
+              categoryId: undefined,
+              vehicleBrandId: undefined,
+              vehicleBrandIds: undefined,
+              vehicleModel: undefined,
+              vehicleModels: undefined,
+            })
+          }
+        />
+      ) : null}
+      {brandIds.length > 0 ? (
+        <Chip
+          label={brandLabel}
+          onRemove={() =>
+            onChange({
+              ...filters,
+              vehicleBrandId: undefined,
+              vehicleBrandIds: undefined,
+              vehicleModel: undefined,
+              vehicleModels: undefined,
+            })
+          }
+        />
+      ) : null}
+      {models.length > 0 ? (
+        <Chip
+          label={models.join(", ")}
+          onRemove={() =>
+            onChange({
+              ...filters,
+              vehicleModel: undefined,
+              vehicleModels: undefined,
+            })
+          }
+        />
+      ) : null}
+      {priceLabel ? (
+        <Chip
+          label={priceLabel}
+          onRemove={() =>
+            onChange({ ...filters, minPrice: undefined, maxPrice: undefined })
+          }
+        />
+      ) : null}
+      {yearLabel ? (
+        <Chip
+          label={yearLabel}
+          onRemove={() =>
+            onChange({ ...filters, minYear: undefined, maxYear: undefined })
+          }
+        />
+      ) : null}
+      {kmLabel ? (
+        <Chip
+          label={kmLabel}
+          onRemove={() =>
+            onChange({ ...filters, minKm: undefined, maxKm: undefined })
+          }
+        />
+      ) : null}
+      {filters.fuelType ? (
+        <Chip
+          label={filters.fuelType}
+          onRemove={() => onChange({ ...filters, fuelType: undefined })}
+        />
+      ) : null}
+      {filters.transmissionType ? (
+        <Chip
+          label={filters.transmissionType}
+          onRemove={() =>
+            onChange({ ...filters, transmissionType: undefined })
+          }
+        />
+      ) : null}
+      {filters.hasPhoto ? (
+        <Chip
+          label="Fotoğraflı"
+          onRemove={() => onChange({ ...filters, hasPhoto: undefined })}
+        />
+      ) : null}
+      {filters.vehiclesOnly ? (
+        <Chip
+          label="Sadece araç"
+          onRemove={() => onChange({ ...filters, vehiclesOnly: undefined })}
+        />
+      ) : null}
     </div>
   );
 }

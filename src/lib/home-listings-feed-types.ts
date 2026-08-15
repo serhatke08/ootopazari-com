@@ -35,6 +35,12 @@ export type HomeListingsFeedFilters = {
   cityIds?: string[];
   sort?: HomeListingsSort;
   vehicleBrandId?: string;
+  vehicleBrandIds?: string[];
+  vehicleModels?: string[];
+  fuelType?: string;
+  transmissionType?: string;
+  hasPhoto?: boolean;
+  vehiclesOnly?: boolean;
   minPrice?: number;
   maxPrice?: number;
   minYear?: number;
