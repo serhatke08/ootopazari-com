@@ -4,20 +4,12 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { isListingDetailPath } from "@/lib/listing-seo";
 
-export function SiteHeaderHost({ children }: { children: ReactNode }) {
+export function SiteHeaderFallback() {
   const pathname = usePathname();
   if (isListingDetailPath(pathname)) return null;
-  return <>{children}</>;
+  return <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />;
 }
 
 export function SiteMainShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const listing = isListingDetailPath(pathname);
-  return (
-    <div
-      className={`flex flex-1 flex-col ${listing ? "" : "layout-with-mobile-nav"}`}
-    >
-      {children}
-    </div>
-  );
+  return <div className="layout-with-mobile-nav flex flex-1 flex-col">{children}</div>;
 }

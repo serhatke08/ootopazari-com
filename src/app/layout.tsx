@@ -6,7 +6,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ListingNavSkeletonGate } from "@/components/ListingNavSkeletonGate";
-import { SiteHeaderHost, SiteMainShell } from "@/components/SiteListingChrome";
+import { SiteHeaderFallback, SiteMainShell } from "@/components/SiteListingChrome";
 import { AppNavigationMemory } from "@/components/AppNavigationMemory";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
 import { tryGetSupabaseEnv } from "@/lib/env";
@@ -138,15 +138,9 @@ export default async function RootLayout({
           <Suspense fallback={null}>
             <AppNavigationMemory />
           </Suspense>
-          <SiteHeaderHost>
-            <Suspense
-              fallback={
-                <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />
-              }
-            >
-              <SiteHeader />
-            </Suspense>
-          </SiteHeaderHost>
+          <Suspense fallback={<SiteHeaderFallback />}>
+            <SiteHeader />
+          </Suspense>
           <SiteMainShell>
             <main className="flex min-h-0 flex-1 flex-col bg-zinc-50">{children}</main>
             <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />

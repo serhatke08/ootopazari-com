@@ -392,10 +392,12 @@ export function SiteHeaderClient({
     setNotifications((prev) => prev.map((n) => ({ ...n, read_at: now })));
   }
 
-  if (isListingDetailPath(pathname)) return null;
+  const hideTopNav = isListingDetailPath(pathname);
 
   return (
     <>
+      {hideTopNav ? null : (
+      <>
       <LeftNavDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -630,6 +632,8 @@ export function SiteHeaderClient({
           ) : null}
         </div>
       </header>
+      </>
+      )}
 
       <MobileBottomNav
         loggedIn={loggedIn}
