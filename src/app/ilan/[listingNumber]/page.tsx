@@ -956,7 +956,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
               images={galleryUrls}
               alt="İlan görseli"
               compact
-              edgeToEdge
               overlay={
                 <div className="flex w-full items-start justify-between gap-2">
                   <ListingBackButton />

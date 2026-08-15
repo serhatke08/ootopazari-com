@@ -22,12 +22,14 @@ function galleryShellClass(edgeToEdge: boolean) {
 
 function mainFrameClass(compact: boolean) {
   return `relative w-full touch-pan-y overflow-hidden rounded-lg bg-zinc-100 ${
-    compact ? "aspect-[16/10] max-h-[15.5rem] sm:max-h-[18rem]" : "aspect-[4/3] sm:aspect-[3/2]"
+    compact ? "aspect-[4/3]" : "aspect-[4/3] sm:aspect-[3/2]"
   }`;
 }
 
-function mainImageClass() {
-  return "pointer-events-none object-cover object-center select-none";
+function mainImageClass(compact: boolean) {
+  return `pointer-events-none object-center select-none ${
+    compact ? "object-contain" : "object-cover"
+  }`;
 }
 
 export function ListingImageGallery({
@@ -229,7 +231,7 @@ export function ListingImageGallery({
   if (!main) {
     return (
       <div className={`relative ${edgeToEdge ? "" : "p-2 sm:p-3"}`}>
-        <div className="flex aspect-[16/10] max-h-[15.5rem] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500 sm:max-h-[18rem]">
+        <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500">
           Görsel yok
         </div>
         {overlay ? (
@@ -272,7 +274,7 @@ export function ListingImageGallery({
           fill
           unoptimized={isHeicLikeUrl(main)}
           draggable={false}
-          className={`${mainImageClass()} transition-opacity duration-200 ${
+          className={`${mainImageClass(compact)} transition-opacity duration-200 ${
             mainLoaded ? "opacity-100" : "opacity-0"
           }`}
           priority={active === 0}

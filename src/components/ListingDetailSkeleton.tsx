@@ -28,7 +28,7 @@ export function ListingDetailSkeleton() {
         </div>
         <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
-            <div className="aspect-[16/10] max-h-[15.5rem] w-full animate-pulse bg-zinc-200 sm:max-h-[18rem]" />
+            <div className="aspect-[4/3] w-full animate-pulse bg-zinc-200" />
             <div className="flex gap-2 p-2">
               {Array.from({ length: 4 }, (_, i) => (
                 <div
