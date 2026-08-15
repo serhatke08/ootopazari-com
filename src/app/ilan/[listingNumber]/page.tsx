@@ -29,9 +29,12 @@ import { getSiteOrigin } from "@/lib/site-url";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
+import { ListingBackButton } from "@/components/ListingBackButton";
 import { ListingImageGallery } from "@/components/ListingImageGallery";
 import { ListingViewTracker } from "@/components/ListingViewTracker";
 import { ListingDetailSellerStats } from "@/components/ListingDetailSellerStats";
+import { ListingDetailStatsRow } from "@/components/ListingDetailStatsRow";
+import { ListingDetailContactDock } from "@/components/ListingDetailContactDock";
 import {
   parseDescriptionSpecLine,
   parseDescriptionVehicleSpecs,
@@ -58,7 +61,6 @@ import { StartConversationButton } from "@/components/messages/StartConversation
 import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
 import { ListingDescriptionText } from "@/components/ListingDescriptionText";
-import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { ListingShareReportActions } from "@/components/ListingShareReportActions";
 import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
@@ -583,6 +585,8 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     !!sellerUserId &&
     !!listing.contact_via_message &&
     (!viewer?.id || viewer.id !== sellerUserId);
+  const isOwner =
+    !!viewer?.id && !!sellerUserId && viewer.id === sellerUserId;
 
   const num = listing.listing_number;
   const expertizRaw = row.expertiz_panels;
@@ -853,6 +857,10 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     !!contactPhone &&
     listing.contact_via_phone === true &&
     detailAccess === "public";
+  const showContactDock =
+    !!seller &&
+    !isOwner &&
+    (showMessageButton || showPhone);
 
   const suspensionReason =
     listing.suspension_reason != null
@@ -902,7 +910,9 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
   return (
     <article
-      className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-4 pb-12 pt-4 text-black sm:px-6 ${
+      className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pt-0 text-black md:px-6 md:pb-12 md:pt-4 ${
+        showContactDock ? "pb-24" : "pb-12"
+      } ${
         isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""
       }`}
     >
@@ -920,7 +930,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ) : null}
       {isSuspendedOwnerView ? (
         <div
-          className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-950"
+          className="mx-4 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-950 md:mx-0"
           role="status"
         >
           <p className="font-semibold">Bu ilan askıya alındı</p>
@@ -937,7 +947,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ) : null}
       {isSuspendedAdminView ? (
         <div
-          className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950"
+          className="mx-4 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 md:mx-0"
           role="status"
         >
           <p className="font-semibold">Bu ilan askıya alınmış (yayından kalkmış)</p>
@@ -948,23 +958,77 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
           ) : null}
         </div>
       ) : null}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href="/"
-            className="inline-flex text-sm font-medium text-black underline decoration-black/30 underline-offset-2 hover:decoration-black"
-          >
-            ← Ana sayfaya dön
-          </Link>
+
+      <div className="listing-detail-layout">
+        <div className="listing-detail-gallery min-w-0">
+          <div className="overflow-hidden bg-white md:rounded-xl md:border md:border-black/10">
+            <ListingImageGallery
+              images={galleryUrls}
+              alt="İlan görseli"
+              compact
+              edgeToEdge
+              overlay={
+                <div className="flex w-full items-start justify-between gap-2">
+                  <ListingBackButton />
+                  <div className="flex items-center gap-1.5">
+                    {id && !isSuspendedDetailView ? (
+                      <FavoriteHeart
+                        listingId={id}
+                        initialFavorited={sessionFav.favoriteIds.has(id)}
+                        loggedIn={!!sessionFav.user}
+                        variant="overlay"
+                      />
+                    ) : null}
+                    {id && detailAccess === "public" ? (
+                      <ListingShareReportActions
+                        listingId={id}
+                        shareTitle={(listing.title as string) ?? "İlan"}
+                        sharePath={
+                          expectedSeoPath ??
+                          `/ilan/${encodeURIComponent(listingNumber)}`
+                        }
+                        loggedIn={!!viewer}
+                        canReport={
+                          !!viewer?.id &&
+                          !!sellerUserId &&
+                          viewer.id !== sellerUserId
+                        }
+                        variant="overlay"
+                      />
+                    ) : null}
+                    {isOwner ? (
+                      <Link
+                        href={`/ilan-duzenle/${encodeURIComponent(listingNumber)}`}
+                        aria-label="İlanı düzenle"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
+                      >
+                        <EditIcon />
+                      </Link>
+                    ) : null}
+                    {viewerAdminProfile && id && detailAccess === "public" ? (
+                      <SuspendListingButton
+                        listingId={id}
+                        listingLabel={`#${String(num ?? "?")} — ${String(listing.title ?? "İlan")}`}
+                        variant="overlay"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              }
+            />
+          </div>
+        </div>
+
+        <div className="listing-detail-intro min-w-0 space-y-2 px-4 md:px-0">
           {vehicleBreadcrumb.length > 0 ? (
             <nav
-              className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-black/70"
-              aria-label="Marka ve model"
+              className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-black/70"
+              aria-label="Kategori ve model"
             >
               {vehicleBreadcrumb.map((part, i) => (
                 <span key={`${part}-${i}`} className="inline-flex items-center">
                   {i > 0 ? (
-                    <span className="mx-1.5 font-medium text-black/35" aria-hidden>
+                    <span className="mx-1 font-medium text-black/35" aria-hidden>
                       &gt;
                     </span>
                   ) : null}
@@ -973,98 +1037,41 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
               ))}
             </nav>
           ) : null}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {id && detailAccess === "public" ? (
-            <ListingShareReportActions
+          <h1 className="text-xl font-bold leading-tight text-black sm:text-2xl">
+            {(listing.title as string) ?? "İlan"}
+          </h1>
+          {(num != null || cityDisplayResolved || listingDateLabel) ? (
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-black/65">
+              {num != null ? (
+                <CopyListingNumber
+                  text={`#${String(num)}`}
+                  className="font-semibold text-blue-600"
+                />
+              ) : null}
+              {cityDisplayResolved ? (
+                <span className="font-medium text-black/75">{cityDisplayResolved}</span>
+              ) : null}
+              {listingDateLabel ? (
+                <span className="text-black/55">{listingDateLabel}</span>
+              ) : null}
+            </p>
+          ) : null}
+          {id ? (
+            <ListingDetailStatsRow
               listingId={id}
-              shareTitle={(listing.title as string) ?? "İlan"}
-              sharePath={
-                expectedSeoPath ?? `/ilan/${encodeURIComponent(listingNumber)}`
-              }
+              initialFavorites={stats?.favorites ?? 0}
+              priceLabel={priceLabel}
+              summary={priceRating}
               loggedIn={!!viewer}
-              canReport={
-                !!viewer?.id &&
-                !!sellerUserId &&
-                viewer.id !== sellerUserId
-              }
+              priceHistory={priceHistory}
             />
-          ) : null}
-          {viewerAdminProfile && id && detailAccess === "public" ? (
-            <SuspendListingButton
-              listingId={id}
-              listingLabel={`#${String(num ?? "?")} — ${String(listing.title ?? "İlan")}`}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      <div className="listing-detail-layout">
-        <h1 className="listing-detail-title text-xl font-bold leading-tight text-black sm:text-2xl lg:text-3xl">
-          {(listing.title as string) ?? "İlan"}
-        </h1>
-        {(num != null || cityDisplayResolved) ? (
-          <p className="listing-detail-meta -mt-2 mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-black/65">
-            {num != null ? (
-              <CopyListingNumber
-                text={`#${String(num)}`}
-                className="font-semibold text-blue-600"
-              />
-            ) : null}
-            {num != null && cityDisplayResolved ? (
-              <span className="text-black/30" aria-hidden>
-                ·
-              </span>
-            ) : null}
-            {cityDisplayResolved ? (
-              <span className="font-medium text-black/75">{cityDisplayResolved}</span>
-            ) : null}
-          </p>
-        ) : null}
-
-        <div className="listing-detail-gallery min-w-0">
-          <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
-            <ListingImageGallery
-              images={galleryUrls}
-              alt="İlan görseli"
-              compact
-              overlay={
-                id && !isSuspendedDetailView ? (
-                  <FavoriteHeart
-                    listingId={id}
-                    initialFavorited={sessionFav.favoriteIds.has(id)}
-                    loggedIn={!!sessionFav.user}
-                    variant="overlay"
-                  />
-                ) : null
-              }
-            />
-          </div>
+          ) : (
+            <p className="text-sm font-bold tabular-nums text-black">{priceLabel}</p>
+          )}
         </div>
 
-        <div className="listing-detail-tabs min-w-0 max-md:mt-3">
+        <div className="listing-detail-tabs min-w-0 px-4 md:px-0">
           <ListingDetailTabs
-            header={
-              id ? (
-                <div className="px-4 py-2.5">
-                  <ListingPriceDisplay
-                    listingId={id}
-                    priceLabel={priceLabel}
-                    listingDate={listingDateLabel}
-                    summary={priceRating}
-                    loggedIn={!!viewer}
-                    showHistory
-                    priceHistory={priceHistory}
-                    priceClassName="text-base font-bold tabular-nums text-black sm:text-lg"
-                    popoverPlacement="below"
-                  />
-                </div>
-              ) : (
-                <div className="px-4 py-2.5">
-                  <p className="text-sm font-medium text-black/70">{priceLabel}</p>
-                </div>
-              )
-            }
             infoContent={<ListingVehicleSpecs rows={vehicleSpecRows} />}
             descriptionContent={descriptionTabContent}
             equipmentContent={equipmentTabContent}
@@ -1092,16 +1099,16 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
           ) : null}
         </div>
 
-        <div className="listing-detail-aside min-w-0 max-md:mt-2">
+        <div className="listing-detail-aside min-w-0 px-4 md:px-0">
           <div className="shrink-0 rounded-xl border border-black/10 bg-white p-3">
             {seller ? (
               <>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
+                <p className="mb-2 hidden text-[10px] font-semibold uppercase tracking-wide text-black/50 md:block">
                   Satıcı
                 </p>
                 <Link
                   href={`/kullanici/${sellerUserId}`}
-                  className="flex items-center gap-2 rounded-lg transition hover:bg-black/[0.03]"
+                  className="hidden items-center gap-2 rounded-lg transition hover:bg-black/[0.03] md:flex"
                 >
                   {sellerAvSrc ? (
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black/5">
@@ -1130,14 +1137,16 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                   </div>
                 </Link>
                 {stats && id ? (
-                  <ListingDetailSellerStats
-                    listingId={id}
-                    initialViews={stats.views}
-                    initialFavorites={stats.favorites}
-                  />
+                  <div className="hidden md:block">
+                    <ListingDetailSellerStats
+                      listingId={id}
+                      initialViews={stats.views}
+                      initialFavorites={stats.favorites}
+                    />
+                  </div>
                 ) : null}
                 {showMessageButton && id ? (
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 hidden gap-2 md:flex">
                     <div className={showPhone ? "min-w-0 flex-1" : "w-full"}>
                       <StartConversationButton
                         listingId={id}
@@ -1151,11 +1160,11 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                     ) : null}
                   </div>
                 ) : showPhone ? (
-                  <div className="mt-3">
+                  <div className="mt-3 hidden md:block">
                     <ListingContactPhone phone={contactPhone} />
                   </div>
                 ) : null}
-                <div className="mt-3 border-t border-black/10 pt-3">
+                <div className="md:mt-3 md:border-t md:border-black/10 md:pt-3">
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-black/50">
                     Konum
                   </p>
@@ -1198,6 +1207,38 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
           />
         </div>
       </div>
+      {showContactDock && sellerUserId ? (
+        <ListingDetailContactDock
+          sellerUserId={sellerUserId}
+          sellerDisplayName={sellerDisplayName}
+          sellerAvSrc={sellerAvSrc}
+          verified={!!adminProfile}
+          listingId={id}
+          showMessage={showMessageButton}
+          showPhone={showPhone}
+          phone={contactPhone}
+        />
+      ) : null}
     </article>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      className="h-4 w-4"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"
+      />
+    </svg>
   );
 }

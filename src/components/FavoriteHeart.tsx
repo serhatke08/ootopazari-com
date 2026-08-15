@@ -159,7 +159,7 @@ export function FavoriteHeart({
                 ? "text-[#e60000]"
                 : "text-[#ff1a1a] hover:text-[#e60000]"
             }`
-          : `inline-flex h-9 w-9 items-center justify-center rounded-lg transition hover:scale-105 disabled:opacity-50 [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.75))] hover:[filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.85))] ${
+          : `inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60 disabled:opacity-50 ${
               favorited ? "text-[#e60000]" : "text-white"
             }`
       }

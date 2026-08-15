@@ -11,7 +11,11 @@ type Props = {
   sharePath: string;
   loggedIn: boolean;
   canReport: boolean;
+  variant?: "buttons" | "overlay";
 };
+
+const overlayBtn =
+  "inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60 disabled:opacity-45";
 
 export function ListingShareReportActions({
   listingId,
@@ -19,6 +23,7 @@ export function ListingShareReportActions({
   sharePath,
   loggedIn,
   canReport,
+  variant = "buttons",
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -114,19 +119,26 @@ export function ListingShareReportActions({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={variant === "overlay" ? "flex items-center gap-1.5" : "flex flex-wrap items-center gap-2"}>
         <button
           type="button"
           onClick={() => void shareListing()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-black/[0.03]"
+          className={
+            variant === "overlay"
+              ? overlayBtn
+              : "inline-flex items-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-black/[0.03]"
+          }
+          aria-label="Paylaş"
         >
-          <ShareIcon />
-          Paylaş
+          <ShareIcon large={variant === "overlay"} />
+          {variant === "overlay" ? null : "Paylaş"}
         </button>
+        {(variant !== "overlay" || canReport || !loggedIn) ? (
         <button
           type="button"
           onClick={openReport}
           disabled={!canReport && loggedIn}
+          aria-label="Şikayet"
           title={
             !loggedIn
               ? "Şikayet için giriş yapın"
@@ -134,12 +146,17 @@ export function ListingShareReportActions({
                 ? "Bu ilan için şikayet kullanılamaz"
                 : undefined
           }
-          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45"
+          className={
+            variant === "overlay"
+              ? overlayBtn
+              : "inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45"
+          }
         >
-          <FlagIcon />
-          Şikayet
+          <FlagIcon large={variant === "overlay"} />
+          {variant === "overlay" ? null : "Şikayet"}
         </button>
-        {shareFeedback ? (
+        ) : null}
+        {shareFeedback && variant !== "overlay" ? (
           <span className="text-xs text-black/55">{shareFeedback}</span>
         ) : null}
       </div>
@@ -237,7 +254,7 @@ export function ListingShareReportActions({
   );
 }
 
-function ShareIcon() {
+function ShareIcon({ large = false }: { large?: boolean }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -245,7 +262,7 @@ function ShareIcon() {
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      className="h-3.5 w-3.5"
+      className={large ? "h-4 w-4" : "h-3.5 w-3.5"}
       aria-hidden
     >
       <path
@@ -257,7 +274,7 @@ function ShareIcon() {
   );
 }
 
-function FlagIcon() {
+function FlagIcon({ large = false }: { large?: boolean }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -265,7 +282,7 @@ function FlagIcon() {
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      className="h-3.5 w-3.5"
+      className={large ? "h-4 w-4" : "h-3.5 w-3.5"}
       aria-hidden
     >
       <path

@@ -4,24 +4,37 @@ import { useState } from "react";
 
 type Props = {
   phone: string;
+  compact?: boolean;
 };
 
 const primaryBtn =
   "flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700";
+const compactBtn =
+  "flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white";
 
-export function ListingContactPhone({ phone }: Props) {
+export function ListingContactPhone({ phone, compact = false }: Props) {
   const [open, setOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const tel = phone.replace(/[^\d+]/g, "");
+  const btnClass = compact ? compactBtn : primaryBtn;
 
   if (!phone.trim()) return null;
+
+  if (compact) {
+    return (
+      <a href={`tel:${tel}`} className={compactBtn}>
+        <PhoneIcon />
+        Ara
+      </a>
+    );
+  }
 
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={primaryBtn}
+        className={btnClass}
       >
         <PhoneIcon />
         Ara
@@ -31,9 +44,9 @@ export function ListingContactPhone({ phone }: Props) {
 
   return (
     <div className="space-y-2">
-      <a href={`tel:${tel}`} className={primaryBtn}>
+      <a href={`tel:${tel}`} className={btnClass}>
         <PhoneIcon />
-        Hemen ara
+        Ara
       </a>
       {!revealed ? (
         <button

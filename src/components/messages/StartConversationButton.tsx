@@ -9,9 +9,16 @@ import { findConversationForListingAndPair } from "@/lib/messages";
 type Props = {
   listingId: string;
   ownerUserId: string;
+  label?: string;
+  className?: string;
 };
 
-export function StartConversationButton({ listingId, ownerUserId }: Props) {
+export function StartConversationButton({
+  listingId,
+  ownerUserId,
+  label = "Mesaj gönder",
+  className,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(false);
@@ -90,14 +97,17 @@ export function StartConversationButton({ listingId, ownerUserId }: Props) {
   }
 
   return (
-    <div className="w-full [&:not(:first-child)]:mt-3">
+    <div className="w-full [&:not(:first-child)]:mt-0">
       <button
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="inline-flex w-full items-center justify-center rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60"
+        className={
+          className ??
+          "inline-flex w-full items-center justify-center rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60"
+        }
       >
-        {loading ? "Açılıyor…" : "Mesaj gönder"}
+        {loading ? "Açılıyor…" : label}
       </button>
       {error ? (
         <p className="mt-2 text-sm text-red-600" role="alert">

@@ -11,12 +11,13 @@ type GalleryProps = {
   alt: string;
   overlay?: ReactNode;
   compact?: boolean;
+  edgeToEdge?: boolean;
 };
 
 const SWIPE_THRESHOLD_PX = 40;
 
-function galleryShellClass() {
-  return "space-y-2 p-2 sm:p-3";
+function galleryShellClass(edgeToEdge: boolean) {
+  return edgeToEdge ? "space-y-2" : "space-y-2 p-2 sm:p-3";
 }
 
 function mainFrameClass(compact: boolean) {
@@ -36,6 +37,7 @@ export function ListingImageGallery({
   alt,
   overlay,
   compact = false,
+  edgeToEdge = false,
 }: GalleryProps) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
@@ -228,12 +230,19 @@ export function ListingImageGallery({
 
   if (!main) {
     return (
-      <div className="relative p-2 sm:p-3">
-        <div className="flex aspect-[16/10] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500">
+      <div className={`relative ${edgeToEdge ? "" : "p-2 sm:p-3"}`}>
+        <div className="flex aspect-[4/3] w-full items-center justify-center rounded-none bg-zinc-100 text-sm text-zinc-500 md:rounded-lg">
           Görsel yok
         </div>
         {overlay ? (
-          <div className="absolute right-4 top-4 z-10">{overlay}</div>
+          <div
+            className="absolute inset-x-0 top-0 z-20 p-2"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {overlay}
+          </div>
         ) : null}
       </div>
     );
@@ -243,9 +252,11 @@ export function ListingImageGallery({
     "absolute top-1/2 z-[2] flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-lg text-white shadow-sm transition hover:bg-black/60 sm:h-10 sm:w-10";
 
   return (
-    <div className={galleryShellClass()}>
+    <div className={galleryShellClass(edgeToEdge)}>
       <div
-        className={`${mainFrameClass(compact)} cursor-zoom-in`}
+        className={`${mainFrameClass(compact)} ${
+          edgeToEdge ? "rounded-none md:rounded-lg" : ""
+        } cursor-zoom-in`}
         onPointerDown={onMainPointerDown}
         onPointerMove={onMainPointerMove}
         onPointerUp={onMainPointerUp}
@@ -270,7 +281,7 @@ export function ListingImageGallery({
           sizes="(max-width: 1024px) 100vw, 720px"
           onLoad={() => setMainLoaded(true)}
         />
-        {hasMultiple ? (
+        {hasMultiple && !overlay ? (
           <>
             <button
               type="button"
@@ -296,23 +307,30 @@ export function ListingImageGallery({
             >
               ›
             </button>
-            <p className="pointer-events-none absolute bottom-2 left-0 right-0 z-[2] text-center text-[11px] font-medium text-black/50">
+            <p className="pointer-events-none absolute bottom-2 left-0 right-0 z-[2] text-center text-[11px] font-medium text-white drop-shadow">
               {active + 1} / {list.length}
             </p>
           </>
         ) : null}
         {overlay ? (
-          <div className="pointer-events-auto absolute right-2 top-2 z-20">
+          <div
+            className="pointer-events-auto absolute inset-x-0 top-0 z-20 p-2"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
             {overlay}
           </div>
         ) : null}
       </div>
 
-      <GalleryThumbnailStrip
-        images={list}
-        activeIndex={active}
-        onSelect={setActive}
-      />
+      <div className={edgeToEdge ? "px-2 pb-2 md:px-0 md:pb-0" : undefined}>
+        <GalleryThumbnailStrip
+          images={list}
+          activeIndex={active}
+          onSelect={setActive}
+        />
+      </div>
 
       {lightbox ? (
         <div

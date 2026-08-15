@@ -6,9 +6,14 @@ import { useState } from "react";
 type Props = {
   listingId: string;
   listingLabel: string;
+  variant?: "button" | "overlay";
 };
 
-export function SuspendListingButton({ listingId, listingLabel }: Props) {
+export function SuspendListingButton({
+  listingId,
+  listingLabel,
+  variant = "button",
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -63,9 +68,14 @@ export function SuspendListingButton({ listingId, listingLabel }: Props) {
           setError(null);
           setReason("");
         }}
-        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100"
+        aria-label="Askıya al"
+        className={
+          variant === "overlay"
+            ? "inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-black/60"
+            : "rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100"
+        }
       >
-        Askıya al
+        {variant === "overlay" ? "!" : "Askıya al"}
       </button>
 
       {open ? (

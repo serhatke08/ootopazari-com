@@ -211,46 +211,43 @@ body {
   gap: 1rem;
 }
 
-.listing-detail-layout > .listing-detail-title {
+.listing-detail-layout > .listing-detail-intro {
   grid-column: 1 / -1;
 }
 
-.listing-detail-layout > .listing-detail-meta {
-  grid-column: 1 / -1;
-}
-
-/* Mobil: galeri → satıcı/konum → bilgiler */
+/* Mobil: galeri → başlık/istatistik → bilgiler → satıcı/konum */
 @media (max-width: 47.999rem) {
-  .listing-detail-layout > .listing-detail-title {
+  .listing-detail-layout > .listing-detail-gallery {
     order: 1;
   }
 
-  .listing-detail-layout > .listing-detail-meta {
+  .listing-detail-layout > .listing-detail-intro {
     order: 2;
   }
 
-  .listing-detail-layout > .listing-detail-gallery {
+  .listing-detail-layout > .listing-detail-tabs {
     order: 3;
   }
 
   .listing-detail-layout > .listing-detail-aside {
     order: 4;
   }
-
-  .listing-detail-layout > .listing-detail-tabs {
-    order: 5;
-  }
 }
 
-/* Tablet: sol galeri + satıcı/konum, sağ bilgiler */
+/* Tablet: sol galeri + intro + satıcı, sağ bilgiler */
 @media (min-width: 48rem) and (max-width: 79.999rem) {
   .listing-detail-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 1.25rem;
-    row-gap: 0.5rem;
+    row-gap: 0.75rem;
   }
 
   .listing-detail-layout > .listing-detail-gallery {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .listing-detail-layout > .listing-detail-intro {
     grid-column: 1;
     grid-row: 2;
   }
@@ -263,34 +260,40 @@ body {
 
   .listing-detail-layout > .listing-detail-tabs {
     grid-column: 2;
-    grid-row: 2 / span 2;
+    grid-row: 1 / span 3;
     margin-top: 0;
     align-self: start;
   }
 }
 
-/* Masaüstü: 3 sütun - Sol %40, Orta %35, Sağ %25 */
+/* Masaüstü: 3 sütun - Sol galeri+intro, orta bilgiler, sağ satıcı */
 @media (min-width: 80rem) {
   .listing-detail-layout {
     grid-template-columns: minmax(0, 8fr) minmax(0, 7fr) minmax(0, 5fr);
-    row-gap: 1rem;
+    row-gap: 0.75rem;
     column-gap: 1.25rem;
   }
 
   .listing-detail-layout > .listing-detail-gallery {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .listing-detail-layout > .listing-detail-intro {
     grid-column: 1;
     grid-row: 2;
   }
 
   .listing-detail-layout > .listing-detail-tabs {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1 / span 2;
     margin-top: 0;
+    align-self: start;
   }
 
   .listing-detail-layout > .listing-detail-aside {
     grid-column: 3;
-    grid-row: 2;
+    grid-row: 1 / span 2;
     margin-top: 0;
     align-self: start;
   }
