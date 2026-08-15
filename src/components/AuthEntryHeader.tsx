@@ -20,19 +20,6 @@ function AppleIcon({ className }: { className?: string }) {
   );
 }
 
-function AndroidIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill="currentColor"
-    >
-      <path d="M6.2 7.5 4.8 5.1a.55.55 0 0 1 .2-.75.55.55 0 0 1 .75.2l1.45 2.5A8.4 8.4 0 0 1 12 5.7c1.7 0 3.27.48 4.8 1.35l1.45-2.5a.55.55 0 0 1 .95.55L17.8 7.5A8.3 8.3 0 0 1 20.5 14v5.2a1.3 1.3 0 0 1-1.3 1.3h-1.05V14a.85.85 0 0 0-1.7 0v6.5H7.55V14a.85.85 0 0 0-1.7 0v6.5H4.8A1.3 1.3 0 0 1 3.5 19.2V14c0-2.6.97-4.97 2.7-6.5ZM9 12.15a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Zm6 0a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Z" />
-    </svg>
-  );
-}
-
 export function AuthEntryHeader({
   subtitle,
   onGoogle,
@@ -48,7 +35,7 @@ export function AuthEntryHeader({
     <div className="mb-8 flex flex-col items-center text-center">
       <div className="mb-4 flex h-[5.5rem] w-[5.5rem] items-center justify-center overflow-hidden rounded-2xl border-2 border-zinc-900/20 bg-[#ffcc00] shadow-sm">
         <Image
-          src="/menu/pazar.png?v=20260413"
+          src="/menu/pazar.png"
           alt="Oto Pazarı"
           width={88}
           height={88}
@@ -86,10 +73,16 @@ export function AuthEntryHeader({
           target="_blank"
           rel="noopener noreferrer"
           className={tileClass}
-          aria-label="Play Store’da Oto Pazarı"
-          title="Android uygulaması"
+          aria-label="Google Play’de Oto Pazarı"
+          title="Google Play"
         >
-          <AndroidIcon className="h-6 w-6 text-[#3DDC84]" />
+          <Image
+            src="/menu/google-play.png"
+            alt=""
+            width={28}
+            height={28}
+            className="h-7 w-7 object-contain"
+          />
         </a>
       </div>
     </div>
