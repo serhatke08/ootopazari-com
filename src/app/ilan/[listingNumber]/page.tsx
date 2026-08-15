@@ -903,7 +903,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   return (
     <article
       className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pt-4 text-black md:px-6 md:pb-12 md:pt-4 ${
-        showContactDock ? "pb-36" : "pb-12"
+        showContactDock ? "pb-28" : "pb-12"
       } ${
         isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""
       }`}
@@ -951,9 +951,9 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
         </div>
       ) : null}
 
-      <div className="listing-detail-title mb-4 flex items-center gap-1 px-4 md:mb-4 md:px-0">
-        <ListingBackButton className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-[1.75rem] font-semibold leading-none text-black" />
-        <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight text-black sm:text-2xl">
+      <div className="listing-detail-title mb-2 flex items-center gap-1 px-4 md:mb-3 md:px-0">
+        <ListingBackButton />
+        <h1 className="min-w-0 flex-1 text-base font-semibold leading-snug text-black sm:text-lg">
           {(listing.title as string) ?? "İlan"}
         </h1>
       </div>

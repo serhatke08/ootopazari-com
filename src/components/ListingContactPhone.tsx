@@ -10,7 +10,7 @@ type Props = {
 const primaryBtn =
   "flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700";
 const compactBtn =
-  "flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white";
+  "flex w-full items-center justify-center gap-1 rounded-md bg-blue-600 px-2 py-1.5 text-xs font-semibold text-white";
 
 export function ListingContactPhone({ phone, compact = false }: Props) {
   const [open, setOpen] = useState(false);
@@ -23,7 +23,7 @@ export function ListingContactPhone({ phone, compact = false }: Props) {
   if (compact) {
     return (
       <a href={`tel:${tel}`} className={compactBtn}>
-        <PhoneIcon />
+        <PhoneIcon compact />
         Ara
       </a>
     );
@@ -75,13 +75,13 @@ export function ListingContactPhone({ phone, compact = false }: Props) {
   );
 }
 
-function PhoneIcon() {
+function PhoneIcon({ compact = false }: { compact?: boolean }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       fill="currentColor"
-      className="h-[1.125rem] w-[1.125rem] shrink-0"
+      className={compact ? "h-3.5 w-3.5 shrink-0" : "h-[1.125rem] w-[1.125rem] shrink-0"}
       aria-hidden
     >
       <path

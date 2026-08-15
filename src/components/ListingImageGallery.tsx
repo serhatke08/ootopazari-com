@@ -4,7 +4,6 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GalleryThumbnailStrip } from "@/components/GalleryThumbnailStrip";
-import { isHeicLikeUrl } from "@/lib/image-format";
 
 type GalleryProps = {
   images: string[];
@@ -272,14 +271,14 @@ export function ListingImageGallery({
           src={main}
           alt={alt}
           fill
-          unoptimized={isHeicLikeUrl(main)}
+          unoptimized
           draggable={false}
-          className={`${mainImageClass(compact)} transition-opacity duration-200 ${
-            mainLoaded ? "opacity-100" : "opacity-0"
-          }`}
+          className={mainImageClass(compact)}
           priority={active === 0}
+          loading={active === 0 ? "eager" : "lazy"}
           sizes="(max-width: 1024px) 100vw, 720px"
           onLoad={() => setMainLoaded(true)}
+          onError={() => setMainLoaded(true)}
         />
         {hasMultiple && !compact ? (
           <>
@@ -435,7 +434,7 @@ export function ListingImageGallery({
                 src={list[active]}
                 alt={alt}
                 fill
-                unoptimized={isHeicLikeUrl(list[active])}
+                unoptimized
                 draggable={false}
                 className="object-contain object-center transition-transform duration-75 ease-out"
                 style={{

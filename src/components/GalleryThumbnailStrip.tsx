@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { isHeicLikeUrl } from "@/lib/image-format";
 
 const PER_ROW = 4;
 const MAX_ROWS = 2;
@@ -52,7 +51,7 @@ export function GalleryThumbnailStrip({
               src={src}
               alt=""
               fill
-              unoptimized={isHeicLikeUrl(src)}
+              unoptimized
               className="object-cover object-center"
               sizes="96px"
             />
