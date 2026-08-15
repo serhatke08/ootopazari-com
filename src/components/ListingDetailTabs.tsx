@@ -18,7 +18,7 @@ const TABS: Array<{ id: Tab; label: string }> = [
 ];
 
 function tabButtonClass(active: boolean) {
-  return `min-w-0 flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold leading-tight transition sm:text-xs ${
+  return `min-w-0 flex-1 rounded-xl px-3 py-2.5 text-xs font-semibold leading-snug transition sm:px-4 sm:py-3 sm:text-sm ${
     active
       ? "bg-[#7c3aed] text-white shadow-sm"
       : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-800"
