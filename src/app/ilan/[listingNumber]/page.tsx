@@ -960,7 +960,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
       <div className="listing-detail-layout">
         <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
-          <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
+          <div className="rounded-xl border border-black/10 bg-white">
             <ListingImageGallery
               images={galleryUrls}
               alt="İlan görseli"

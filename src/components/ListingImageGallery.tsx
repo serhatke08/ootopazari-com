@@ -25,10 +25,8 @@ function mainFrameClass(compact: boolean) {
   }`;
 }
 
-function mainImageClass(compact: boolean) {
-  return `pointer-events-none object-center select-none ${
-    compact ? "object-contain" : "object-cover"
-  }`;
+function mainImageClass() {
+  return "pointer-events-none object-contain object-center select-none";
 }
 
 export function ListingImageGallery({
@@ -266,20 +264,23 @@ export function ListingImageGallery({
         {!mainLoaded ? (
           <div className="absolute inset-0 animate-pulse bg-zinc-200" aria-hidden />
         ) : null}
-        <Image
-          key={main}
-          src={main}
-          alt={alt}
-          fill
-          unoptimized
-          draggable={false}
-          className={mainImageClass(compact)}
-          priority={active === 0}
-          loading={active === 0 ? "eager" : "lazy"}
-          sizes="(max-width: 1024px) 100vw, 720px"
-          onLoad={() => setMainLoaded(true)}
-          onError={() => setMainLoaded(true)}
-        />
+        <div className="absolute inset-2 sm:inset-3">
+          <Image
+            key={main}
+            src={main}
+            alt={alt}
+            fill
+            unoptimized
+            draggable={false}
+            className={mainImageClass()}
+            style={{ objectFit: "contain" }}
+            priority={active === 0}
+            loading={active === 0 ? "eager" : "lazy"}
+            sizes="(max-width: 1024px) 100vw, 720px"
+            onLoad={() => setMainLoaded(true)}
+            onError={() => setMainLoaded(true)}
+          />
+        </div>
         {hasMultiple && !compact ? (
           <>
             <button

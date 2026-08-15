@@ -8,7 +8,7 @@ const MAX_ROWS = 2;
 const PAGE_SIZE = PER_ROW * MAX_ROWS;
 
 const thumbClass = (active: boolean) =>
-  `relative aspect-[5/3] w-full min-w-0 overflow-hidden rounded border-2 bg-black transition sm:aspect-auto sm:h-14 sm:w-24 sm:shrink-0 ${
+  `relative aspect-[4/3] w-full min-w-0 overflow-hidden rounded border-2 bg-zinc-100 transition ${
     active ? "border-black" : "border-black/20 hover:border-black/45"
   }`;
 
@@ -42,19 +42,22 @@ export function GalleryThumbnailStrip({
 
   return (
     <div className="flex shrink-0 flex-col gap-2">
-      <div className="grid min-h-0 min-w-0 grid-cols-5 gap-1 overflow-hidden max-h-[5.5rem] sm:grid-cols-4 sm:gap-1.5 sm:max-h-[7.375rem]">
+      <div className="grid min-w-0 grid-cols-4 gap-1.5">
         {visible.map((src, i) => {
           const idx = start + i;
           const active = activeIndex === idx;
           const inner = (
-            <Image
-              src={src}
-              alt=""
-              fill
-              unoptimized
-              className="object-cover object-center"
-              sizes="96px"
-            />
+            <span className="absolute inset-0.5">
+              <Image
+                src={src}
+                alt=""
+                fill
+                unoptimized
+                className="object-contain object-center"
+                style={{ objectFit: "contain" }}
+                sizes="120px"
+              />
+            </span>
           );
           if (staticPreview || !onSelect) {
             return (
