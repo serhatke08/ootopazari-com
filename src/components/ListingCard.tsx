@@ -233,7 +233,7 @@ export function ListingCard({
       ) : null}
       {imageArea}
       <div className="flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3">
-        {ownerName ? (
+        {ownerName && !isHomeGrid ? (
           ownerHref ? (
             <Link
               href={ownerHref}
