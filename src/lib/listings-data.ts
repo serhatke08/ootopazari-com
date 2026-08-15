@@ -94,13 +94,13 @@ const LISTING_SELECT = [
   "featured_started_at",
   "feature_boost_campaign_start_at",
   "feature_boost_pack_days",
-  "contact_phone",
-  "contact_via_phone",
-  "contact_via_message",
   "activated_at",
 ].join(", ");
 
 const LISTING_EDIT_EXTRA = [
+  "contact_phone",
+  "contact_via_phone",
+  "contact_via_message",
   "is_fixed_price",
   "is_negotiable",
   "district",
@@ -946,7 +946,7 @@ export async function fetchProfilePublic(
 ): Promise<Record<string, unknown> | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id,username,full_name,avatar_url,phone,created_at")
+    .select("id,username,full_name,avatar_url,created_at")
     .eq("id", userId)
     .maybeSingle();
 

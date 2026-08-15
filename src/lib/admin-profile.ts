@@ -6,8 +6,8 @@ export const ADMIN_VERIFIED_BADGE_SRC =
 
 export type AdminProfileRow = {
   user_id: string;
-  email: string;
   display_name: string;
+  email?: string;
 };
 
 export async function fetchAdminProfileByUserId(
@@ -16,7 +16,7 @@ export async function fetchAdminProfileByUserId(
 ): Promise<AdminProfileRow | null> {
   const { data, error } = await supabase
     .from("admin_profiles")
-    .select("user_id,email,display_name")
+    .select("user_id,display_name")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -39,7 +39,7 @@ export async function fetchAdminProfilesByUserIds(
 
   const { data, error } = await supabase
     .from("admin_profiles")
-    .select("user_id,email,display_name")
+    .select("user_id,display_name")
     .in("user_id", uniq);
 
   if (error) {

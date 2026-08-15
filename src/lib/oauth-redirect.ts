@@ -20,8 +20,9 @@ export function buildOAuthRedirectTo(next?: string): string {
   const base = fallbackOrigin ? withProtocol(fallbackOrigin) : "http://localhost:3000";
   const url = new URL("/auth/callback", base);
 
-  if (next?.startsWith("/")) {
-    url.searchParams.set("next", next);
+  const safeNext = safeNextPath(next);
+  if (safeNext !== "/") {
+    url.searchParams.set("next", safeNext);
   }
 
   return url.toString();

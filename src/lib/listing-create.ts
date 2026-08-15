@@ -55,7 +55,8 @@ export function categoryAllowsBodyExpertiz(
   return BODY_EXPERTIZ_NAME_RE.test(c) || BODY_EXPERTIZ_NAME_RE.test(n);
 }
 
-const RE_SCRIPT = /<script[\s\S]*?>[\s\S]*?<\/script>/gi;
+const RE_UNSAFE_HTML =
+  /<script[\s\S]*?>|javascript\s*:|onerror\s*=|onload\s*=/i;
 
 export const ContentFilterService = {
   validateListingContent(title: string, description: string): {
@@ -70,7 +71,7 @@ export const ContentFilterService = {
     if (d.length > 50_000) {
       return { ok: false, message: "Açıklama çok uzun." };
     }
-    if (RE_SCRIPT.test(t) || RE_SCRIPT.test(d)) {
+    if (RE_UNSAFE_HTML.test(t) || RE_UNSAFE_HTML.test(d)) {
       return { ok: false, message: "İçerik güvenlik kontrolünden geçmedi." };
     }
     return { ok: true };
@@ -252,4 +253,63 @@ export function moderationPayload(): {
   return REQUIRES_APPROVAL_REVIEW
     ? { moderation_status: "pending", moderation_reason: null }
     : { moderation_status: "approved", moderation_reason: null };
+}
+
+const LISTING_CLIENT_WRITE_KEYS = new Set([
+  "category_id",
+  "title",
+  "description",
+  "price",
+  "is_fixed_price",
+  "is_negotiable",
+  "city_id",
+  "district",
+  "contact_phone",
+  "country_id",
+  "vehicle_brand_id",
+  "vehicle_model",
+  "vehicle_year",
+  "vehicle_mileage",
+  "fuel_type",
+  "transmission_type",
+  "engine_capacity",
+  "engine_power",
+  "color",
+  "body_type",
+  "drive_type",
+  "vehicle_brand_model_id",
+  "vehicle_engine_package_id",
+  "has_expertise",
+  "is_damaged",
+  "is_tradeable",
+  "expertiz_panels",
+  "image_url",
+  "images",
+  "contact_via_phone",
+  "contact_via_message",
+]);
+
+const LISTING_CLIENT_INSERT_ONLY_KEYS = new Set([
+  "user_id",
+  "activated_at",
+  "moderation_status",
+  "moderation_reason",
+]);
+
+/** Tarayıcıdan gelen ilan yazımında öne çıkar / askı / sahte user_id yok. */
+export function sanitizeListingClientWrite(
+  raw: Record<string, unknown>,
+  mode: "insert" | "update"
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (LISTING_CLIENT_WRITE_KEYS.has(key)) {
+      out[key] = value;
+      continue;
+    }
+    if (mode === "insert" && LISTING_CLIENT_INSERT_ONLY_KEYS.has(key)) {
+      out[key] = value;
+    }
+  }
+  return out;
 }

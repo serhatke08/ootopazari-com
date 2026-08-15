@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allowRateLimit } from "@/lib/api-rate-limit";
 import {
   isListingReportReason,
   LISTING_REPORT_REASONS,
@@ -16,6 +17,13 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { ok: false, error: "unauthorized", message: "Şikayet için giriş yapmalısınız." },
       { status: 401 }
+    );
+  }
+
+  if (!allowRateLimit(`report:${user.id}`, 8, 60_000)) {
+    return NextResponse.json(
+      { ok: false, error: "rate_limited", message: "Çok fazla şikayet. Biraz bekleyin." },
+      { status: 429 }
     );
   }
 

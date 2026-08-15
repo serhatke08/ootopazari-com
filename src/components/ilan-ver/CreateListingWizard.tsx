@@ -30,6 +30,7 @@ import {
   parsePriceTry,
   formatPriceThousandsTr,
   formatMileageThousandsTr,
+  sanitizeListingClientWrite,
 } from "@/lib/listing-create";
 import {
   STEP3_BODY_USE_STEP1,
@@ -948,7 +949,7 @@ export function CreateListingWizard({
       if (isEditMode && editListingId) {
         const { error: upErr } = await supabase
           .from("listings")
-          .update(base)
+          .update(sanitizeListingClientWrite(base, "update"))
           .eq("id", editListingId)
           .eq("user_id", uid);
 
@@ -1043,7 +1044,7 @@ export function CreateListingWizard({
 
       const { data: inserted, error: insErr } = await supabase
         .from("listings")
-        .insert(base)
+        .insert(sanitizeListingClientWrite(base, "insert"))
         .select("id")
         .single();
 
@@ -1090,7 +1091,8 @@ export function CreateListingWizard({
         const { error: upListingErr } = await supabase
           .from("listings")
           .update({ image_url: coverUrl })
-          .eq("id", listingId);
+          .eq("id", listingId)
+          .eq("user_id", uid);
 
         if (upListingErr) {
           throw new Error(`Kapak güncellenemedi: ${upListingErr.message}`);

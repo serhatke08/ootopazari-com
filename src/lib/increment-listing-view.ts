@@ -15,9 +15,21 @@ async function tryInsertViewRow(
   return !error;
 }
 
+async function listingExists(
+  supabase: SupabaseClient,
+  listingId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("listings")
+    .select("id")
+    .eq("id", listingId)
+    .maybeSingle();
+  return !error && Boolean(data?.id);
+}
+
 /**
- * Her çağrıda `listing_views` tablosuna YENİ satır ekler.
- * Aynı kullanıcı aynı ilana 100 kez girerse 100 satır eklenir -> RPC view_count 100 artar.
+ * Önce oturum / RLS ile yazar. RLS engellerse yalnızca gerçek ilan için
+ * service_role kullanır — sahte id ile tablo şişmez.
  */
 export async function incrementListingView(
   supabase: SupabaseClient,
@@ -34,6 +46,7 @@ export async function incrementListingView(
   };
 
   if (await tryInsertViewRow(supabase, payload)) return true;
+  if (!(await listingExists(supabase, id))) return false;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();

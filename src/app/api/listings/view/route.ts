@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allowRateLimit, clientIpFromRequest } from "@/lib/api-rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { incrementListingView } from "@/lib/increment-listing-view";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
@@ -18,6 +19,11 @@ export async function POST(req: Request) {
 
   if (!listingId) {
     return NextResponse.json({ ok: false, error: "listingId" }, { status: 400 });
+  }
+
+  const ip = clientIpFromRequest(req);
+  if (!allowRateLimit(`view:${ip}`, 80, 60_000)) {
+    return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
 
   const supabase = await createSupabaseServerClient();

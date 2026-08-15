@@ -2,12 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { tryGetSupabaseEnv } from "@/lib/env";
+import { safeNextPath } from "@/lib/oauth-redirect";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const nextRaw = searchParams.get("next");
-  const next = nextRaw && nextRaw.startsWith("/") ? nextRaw : "/";
+  const next = safeNextPath(searchParams.get("next"));
 
   if (!code) {
     return NextResponse.redirect(`${origin}/giris?error=oauth`);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allowRateLimit } from "@/lib/api-rate-limit";
 import { isSupportAgentUserId } from "@/lib/support-agent";
 import {
   findOrCreateSupportConversation,
@@ -19,6 +20,13 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Giriş gerekli." }, { status: 401 });
+  }
+
+  if (!allowRateLimit(`support:${user.id}`, 30, 60_000)) {
+    return NextResponse.json(
+      { error: "Çok fazla mesaj. Biraz bekleyin." },
+      { status: 429 }
+    );
   }
 
   if (isSupportAgentUserId(user.id)) {
