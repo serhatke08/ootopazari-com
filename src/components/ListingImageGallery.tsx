@@ -281,7 +281,7 @@ export function ListingImageGallery({
           sizes="(max-width: 1024px) 100vw, 720px"
           onLoad={() => setMainLoaded(true)}
         />
-        {hasMultiple && !overlay ? (
+        {hasMultiple && !compact ? (
           <>
             <button
               type="button"

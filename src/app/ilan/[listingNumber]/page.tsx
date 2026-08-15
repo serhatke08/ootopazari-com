@@ -952,13 +952,14 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
         </div>
       ) : null}
 
+      <div className="listing-detail-title mb-4 flex items-center gap-1 px-4 md:mb-4 md:px-0">
+        <ListingBackButton className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-[1.75rem] font-semibold leading-none text-black" />
+        <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight text-black sm:text-2xl">
+          {(listing.title as string) ?? "İlan"}
+        </h1>
+      </div>
+
       <div className="listing-detail-layout">
-        <div className="listing-detail-title flex items-center gap-1 px-4 md:px-0">
-          <ListingBackButton className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-[1.65rem] font-semibold leading-none text-black" />
-          <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight text-black sm:text-2xl">
-            {(listing.title as string) ?? "İlan"}
-          </h1>
-        </div>
         <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
             <ListingImageGallery

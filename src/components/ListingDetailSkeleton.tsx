@@ -22,11 +22,11 @@ export function ListingDetailSkeleton() {
       aria-busy="true"
       aria-label="İlan yükleniyor"
     >
+      <div className="listing-detail-title mb-4 flex items-center gap-1 px-4 md:px-0">
+        <Pulse className="h-8 w-8 shrink-0" />
+        <Pulse className="h-8 w-full max-w-2xl sm:h-9" />
+      </div>
       <div className="listing-detail-layout">
-        <div className="listing-detail-title flex items-center gap-1 px-4 md:px-0">
-          <Pulse className="h-8 w-8 shrink-0" />
-          <Pulse className="h-8 w-full max-w-2xl sm:h-9" />
-        </div>
         <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
             <div className="aspect-[4/3] w-full animate-pulse bg-zinc-200" />
