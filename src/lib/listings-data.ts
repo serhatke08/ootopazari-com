@@ -269,6 +269,21 @@ export async function fetchVehicleBrands(
   return [];
 }
 
+export async function fetchVehicleBrandName(
+  supabase: SupabaseClient,
+  brandId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("vehicle_brands")
+    .select("name,code")
+    .eq("id", brandId)
+    .maybeSingle();
+  if (error || !data) return null;
+  const name = data.name != null ? String(data.name).trim() : "";
+  const code = data.code != null ? String(data.code).trim() : "";
+  return name || code || null;
+}
+
 export type ListingListParams = {
   page: number;
   pageSize: number;

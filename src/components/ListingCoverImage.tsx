@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { isHeicLikeUrl } from "@/lib/image-format";
 import {
-  isPublicListingImageUrl,
   listingImageDisplayUrl,
   resolveListingImageUrl,
 } from "@/lib/storage";
@@ -45,10 +44,7 @@ export function ListingCoverImage({
     );
   }
 
-  const unoptimized =
-    isHeicLikeUrl(src) ||
-    isHeicLikeUrl(raw) ||
-    isPublicListingImageUrl(env, src);
+  const unoptimized = isHeicLikeUrl(src) || isHeicLikeUrl(raw);
 
   return (
     <Image

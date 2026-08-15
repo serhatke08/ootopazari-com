@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GalleryThumbnailStrip } from "@/components/GalleryThumbnailStrip";
+import { isHeicLikeUrl } from "@/lib/image-format";
 
 type GalleryProps = {
   images: string[];
@@ -56,6 +57,11 @@ export function ListingImageGallery({
   const list = images.filter(Boolean);
   const main = list[active] ?? list[0];
   const hasMultiple = list.length > 1;
+  const [mainLoaded, setMainLoaded] = useState(false);
+
+  useEffect(() => {
+    setMainLoaded(false);
+  }, [main]);
 
   const goPrev = useCallback(() => {
     setActive((a) => (a > 0 ? a - 1 : list.length - 1));
@@ -247,16 +253,22 @@ export function ListingImageGallery({
         role={hasMultiple ? "group" : undefined}
         aria-label={hasMultiple ? "Görseller arasında kaydırın veya okları kullanın" : undefined}
       >
+        {!mainLoaded ? (
+          <div className="absolute inset-0 animate-pulse bg-zinc-200" aria-hidden />
+        ) : null}
         <Image
           key={main}
           src={main}
           alt={alt}
           fill
-          unoptimized
+          unoptimized={isHeicLikeUrl(main)}
           draggable={false}
-          className={mainImageClass(compact)}
+          className={`${mainImageClass(compact)} transition-opacity duration-200 ${
+            mainLoaded ? "opacity-100" : "opacity-0"
+          }`}
           priority={active === 0}
-          sizes="(max-width: 1024px) 100vw, 33vw"
+          sizes="(max-width: 1024px) 100vw, 720px"
+          onLoad={() => setMainLoaded(true)}
         />
         {hasMultiple ? (
           <>
@@ -405,7 +417,7 @@ export function ListingImageGallery({
                 src={list[active]}
                 alt={alt}
                 fill
-                unoptimized
+                unoptimized={isHeicLikeUrl(list[active])}
                 draggable={false}
                 className="object-contain object-center transition-transform duration-75 ease-out"
                 style={{

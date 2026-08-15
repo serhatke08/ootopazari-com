@@ -1,6 +1,6 @@
 import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
 
-/** Yalnızca ana sayfa ve benzeri genel rotalar için; ilan detayın kendi loading.tsx dosyası var. */
+/** Yalnızca ana sayfa. İlan detay iskeleti `ListingNavSkeletonGate` + sayfa içi Suspense. */
 export default function RootLoading() {
   return (
     <div id="ilanlar" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">

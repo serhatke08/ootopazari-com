@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
             hostname,
             pathname: "/storage/v1/object/sign/**",
           },
+          {
+            protocol: "https" as const,
+            hostname,
+            pathname: "/storage/v1/render/image/public/**",
+          },
         ]
       ),
       ...GOOGLE_AVATAR_HOSTS.map((hostname) => ({

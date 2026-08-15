@@ -1,18 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import { tryGetSupabaseEnv } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
+import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
+import { loadListingDetailRequest } from "@/lib/listing-detail-request";
 import {
   buildCategoryMap,
   buildCityMap,
   fetchCategories,
   fetchCities,
-  fetchListingForDetailPage,
   fetchProfilePublic,
-  fetchVehicleBrands,
+  fetchVehicleBrandName,
   resolveListingCityDisplay,
 } from "@/lib/listings-data";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
@@ -22,7 +22,6 @@ import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
 import {
   buildListingSeoPath,
-  extractListingNumberFromSeoParam,
   isNonCanonicalListingPath,
 } from "@/lib/listing-seo";
 import { buildListingVehicleJsonLd } from "@/lib/seo-json-ld";
@@ -314,28 +313,13 @@ function extractDescriptionBody(text: string): string {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { listingNumber: listingParam } = await params;
-  const listingNumber = extractListingNumberFromSeoParam(listingParam) ?? listingParam;
-  const env = tryGetSupabaseEnv();
+  const { env, listingNumber, detail } = await loadListingDetailRequest(listingParam);
   if (!env) {
     return { title: "İlan" };
   }
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const adminMeta = user?.id
-    ? await fetchAdminProfileByUserId(supabase, user.id)
-    : null;
-  const detail = await fetchListingForDetailPage(
-    supabase,
-    listingNumber,
-    user?.id ?? null,
-    { viewerIsAdmin: !!adminMeta }
-  );
   // `notFound()` ve `permanentRedirect()` burada çağrılır çünkü generateMetadata
-  // yanıt başlıkları gönderilmeden önce çözülür. Sayfa gövdesinde çağrılsalardı
-  // `loading.tsx`'in açtığı streaming bağlamı yüzünden Next.js gerçek 404/308
-  // yerine 200 dönüp yönlendirmeyi istemci tarafına bırakırdı.
+  // yanıt başlıkları gönderilmeden önce çözülür. Route-level `loading.tsx`
+  // bunları 200'e çevirdiği için kullanılmıyor.
   if (!detail) {
     notFound();
   }
@@ -426,51 +410,143 @@ function Field({
 
 export default async function IlanDetayPage({ params }: Props) {
   const { listingNumber: listingParam } = await params;
-  const listingNumber = extractListingNumberFromSeoParam(listingParam) ?? listingParam;
-  const env = tryGetSupabaseEnv();
-  if (!env) {
+  const ctx = await loadListingDetailRequest(listingParam);
+  if (!ctx.env) {
     return (
       <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6">
         <MissingEnv />
       </div>
     );
   }
-
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user: viewer },
-  } = await supabase.auth.getUser();
-  const viewerAdminProfile = viewer?.id
-    ? await fetchAdminProfileByUserId(supabase, viewer.id)
-    : null;
-  const [detail, cities, categories] = await Promise.all([
-    fetchListingForDetailPage(supabase, listingNumber, viewer?.id ?? null, {
-      viewerIsAdmin: !!viewerAdminProfile,
-    }),
-    fetchCities(supabase),
-    fetchCategories(supabase),
-  ]);
-  
-  // Asıl 404/308 kararı generateMetadata'da verilir; buradakiler yalnızca
-  // güvenlik ağıdır.
-  if (!detail) {
+  if (!ctx.detail) {
     notFound();
   }
-
-  const { listing, access: detailAccess } = detail;
   const expectedSeoPath = buildListingSeoPath(
-    listing.listing_number != null ? String(listing.listing_number) : listingNumber,
-    typeof listing.title === "string" ? listing.title : null
+    ctx.detail.listing.listing_number != null
+      ? String(ctx.detail.listing.listing_number)
+      : ctx.listingNumber,
+    typeof ctx.detail.listing.title === "string" ? ctx.detail.listing.title : null
   );
   if (expectedSeoPath && isNonCanonicalListingPath(expectedSeoPath, listingParam)) {
     permanentRedirect(expectedSeoPath);
   }
+
+  return (
+    <Suspense fallback={<ListingDetailSkeleton />}>
+      <IlanDetayBody listingParam={listingParam} />
+    </Suspense>
+  );
+}
+
+async function IlanDetayBody({ listingParam }: { listingParam: string }) {
+  const ctx = await loadListingDetailRequest(listingParam);
+  const env = ctx.env;
+  const supabase = ctx.supabase;
+  const viewer = ctx.viewer;
+  const viewerAdminProfile = ctx.viewerAdmin;
+  const listingNumber = ctx.listingNumber;
+  if (!env || !supabase || !ctx.detail) {
+    notFound();
+  }
+
+  const { listing, access: detailAccess } = ctx.detail;
+  const expectedSeoPath = buildListingSeoPath(
+    listing.listing_number != null ? String(listing.listing_number) : listingNumber,
+    typeof listing.title === "string" ? listing.title : null
+  );
 
   const isSuspendedOwnerView = detailAccess === "suspended_owner";
   const isSuspendedAdminView = detailAccess === "suspended_admin";
   const isSuspendedDetailView = isSuspendedOwnerView || isSuspendedAdminView;
 
   const id = listing.id as string | undefined;
+  const row = listing as Record<string, unknown>;
+  const sellerUserId = listing.user_id ? String(listing.user_id) : "";
+  const showPublicChat =
+    detailAccess === "public" && !!id && !!sellerUserId && !!viewer?.id;
+  const needCityLookup =
+    !(listing.city_name != null && String(listing.city_name).trim()) &&
+    !!listing.city_id;
+  const brandModelFk = pick(row, ["vehicle_brand_model_id", "brand_model_id"]);
+  const packageId = pick(row, ["vehicle_engine_package_id"]) as string | undefined;
+  const rawVehicleModel = listing.vehicle_model as string | null | undefined;
+
+  const [
+    cities,
+    categories,
+    statsPair,
+    priceRating,
+    priceHistory,
+    seller,
+    adminProfile,
+    brandName,
+    galleryUrls,
+    seriCode,
+    listingPublicComments,
+    viewerProfile,
+    hierarchyLabels,
+    catalogParts,
+  ] = await Promise.all([
+    needCityLookup ? fetchCities(supabase) : Promise.resolve([]),
+    fetchCategories(supabase),
+    id
+      ? Promise.all([
+          fetchListingPublicStatsMap(supabase, [id]),
+          getSessionAndFavoriteSet(supabase, [id]),
+        ])
+      : Promise.resolve([
+          new Map(),
+          { user: null, favoriteIds: new Set<string>() },
+        ] as const),
+    id
+      ? fetchPriceRatingSummary(supabase, id, viewer?.id ?? null)
+      : Promise.resolve(EMPTY_PRICE_RATING_SUMMARY),
+    id ? fetchListingPriceHistory(supabase, id) : Promise.resolve([]),
+    sellerUserId ? fetchProfilePublic(supabase, sellerUserId) : Promise.resolve(null),
+    sellerUserId
+      ? fetchAdminProfileByUserId(supabase, sellerUserId)
+      : Promise.resolve(null),
+    listing.vehicle_brand_id
+      ? fetchVehicleBrandName(supabase, String(listing.vehicle_brand_id))
+      : Promise.resolve(null),
+    collectListingGalleryUrlsWithStorageFallback(
+      supabase,
+      env,
+      row,
+      listing.image_url as string | null
+    ),
+    brandModelFk != null && String(brandModelFk).trim() !== ""
+      ? fetchVehicleBrandModelSeriCode(supabase, String(brandModelFk))
+      : Promise.resolve(null),
+    showPublicChat
+      ? fetchListingPublicComments(supabase, id!, sellerUserId)
+      : Promise.resolve([]),
+    viewer?.id ? fetchProfilePublic(supabase, viewer.id) : Promise.resolve(null),
+    packageId
+      ? fetchListingEnginePackageLabels(supabase, String(packageId))
+      : Promise.resolve({
+          motor: null,
+          paket: null,
+          horsepower: null,
+          engineCapacityCc: null,
+        }),
+    !packageId
+      ? resolveListingVehicleCatalogParts(supabase, {
+          brandId: listing.vehicle_brand_id,
+          rawModel: rawVehicleModel,
+        })
+      : Promise.resolve({
+          model: null,
+          motor: null,
+          paket: null,
+          horsepower: null,
+          engineCapacityCc: null,
+          variantRemainder: null,
+        }),
+  ]);
+
+  const [statsMap, sessionFav] = statsPair;
+  const stats = id ? statsMap.get(id) : undefined;
 
   const cityMap = buildCityMap(cities);
   const categoryMap = buildCategoryMap(categories);
@@ -491,23 +567,6 @@ export default async function IlanDetayPage({ params }: Props) {
     categoryText.includes("motor");
   const isCarLike = !isMotorcycle;
 
-  const row = listing as Record<string, unknown>;
-  const [statsMap, sessionFav] = id
-    ? await Promise.all([
-        fetchListingPublicStatsMap(supabase, [id]),
-        getSessionAndFavoriteSet(supabase, [id]),
-      ])
-    : [new Map(), { user: null, favoriteIds: new Set<string>() }];
-  const stats = id ? statsMap.get(id) : undefined;
-
-  const priceRating = id
-    ? await fetchPriceRatingSummary(supabase, id, viewer?.id ?? null)
-    : EMPTY_PRICE_RATING_SUMMARY;
-
-  const priceHistory = id
-    ? await fetchListingPriceHistory(supabase, id)
-    : [];
-
   const listingDateLabel = fmtListingDate(row.created_at);
   const priceLabel =
     listing.price != null
@@ -518,34 +577,12 @@ export default async function IlanDetayPage({ params }: Props) {
         }).format(Number(listing.price))
       : "Fiyat sorunuz";
 
-  const sellerUserId = listing.user_id ? String(listing.user_id) : "";
   const showMessageButton =
     detailAccess === "public" &&
     !!id &&
     !!sellerUserId &&
     !!listing.contact_via_message &&
     (!viewer?.id || viewer.id !== sellerUserId);
-
-  const [seller, adminProfile] = await Promise.all([
-    sellerUserId ? fetchProfilePublic(supabase, sellerUserId) : Promise.resolve(null),
-    sellerUserId
-      ? fetchAdminProfileByUserId(supabase, sellerUserId)
-      : Promise.resolve(null),
-  ]);
-
-  let brandName: string | null = null;
-  if (listing.vehicle_brand_id) {
-    const brands = await fetchVehicleBrands(supabase, null);
-    const b = brands.find((x) => x.id === listing.vehicle_brand_id);
-    brandName = b?.name ?? b?.code ?? null;
-  }
-
-  const galleryUrls = await collectListingGalleryUrlsWithStorageFallback(
-    supabase,
-    env,
-    row,
-    listing.image_url as string | null
-  );
 
   const num = listing.listing_number;
   const expertizRaw = row.expertiz_panels;
@@ -555,17 +592,9 @@ export default async function IlanDetayPage({ params }: Props) {
       ? mergeExpertizWithDefaults(expertizPanelsParsed)
       : null;
 
-  const brandModelFk = pick(row, [
-    "vehicle_brand_model_id",
-    "brand_model_id",
-  ]);
   let seriDisplay: string | undefined;
   let modelDisplay: string | undefined;
   if (brandModelFk != null && String(brandModelFk).trim() !== "") {
-    const seriCode = await fetchVehicleBrandModelSeriCode(
-      supabase,
-      String(brandModelFk)
-    );
     seriDisplay = seriCode ?? undefined;
     modelDisplay = trimOnlyFromRow(row);
   } else {
@@ -589,21 +618,6 @@ export default async function IlanDetayPage({ params }: Props) {
       ? sellerAvatarRaw
       : resolveListingImageUrl(env, sellerAvatarRaw)
     : null;
-
-  const showPublicChat =
-    detailAccess === "public" &&
-    !!id &&
-    !!sellerUserId &&
-    !!viewer?.id;
-
-  const [listingPublicComments, viewerProfile] = await Promise.all([
-    showPublicChat
-      ? fetchListingPublicComments(supabase, id!, sellerUserId)
-      : Promise.resolve([]),
-    viewer?.id
-      ? fetchProfilePublic(supabase, viewer.id)
-      : Promise.resolve(null),
-  ]);
 
   const viewerDisplayName = viewer
     ? viewerAdminProfile?.display_name?.trim() ||
@@ -651,25 +665,6 @@ export default async function IlanDetayPage({ params }: Props) {
   const motorNote = pick(row, ["engine_note", "motor_note"]) as string | undefined;
   const paketNote = pick(row, ["package_note", "paket_note"]) as string | undefined;
   const kasaNote = pick(row, ["body_note", "kasa_note"]) as string | undefined;
-
-  const packageId = pick(row, ["vehicle_engine_package_id"]) as string | undefined;
-  const hierarchyLabels = packageId
-    ? await fetchListingEnginePackageLabels(supabase, String(packageId))
-    : { motor: null, paket: null, horsepower: null, engineCapacityCc: null };
-  const rawVehicleModel = listing.vehicle_model as string | null | undefined;
-  const catalogParts = !packageId
-    ? await resolveListingVehicleCatalogParts(supabase, {
-        brandId: listing.vehicle_brand_id,
-        rawModel: rawVehicleModel,
-      })
-    : {
-        model: null,
-        motor: null,
-        paket: null,
-        horsepower: null,
-        engineCapacityCc: null,
-        variantRemainder: null,
-      };
 
   const motorDisplay =
     motorNote?.trim() ||

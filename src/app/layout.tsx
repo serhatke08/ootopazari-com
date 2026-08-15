@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { ListingNavSkeletonGate } from "@/components/ListingNavSkeletonGate";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { getSiteOrigin } from "@/lib/site-url";
@@ -143,6 +144,7 @@ export default async function RootLayout({
             <main className="flex min-h-0 flex-1 flex-col bg-zinc-50">{children}</main>
             <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />
           </div>
+          <ListingNavSkeletonGate />
         </SiteSearchProvider>
         <Analytics />
         <SpeedInsights />
