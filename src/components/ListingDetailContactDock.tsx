@@ -30,15 +30,15 @@ export function ListingDetailContactDock({
 
   return (
     <div
-      className="fixed inset-x-0 z-[45] border-t border-zinc-200 bg-white/95 px-3 py-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 z-[45] border-t border-zinc-200 bg-white/95 px-3 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur-md md:hidden"
       style={{
         bottom: "calc(3.45rem + env(safe-area-inset-bottom, 0px))",
       }}
     >
-      <div className="mx-auto flex max-w-lg items-center gap-2">
+      <div className="mx-auto flex max-w-lg flex-col gap-2">
         <Link
           href={`/kullanici/${sellerUserId}`}
-          className="flex min-w-0 flex-1 items-center gap-2"
+          className="flex min-w-0 items-center gap-2.5"
         >
           {sellerAvSrc ? (
             <Image
@@ -58,19 +58,23 @@ export function ListingDetailContactDock({
           </span>
           {verified ? <AdminVerifiedBadge /> : null}
         </Link>
-        {showMessage && listingId ? (
-          <div className={showPhone ? "w-[7.25rem] shrink-0" : "w-[8.5rem] shrink-0"}>
-            <StartConversationButton
-              listingId={listingId}
-              ownerUserId={sellerUserId}
-              label="Mesaj"
-              className="w-full rounded-lg bg-[#ffcc00] px-3 py-2.5 text-sm font-semibold text-zinc-900"
-            />
-          </div>
-        ) : null}
-        {showPhone ? (
-          <div className="w-[7.25rem] shrink-0">
-            <ListingContactPhone phone={phone} compact />
+        {showMessage || showPhone ? (
+          <div className="flex gap-2">
+            {showMessage && listingId ? (
+              <div className={showPhone ? "min-w-0 flex-1" : "w-full"}>
+                <StartConversationButton
+                  listingId={listingId}
+                  ownerUserId={sellerUserId}
+                  label="Mesaj"
+                  className="w-full rounded-lg bg-[#ffcc00] px-3 py-2.5 text-sm font-semibold text-zinc-900"
+                />
+              </div>
+            ) : null}
+            {showPhone ? (
+              <div className={showMessage ? "min-w-0 flex-1" : "w-full"}>
+                <ListingContactPhone phone={phone} compact />
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>

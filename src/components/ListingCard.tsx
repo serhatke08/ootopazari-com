@@ -213,7 +213,7 @@ export function ListingCard({
           ownerHref ? (
             <Link
               href={ownerHref}
-              className="-mt-2 mb-0.5 inline-flex min-w-0 items-center gap-1 text-zinc-500 hover:text-zinc-800"
+              className="-mt-2 mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500 hover:text-zinc-800"
             >
               <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200">
                 {ownerAvatarSrc ? (
@@ -230,10 +230,10 @@ export function ListingCard({
                   </span>
                 )}
               </span>
-              <span className="truncate text-[10px] font-medium leading-none">{ownerName}</span>
+              <span className="truncate pl-0.5 text-[10px] font-medium leading-none">{ownerName}</span>
             </Link>
           ) : (
-            <div className="-mt-2 mb-0.5 inline-flex min-w-0 items-center gap-1 text-zinc-500">
+            <div className="-mt-2 mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500">
               <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200">
                 {ownerAvatarSrc ? (
                   <Image
@@ -249,7 +249,7 @@ export function ListingCard({
                   </span>
                 )}
               </span>
-              <span className="truncate text-[10px] font-medium leading-none">{ownerName}</span>
+              <span className="truncate pl-0.5 text-[10px] font-medium leading-none">{ownerName}</span>
             </div>
           )
         ) : null}
