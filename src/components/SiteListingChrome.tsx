@@ -6,7 +6,11 @@ import { isListingDetailPath } from "@/lib/listing-seo";
 
 export function SiteHeaderFallback() {
   const pathname = usePathname();
-  if (isListingDetailPath(pathname)) return null;
+  if (isListingDetailPath(pathname)) {
+    return (
+      <header className="hidden h-14 border-b border-amber-400/80 bg-[#ffcc00] md:block" />
+    );
+  }
   return <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />;
 }
 

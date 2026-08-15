@@ -392,12 +392,10 @@ export function SiteHeaderClient({
     setNotifications((prev) => prev.map((n) => ({ ...n, read_at: now })));
   }
 
-  const hideTopNav = isListingDetailPath(pathname);
+  const hideTopNavOnMobile = isListingDetailPath(pathname);
 
   return (
     <>
-      {hideTopNav ? null : (
-      <>
       <LeftNavDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -412,7 +410,7 @@ export function SiteHeaderClient({
       <header
         className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm transition-transform duration-300 ${
           headerVisible ? "translate-y-0" : "-translate-y-full"
-        }`}
+        } ${hideTopNavOnMobile ? "hidden md:block" : ""}`}
       >
         <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
           <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 sm:grid-cols-[minmax(12rem,1fr)_auto_minmax(13rem,1fr)] sm:gap-3">
@@ -632,8 +630,6 @@ export function SiteHeaderClient({
           ) : null}
         </div>
       </header>
-      </>
-      )}
 
       <MobileBottomNav
         loggedIn={loggedIn}
