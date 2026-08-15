@@ -25,6 +25,44 @@ const navSearchFormClass =
 const navSearchInputClass =
   "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25";
 
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
 function BellIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -71,7 +109,15 @@ function NavSearchFallback({ id }: { id: string }) {
   );
 }
 
-function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
+function NavSearchForm({
+  id = "site-nav-search",
+  autoFocus = false,
+  onSubmitted,
+}: {
+  id?: string;
+  autoFocus?: boolean;
+  onSubmitted?: () => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -100,9 +146,11 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
     }
     if (onHome && siteSearch) {
       siteSearch.setHomeTextQuery(raw);
+      onSubmitted?.();
       return;
     }
     router.push(raw ? `/?q=${encodeURIComponent(raw)}` : "/");
+    onSubmitted?.();
   }
 
   return (
@@ -122,6 +170,7 @@ function NavSearchForm({ id = "site-nav-search" }: { id?: string }) {
         onChange={(e) => setValue(e.target.value)}
         placeholder="Ara…"
         autoComplete="off"
+        autoFocus={autoFocus}
         enterKeyHint="search"
         className={navSearchInputClass}
       />
@@ -183,6 +232,7 @@ export function SiteHeaderClient({
   isParcaciDealerActive: boolean;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
@@ -218,7 +268,17 @@ export function SiteHeaderClient({
   useEffect(() => {
     setDrawerOpen(false);
     setNotifOpen(false);
+    setMobileSearchOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileSearchOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileSearchOpen]);
 
   useEffect(() => {
     // Yön değişimi için eşik: dokunmatik kaydırmanın ve iOS lastik efektinin
@@ -344,8 +404,8 @@ export function SiteHeaderClient({
           headerVisible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="mx-auto max-w-[1400px] px-2 py-2 sm:px-4 sm:py-2.5 md:px-6">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto_minmax(13rem,1fr)] sm:gap-3">
+        <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 sm:grid-cols-[minmax(12rem,1fr)_auto_minmax(13rem,1fr)] sm:gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <HamburgerButton
               open={drawerOpen}
@@ -369,7 +429,17 @@ export function SiteHeaderClient({
             </span>
           </Link>
 
-          <nav className="flex min-w-0 items-center justify-end gap-x-1.5 gap-y-1 text-sm sm:gap-x-2 md:gap-x-2 lg:gap-x-3">
+          <nav className="flex min-w-0 items-center justify-end gap-x-1 gap-y-1 text-sm sm:gap-x-2 md:gap-x-2 lg:gap-x-3">
+            <button
+              type="button"
+              data-mobile-search-toggle="true"
+              onClick={() => setMobileSearchOpen((o) => !o)}
+              className="inline-flex items-center justify-center rounded-md p-2 text-zinc-900 hover:bg-black/10 sm:hidden"
+              aria-label={mobileSearchOpen ? "Aramayı kapat" : "Ara"}
+              aria-expanded={mobileSearchOpen}
+            >
+              {mobileSearchOpen ? <CloseIcon /> : <SearchIcon />}
+            </button>
             {hasEnv ? (
               <>
                 <Link
@@ -539,11 +609,17 @@ export function SiteHeaderClient({
             ) : null}
           </nav>
           </div>
-          <div className="mt-2 sm:hidden">
-            <Suspense fallback={<NavSearchFallback id="site-nav-search-mobile" />}>
-              <NavSearchForm id="site-nav-search-mobile" />
-            </Suspense>
-          </div>
+          {mobileSearchOpen ? (
+            <div className="mt-1.5 sm:hidden">
+              <Suspense fallback={<NavSearchFallback id="site-nav-search-mobile" />}>
+                <NavSearchForm
+                  id="site-nav-search-mobile"
+                  autoFocus
+                  onSubmitted={() => setMobileSearchOpen(false)}
+                />
+              </Suspense>
+            </div>
+          ) : null}
         </div>
       </header>
 
