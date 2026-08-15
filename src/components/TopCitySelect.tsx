@@ -11,18 +11,23 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [draftIds, setDraftIds] = useState<string[]>([]);
 
   const cityOptions = Array.isArray(cities) ? cities : [];
-  const selectedIds = useMemo(
+  const appliedIds = useMemo(
     () =>
       pathname === "/" ? parseCityIdsParam(searchParams.get("city_id")) : [],
     [pathname, searchParams]
   );
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const draftSet = useMemo(() => new Set(draftIds), [draftIds]);
 
   useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
+    if (!open) {
+      setQuery("");
+      return;
+    }
+    setDraftIds(appliedIds);
+  }, [open, appliedIds]);
 
   function commit(nextIds: string[]) {
     const p = new URLSearchParams(searchParams.toString());
@@ -31,13 +36,13 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
     p.delete("page");
     const qs = p.toString();
     router.push(qs ? `/?${qs}` : "/");
+    setOpen(false);
   }
 
-  function toggle(id: string) {
-    const next = selectedSet.has(id)
-      ? selectedIds.filter((x) => x !== id)
-      : [...selectedIds, id];
-    commit(next);
+  function toggleDraft(id: string) {
+    setDraftIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   }
 
   const filtered = useMemo(() => {
@@ -49,13 +54,13 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
   }, [cityOptions, query]);
 
   const label = (() => {
-    if (selectedIds.length === 0) return "Tüm Şehirler";
-    if (selectedIds.length === 1) {
+    if (appliedIds.length === 0) return "Tüm Şehirler";
+    if (appliedIds.length === 1) {
       return (
-        cityOptions.find((c) => c.id === selectedIds[0])?.name ?? "1 şehir"
+        cityOptions.find((c) => c.id === appliedIds[0])?.name ?? "1 şehir"
       );
     }
-    return `${selectedIds.length} şehir`;
+    return `${appliedIds.length} şehir`;
   })();
 
   return (
@@ -64,7 +69,7 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={`flex min-w-[96px] items-center justify-between gap-1 rounded-md border px-2 py-1 text-[11px] shadow-sm sm:min-w-[110px] sm:text-xs ${
-          selectedIds.length > 0
+          appliedIds.length > 0
             ? "border-blue-600 bg-blue-50 font-medium text-blue-700 hover:bg-blue-100"
             : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
         }`}
@@ -106,14 +111,14 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
               <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-zinc-50">
                 <input
                   type="checkbox"
-                  checked={selectedIds.length === 0}
-                  onChange={() => commit([])}
+                  checked={draftIds.length === 0}
+                  onChange={() => setDraftIds([])}
                   className="h-3.5 w-3.5 rounded border-zinc-300"
                 />
                 Tüm Şehirler
               </label>
               {filtered.map((city) => {
-                const checked = selectedSet.has(city.id);
+                const checked = draftSet.has(city.id);
                 return (
                   <label
                     key={city.id}
@@ -122,7 +127,7 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => toggle(city.id)}
+                      onChange={() => toggleDraft(city.id)}
                       className="h-3.5 w-3.5 rounded border-zinc-300"
                     />
                     <span className="truncate">{city.name ?? "Şehir"}</span>
@@ -132,6 +137,22 @@ export function TopCitySelect({ cities }: { cities: CityRow[] }) {
               {filtered.length === 0 ? (
                 <p className="px-2 py-3 text-xs text-zinc-500">Şehir yok.</p>
               ) : null}
+            </div>
+            <div className="mt-2 flex items-center justify-end gap-2 border-t border-zinc-100 pt-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={() => commit(draftIds)}
+                className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-semibold text-white hover:bg-zinc-800"
+              >
+                Tamam
+              </button>
             </div>
           </div>
         </>
