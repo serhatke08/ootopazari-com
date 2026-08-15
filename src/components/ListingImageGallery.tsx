@@ -29,6 +29,30 @@ function mainImageClass() {
   return "pointer-events-none object-contain object-center select-none";
 }
 
+function GalleryChevron({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.25}
+      className="h-5 w-5"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d={
+          dir === "left"
+            ? "M15.75 19.5 8.25 12l7.5-7.5"
+            : "M8.25 4.5 15.75 12l-7.5 7.5"
+        }
+      />
+    </svg>
+  );
+}
+
 export function ListingImageGallery({
   images,
   alt,
@@ -245,7 +269,7 @@ export function ListingImageGallery({
   }
 
   const navBtnClass =
-    "absolute top-1/2 z-[2] flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-lg text-white shadow-sm transition hover:bg-black/60 sm:h-10 sm:w-10";
+    "absolute top-1/2 z-[3] flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white shadow-sm transition hover:bg-black/65 sm:h-10 sm:w-10";
 
   return (
     <div className={galleryShellClass(edgeToEdge)}>
@@ -280,31 +304,33 @@ export function ListingImageGallery({
             onError={() => setLoadedSrc(main)}
           />
         </div>
-        {hasMultiple && !compact ? (
+        {hasMultiple ? (
           <>
             <button
               type="button"
               className={`${navBtnClass} left-2`}
               onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 goPrev();
               }}
               aria-label="Önceki görsel"
             >
-              ‹
+              <GalleryChevron dir="left" />
             </button>
             <button
               type="button"
               className={`${navBtnClass} right-2`}
               onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 goNext();
               }}
               aria-label="Sonraki görsel"
             >
-              ›
+              <GalleryChevron dir="right" />
             </button>
             <p className="pointer-events-none absolute bottom-2 left-0 right-0 z-[2] text-center text-[11px] font-medium text-white drop-shadow">
               {active + 1} / {list.length}

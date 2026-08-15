@@ -1,14 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-
-const PER_ROW = 4;
-const MAX_ROWS = 2;
-const PAGE_SIZE = PER_ROW * MAX_ROWS;
+import { useEffect, useRef } from "react";
 
 const thumbClass = (active: boolean) =>
-  `relative aspect-[4/3] w-full min-w-0 overflow-hidden rounded border-2 bg-zinc-100 transition ${
+  `relative h-[3.25rem] w-[4.25rem] shrink-0 overflow-hidden rounded border-2 bg-zinc-100 transition sm:h-16 sm:w-[5.25rem] ${
     active ? "border-black" : "border-black/20 hover:border-black/45"
   }`;
 
@@ -26,93 +22,66 @@ export function GalleryThumbnailStrip({
   onSelect,
   staticPreview = false,
 }: Props) {
-  const [page, setPage] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLElement | null>(null);
   const total = images.length;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount - 1);
-  const start = safePage * PAGE_SIZE;
-  const visible = images.slice(start, start + PAGE_SIZE);
-  const showDots = pageCount > 1;
 
   useEffect(() => {
-    setPage(Math.floor(activeIndex / PAGE_SIZE));
+    const scroller = scrollerRef.current;
+    const el = activeRef.current;
+    if (!scroller || !el) return;
+    const left = el.offsetLeft - (scroller.clientWidth - el.offsetWidth) / 2;
+    scroller.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
   }, [activeIndex]);
 
   if (total <= 1) return null;
 
   return (
-    <div className="flex shrink-0 flex-col gap-2">
-      <div className="grid min-w-0 grid-cols-4 gap-1.5">
-        {visible.map((src, i) => {
-          const idx = start + i;
-          const active = activeIndex === idx;
-          const inner = (
-            <span className="absolute inset-0.5">
-              <Image
-                src={src}
-                alt=""
-                fill
-                unoptimized
-                className="object-contain object-center"
-                style={{ objectFit: "contain" }}
-                sizes="120px"
-              />
-            </span>
-          );
-          if (staticPreview || !onSelect) {
-            return (
-              <div
-                key={`${src}-${idx}`}
-                className={thumbClass(active)}
-                aria-hidden={!active}
-              >
-                {inner}
-              </div>
-            );
-          }
+    <div
+      ref={scrollerRef}
+      className="flex min-w-0 gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [scrollbar-width:thin] [-ms-overflow-style:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-300"
+    >
+      {images.map((src, idx) => {
+        const active = activeIndex === idx;
+        const inner = (
+          <span className="absolute inset-0.5">
+            <Image
+              src={src}
+              alt=""
+              fill
+              unoptimized
+              className="object-contain object-center"
+              style={{ objectFit: "contain" }}
+              sizes="96px"
+            />
+          </span>
+        );
+        if (staticPreview || !onSelect) {
           return (
-            <button
+            <div
               key={`${src}-${idx}`}
-              type="button"
-              onClick={() => onSelect(idx)}
+              ref={active ? (node) => { activeRef.current = node; } : undefined}
               className={thumbClass(active)}
-              aria-label={`Görsel ${idx + 1}`}
-              aria-current={active}
+              aria-hidden={!active}
             >
               {inner}
-            </button>
+            </div>
           );
-        })}
-      </div>
-
-      {showDots ? (
-        <div
-          className="flex items-center justify-center gap-2"
-          role="tablist"
-          aria-label="Görsel sayfaları"
-        >
-          {Array.from({ length: pageCount }, (_, i) => (
-            <button
-              key={i}
-              type="button"
-              disabled={staticPreview}
-              onClick={() => setPage(i)}
-              className="flex h-6 w-6 items-center justify-center disabled:pointer-events-none"
-              role="tab"
-              aria-selected={safePage === i}
-              aria-label={`Görsel grubu ${i + 1}`}
-            >
-              <span
-                className={`block rounded-full transition ${
-                  safePage === i
-                    ? "h-2.5 w-2.5 bg-blue-600"
-                    : "h-2 w-2 bg-black/20 hover:bg-black/35"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-      ) : null}
+        }
+        return (
+          <button
+            key={`${src}-${idx}`}
+            type="button"
+            ref={active ? (node) => { activeRef.current = node; } : undefined}
+            onClick={() => onSelect(idx)}
+            className={thumbClass(active)}
+            aria-label={`Görsel ${idx + 1}`}
+            aria-current={active}
+          >
+            {inner}
+          </button>
+        );
+      })}
     </div>
   );
 }
