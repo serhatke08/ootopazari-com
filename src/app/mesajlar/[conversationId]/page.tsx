@@ -19,6 +19,7 @@ import {
   fetchProfilesByIds,
   fetchUnreadCountsByConversation,
   listingConversationStatus,
+  listingSummaryForConversation,
   otherParticipantId,
   profileDisplayName,
 } from "@/lib/messages";
@@ -90,7 +91,7 @@ export default async function MesajConversationPage({ params }: Props) {
   ]);
 
   const supportChat = isSupportConversation(conv);
-  const listing = listingMap.get(conv.listing_id);
+  const listing = listingSummaryForConversation(listingMap, conv.listing_id);
   const listingTitle = supportChat
     ? SUPPORT_AGENT_DISPLAY_NAME
     : listing?.title?.trim() || null;

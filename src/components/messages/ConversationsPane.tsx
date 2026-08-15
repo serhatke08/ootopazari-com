@@ -4,6 +4,7 @@ import type { SupabasePublicEnv } from "@/lib/env";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import {
   listingConversationStatus,
+  listingSummaryForConversation,
   otherParticipantId,
   profileDisplayName,
   type ConversationRow,
@@ -95,7 +96,7 @@ export function ConversationsPane({
     >
       <div className="overflow-y-auto">
         {rows.map((c) => {
-          const listing = listingMap.get(c.listing_id);
+          const listing = listingSummaryForConversation(listingMap, c.listing_id);
           const otherProfile = profileMap.get(otherParticipantId(c, userId));
           const last = lastMap.get(c.id);
           const unread = unreadMap.get(c.id) ?? 0;

@@ -56,18 +56,19 @@ export function ListingImageGallery({
   const list = images.filter(Boolean);
   const main = list[active] ?? list[0];
   const hasMultiple = list.length > 1;
-  const [mainLoaded, setMainLoaded] = useState(false);
-
-  useEffect(() => {
-    setMainLoaded(false);
-  }, [main]);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const mainLoaded = loadedSrc === main;
 
   const goPrev = useCallback(() => {
     setActive((a) => (a > 0 ? a - 1 : list.length - 1));
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
   }, [list.length]);
 
   const goNext = useCallback(() => {
     setActive((a) => (a < list.length - 1 ? a + 1 : 0));
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
   }, [list.length]);
 
   const clampPan = useCallback((x: number, y: number, z: number) => {
@@ -117,12 +118,6 @@ export function ListingImageGallery({
     };
   }, [lightbox, hasMultiple, goPrev, goNext]);
 
-  useEffect(() => {
-    if (!lightbox) return;
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, [lightbox, active]);
-
   const onMainPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     swipeRef.current = {
@@ -164,7 +159,11 @@ export function ListingImageGallery({
         else goPrev();
         return;
       }
-      if (!moved) setLightbox(true);
+      if (!moved) {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        setLightbox(true);
+      }
     },
     [hasMultiple, goNext, goPrev]
   );
@@ -277,8 +276,8 @@ export function ListingImageGallery({
             priority={active === 0}
             loading={active === 0 ? "eager" : "lazy"}
             sizes="(max-width: 1024px) 100vw, 720px"
-            onLoad={() => setMainLoaded(true)}
-            onError={() => setMainLoaded(true)}
+            onLoad={() => setLoadedSrc(main)}
+            onError={() => setLoadedSrc(main)}
           />
         </div>
         {hasMultiple && !compact ? (
@@ -328,7 +327,11 @@ export function ListingImageGallery({
         <GalleryThumbnailStrip
           images={list}
           activeIndex={active}
-          onSelect={setActive}
+          onSelect={(idx) => {
+            setActive(idx);
+            setZoom(1);
+            setPan({ x: 0, y: 0 });
+          }}
         />
       </div>
 

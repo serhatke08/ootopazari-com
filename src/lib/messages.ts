@@ -182,6 +182,40 @@ export type ListingConversationStatus =
   | { active: true }
   | { active: false; message: string };
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function listingRefKey(value: string | number | null | undefined): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function isUuidRef(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+function isListingNumberRef(value: string): boolean {
+  return /^\d{4,14}$/.test(value);
+}
+
+function indexListingSummary(
+  map: Map<string, ListingMessageSummary>,
+  row: ListingMessageSummary
+) {
+  const idKey = listingRefKey(row.id);
+  if (idKey) map.set(idKey, row);
+  const numKey = listingRefKey(row.listing_number);
+  if (numKey) map.set(numKey, row);
+}
+
+export function listingSummaryForConversation(
+  map: Map<string, ListingMessageSummary>,
+  listingId: string | null | undefined
+): ListingMessageSummary | undefined {
+  const key = listingRefKey(listingId);
+  if (!key) return undefined;
+  return map.get(key);
+}
+
 /** Mesajlaşmaya açık mı? (silinmiş / askıda / onaysız ilanlar kapalı). */
 export function listingConversationStatus(
   listing: ListingMessageSummary | null | undefined
@@ -193,8 +227,10 @@ export function listingConversationStatus(
     };
   }
 
-  const status = String(listing.moderation_status ?? "").toLowerCase();
-  if (status === "approved") {
+  const status = String(listing.moderation_status ?? "approved")
+    .trim()
+    .toLowerCase();
+  if (!status || status === "approved") {
     return { active: true };
   }
 
@@ -215,11 +251,35 @@ export function listingConversationStatus(
         message: "Bu ilan yayında değil. Yeni mesaj gönderilemez.",
       };
     default:
-      return {
-        active: false,
-        message: "Bu ilan artık aktif değil. Yeni mesaj gönderilemez.",
-      };
+      return { active: true };
   }
+}
+
+const LISTING_SUMMARY_SELECT =
+  "id,title,image_url,listing_number,moderation_status";
+const LISTING_SUMMARY_CHUNK = 80;
+
+async function fetchListingSummaryRows(
+  supabase: SupabaseClient,
+  column: "id" | "listing_number",
+  values: string[]
+): Promise<ListingMessageSummary[]> {
+  const out: ListingMessageSummary[] = [];
+  for (let i = 0; i < values.length; i += LISTING_SUMMARY_CHUNK) {
+    const chunk = values.slice(i, i + LISTING_SUMMARY_CHUNK);
+    const { data, error } = await supabase
+      .from("listings")
+      .select(LISTING_SUMMARY_SELECT)
+      .in(column, chunk);
+    if (error) {
+      console.warn(`listings batch (messages ${column}):`, error.message);
+      continue;
+    }
+    for (const row of data ?? []) {
+      out.push(row as ListingMessageSummary);
+    }
+  }
+  return out;
 }
 
 export async function fetchListingSummariesByIds(
@@ -227,19 +287,27 @@ export async function fetchListingSummariesByIds(
   listingIds: string[]
 ): Promise<Map<string, ListingMessageSummary>> {
   const map = new Map<string, ListingMessageSummary>();
-  if (listingIds.length === 0) return map;
-  const { data, error } = await supabase
-    .from("listings")
-    .select("id,title,image_url,listing_number,moderation_status")
-    .in("id", listingIds);
+  const refs = [
+    ...new Set(
+      listingIds.map(listingRefKey).filter((id) => id.length > 0)
+    ),
+  ];
+  if (refs.length === 0) return map;
 
-  if (error) {
-    console.warn("listings batch (messages):", error.message);
-    return map;
-  }
-  for (const row of data ?? []) {
-    const r = row as ListingMessageSummary;
-    if (r.id) map.set(String(r.id), r);
+  const uuids = refs.filter(isUuidRef);
+  const numbers = refs.filter(isListingNumberRef);
+
+  const [byId, byNumber] = await Promise.all([
+    uuids.length > 0
+      ? fetchListingSummaryRows(supabase, "id", uuids)
+      : Promise.resolve([]),
+    numbers.length > 0
+      ? fetchListingSummaryRows(supabase, "listing_number", numbers)
+      : Promise.resolve([]),
+  ]);
+
+  for (const row of [...byId, ...byNumber]) {
+    indexListingSummary(map, row);
   }
   return map;
 }

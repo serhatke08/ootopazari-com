@@ -6,6 +6,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ListingNavSkeletonGate } from "@/components/ListingNavSkeletonGate";
+import { AppNavigationMemory } from "@/components/AppNavigationMemory";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { getSiteOrigin } from "@/lib/site-url";
@@ -133,6 +134,9 @@ export default async function RootLayout({
           }}
         />
         <SiteSearchProvider>
+          <Suspense fallback={null}>
+            <AppNavigationMemory />
+          </Suspense>
           <Suspense
             fallback={
               <header className="h-14 border-b border-amber-400/80 bg-[#ffcc00]" />

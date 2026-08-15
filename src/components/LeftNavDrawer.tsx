@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import type { CategoryRow } from "@/lib/listings-data";
 import { DrawerMenuSections } from "@/components/DrawerMenuSections";
 import { SidebarQuickLinks } from "@/components/SidebarQuickLinks";
@@ -68,6 +68,19 @@ export function LeftNavDrawer({
   unreadMessageCount?: number;
   hasListings?: boolean;
 }) {
+  const [cascadeMountKey, setCascadeMountKey] = useState(0);
+
+  const handleClose = useCallback(() => {
+    if (open) {
+      setCascadeMountKey((k) => k + 1);
+      const ae = document.activeElement;
+      if (ae instanceof HTMLElement && ae.closest("#site-left-drawer")) {
+        ae.blur();
+      }
+    }
+    onClose();
+  }, [open, onClose]);
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -80,26 +93,11 @@ export function LeftNavDrawer({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  /** Menü kapanınca cascade + select’ler sıfırlansın; mobilde açık picker kapanır */
-  const [cascadeMountKey, setCascadeMountKey] = useState(0);
-  const prevOpenRef = useRef<boolean | null>(null);
-  useEffect(() => {
-    const prev = prevOpenRef.current;
-    if (prev === true && open === false) {
-      setCascadeMountKey((k) => k + 1);
-      const ae = document.activeElement;
-      if (ae instanceof HTMLElement && ae.closest("#site-left-drawer")) {
-        ae.blur();
-      }
-    }
-    prevOpenRef.current = open;
-  }, [open]);
+  }, [open, handleClose]);
 
   return (
     <>
@@ -108,7 +106,7 @@ export function LeftNavDrawer({
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden={!open}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       <aside
@@ -127,7 +125,7 @@ export function LeftNavDrawer({
           </span>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-md p-1 text-zinc-900 hover:bg-black/10"
             aria-label="Menüyü kapat"
           >
@@ -143,7 +141,7 @@ export function LeftNavDrawer({
               sessionEmail={sessionEmail}
               unreadMessageCount={unreadMessageCount}
               hasListings={hasListings}
-              onNavigate={onClose}
+              onNavigate={handleClose}
             />
             <div className="border-t border-zinc-200 pt-1">
               <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
@@ -160,7 +158,7 @@ export function LeftNavDrawer({
                 <VehicleCascadeSidebar
                   key={cascadeMountKey}
                   categories={categories}
-                  onNavigate={onClose}
+                  onNavigate={handleClose}
                   compact
                 />
               </Suspense>
@@ -170,7 +168,7 @@ export function LeftNavDrawer({
                 Kısayollar
               </p>
               <SidebarQuickLinks
-                onNavigate={onClose}
+                onNavigate={handleClose}
                 compact
                 items={DRAWER_QUICK_LINKS}
               />

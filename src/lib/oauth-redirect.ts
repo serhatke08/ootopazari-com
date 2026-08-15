@@ -1,3 +1,11 @@
+/** Uygulama içi dönüş yolu; açık yönlendirmeyi engeller. */
+export function safeNextPath(raw: string | null | undefined): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) {
+    return "/";
+  }
+  return raw;
+}
+
 function withProtocol(origin: string): string {
   return /^[a-z][a-z0-9+.-]*:\/\//i.test(origin)
     ? origin

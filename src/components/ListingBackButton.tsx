@@ -1,6 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import {
+  getSafeBackHref,
+  isUnsafeHistoryReferrer,
+  oauthTrapArmed,
+} from "@/lib/app-nav-memory";
 
 export function ListingBackButton({ className }: { className?: string }) {
   const router = useRouter();
@@ -10,11 +15,17 @@ export function ListingBackButton({ className }: { className?: string }) {
       type="button"
       aria-label="Geri"
       onClick={() => {
-        if (typeof window !== "undefined" && window.history.length > 1) {
-          router.back();
+        const target = getSafeBackHref("/");
+        if (
+          oauthTrapArmed() ||
+          isUnsafeHistoryReferrer(
+            typeof document !== "undefined" ? document.referrer : ""
+          )
+        ) {
+          window.location.replace(target);
           return;
         }
-        router.push("/");
+        router.push(target);
       }}
       className={
         className ??

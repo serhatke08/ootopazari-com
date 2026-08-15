@@ -135,7 +135,7 @@ export function CompleteProfileAfterOAuthForm({
       }
 
       router.refresh();
-      router.push(nextPath);
+      router.replace(nextPath);
     } finally {
       setLoading(false);
     }

@@ -6,14 +6,15 @@ import Link from "next/link";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { AuthEntryHeader } from "@/components/AuthEntryHeader";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { buildOAuthRedirectTo } from "@/lib/oauth-redirect";
+import { buildOAuthRedirectTo, safeNextPath } from "@/lib/oauth-redirect";
+import { markOAuthRedirect } from "@/lib/app-nav-memory";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextRaw = searchParams.get("next");
   const oauthErrorRaw = searchParams.get("error");
-  const next = nextRaw?.startsWith("/") ? nextRaw : "/";
+  const next = safeNextPath(nextRaw);
   const oauthError =
     oauthErrorRaw && oauthErrorRaw.trim()
       ? friendlyAuthError(decodeURIComponent(oauthErrorRaw))
@@ -60,7 +61,9 @@ export function LoginForm() {
         return;
       }
       if (data?.url && typeof window !== "undefined") {
-        window.location.assign(data.url);
+        markOAuthRedirect();
+        window.location.replace(data.url);
+        return;
       }
     } finally {
       setOauthLoading(false);
@@ -82,7 +85,7 @@ export function LoginForm() {
         return;
       }
       router.refresh();
-      router.push(next);
+      router.replace(next);
     } finally {
       setLoading(false);
     }
