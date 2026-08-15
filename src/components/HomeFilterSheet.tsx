@@ -32,6 +32,8 @@ type Draft = {
   vehiclesOnly: boolean;
 };
 
+type Panel = "category" | "brand" | "model" | null;
+
 function parseTrInt(raw: string): number | undefined {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return undefined;
@@ -75,6 +77,96 @@ function filtersToDraft(f: HomeListingsFeedFilters): Draft {
   };
 }
 
+function Chevron() {
+  return (
+    <svg
+      className="h-4 w-4 shrink-0 text-zinc-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
+    </svg>
+  );
+}
+
+function Check({ on }: { on: boolean }) {
+  return (
+    <span
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+        on ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-300 bg-white"
+      }`}
+      aria-hidden
+    >
+      {on ? (
+        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+        </svg>
+      ) : null}
+    </span>
+  );
+}
+
+function FilterRow({
+  label,
+  value,
+  disabled,
+  hint,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  disabled?: boolean;
+  hint?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3.5 text-left disabled:opacity-45"
+    >
+      <span className="shrink-0 text-sm font-semibold text-zinc-900">{label}</span>
+      <span
+        className={`min-w-0 flex-1 truncate text-right text-sm ${
+          value ? "font-medium text-zinc-800" : "text-zinc-400"
+        }`}
+      >
+        {disabled ? hint ?? "—" : value || "Seçiniz"}
+      </span>
+      <Chevron />
+    </button>
+  );
+}
+
+function SearchBox({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="border-b border-zinc-100 px-4 py-2">
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+      />
+    </div>
+  );
+}
+
 export function HomeFilterSheet({
   open,
   onClose,
@@ -93,16 +185,19 @@ export function HomeFilterSheet({
   const mounted = useIsClient();
   const [draft, setDraft] = useState<Draft>(() => filtersToDraft(applied));
   const [rangeErr, setRangeErr] = useState<string | null>(null);
-  const [brands, setBrands] = useState<{ id: string; name: string | null; code?: string | null }[]>([]);
-  const [models, setModels] = useState<{ id: string; name: string | null; code?: string | null }[]>([]);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [query, setQuery] = useState("");
+  const [brands, setBrands] = useState<
+    { id: string; name: string | null; code?: string | null }[]
+  >([]);
+  const [models, setModels] = useState<
+    { id: string; name: string | null; code?: string | null }[]
+  >([]);
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
 
   const visibleCategories = useMemo(
-    () =>
-      categories.filter(
-        (c) => !isHiddenFilterCategory(c.code, c.name)
-      ),
+    () => categories.filter((c) => !isHiddenFilterCategory(c.code, c.name)),
     [categories]
   );
 
@@ -110,6 +205,8 @@ export function HomeFilterSheet({
     if (open) {
       setDraft(filtersToDraft(applied));
       setRangeErr(null);
+      setPanel(null);
+      setQuery("");
     }
   }, [open, applied]);
 
@@ -125,11 +222,17 @@ export function HomeFilterSheet({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      if (panel) {
+        setPanel(null);
+        setQuery("");
+      } else {
+        onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, onClose, panel]);
 
   useEffect(() => {
     if (!open || !draft.categoryId) {
@@ -222,6 +325,11 @@ export function HomeFilterSheet({
     }));
   }
 
+  function closePanel() {
+    setPanel(null);
+    setQuery("");
+  }
+
   function apply() {
     const minPrice = parseTrInt(draft.minPrice);
     const maxPrice = parseTrInt(draft.maxPrice);
@@ -279,6 +387,47 @@ export function HomeFilterSheet({
     vehiclesOnly: draft.vehiclesOnly,
   });
 
+  const categoryName =
+    visibleCategories.find((c) => c.id === draft.categoryId)?.name ??
+    visibleCategories.find((c) => c.id === draft.categoryId)?.code ??
+    "";
+  const brandNames = brands
+    .filter((b) => draft.brandIds.includes(b.id))
+    .map((b) => b.name ?? b.code ?? "")
+    .filter(Boolean);
+  const brandSummary =
+    brandNames.length === 0
+      ? ""
+      : brandNames.length <= 2
+        ? brandNames.join(", ")
+        : `${brandNames.length} marka`;
+  const modelSummary =
+    draft.models.length === 0
+      ? ""
+      : draft.models.length <= 2
+        ? draft.models.join(", ")
+        : `${draft.models.length} model`;
+
+  const q = query.trim().toLocaleLowerCase("tr");
+  const filteredCategories = q
+    ? visibleCategories.filter((c) =>
+        `${c.name ?? ""} ${c.code ?? ""}`.toLocaleLowerCase("tr").includes(q)
+      )
+    : visibleCategories;
+  const filteredBrands = q
+    ? brands.filter((b) =>
+        `${b.name ?? ""} ${b.code ?? ""}`.toLocaleLowerCase("tr").includes(q)
+      )
+    : brands;
+  const filteredModels = q
+    ? models.filter((m) =>
+        `${m.name ?? ""} ${m.code ?? ""}`.toLocaleLowerCase("tr").includes(q)
+      )
+    : models;
+
+  const panelTitle =
+    panel === "category" ? "Kategori" : panel === "brand" ? "Marka" : panel === "model" ? "Model" : "Filtrele";
+
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center">
       <button
@@ -293,305 +442,369 @@ export function HomeFilterSheet({
         aria-labelledby="home-filter-title"
         className="relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-2xl sm:max-h-[85dvh] sm:rounded-2xl"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-4 py-3">
-          <h2 id="home-filter-title" className="text-base font-bold text-zinc-900">
-            Filtrele{badge > 0 ? ` · ${badge}` : ""}
+        <div className="flex shrink-0 items-center gap-2 border-b border-zinc-200 px-3 py-3">
+          {panel ? (
+            <button
+              type="button"
+              onClick={closePanel}
+              className="rounded-full p-1.5 text-zinc-600 hover:bg-zinc-100"
+              aria-label="Geri"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          ) : null}
+          <h2 id="home-filter-title" className="min-w-0 flex-1 text-base font-bold text-zinc-900">
+            {panel ? panelTitle : `Filtrele${badge > 0 ? ` · ${badge}` : ""}`}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
-            aria-label="Kapat"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          {panel === "brand" || panel === "model" ? (
+            <button
+              type="button"
+              onClick={closePanel}
+              className="rounded-lg px-2 py-1 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
+            >
+              Tamam
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+              aria-label="Kapat"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
-          <section>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Kategori
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {visibleCategories.map((c) => {
+        {panel === "category" ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <SearchBox
+              value={query}
+              onChange={setQuery}
+              placeholder="Kategori ara"
+            />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setCategory("");
+                  closePanel();
+                }}
+                className="flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3.5 text-left"
+              >
+                <Check on={!draft.categoryId} />
+                <span className="text-sm font-medium text-zinc-900">Tümü</span>
+              </button>
+              {filteredCategories.map((c) => {
                 const on = draft.categoryId === c.id;
                 return (
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => setCategory(on ? "" : c.id)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                      on
-                        ? "border-zinc-900 bg-zinc-900 text-white"
-                        : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
-                    }`}
+                    onClick={() => {
+                      setCategory(on ? "" : c.id);
+                      closePanel();
+                    }}
+                    className="flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3.5 text-left"
                   >
-                    {c.name ?? c.code ?? "Kategori"}
+                    <Check on={on} />
+                    <span className="text-sm font-medium text-zinc-900">
+                      {c.name ?? c.code ?? "Kategori"}
+                    </span>
                   </button>
                 );
               })}
             </div>
-          </section>
-
-          {draft.categoryId ? (
-            <section>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Marka
-              </p>
+          </div>
+        ) : panel === "brand" ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <SearchBox value={query} onChange={setQuery} placeholder="Marka ara" />
+            <div className="min-h-0 flex-1 overflow-y-auto">
               {loadingBrands ? (
-                <p className="text-xs text-zinc-500">Yükleniyor…</p>
-              ) : brands.length === 0 ? (
-                <p className="text-xs text-zinc-500">Bu kategoride marka yok.</p>
+                <p className="px-4 py-6 text-sm text-zinc-500">Yükleniyor…</p>
+              ) : filteredBrands.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-zinc-500">
+                  {brands.length === 0 ? "Bu kategoride marka yok." : "Eşleşen marka yok."}
+                </p>
               ) : (
-                <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
-                  {brands.map((b) => {
-                    const on = draft.brandIds.includes(b.id);
-                    return (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => toggleBrand(b.id)}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                          on
-                            ? "border-zinc-900 bg-zinc-900 text-white"
-                            : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
-                        }`}
-                      >
+                filteredBrands.map((b) => {
+                  const on = draft.brandIds.includes(b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => toggleBrand(b.id)}
+                      className="flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3.5 text-left"
+                    >
+                      <Check on={on} />
+                      <span className="text-sm font-medium text-zinc-900">
                         {b.name ?? b.code ?? "Marka"}
-                      </button>
-                    );
-                  })}
-                </div>
+                      </span>
+                    </button>
+                  );
+                })
               )}
-            </section>
-          ) : null}
-
-          {draft.brandIds.length > 0 ? (
-            <section>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Model
-              </p>
+            </div>
+          </div>
+        ) : panel === "model" ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <SearchBox value={query} onChange={setQuery} placeholder="Model ara" />
+            <div className="min-h-0 flex-1 overflow-y-auto">
               {loadingModels ? (
-                <p className="text-xs text-zinc-500">Yükleniyor…</p>
-              ) : models.length === 0 ? (
-                <p className="text-xs text-zinc-500">Bu markada model yok.</p>
+                <p className="px-4 py-6 text-sm text-zinc-500">Yükleniyor…</p>
+              ) : filteredModels.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-zinc-500">
+                  {models.length === 0 ? "Bu markada model yok." : "Eşleşen model yok."}
+                </p>
               ) : (
-                <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
-                  {models.map((m) => {
-                    const label = (m.name ?? m.code ?? "").trim();
-                    if (!label) return null;
-                    const on = draft.models.includes(label);
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => toggleModel(label)}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                          on
-                            ? "border-zinc-900 bg-zinc-900 text-white"
-                            : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+                filteredModels.map((m) => {
+                  const label = (m.name ?? m.code ?? "").trim();
+                  if (!label) return null;
+                  const on = draft.models.includes(label);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => toggleModel(label)}
+                      className="flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3.5 text-left"
+                    >
+                      <Check on={on} />
+                      <span className="text-sm font-medium text-zinc-900">{label}</span>
+                    </button>
+                  );
+                })
               )}
-            </section>
-          ) : null}
-
-          <section>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Fiyat
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                inputMode="numeric"
-                placeholder="Min"
-                value={formatTrInt(draft.minPrice)}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, minPrice: e.target.value.replace(/\D/g, "") }))
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
-              <span className="text-zinc-400">–</span>
-              <input
-                inputMode="numeric"
-                placeholder="Max"
-                value={formatTrInt(draft.maxPrice)}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, maxPrice: e.target.value.replace(/\D/g, "") }))
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
             </div>
-          </section>
+          </div>
+        ) : (
+          <>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <FilterRow
+                label="Kategori"
+                value={categoryName}
+                onClick={() => setPanel("category")}
+              />
+              <FilterRow
+                label="Marka"
+                value={brandSummary}
+                disabled={!draft.categoryId}
+                hint="Önce kategori seçin"
+                onClick={() => setPanel("brand")}
+              />
+              <FilterRow
+                label="Model"
+                value={modelSummary}
+                disabled={draft.brandIds.length === 0}
+                hint="Önce marka seçin"
+                onClick={() => setPanel("model")}
+              />
 
-          <section>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Yıl & km
-            </p>
-            <div className="mb-2 flex items-center gap-2">
-              <input
-                inputMode="numeric"
-                placeholder="Min yıl"
-                value={draft.minYear}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, minYear: e.target.value.replace(/\D/g, "") }))
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
-              <span className="text-zinc-400">–</span>
-              <input
-                inputMode="numeric"
-                placeholder="Max yıl"
-                value={draft.maxYear}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, maxYear: e.target.value.replace(/\D/g, "") }))
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                inputMode="numeric"
-                placeholder="Min km"
-                value={formatTrInt(draft.minKm)}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, minKm: e.target.value.replace(/\D/g, "") }))
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
-              <span className="text-zinc-400">–</span>
-              <input
-                inputMode="numeric"
-                placeholder="Max km"
-                value={formatTrInt(draft.maxKm)}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, maxKm: e.target.value.replace(/\D/g, "") }))
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-          </section>
-
-          <section>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Yakıt
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {HOME_FILTER_FUELS.map((fuel) => {
-                const on = draft.fuelType === fuel;
-                return (
-                  <button
-                    key={fuel}
-                    type="button"
-                    onClick={() =>
-                      setDraft((d) => ({ ...d, fuelType: on ? "" : fuel }))
-                    }
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                      on
-                        ? "border-zinc-900 bg-zinc-900 text-white"
-                        : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
-                    }`}
-                  >
-                    {fuel}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Vites
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {HOME_FILTER_TRANSMISSIONS.map((tr) => {
-                const on = draft.transmissionType === tr;
-                return (
-                  <button
-                    key={tr}
-                    type="button"
-                    onClick={() =>
+              <div className="border-b border-zinc-100 px-4 py-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Fiyat</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    inputMode="numeric"
+                    placeholder="Min"
+                    value={formatTrInt(draft.minPrice)}
+                    onChange={(e) =>
                       setDraft((d) => ({
                         ...d,
-                        transmissionType: on ? "" : tr,
+                        minPrice: e.target.value.replace(/\D/g, ""),
                       }))
                     }
+                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                  <span className="text-zinc-400">–</span>
+                  <input
+                    inputMode="numeric"
+                    placeholder="Max"
+                    value={formatTrInt(draft.maxPrice)}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        maxPrice: e.target.value.replace(/\D/g, ""),
+                      }))
+                    }
+                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="border-b border-zinc-100 px-4 py-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Yıl & km</p>
+                <div className="mb-2 flex items-center gap-2">
+                  <input
+                    inputMode="numeric"
+                    placeholder="Min yıl"
+                    value={draft.minYear}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        minYear: e.target.value.replace(/\D/g, ""),
+                      }))
+                    }
+                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                  <span className="text-zinc-400">–</span>
+                  <input
+                    inputMode="numeric"
+                    placeholder="Max yıl"
+                    value={draft.maxYear}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        maxYear: e.target.value.replace(/\D/g, ""),
+                      }))
+                    }
+                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    inputMode="numeric"
+                    placeholder="Min km"
+                    value={formatTrInt(draft.minKm)}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        minKm: e.target.value.replace(/\D/g, ""),
+                      }))
+                    }
+                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                  <span className="text-zinc-400">–</span>
+                  <input
+                    inputMode="numeric"
+                    placeholder="Max km"
+                    value={formatTrInt(draft.maxKm)}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        maxKm: e.target.value.replace(/\D/g, ""),
+                      }))
+                    }
+                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="border-b border-zinc-100 px-4 py-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Yakıt</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {HOME_FILTER_FUELS.map((fuel) => {
+                    const on = draft.fuelType === fuel;
+                    return (
+                      <button
+                        key={fuel}
+                        type="button"
+                        onClick={() =>
+                          setDraft((d) => ({ ...d, fuelType: on ? "" : fuel }))
+                        }
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                          on
+                            ? "border-zinc-900 bg-zinc-900 text-white"
+                            : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
+                        }`}
+                      >
+                        {fuel}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-b border-zinc-100 px-4 py-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Vites</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {HOME_FILTER_TRANSMISSIONS.map((tr) => {
+                    const on = draft.transmissionType === tr;
+                    return (
+                      <button
+                        key={tr}
+                        type="button"
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            transmissionType: on ? "" : tr,
+                          }))
+                        }
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                          on
+                            ? "border-zinc-900 bg-zinc-900 text-white"
+                            : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
+                        }`}
+                      >
+                        {tr}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-4 py-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Diğer</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraft((d) => ({ ...d, hasPhoto: !d.hasPhoto }))
+                    }
                     className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                      on
+                      draft.hasPhoto
                         ? "border-zinc-900 bg-zinc-900 text-white"
                         : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
                     }`}
                   >
-                    {tr}
+                    Fotoğraflı
                   </button>
-                );
-              })}
-            </div>
-          </section>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraft((d) => ({ ...d, vehiclesOnly: !d.vehiclesOnly }))
+                    }
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      draft.vehiclesOnly
+                        ? "border-zinc-900 bg-zinc-900 text-white"
+                        : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
+                    }`}
+                  >
+                    Sadece araç
+                  </button>
+                </div>
+              </div>
 
-          <section>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Diğer
-            </p>
-            <div className="flex flex-wrap gap-1.5">
+              {rangeErr ? (
+                <p
+                  className="mx-4 mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+                  role="alert"
+                >
+                  {rangeErr}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex shrink-0 gap-2 border-t border-zinc-200 px-4 py-3">
               <button
                 type="button"
-                onClick={() =>
-                  setDraft((d) => ({ ...d, hasPhoto: !d.hasPhoto }))
-                }
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                  draft.hasPhoto
-                    ? "border-zinc-900 bg-zinc-900 text-white"
-                    : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
-                }`}
+                onClick={onReset}
+                className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
               >
-                Fotoğraflı
+                Sıfırla
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setDraft((d) => ({ ...d, vehiclesOnly: !d.vehiclesOnly }))
-                }
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                  draft.vehiclesOnly
-                    ? "border-zinc-900 bg-zinc-900 text-white"
-                    : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400"
-                }`}
+                onClick={apply}
+                className="flex-[2] rounded-lg bg-zinc-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
               >
-                Sadece araç
+                Uygula
               </button>
             </div>
-          </section>
-
-          {rangeErr ? (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-              {rangeErr}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="flex shrink-0 gap-2 border-t border-zinc-200 px-4 py-3">
-          <button
-            type="button"
-            onClick={onReset}
-            className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
-          >
-            Sıfırla
-          </button>
-          <button
-            type="button"
-            onClick={apply}
-            className="flex-[2] rounded-lg bg-zinc-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
-          >
-            Uygula
-          </button>
-        </div>
+          </>
+        )}
       </div>
     </div>,
     document.body

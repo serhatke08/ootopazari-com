@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
@@ -66,13 +65,20 @@ type Props = {
   variant?: "overlay" | "inline";
 };
 
+function emitFavoriteChanged(listingId: string, favorited: boolean) {
+  window.dispatchEvent(
+    new CustomEvent("listing:favorite-changed", {
+      detail: { listingId, favorited },
+    })
+  );
+}
+
 export function FavoriteHeart({
   listingId,
   initialFavorited,
   loggedIn,
   variant = "overlay",
 }: Props) {
-  const router = useRouter();
   const [favorited, setFavorited] = useState(initialFavorited);
   const [pending, setPending] = useState(false);
 
@@ -109,6 +115,7 @@ export function FavoriteHeart({
           .eq("listing_id", listingId);
         if (error) throw error;
         setFavorited(false);
+        emitFavoriteChanged(listingId, false);
       } else {
         const payload = { user_id: user.id, listing_id: listingId };
         const { error } = await supabase.from("user_favorites").upsert(payload, {
@@ -126,15 +133,15 @@ export function FavoriteHeart({
           }
         }
         setFavorited(true);
+        emitFavoriteChanged(listingId, true);
       }
-      router.refresh();
     } catch (e) {
       console.error(e);
       alert(explainSupabaseError(e));
     } finally {
       setPending(false);
     }
-  }, [favorited, goLogin, listingId, loggedIn, router]);
+  }, [favorited, goLogin, listingId, loggedIn]);
 
   return (
     <button

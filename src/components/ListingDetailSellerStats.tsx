@@ -77,8 +77,22 @@ export function ListingDetailSellerStats({
       }
     }
 
+    function onFavorite(event: Event) {
+      const custom = event as CustomEvent<{
+        listingId?: string;
+        favorited?: boolean;
+      }>;
+      if (custom.detail?.listingId !== listingId) return;
+      if (typeof custom.detail.favorited !== "boolean") return;
+      setFavorites((n) => Math.max(0, n + (custom.detail.favorited ? 1 : -1)));
+    }
+
     window.addEventListener("listing:view-stats", onStats);
-    return () => window.removeEventListener("listing:view-stats", onStats);
+    window.addEventListener("listing:favorite-changed", onFavorite);
+    return () => {
+      window.removeEventListener("listing:view-stats", onStats);
+      window.removeEventListener("listing:favorite-changed", onFavorite);
+    };
   }, [listingId]);
 
   return (
