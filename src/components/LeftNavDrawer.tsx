@@ -117,26 +117,26 @@ export function LeftNavDrawer({
         aria-modal="true"
         aria-label="Site menüsü"
         aria-hidden={!open}
-        className={`fixed inset-y-0 left-0 z-[70] flex w-[min(100vw,380px)] max-w-full flex-col border-r border-amber-400/50 bg-white shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 left-0 z-[70] flex w-[50vw] flex-col border-r border-amber-400/50 bg-white shadow-2xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-400/80 bg-[#ffcc00] px-3 py-3">
-          <span className="text-sm font-black tracking-tight text-zinc-900">
+        <div className="flex shrink-0 items-center justify-between gap-1 border-b border-amber-400/80 bg-[#ffcc00] px-2 py-1.5">
+          <span className="text-xs font-black tracking-tight text-zinc-900">
             Menü
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-2 text-zinc-900 hover:bg-black/10"
+            className="rounded-md p-1 text-zinc-900 hover:bg-black/10"
             aria-label="Menüyü kapat"
           >
-            <IconClose className="h-6 w-6" />
+            <IconClose className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1.5 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="space-y-2.5">
             <DrawerMenuSections
               drawerProfile={drawerProfile}
               dealerApplications={dealerApplications}
@@ -146,7 +146,7 @@ export function LeftNavDrawer({
               onNavigate={onClose}
             />
             <div className="border-t border-zinc-200 pt-1">
-              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
                 Kategoriler
               </p>
               <Suspense
@@ -161,11 +161,12 @@ export function LeftNavDrawer({
                   key={cascadeMountKey}
                   categories={categories}
                   onNavigate={onClose}
+                  compact
                 />
               </Suspense>
             </div>
-            <div className="border-t border-zinc-200 pt-3">
-              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+            <div className="border-t border-zinc-200 pt-2">
+              <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
                 Kısayollar
               </p>
               <SidebarQuickLinks
