@@ -46,7 +46,10 @@ import {
 } from "@/lib/expertiz";
 import { ExpertizCarPreview } from "@/components/ExpertizDiagram";
 import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
-import type { ListingQuotaSnapshot } from "@/lib/listing-quota";
+import {
+  recordActivationUse,
+  type ListingQuotaSnapshot,
+} from "@/lib/listing-quota";
 
 const OTHER = "__other__";
 
@@ -1024,7 +1027,7 @@ export function CreateListingWizard({
 
       if (listingQuota && !listingQuota.unlimited && listingQuota.remaining <= 0) {
         setErr(
-          `Yıllık ${listingQuota.limit} ilan hakkınız doldu. Yeni yıl başında yenilenir.`
+          `Son 12 ayda ${listingQuota.limit} ücretsiz yayın hakkınız doldu.`
         );
         return;
       }
@@ -1042,18 +1045,19 @@ export function CreateListingWizard({
         const msg = insErr?.message ?? "İlan kaydedilemedi.";
         setErr(
           /quota|hakk/i.test(msg)
-            ? `Yıllık ${listingQuota?.limit ?? 5} ilan hakkınız doldu.`
+            ? `Son 12 ayda ${listingQuota?.limit ?? 5} ücretsiz yayın hakkınız doldu.`
             : msg
         );
         return;
       }
 
       const listingId = inserted.id as string;
-      await supabase.from("listing_quota_uses").insert({
-        user_id: uid,
-        listing_id: listingId,
-        kind: "create",
-      });
+      await recordActivationUse(
+        supabase,
+        uid,
+        listingId,
+        listingQuota?.unlimited ? "membership" : "free"
+      );
 
       // Görsel yükleme - hata olursa ilan silinecek
       let uploadSuccess = false;
@@ -1130,8 +1134,8 @@ export function CreateListingWizard({
         </div>
         {!isEditMode && listingQuota && !listingQuota.unlimited && listingQuota.remaining <= 0 ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            Bu yılki {listingQuota.limit} ücretsiz ilan hakkınız doldu. Pasif
-            ilanı tekrar aktif etmek de 1 hak kullanır.
+            Son 12 ayda {listingQuota.limit} ücretsiz yayın hakkınız doldu.
+            Pasif ilanı tekrar aktif etmek de 1 hak kullanır.
           </p>
         ) : null}
 

@@ -4,8 +4,14 @@ import { normalizeDealerState } from "@/lib/bayi-application-status";
 import type { ApplicationStatus, PaymentStatus } from "@/lib/bayi-types";
 
 export const YEARLY_FREE_LISTING_QUOTA = 5;
+export const FREE_LISTING_WINDOW_DAYS = 365;
 export const LISTING_ACTIVE_DAYS = 30;
 export const LISTING_EXPIRED_GRACE_DAYS = 5;
+
+export const LISTING_ACTIVATION_USES_TABLE = "listing_activation_uses";
+export const LISTING_TABLE_CARS = "listings";
+
+export type ListingActivationKind = "free" | "paid" | "membership";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 
@@ -27,6 +33,10 @@ export function istanbulCalendarYear(d = new Date()): number {
 
 export function istanbulYearStartIso(year: number): string {
   return new Date(`${year}-01-01T00:00:00+03:00`).toISOString();
+}
+
+export function listingFreeUseCutoffIso(now = Date.now()): string {
+  return new Date(now - FREE_LISTING_WINDOW_DAYS * MS_DAY).toISOString();
 }
 
 export function listingActivatedAt(listing: {
@@ -140,6 +150,30 @@ export async function userHasUnlimitedListingQuota(
   return false;
 }
 
+export async function countFreeActivationUses(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const cutoff = listingFreeUseCutoffIso();
+  const run = (timeCol: "used_at" | "created_at") =>
+    supabase
+      .from(LISTING_ACTIVATION_USES_TABLE)
+      .select("id")
+      .eq("user_id", userId)
+      .eq("kind", "free")
+      .gte(timeCol, cutoff);
+
+  let { data, error } = await run("used_at");
+  if (error && /used_at/i.test(error.message)) {
+    ({ data, error } = await run("created_at"));
+  }
+  if (error) {
+    console.warn("listing_activation_uses count:", error.message);
+    return 0;
+  }
+  return data?.length ?? 0;
+}
+
 export async function fetchListingQuota(
   supabase: SupabaseClient,
   userId: string
@@ -156,43 +190,7 @@ export async function fetchListingQuota(
     };
   }
 
-  const yearStart = istanbulYearStartIso(year);
-  const listingIds = new Set<string>();
-  const pageSize = 1000;
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
-      .from("listings")
-      .select("id")
-      .eq("user_id", userId)
-      .range(from, from + pageSize - 1);
-    if (error) {
-      console.warn("listing quota listings:", error.message);
-      break;
-    }
-    const rows = data ?? [];
-    for (const row of rows) {
-      const id = String((row as { id?: unknown }).id ?? "").trim();
-      if (id) listingIds.add(id);
-    }
-    if (rows.length < pageSize) break;
-    from += pageSize;
-  }
-
-  let reactivateUsed = 0;
-  const { data: reactivates, error: reactivateErr } = await supabase
-    .from("listing_quota_uses")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("kind", "reactivate")
-    .gte("created_at", yearStart);
-  if (reactivateErr) {
-    console.warn("listing quota reactivations:", reactivateErr.message);
-  } else {
-    reactivateUsed = reactivates?.length ?? 0;
-  }
-
-  const used = listingIds.size + reactivateUsed;
+  const used = await countFreeActivationUses(supabase, userId);
   return {
     year,
     limit: YEARLY_FREE_LISTING_QUOTA,
@@ -202,24 +200,52 @@ export async function fetchListingQuota(
   };
 }
 
+export async function recordActivationUse(
+  supabase: SupabaseClient,
+  userId: string,
+  listingId: string,
+  kind: ListingActivationKind,
+  listingTable = LISTING_TABLE_CARS
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const now = new Date().toISOString();
+  const full = {
+    user_id: userId,
+    listing_id: listingId,
+    listing_table: listingTable,
+    kind,
+    used_at: now,
+  };
+  let { error } = await supabase.from(LISTING_ACTIVATION_USES_TABLE).insert(full);
+  if (error && /listing_table/i.test(error.message)) {
+    const { listing_table: _t, ...withoutTable } = full;
+    ({ error } = await supabase
+      .from(LISTING_ACTIVATION_USES_TABLE)
+      .insert(withoutTable));
+  }
+  if (error && /used_at/i.test(error.message)) {
+    const { used_at: _u, listing_table: _t, ...minimal } = full;
+    ({ error } = await supabase
+      .from(LISTING_ACTIVATION_USES_TABLE)
+      .insert({ ...minimal, created_at: now }));
+  }
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+  return { ok: true };
+}
+
+/** Yeni ücretsiz yayın veya yeniden yayın — bayi/admin `membership` yazar, kota düşmez. */
 export async function recordListingQuotaUse(
   supabase: SupabaseClient,
   userId: string,
   listingId: string,
-  kind: "create" | "reactivate"
+  kind: "create" | "reactivate" | ListingActivationKind = "free"
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { error } = await supabase.from("listing_quota_uses").insert({
-    user_id: userId,
-    listing_id: listingId,
-    kind,
-  });
-  if (error) {
-    if (kind === "create" && /duplicate|unique/i.test(error.message)) {
-      return { ok: true };
-    }
-    return { ok: false, message: error.message };
-  }
-  return { ok: true };
+  const mapped: ListingActivationKind =
+    kind === "paid" || kind === "membership" || kind === "free"
+      ? kind
+      : "free";
+  return recordActivationUse(supabase, userId, listingId, mapped);
 }
 
 type ExpireRow = {

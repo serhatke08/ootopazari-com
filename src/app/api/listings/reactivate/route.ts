@@ -59,13 +59,18 @@ export async function POST(req: Request) {
       {
         ok: false,
         error: "quota",
-        message: `Yıllık ${quota.limit} ilan hakkınız doldu. Yeni yıl başında yenilenir.`,
+        message: `Son 12 ayda ${quota.limit} ücretsiz yayın hakkınız doldu.`,
       },
       { status: 403 }
     );
   }
 
-  const used = await recordListingQuotaUse(admin, user.id, listingId, "reactivate");
+  const used = await recordListingQuotaUse(
+    admin,
+    user.id,
+    listingId,
+    quota.unlimited ? "membership" : "free"
+  );
   if (!used.ok) {
     return NextResponse.json(
       { ok: false, error: "quota_write", message: used.message },
