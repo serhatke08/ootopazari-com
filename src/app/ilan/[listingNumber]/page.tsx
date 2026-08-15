@@ -38,7 +38,6 @@ import { ListingDetailContactDock } from "@/components/ListingDetailContactDock"
 import {
   parseDescriptionSpecLine,
   parseDescriptionVehicleSpecs,
-  resolveListingModelDisplay,
   type ListingSpecRow,
 } from "@/lib/listing-vehicle-display";
 import { ListingVehicleSpecs } from "@/components/ListingVehicleSpecs";
@@ -199,6 +198,16 @@ function inferModelOnlyFromVehicleModel(
     return parts.slice(0, numericIndex).join(" ");
   }
   return parts[0];
+}
+
+function includesVehiclePart(
+  haystack: string | null | undefined,
+  part: string | null | undefined
+): boolean {
+  const h = haystack?.trim();
+  const p = part?.trim();
+  if (!h || !p) return false;
+  return h.toLocaleLowerCase("tr").includes(p.toLocaleLowerCase("tr"));
 }
 
 function trimOnlyFromRow(row: Record<string, unknown>): string | undefined {
@@ -682,25 +691,15 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     labelFromEquipmentLines(equipmentLines, "Paket") ||
     strCell(pick(row, ["package_name", "paket_name", "package_label"]));
 
-  const legacyModelForDisplay = resolveListingModelDisplay({
-    trimModel: modelDisplay,
-    motor: motorDisplay,
-    paket: paketDisplay,
-    vehicleModel: listing.vehicle_model as string | null | undefined,
-    seri: seriDisplay,
-  });
-  const strippedModel = stripKnownParts(rawVehicleModel, [
-    motorDisplay,
-    paketDisplay,
-    legacyModelForDisplay,
-  ]);
   const modelForDisplay =
     catalogParts.model ||
-    seriDisplay ||
-    (strippedModel && strippedModel !== rawVehicleModel?.trim()
-      ? strippedModel
-      : inferModelOnlyFromVehicleModel(rawVehicleModel)) ||
-    legacyModelForDisplay;
+    modelDisplay ||
+    inferModelOnlyFromVehicleModel(rawVehicleModel) ||
+    (seriDisplay &&
+    !includesVehiclePart(seriDisplay, motorDisplay) &&
+    !includesVehiclePart(seriDisplay, paketDisplay)
+      ? seriDisplay
+      : undefined);
 
   const kasaDisplay =
     listing.body_type?.toString().trim() ||

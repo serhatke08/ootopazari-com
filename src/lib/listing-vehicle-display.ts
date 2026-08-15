@@ -29,15 +29,6 @@ export function parseDescriptionVehicleSpecs(
   };
 }
 
-/** İlan detayında Model satırı: motor + paket birleşimi. */
-export function joinMotorPaket(
-  motor: string | null | undefined,
-  paket: string | null | undefined
-): string | undefined {
-  const parts = [motor?.trim(), paket?.trim()].filter(Boolean) as string[];
-  return parts.length > 0 ? parts.join(" · ") : undefined;
-}
-
 /** `vehicle_model` metninden seri önekini çıkarır (kalan motor/paket olabilir). */
 export function vehicleModelTailAfterSeri(
   vehicleModel: string | null | undefined,
@@ -62,18 +53,15 @@ export function vehicleModelTailAfterSeri(
 
 export function resolveListingModelDisplay(opts: {
   trimModel?: string | null;
-  motor?: string | null;
-  paket?: string | null;
   vehicleModel?: string | null;
   seri?: string | null;
 }): string | undefined {
   const trim = opts.trimModel?.trim();
   if (trim) return trim;
-
-  const motorPaket = joinMotorPaket(opts.motor, opts.paket);
-  if (motorPaket) return motorPaket;
-
-  return vehicleModelTailAfterSeri(opts.vehicleModel, opts.seri);
+  const seri = opts.seri?.trim();
+  if (seri) return seri;
+  const vm = opts.vehicleModel?.trim();
+  return vm || undefined;
 }
 
 export type ListingSpecRow = {
