@@ -48,6 +48,7 @@ export function ListingDetailStatsRow({
     return () => window.removeEventListener("listing:view-stats", onStats);
   }, [listingId]);
 
+  const hasRating = summary.count > 0 && summary.average != null;
   const ratingColor = priceRatingIndicatorColor(summary.average, summary.count);
 
   return (
@@ -69,10 +70,14 @@ export function ListingDetailStatsRow({
         />
         <span
           className="rounded-md px-2 py-0.5 text-lg font-bold tabular-nums sm:text-xl"
-          style={{
-            color: ratingColor,
-            backgroundColor: priceRatingFill(ratingColor, 0.18),
-          }}
+          style={
+            hasRating
+              ? {
+                  color: ratingColor,
+                  backgroundColor: priceRatingFill(ratingColor, 0.18),
+                }
+              : { color: "#18181b" }
+          }
         >
           {priceLabel}
         </span>

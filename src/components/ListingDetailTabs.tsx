@@ -56,11 +56,11 @@ export function ListingDetailTabs({
       </div>
 
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="min-w-0 truncate text-sm font-semibold text-zinc-900">
+        <h2 className="min-w-0 truncate text-xs font-semibold text-zinc-900">
           {activeLabel}
         </h2>
         {publishedAt ? (
-          <p className="shrink-0 text-[11px] tabular-nums text-zinc-500">
+          <p className="shrink-0 text-[10px] tabular-nums text-zinc-500">
             {publishedAt}
           </p>
         ) : null}

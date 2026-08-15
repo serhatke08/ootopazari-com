@@ -742,6 +742,8 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     ]) ?? hierarchyLabels.horsepower ?? catalogParts.horsepower
   );
 
+  const publishedAt = fmtListingDate(row.created_at);
+
   const vehicleSpecRows = compactRows([
     specRow("İlan No", num != null ? `#${String(num)}` : null),
     specRow("Konum", cityDisplayResolved),
@@ -1047,7 +1049,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
         <div className="listing-detail-tabs min-w-0 px-4 md:px-0">
           <ListingDetailTabs
-            publishedAt={fmtListingDate(row.created_at)}
+            publishedAt={publishedAt}
             infoContent={<ListingVehicleSpecs rows={vehicleSpecRows} />}
             descriptionContent={descriptionTabContent}
             equipmentContent={equipmentTabContent}

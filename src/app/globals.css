@@ -299,3 +299,10 @@ body {
   }
 }
 
+.listing-detail-vehicle-specs-panel,
+.listing-detail-vehicle-specs-panel dt,
+.listing-detail-vehicle-specs-panel dd {
+  font-size: 11px;
+  line-height: 1.35;
+}
+

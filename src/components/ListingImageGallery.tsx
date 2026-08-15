@@ -304,6 +304,16 @@ export function ListingImageGallery({
             onError={() => setLoadedSrc(main)}
           />
         </div>
+        {overlay ? (
+          <div
+            className="pointer-events-auto absolute inset-x-0 top-0 z-20 p-2"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {overlay}
+          </div>
+        ) : null}
         {hasMultiple ? (
           <>
             <button
@@ -336,16 +346,6 @@ export function ListingImageGallery({
               {active + 1} / {list.length}
             </p>
           </>
-        ) : null}
-        {overlay ? (
-          <div
-            className="pointer-events-auto absolute inset-x-0 top-0 z-20 p-2"
-            onPointerDown={(e) => e.stopPropagation()}
-            onPointerUp={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {overlay}
-          </div>
         ) : null}
       </div>
 
