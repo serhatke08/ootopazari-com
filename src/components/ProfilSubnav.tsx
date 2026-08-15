@@ -10,10 +10,6 @@ const active = "border-zinc-900 text-zinc-900";
 
 export function ProfilSubnav() {
   const pathname = usePathname();
-  if (pathname.startsWith("/profil/ayarlar")) {
-    return null;
-  }
-
   const isIlanlarim = pathname.startsWith("/profil/ilanlarim");
   const isOdemeler = pathname.startsWith("/profil/odemeler");
   const isDestek = pathname.startsWith("/profil/destek");

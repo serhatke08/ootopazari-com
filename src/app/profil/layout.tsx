@@ -111,7 +111,7 @@ export default async function ProfilLayout({
 
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
-      <ProfilTitleRow />
+      <ProfilTitleRow email={user.email ?? ""} />
 
       <ProfilHeader
         displayName={displayName}

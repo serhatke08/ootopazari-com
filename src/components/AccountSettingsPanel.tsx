@@ -80,9 +80,9 @@ export function AccountSettingsPanel({ email }: Props) {
   }
 
   return (
-    <div className="mt-6">
+    <div>
       <nav
-        className="flex flex-wrap items-end gap-5 border-b border-zinc-200"
+        className="-mx-1 flex flex-wrap items-end gap-4 border-b border-zinc-200 px-1"
         aria-label="Ayar sekmeleri"
       >
         {TABS.map((item) => {
@@ -110,7 +110,7 @@ export function AccountSettingsPanel({ email }: Props) {
         })}
       </nav>
 
-      <div className="mt-6">
+      <div className="mt-4">
         {tab === "hesap" ? (
           <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
             <h2 className="text-base font-semibold text-zinc-900">
