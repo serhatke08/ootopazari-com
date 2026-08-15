@@ -5,6 +5,10 @@ import { ListingPriceHistoryButton } from "@/components/ListingPriceHistoryButto
 import { ListingPriceRatingDot } from "@/components/ListingPriceRatingDot";
 import type { PriceHistoryEntry } from "@/lib/listing-price-history";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
+import {
+  priceRatingFill,
+  priceRatingIndicatorColor,
+} from "@/lib/listing-price-ratings";
 
 type Props = {
   listingId: string;
@@ -44,15 +48,17 @@ export function ListingDetailStatsRow({
     return () => window.removeEventListener("listing:view-stats", onStats);
   }, [listingId]);
 
+  const ratingColor = priceRatingIndicatorColor(summary.average, summary.count);
+
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div className="flex items-center gap-3">
       <span className="inline-flex items-center gap-1.5 text-sm text-black">
         <HeartIcon />
         <span className="tabular-nums font-semibold">
           {favorites.toLocaleString("tr-TR")}
         </span>
       </span>
-      <span className="inline-flex min-w-0 items-center gap-2">
+      <span className="ml-auto inline-flex min-w-0 items-center gap-1.5">
         <ListingPriceRatingDot
           listingId={listingId}
           summary={summary}
@@ -61,14 +67,20 @@ export function ListingDetailStatsRow({
           framed
           popoverPlacement="below"
         />
-        <span className="text-lg font-bold tabular-nums text-black sm:text-xl">
+        <span
+          className="rounded-md px-2 py-0.5 text-lg font-bold tabular-nums sm:text-xl"
+          style={{
+            color: ratingColor,
+            backgroundColor: priceRatingFill(ratingColor, 0.18),
+          }}
+        >
           {priceLabel}
         </span>
+        <ListingPriceHistoryButton
+          history={priceHistory}
+          popoverPlacement="below"
+        />
       </span>
-      <ListingPriceHistoryButton
-        history={priceHistory}
-        popoverPlacement="below"
-      />
     </div>
   );
 }

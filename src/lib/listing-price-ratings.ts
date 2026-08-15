@@ -74,6 +74,26 @@ export function priceRatingIndicatorColor(
   return "#dc2626";
 }
 
+/** Anket rengine göre yarı saydam arka plan. */
+export function priceRatingFill(hex: string, alpha = 0.16): string {
+  const raw = hex.replace("#", "").trim();
+  const full =
+    raw.length === 3
+      ? raw
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : raw;
+  if (full.length !== 6 || !/^[0-9a-f]+$/i.test(full)) {
+    return `rgba(156, 163, 175, ${alpha})`;
+  }
+  const n = Number.parseInt(full, 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function countKeyForRating(rating: number): keyof PriceRatingCounts | null {
   if (rating === 1) return "fair";
   if (rating === 2) return "expensive";
