@@ -852,6 +852,23 @@ export async function fetchListingsByIds(
   return (data ?? []) as unknown as ListingRow[];
 }
 
+/** Favoriler: yayından düşmüş ilanlar da gelsin (RLS izin verirse). */
+export async function fetchListingsByIdsAny(
+  supabase: SupabaseClient,
+  ids: string[]
+): Promise<ListingRow[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("listings")
+    .select(LISTING_SELECT)
+    .in("id", ids);
+  if (error) {
+    console.warn("fetchListingsByIdsAny:", error.message);
+    return fetchListingsByIds(supabase, ids);
+  }
+  return (data ?? []) as unknown as ListingRow[];
+}
+
 /** Oturum açmış kullanıcının kendi ilanları (moderasyon filtresi yok; RLS ile sınırlanır). */
 export async function fetchListingsForUser(
   supabase: SupabaseClient,
