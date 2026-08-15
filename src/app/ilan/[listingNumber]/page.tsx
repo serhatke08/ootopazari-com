@@ -47,7 +47,6 @@ import { mergeExpertizWithDefaults, parseExpertizPanels } from "@/lib/expertiz";
 import {
   fetchVehicleBrandModelSeriCode,
   fetchListingEnginePackageLabels,
-  formatListingSeriesLine,
   resolveListingVehicleCatalogParts,
 } from "@/lib/vehicle-hierarchy";
 import {
@@ -702,13 +701,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ? strippedModel
       : inferModelOnlyFromVehicleModel(rawVehicleModel)) ||
     legacyModelForDisplay;
-  const detailVehicleSeries = formatListingSeriesLine({
-    engine: motorDisplay,
-    package: paketDisplay,
-    variantRemainder: catalogParts.variantRemainder,
-    rawModel: rawVehicleModel,
-    resolvedModel: modelForDisplay,
-  });
 
   const kasaDisplay =
     listing.body_type?.toString().trim() ||
@@ -759,7 +751,8 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     specRow("Model", modelForDisplay),
     isMotorcycle
       ? specRow("CC", engineCapacityDisplay)
-      : specRow("Seri", detailVehicleSeries),
+      : specRow("Motor", motorDisplay),
+    specRow("Donanım / Paket", paketDisplay),
     specRow("Üretim yılı", listing.vehicle_year as number | null),
     specRow(
       "Kilometre",
@@ -807,7 +800,8 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     categoryName?.trim(),
     brandName?.trim(),
     modelForDisplay?.trim(),
-    detailVehicleSeries?.trim(),
+    !isMotorcycle ? motorDisplay?.trim() : null,
+    paketDisplay?.trim(),
   ].filter((p): p is string => !!p);
 
   const equipmentTabContent =
@@ -826,7 +820,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       <dl className="space-y-0">
         <Field label="Kasa tipi" value={kasaDisplay} />
         <Field label="Motor" value={motorDisplay} />
-        <Field label="Paket" value={paketDisplay} />
+        <Field label="Donanım / Paket" value={paketDisplay} />
         <Field
           label="Motor hacmi"
           value={pick(row, ["engine_capacity", "motor_hacmi"]) as string}
