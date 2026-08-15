@@ -127,6 +127,8 @@ export function CompleteProfileAfterOAuthForm({
           full_name: fullName,
           username: u,
           phone: p,
+          avatar_url: null,
+          picture: null,
         },
       });
       if (metaErr) {

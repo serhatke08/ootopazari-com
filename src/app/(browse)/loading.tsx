@@ -16,11 +16,12 @@ export default function RootLoading() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <div className="h-8 w-40 animate-pulse rounded-lg bg-zinc-200" />
-            <div className="flex items-center gap-2">
-              <div className="h-9 w-28 animate-pulse rounded-lg bg-zinc-200" />
-              <div className="h-9 w-20 animate-pulse rounded-lg bg-zinc-200" />
+          <div className="mb-3 flex items-center justify-between gap-1.5">
+            <div className="h-6 w-16 animate-pulse rounded-md bg-zinc-200" />
+            <div className="flex items-center gap-1">
+              <div className="h-7 w-24 animate-pulse rounded-md bg-zinc-200" />
+              <div className="h-7 w-16 animate-pulse rounded-md bg-zinc-200" />
+              <div className="h-7 w-14 animate-pulse rounded-md bg-zinc-200" />
             </div>
           </div>
           <HomeListingsGridSkeleton count={15} />

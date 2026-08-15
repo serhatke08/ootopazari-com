@@ -46,6 +46,7 @@ import {
 } from "@/lib/expertiz";
 import { ExpertizCarPreview } from "@/components/ExpertizDiagram";
 import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
+import type { ListingQuotaSnapshot } from "@/lib/listing-quota";
 
 const OTHER = "__other__";
 
@@ -54,6 +55,7 @@ type Category = { id: string; name: string | null; code: string | null };
 type Props = {
   categories: Category[];
   userCountryId: string | null;
+  listingQuota?: ListingQuotaSnapshot | null;
   /** Doluysa güncelleme modu */
   editListingId?: string | null;
   editListingNumber?: string | null;
@@ -181,6 +183,7 @@ function pickEngineFuelHp(row: Record<string, unknown>): {
 export function CreateListingWizard({
   categories,
   userCountryId,
+  listingQuota = null,
   editListingId = null,
   editListingNumber = null,
   initialGalleryUrls: initialGalleryUrlsProp,
@@ -1019,7 +1022,15 @@ export function CreateListingWizard({
         return;
       }
 
+      if (listingQuota && !listingQuota.unlimited && listingQuota.remaining <= 0) {
+        setErr(
+          `Yıllık ${listingQuota.limit} ilan hakkınız doldu. Yeni yıl başında yenilenir.`
+        );
+        return;
+      }
+
       base.user_id = uid;
+      base.activated_at = new Date().toISOString();
 
       const { data: inserted, error: insErr } = await supabase
         .from("listings")
@@ -1028,11 +1039,21 @@ export function CreateListingWizard({
         .single();
 
       if (insErr || !inserted?.id) {
-        setErr(insErr?.message ?? "İlan kaydedilemedi.");
+        const msg = insErr?.message ?? "İlan kaydedilemedi.";
+        setErr(
+          /quota|hakk/i.test(msg)
+            ? `Yıllık ${listingQuota?.limit ?? 5} ilan hakkınız doldu.`
+            : msg
+        );
         return;
       }
 
       const listingId = inserted.id as string;
+      await supabase.from("listing_quota_uses").insert({
+        user_id: uid,
+        listing_id: listingId,
+        kind: "create",
+      });
 
       // Görsel yükleme - hata olursa ilan silinecek
       let uploadSuccess = false;
@@ -1101,8 +1122,18 @@ export function CreateListingWizard({
             <span className="rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-semibold tabular-nums text-zinc-700">
               #{editListingNumber}
             </span>
+          ) : listingQuota && !listingQuota.unlimited ? (
+            <span className="rounded-full bg-amber-50 px-4 py-1.5 text-sm font-semibold tabular-nums text-amber-900">
+              Kalan hak: {listingQuota.remaining}/{listingQuota.limit}
+            </span>
           ) : null}
         </div>
+        {!isEditMode && listingQuota && !listingQuota.unlimited && listingQuota.remaining <= 0 ? (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            Bu yılki {listingQuota.limit} ücretsiz ilan hakkınız doldu. Pasif
+            ilanı tekrar aktif etmek de 1 hak kullanır.
+          </p>
+        ) : null}
 
         {/* Modern Step Indicator */}
         <div className="space-y-4">

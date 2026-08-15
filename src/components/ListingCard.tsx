@@ -1,7 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { isListingSuspended, type ListingRow } from "@/lib/listings-data";
+import {
+  isListingExpiredStatus,
+  isListingSuspended,
+  type ListingRow,
+} from "@/lib/listings-data";
 import type { ListingPublicStats } from "@/lib/listing-stats";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { buildListingSeoPath } from "@/lib/listing-seo";
@@ -11,6 +15,7 @@ import { ListingCoverImage } from "@/components/ListingCoverImage";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
 import { listingHomeBoostChromeActive } from "@/lib/listing-feature-boost";
+import { initialFromName } from "@/lib/user-display-name";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import { EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
 
@@ -31,6 +36,7 @@ type Props = {
   ownerActions?: ReactNode;
   /** Askıya alınmış ilan: soluk görünüm + etiket */
   suspended?: boolean;
+  expired?: boolean;
   suspensionReason?: string | null;
   /** Kartta görsel altında küçük profil satırı. */
   ownerName?: string | null;
@@ -109,6 +115,7 @@ export function ListingCard({
   cityDisplayName,
   ownerActions,
   suspended: suspendedProp,
+  expired: expiredProp,
   suspensionReason,
   ownerName,
   ownerAvatarSrc,
@@ -118,8 +125,10 @@ export function ListingCard({
   const ratingSummary = priceRating ?? EMPTY_PRICE_RATING_SUMMARY;
   const suspended =
     suspendedProp ?? isListingSuspended(listing);
+  const expired = expiredProp ?? isListingExpiredStatus(listing);
+  const inactive = suspended || expired;
   const boostActive =
-    !suspended && listingHomeBoostChromeActive(listing);
+    !inactive && listingHomeBoostChromeActive(listing);
   const cityText =
     (cityDisplayName != null && String(cityDisplayName).trim() !== ""
       ? String(cityDisplayName).trim()
@@ -192,10 +201,19 @@ export function ListingCard({
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md sm:rounded-xl ${
-        suspended ? "opacity-[0.72] grayscale-[0.35]" : ""
+        inactive ? "opacity-[0.72] grayscale-[0.35]" : ""
       }`}
     >
-      {suspended ? (
+      {expired ? (
+        <div className="border-b border-amber-100 bg-amber-50 px-2 py-1.5 sm:px-4">
+          <p className="text-center text-[10px] font-bold uppercase tracking-wide text-amber-800 sm:text-[11px]">
+            Süresi doldu · pasif
+          </p>
+          <p className="mt-0.5 text-center text-[10px] text-amber-900/80 sm:text-[11px]">
+            1 aylık yayın süresi bitti. Tekrar aktif etmek 1 ilan hakkı kullanır.
+          </p>
+        </div>
+      ) : suspended ? (
         <div className="border-b border-red-100 bg-red-50 px-2 py-1.5 sm:px-4">
           <p className="text-center text-[10px] font-bold uppercase tracking-wide text-red-700 sm:text-[11px]">
             Askıya alındı
@@ -208,12 +226,12 @@ export function ListingCard({
         </div>
       ) : null}
       {href && !isHomeGrid ? <Link href={href}>{imageArea}</Link> : imageArea}
-      <div className="flex flex-1 flex-col gap-1 p-2 sm:gap-1.5 sm:p-3">
+      <div className="flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3">
         {ownerName ? (
           ownerHref ? (
             <Link
               href={ownerHref}
-              className="-mt-2 mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500 hover:text-zinc-800"
+              className="mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500 hover:text-zinc-800"
             >
               <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200">
                 {ownerAvatarSrc ? (
@@ -226,14 +244,14 @@ export function ListingCard({
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-zinc-600">
-                    {ownerName.trim().slice(0, 1).toUpperCase() || "?"}
+                    {initialFromName(ownerName)}
                   </span>
                 )}
               </span>
               <span className="truncate pl-0.5 text-[10px] font-medium leading-none">{ownerName}</span>
             </Link>
           ) : (
-            <div className="-mt-2 mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500">
+            <div className="mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500">
               <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200">
                 {ownerAvatarSrc ? (
                   <Image
@@ -245,7 +263,7 @@ export function ListingCard({
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-zinc-600">
-                    {ownerName.trim().slice(0, 1).toUpperCase() || "?"}
+                    {initialFromName(ownerName)}
                   </span>
                 )}
               </span>

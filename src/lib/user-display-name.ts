@@ -2,9 +2,17 @@ import type { User } from "@supabase/supabase-js";
 
 type ProfileLike = { full_name?: unknown } | null | undefined;
 
+/** Avatar harfi: ismin (adın) ilk harfi. */
+export function initialFromName(name: string | null | undefined): string {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "?";
+  const ch = Array.from(trimmed)[0];
+  return ch ? ch.toLocaleUpperCase("tr") : "?";
+}
+
 /**
  * Navbar / küçük alanlar: görünen isim.
- * Profil layout ile aynı öncelik: metadata ad/soyad → metadata full_name → `profiles.full_name` → e-posta @ öncesi.
+ * Profil layout ile aynı öncelik: `profiles.full_name` → metadata ad/soyad → metadata full_name → e-posta @ öncesi.
  */
 export function displayNameFromAuthUser(
   user: User,
@@ -18,7 +26,7 @@ export function displayNameFromAuthUser(
 
   const profileFull =
     profile?.full_name != null ? String(profile.full_name).trim() : "";
-  if (!firstName && !lastName && profileFull) {
+  if (profileFull) {
     const parts = profileFull.split(/\s+/).filter(Boolean);
     firstName = parts[0] ?? null;
     lastName = parts.slice(1).join(" ") || null;

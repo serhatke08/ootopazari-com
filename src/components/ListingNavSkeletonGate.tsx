@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
 
 function listingHrefFromClick(target: EventTarget | null): string | null {
@@ -21,10 +22,31 @@ function listingHrefFromClick(target: EventTarget | null): string | null {
 export function ListingNavSkeletonGate() {
   const pathname = usePathname();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setPendingHref(null);
   }, [pathname]);
+
+  const show = Boolean(pendingHref && pendingHref !== pathname);
+
+  useEffect(() => {
+    if (!show) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
+    };
+  }, [show]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -41,15 +63,18 @@ export function ListingNavSkeletonGate() {
     return () => document.removeEventListener("click", onClick, true);
   }, []);
 
-  if (!pendingHref || pendingHref === pathname) return null;
+  if (!mounted || !show) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-x-0 top-14 bottom-0 z-30 overflow-y-auto bg-white md:top-[4.25rem]"
+      className="fixed inset-0 z-[35] overflow-y-auto overscroll-contain bg-white"
       aria-busy="true"
       aria-live="polite"
     >
-      <ListingDetailSkeleton />
-    </div>
+      <div className="min-h-[100dvh] bg-white pt-14 md:pt-[4.25rem]">
+        <ListingDetailSkeleton />
+      </div>
+    </div>,
+    document.body
   );
 }

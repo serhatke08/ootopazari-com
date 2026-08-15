@@ -7,12 +7,14 @@ import { MissingEnv } from "@/components/MissingEnv";
 import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
 import { fetchFollowCounts } from "@/lib/profile-follows";
 import { fetchProfilePublic } from "@/lib/listings-data";
-import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
+import { avatarUrlFromAuthUser, sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { resolveListingImageUrl } from "@/lib/storage";
 import { ProfilHeader } from "@/components/ProfilHeader";
 import { ProfilSubnav } from "@/components/ProfilSubnav";
 import { PaymentServiceCompactSummary } from "@/components/PaymentHistoryList";
 import { fetchUserPaymentServiceSummaries } from "@/lib/payment-history";
+import { initialFromName } from "@/lib/user-display-name";
+import { expireDueListings, fetchListingQuota } from "@/lib/listing-quota";
 
 export const metadata: Metadata = {
   title: "Profilim",
@@ -31,23 +33,8 @@ function readNamesAndAvatar(user: User): {
   return {
     firstName: typeof m.first_name === "string" ? m.first_name.trim() || null : null,
     lastName: typeof m.last_name === "string" ? m.last_name.trim() || null : null,
-    avatarRaw: sanitizeUserAvatarUrl(
-      typeof m.avatar_url === "string" ? m.avatar_url.trim() || null : null
-    ),
+    avatarRaw: avatarUrlFromAuthUser(user),
   };
-}
-
-function initials(
-  first: string | null,
-  last: string | null,
-  email: string | null | undefined
-): string {
-  const a = first?.charAt(0);
-  const b = last?.charAt(0);
-  if (a && b) return (a + b).toLocaleUpperCase("tr");
-  if (a) return a.toLocaleUpperCase("tr");
-  if (email) return email.slice(0, 2).toLocaleUpperCase("tr");
-  return "?";
 }
 
 export default async function ProfilLayout({
@@ -73,12 +60,22 @@ export default async function ProfilLayout({
     redirect(`/giris?next=${encodeURIComponent("/profil")}`);
   }
 
-  const [profile, adminProfile, followCounts, serviceSummaries] = await Promise.all([
-    user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
-    user.id ? fetchAdminProfileByUserId(supabase, user.id) : Promise.resolve(null),
-    user.id ? fetchFollowCounts(supabase, user.id) : Promise.resolve({ followers: 0, following: 0 }),
-    user.id ? fetchUserPaymentServiceSummaries(supabase, user.id) : Promise.resolve([]),
-  ]);
+  if (user.id) {
+    await expireDueListings(supabase, { userId: user.id });
+  }
+
+  const [profile, adminProfile, followCounts, serviceSummaries, listingQuota] =
+    await Promise.all([
+      user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
+      user.id ? fetchAdminProfileByUserId(supabase, user.id) : Promise.resolve(null),
+      user.id
+        ? fetchFollowCounts(supabase, user.id)
+        : Promise.resolve({ followers: 0, following: 0 }),
+      user.id
+        ? fetchUserPaymentServiceSummaries(supabase, user.id)
+        : Promise.resolve([]),
+      user.id ? fetchListingQuota(supabase, user.id) : Promise.resolve(null),
+    ]);
 
   const meta = readNamesAndAvatar(user);
   let firstName = meta.firstName;
@@ -106,7 +103,7 @@ export default async function ProfilLayout({
     user.email?.split("@")[0]?.trim() ||
     "Profil";
 
-  const initialsLabel = initials(firstName, lastName, user.email);
+  const initialsLabel = initialFromName(firstName || displayName);
   const publicProfileHref = `/kullanici/${encodeURIComponent(user.id)}`;
 
   return (
@@ -128,6 +125,15 @@ export default async function ProfilLayout({
         publicProfileHref={publicProfileHref}
         followerCount={followCounts.followers}
         followingCount={followCounts.following}
+        listingQuota={
+          listingQuota
+            ? {
+                remaining: listingQuota.remaining,
+                limit: listingQuota.limit,
+                unlimited: listingQuota.unlimited,
+              }
+            : null
+        }
       />
 
       <PaymentServiceCompactSummary summaries={serviceSummaries} />

@@ -9,6 +9,7 @@ import {
   type ListingDetailAccessMode,
   type ListingRow,
 } from "@/lib/listings-data";
+import { expireDueListings } from "@/lib/listing-quota";
 import { extractListingNumberFromSeoParam } from "@/lib/listing-seo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { User } from "@supabase/supabase-js";
@@ -52,6 +53,10 @@ export const loadListingDetailRequest = cache(
     const viewerAdmin = viewer?.id
       ? await fetchAdminProfileByUserId(supabase, viewer.id)
       : null;
+    if (viewer?.id) {
+      await expireDueListings(supabase, { userId: viewer.id });
+    }
+
     const detail = await fetchListingForDetailPage(
       supabase,
       listingNumber,

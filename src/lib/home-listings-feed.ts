@@ -26,6 +26,8 @@ import type {
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
 import { enrichListingRowsCoverImages } from "@/lib/listing-images";
+import { expireDueListings } from "@/lib/listing-quota";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export type { HomeListingCardItem, HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
 export { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
@@ -115,6 +117,10 @@ export async function fetchHomeListingsFeed(
   loggedIn: boolean;
 }> {
   const lite = options?.lite ?? false;
+  const admin = createSupabaseServiceClient();
+  if (admin) {
+    await expireDueListings(admin);
+  }
 
   const [categories, cities, { rows, total }] = await Promise.all([
     fetchCategories(supabase),
@@ -124,11 +130,15 @@ export async function fetchHomeListingsFeed(
       pageSize,
       categoryId: filters.categoryId,
       cityId: filters.cityId,
+      cityIds: filters.cityIds,
+      sort: filters.sort,
       vehicleBrandId: filters.vehicleBrandId,
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
       minYear: filters.minYear,
       maxYear: filters.maxYear,
+      minKm: filters.minKm,
+      maxKm: filters.maxKm,
       q: filters.q,
       vehicleModel: filters.vehicleModel,
       bodyType: filters.bodyType,

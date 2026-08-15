@@ -88,6 +88,11 @@ export type ProfilHeaderProps = {
   publicProfileHref: string;
   followerCount: number;
   followingCount: number;
+  listingQuota?: {
+    remaining: number;
+    limit: number;
+    unlimited: boolean;
+  } | null;
 };
 
 export function ProfilHeader({
@@ -103,6 +108,7 @@ export function ProfilHeader({
   publicProfileHref,
   followerCount,
   followingCount,
+  listingQuota = null,
 }: ProfilHeaderProps) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -317,6 +323,8 @@ export function ProfilHeader({
             alt=""
             width={112}
             height={112}
+            unoptimized
+            referrerPolicy="no-referrer"
             className="h-full w-full object-cover"
           />
         ) : (
@@ -458,6 +466,26 @@ export function ProfilHeader({
                     </span>{" "}
                     <span className="text-zinc-600">Takip</span>
                   </div>
+                  {listingQuota ? (
+                    <>
+                      <div className="hidden h-4 w-px bg-zinc-200 sm:block" aria-hidden />
+                      <div>
+                        {listingQuota.unlimited ? (
+                          <>
+                            <span className="text-lg font-bold text-zinc-900">∞</span>{" "}
+                            <span className="text-zinc-600">İlan hakkı</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="tabular-nums text-lg font-bold text-zinc-900">
+                              {listingQuota.remaining}/{listingQuota.limit}
+                            </span>{" "}
+                            <span className="text-zinc-600">İlan hakkı</span>
+                          </>
+                        )}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
 
                 <div className="mt-1 flex w-full max-w-md flex-col items-stretch gap-2 sm:items-start">

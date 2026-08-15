@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { GoogleIcon } from "@/components/GoogleIcon";
-import { appStoreUrl, playStoreUrl } from "@/lib/app-stores";
+import { appStoreUrl } from "@/lib/app-stores";
 
 const tileClass =
   "flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-zinc-900/20 disabled:opacity-60";
@@ -67,22 +67,6 @@ export function AuthEntryHeader({
           title="iOS uygulaması"
         >
           <AppleIcon className="h-6 w-6 text-zinc-900" />
-        </a>
-        <a
-          href={playStoreUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={tileClass}
-          aria-label="Google Play’de Oto Pazarı"
-          title="Google Play"
-        >
-          <Image
-            src="/menu/google-play.png"
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 object-contain"
-          />
         </a>
       </div>
     </div>

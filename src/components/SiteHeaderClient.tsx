@@ -16,6 +16,7 @@ import { useUserHasListings } from "@/hooks/useUserHasListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { useSiteSearch } from "@/components/SiteSearchProvider";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
+import { initialFromName } from "@/lib/user-display-name";
 
 const linkClass =
   "text-zinc-900 hover:underline decoration-zinc-900/40 font-semibold";
@@ -187,8 +188,9 @@ function NavProfileAvatar({
   avatarUrl: string | null;
   title?: string;
 }) {
-  const initial =
-    displayName.trim().slice(0, 1).toLocaleUpperCase("tr") || "?";
+  const initial = initialFromName(displayName);
+  const [brokenSrc, setBrokenSrc] = useState<string | null>(null);
+  const showPhoto = Boolean(avatarUrl) && brokenSrc !== avatarUrl;
 
   return (
     <Link
@@ -197,13 +199,16 @@ function NavProfileAvatar({
       title={title ?? displayName}
       aria-label="Hesabım"
     >
-      {avatarUrl ? (
+      {showPhoto ? (
         <Image
-          src={avatarUrl}
+          src={avatarUrl as string}
           alt=""
           width={36}
           height={36}
+          unoptimized
+          referrerPolicy="no-referrer"
           className="h-full w-full object-cover"
+          onError={() => setBrokenSrc(avatarUrl)}
         />
       ) : (
         <span className="flex h-full w-full items-center justify-center bg-zinc-900 text-sm font-bold text-[#ffcc00]">

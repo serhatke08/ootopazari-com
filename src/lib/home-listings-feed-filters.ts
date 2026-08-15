@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
+import type {
+  HomeListingsFeedFilters,
+  HomeListingsSort,
+} from "@/lib/home-listings-feed-types";
+import { HOME_LISTINGS_SORT_OPTIONS } from "@/lib/home-listings-feed-types";
 import {
   fetchEngineLabelsForBrandModel,
   fetchHierarchyRowName,
@@ -13,15 +17,71 @@ function parseFilterNum(s: string | undefined): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+export function parseCityIdsParam(
+  raw: string | null | undefined
+): string[] {
+  if (!raw) return [];
+  return [
+    ...new Set(
+      raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
+export function parseHomeListingsSort(
+  raw: string | null | undefined
+): HomeListingsSort {
+  const v = (raw ?? "").trim();
+  if (HOME_LISTINGS_SORT_OPTIONS.some((o) => o.value === v)) {
+    return v as HomeListingsSort;
+  }
+  return "newest";
+}
+
+export function homeFeedFiltersToQueryString(
+  filters: HomeListingsFeedFilters
+): string {
+  const p = new URLSearchParams();
+  if (filters.categoryId) p.set("category_id", filters.categoryId);
+  const cityIds =
+    filters.cityIds?.length ? filters.cityIds : filters.cityId ? [filters.cityId] : [];
+  if (cityIds.length > 0) p.set("city_id", cityIds.join(","));
+  if (filters.sort && filters.sort !== "newest") p.set("sort", filters.sort);
+  if (filters.vehicleBrandId) p.set("vehicle_brand_id", filters.vehicleBrandId);
+  if (filters.minPrice != null) p.set("min_price", String(filters.minPrice));
+  if (filters.maxPrice != null) p.set("max_price", String(filters.maxPrice));
+  if (filters.minYear != null) p.set("min_year", String(filters.minYear));
+  if (filters.maxYear != null) p.set("max_year", String(filters.maxYear));
+  if (filters.minKm != null) p.set("min_km", String(filters.minKm));
+  if (filters.maxKm != null) p.set("max_km", String(filters.maxKm));
+  if (filters.q) p.set("q", filters.q);
+  if (filters.vehicleModel) p.set("vehicle_model", filters.vehicleModel);
+  if (filters.vehicleBrandModelId) {
+    p.set("vehicle_brand_model_id", filters.vehicleBrandModelId);
+  }
+  if (filters.bodyType) p.set("body_type", filters.bodyType);
+  if (filters.bodyStyleId) p.set("body_style_id", filters.bodyStyleId);
+  if (filters.engineId) p.set("engine_id", filters.engineId);
+  if (filters.vehicleEngineOther) p.set("engine_other", "1");
+  if (filters.vehicleEnginePackageId) {
+    p.set("vehicle_engine_package_id", filters.vehicleEnginePackageId);
+  }
+  return p.toString();
+}
+
 /** URL arama parametrelerinden ana sayfa ilan filtresi (kasa/motor/paket çözümlemesi). */
 export async function resolveHomeListingsFeedFilters(
   supabase: SupabaseClient,
   get: (key: string) => string | undefined
 ): Promise<HomeListingsFeedFilters> {
   const categoryId = get("category_id")?.trim() || undefined;
-  const cityId = get("city_id")?.trim() || undefined;
+  const cityIds = parseCityIdsParam(get("city_id"));
   const vehicleBrandId = get("vehicle_brand_id")?.trim() || undefined;
   const q = get("q")?.trim() || undefined;
+  const sort = parseHomeListingsSort(get("sort"));
 
   let vehicleModel = get("vehicle_model")?.trim() || undefined;
   const brandModelId = get("vehicle_brand_model_id")?.trim();
@@ -65,7 +125,9 @@ export async function resolveHomeListingsFeedFilters(
 
   return {
     categoryId,
-    cityId,
+    cityId: cityIds[0],
+    cityIds: cityIds.length > 0 ? cityIds : undefined,
+    sort: sort === "newest" ? undefined : sort,
     vehicleBrandId,
     minPrice: parseFilterNum(get("min_price")),
     maxPrice: parseFilterNum(get("max_price")),
@@ -93,6 +155,7 @@ export function homeListingsFeedHasFilters(
   return !!(
     filters.categoryId ||
     filters.cityId ||
+    (filters.cityIds?.length ?? 0) > 0 ||
     filters.vehicleBrandId ||
     filters.q ||
     filters.vehicleModel ||

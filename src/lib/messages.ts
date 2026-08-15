@@ -250,6 +250,11 @@ export function listingConversationStatus(
         active: false,
         message: "Bu ilan yayında değil. Yeni mesaj gönderilemez.",
       };
+    case "expired":
+      return {
+        active: false,
+        message: "Bu ilanın süresi doldu. Yeni mesaj gönderilemez.",
+      };
     default:
       return { active: true };
   }

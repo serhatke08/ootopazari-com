@@ -4,6 +4,7 @@ import {
   sortListingsByFeedNewest,
 } from "@/lib/listing-feature-boost";
 import { fetchBrandModels } from "@/lib/vehicle-hierarchy";
+import type { HomeListingsSort } from "@/lib/home-listings-feed-types";
 
 /** listings satırı + olası join — şema geniş; fazladan alanları yok sayarız */
 export type ListingRow = Record<string, unknown> & {
@@ -289,6 +290,8 @@ export type ListingListParams = {
   pageSize: number;
   categoryId?: string;
   cityId?: string;
+  cityIds?: string[];
+  sort?: HomeListingsSort;
   vehicleBrandId?: string;
   /** `listings.vehicle_model` üzerinde kısmi eşleşme (seri adı / kodu) */
   vehicleModel?: string;
@@ -364,10 +367,12 @@ function buildTextSearchOrClause(term: string): string | null {
 function listingListNeedsFullFeedSort(
   params: Omit<ListingListParams, "page" | "pageSize">
 ): boolean {
+  if (params.sort && params.sort !== "newest") return false;
   if (params.vehicleEngineOther) return true;
   return !(
     params.categoryId ||
     params.cityId ||
+    (params.cityIds?.length ?? 0) > 0 ||
     params.vehicleBrandId ||
     params.q?.trim() ||
     params.vehicleModel?.trim() ||
@@ -389,7 +394,14 @@ function applyListingListFilters(
 ): any {
   let query = q;
   if (params.categoryId) query = query.eq("category_id", params.categoryId);
-  if (params.cityId) query = query.eq("city_id", params.cityId);
+  const cityIds =
+    params.cityIds?.length
+      ? params.cityIds
+      : params.cityId
+        ? [params.cityId]
+        : [];
+  if (cityIds.length === 1) query = query.eq("city_id", cityIds[0]);
+  else if (cityIds.length > 1) query = query.in("city_id", cityIds);
   if (params.vehicleBrandId) {
     query = query.eq("vehicle_brand_id", params.vehicleBrandId);
   }
@@ -426,13 +438,33 @@ function applyListingListFilters(
   if (params.maxPrice != null) query = query.lte("price", params.maxPrice);
   if (params.minYear != null) query = query.gte("vehicle_year", params.minYear);
   if (params.maxYear != null) query = query.lte("vehicle_year", params.maxYear);
-  if (params.minKm != null) query = query.gte("vehicle_km", params.minKm);
-  if (params.maxKm != null) query = query.lte("vehicle_km", params.maxKm);
+  if (params.minKm != null) query = query.gte("vehicle_mileage", params.minKm);
+  if (params.maxKm != null) query = query.lte("vehicle_mileage", params.maxKm);
   if (params.q?.trim()) {
     const clause = buildTextSearchOrClause(params.q);
     if (clause) query = query.or(clause);
   }
   return query;
+}
+
+function applyListingOrder(q: any, sort: HomeListingsSort | undefined): any {
+  const nulls = { nullsFirst: false } as const;
+  switch (sort) {
+    case "price_asc":
+      return q.order("price", { ascending: true, ...nulls });
+    case "price_desc":
+      return q.order("price", { ascending: false, ...nulls });
+    case "km_asc":
+      return q.order("vehicle_mileage", { ascending: true, ...nulls });
+    case "km_desc":
+      return q.order("vehicle_mileage", { ascending: false, ...nulls });
+    case "year_asc":
+      return q.order("vehicle_year", { ascending: true, ...nulls });
+    case "year_desc":
+      return q.order("vehicle_year", { ascending: false, ...nulls });
+    default:
+      return q.order("created_at", { ascending: false, ...nulls });
+  }
 }
 
 /** Filtreli arama — SQL sayfalama (tüm tabloyu belleğe almaz). */
@@ -443,6 +475,9 @@ async function fetchListingsPageFast(
   const { page, pageSize, ...filterParams } = params;
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
+  const customSort = Boolean(
+    filterParams.sort && filterParams.sort !== "newest"
+  );
 
   let countQ = supabase
     .from("listings")
@@ -453,9 +488,9 @@ async function fetchListingsPageFast(
   let dataQ = supabase
     .from("listings")
     .select(LISTING_SELECT)
-    .eq("moderation_status", "approved")
-    .order("created_at", { ascending: false, nullsFirst: false });
+    .eq("moderation_status", "approved");
   dataQ = applyListingListFilters(dataQ, filterParams);
+  dataQ = applyListingOrder(dataQ, filterParams.sort);
 
   const [{ count, error: countErr }, { data, error: dataErr }] =
     await Promise.all([countQ, dataQ.range(start, end)]);
@@ -468,9 +503,8 @@ async function fetchListingsPageFast(
     return { rows: [], total: count ?? 0 };
   }
 
-  const rows = sortListingsByFeedNewest(
-    (data ?? []) as unknown as ListingRow[]
-  );
+  const raw = (data ?? []) as unknown as ListingRow[];
+  const rows = customSort ? raw : sortListingsByFeedNewest(raw);
   return { rows, total: count ?? rows.length };
 }
 
@@ -595,7 +629,9 @@ export async function fetchListingByNumber(
 export type ListingDetailAccessMode =
   | "public"
   | "suspended_owner"
-  | "suspended_admin";
+  | "suspended_admin"
+  | "expired_owner"
+  | "expired_admin";
 
 /**
  * İlan detay: onaylı herkese açık; askıya alınmışsa sahibi veya admin görebilir (RLS izin veriyorsa).
@@ -641,11 +677,25 @@ export async function fetchListingForDetailPage(
     return null;
   }
 
+  if (status === "expired") {
+    if (viewer && ownerId && viewer === ownerId) {
+      return { listing: row, access: "expired_owner" };
+    }
+    if (viewerIsAdmin) {
+      return { listing: row, access: "expired_admin" };
+    }
+    return null;
+  }
+
   return null;
 }
 
 export function isListingSuspended(listing: ListingRow): boolean {
   return String(listing.moderation_status ?? "").toLowerCase() === "suspended";
+}
+
+export function isListingExpiredStatus(listing: ListingRow): boolean {
+  return String(listing.moderation_status ?? "").toLowerCase() === "expired";
 }
 
 export async function fetchListingsByIds(

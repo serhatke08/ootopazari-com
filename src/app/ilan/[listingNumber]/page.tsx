@@ -335,9 +335,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = detail.listing;
   const titleBase = (listing.title as string) ?? "İlan";
   const title =
-    detail.access === "suspended_owner" || detail.access === "suspended_admin"
-      ? `Askıya alındı — ${titleBase}`
-      : titleBase;
+    detail.access === "expired_owner" || detail.access === "expired_admin"
+      ? `Süresi doldu — ${titleBase}`
+      : detail.access === "suspended_owner" || detail.access === "suspended_admin"
+        ? `Askıya alındı — ${titleBase}`
+        : titleBase;
   const city =
     (listing.city_name as string) ||
     (listing.district as string) ||
@@ -384,7 +386,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: imageUrl ? [imageUrl] : undefined,
     },
     robots:
-      detail.access === "suspended_owner" || detail.access === "suspended_admin"
+      detail.access === "suspended_owner" ||
+      detail.access === "suspended_admin" ||
+      detail.access === "expired_owner" ||
+      detail.access === "expired_admin"
         ? { index: false, follow: false }
         : undefined,
   };
@@ -466,7 +471,10 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
   const isSuspendedOwnerView = detailAccess === "suspended_owner";
   const isSuspendedAdminView = detailAccess === "suspended_admin";
-  const isSuspendedDetailView = isSuspendedOwnerView || isSuspendedAdminView;
+  const isExpiredDetailView =
+    detailAccess === "expired_owner" || detailAccess === "expired_admin";
+  const isSuspendedDetailView =
+    isSuspendedOwnerView || isSuspendedAdminView || isExpiredDetailView;
 
   const id = listing.id as string | undefined;
   const row = listing as Record<string, unknown>;
@@ -920,6 +928,19 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ) : null}
       {id && !isSuspendedDetailView ? (
         <ListingViewTracker listingId={id} />
+      ) : null}
+      {isExpiredDetailView ? (
+        <div
+          className="mx-4 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 md:mx-0"
+          role="status"
+        >
+          <p className="font-semibold">İlan süresi doldu</p>
+          <p className="mt-1 text-sm text-amber-900/90">
+            1 aylık yayın süresi bittiği için ilan pasife alındı. Profil →
+            İlanlarım üzerinden tekrar aktif edebilirsiniz; bu 1 ilan hakkı
+            kullanır.
+          </p>
+        </div>
       ) : null}
       {isSuspendedOwnerView ? (
         <div

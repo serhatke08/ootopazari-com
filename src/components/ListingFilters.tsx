@@ -78,18 +78,18 @@ export function ListingFilters() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium shadow-sm transition sm:text-sm ${
+        className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium shadow-sm transition sm:text-xs ${
           hasActiveFilters
             ? "border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100"
             : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
         }`}
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
         </svg>
         Filtrele
         {hasActiveFilters ? (
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white">
             {[minPrice, maxPrice, minYear, maxYear, minKm, maxKm].filter(Boolean).length}
           </span>
         ) : null}

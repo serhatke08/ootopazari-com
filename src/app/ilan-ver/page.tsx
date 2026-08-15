@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { fetchCategories } from "@/lib/listings-data";
 import { CreateListingWizard } from "@/components/ilan-ver/CreateListingWizard";
+import { expireDueListings, fetchListingQuota } from "@/lib/listing-quota";
 
 export const metadata: Metadata = {
   title: "İlan Ver",
@@ -30,13 +31,16 @@ export default async function IlanVerPage() {
     redirect(`/giris?next=${encodeURIComponent("/ilan-ver")}`);
   }
 
-  const [categories, profileRes] = await Promise.all([
+  await expireDueListings(supabase, { userId: user.id });
+
+  const [categories, profileRes, quota] = await Promise.all([
     fetchCategories(supabase),
     supabase
       .from("profiles")
       .select("id,full_name,username,phone,country_id")
       .eq("id", user.id)
       .maybeSingle(),
+    fetchListingQuota(supabase, user.id),
   ]);
 
   const profile = profileRes.data as {
@@ -69,6 +73,7 @@ export default async function IlanVerPage() {
       <CreateListingWizard
         categories={listingCategories}
         userCountryId={userCountryId}
+        listingQuota={quota}
       />
     </div>
   );

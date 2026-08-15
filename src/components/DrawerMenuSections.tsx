@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
 import { DEALER_TYPE_META } from "@/lib/dealer-types";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
+import { initialFromName } from "@/lib/user-display-name";
 
 function IconPlusGreen({ className }: { className?: string }) {
   return (
@@ -61,6 +63,39 @@ function IconBoostAmber({ className }: { className?: string }) {
 const rowClass =
   "flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-[11px] font-medium leading-snug text-zinc-900 shadow-sm transition hover:border-[#ffcc00] hover:bg-amber-50/50";
 
+function DrawerProfileAvatar({
+  displayName,
+  avatarUrl,
+}: {
+  displayName: string;
+  avatarUrl: string | null;
+}) {
+  const [brokenSrc, setBrokenSrc] = useState<string | null>(null);
+  const showPhoto = Boolean(avatarUrl) && brokenSrc !== avatarUrl;
+  const initial = initialFromName(displayName);
+
+  return (
+    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-200 ring-1 ring-white">
+      {showPhoto ? (
+        <Image
+          src={avatarUrl as string}
+          alt=""
+          width={32}
+          height={32}
+          unoptimized
+          referrerPolicy="no-referrer"
+          className="h-8 w-8 object-cover"
+          onError={() => setBrokenSrc(avatarUrl)}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-xs font-bold text-zinc-500">
+          {initial}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DrawerMenuSections({
   drawerProfile,
   dealerApplications,
@@ -91,21 +126,10 @@ export function DrawerMenuSections({
           onClick={() => onNavigate?.()}
           className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2 py-1.5 shadow-sm transition hover:border-amber-300 hover:bg-amber-50/40"
         >
-          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-200 ring-1 ring-white">
-            {drawerProfile?.avatarUrl ? (
-              <Image
-                src={drawerProfile.avatarUrl}
-                alt=""
-                width={32}
-                height={32}
-                className="h-8 w-8 object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs font-bold text-zinc-500">
-                {displayName.trim().slice(0, 1).toUpperCase() || "?"}
-              </div>
-            )}
-          </div>
+          <DrawerProfileAvatar
+            displayName={displayName}
+            avatarUrl={drawerProfile?.avatarUrl ?? null}
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[11px] font-semibold text-zinc-900">
               {displayName}

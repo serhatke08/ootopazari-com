@@ -16,11 +16,17 @@ import {
   type CityRow,
   type VehicleBrandRow,
 } from "@/lib/listings-data";
-import { homeListingsFeedHasFilters } from "@/lib/home-listings-feed-filters";
+import {
+  homeFeedFiltersToQueryString,
+  homeListingsFeedHasFilters,
+  parseCityIdsParam,
+  parseHomeListingsSort,
+} from "@/lib/home-listings-feed-filters";
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { TopCitySelect } from "@/components/TopCitySelect";
+import { ListingSortSelect } from "@/components/ListingSortSelect";
 import { ListingFilters } from "@/components/ListingFilters";
 import { useSiteSearch } from "@/components/SiteSearchProvider";
 import { ADSENSE_HOME_SLOT } from "@/lib/adsense";
@@ -37,32 +43,6 @@ type Props = {
   initialFilters: HomeListingsFeedFilters;
 };
 
-function filtersToQueryString(filters: HomeListingsFeedFilters): string {
-  const p = new URLSearchParams();
-  if (filters.categoryId) p.set("category_id", filters.categoryId);
-  if (filters.cityId) p.set("city_id", filters.cityId);
-  if (filters.vehicleBrandId) p.set("vehicle_brand_id", filters.vehicleBrandId);
-  if (filters.minPrice != null) p.set("min_price", String(filters.minPrice));
-  if (filters.maxPrice != null) p.set("max_price", String(filters.maxPrice));
-  if (filters.minYear != null) p.set("min_year", String(filters.minYear));
-  if (filters.maxYear != null) p.set("max_year", String(filters.maxYear));
-  if (filters.minKm != null) p.set("min_km", String(filters.minKm));
-  if (filters.maxKm != null) p.set("max_km", String(filters.maxKm));
-  if (filters.q) p.set("q", filters.q);
-  if (filters.vehicleModel) p.set("vehicle_model", filters.vehicleModel);
-  if (filters.vehicleBrandModelId) {
-    p.set("vehicle_brand_model_id", filters.vehicleBrandModelId);
-  }
-  if (filters.bodyType) p.set("body_type", filters.bodyType);
-  if (filters.bodyStyleId) p.set("body_style_id", filters.bodyStyleId);
-  if (filters.engineId) p.set("engine_id", filters.engineId);
-  if (filters.vehicleEngineOther) p.set("engine_other", "1");
-  if (filters.vehicleEnginePackageId) {
-    p.set("vehicle_engine_package_id", filters.vehicleEnginePackageId);
-  }
-  return p.toString();
-}
-
 function filtersFromUrl(
   sp: URLSearchParams,
   textQ: string | undefined
@@ -74,9 +54,13 @@ function filtersFromUrl(
     const n = Number(v);
     return Number.isFinite(n) ? n : undefined;
   };
+  const cityIds = parseCityIdsParam(get("city_id"));
+  const sort = parseHomeListingsSort(get("sort"));
   return {
     categoryId: get("category_id"),
-    cityId: get("city_id"),
+    cityId: cityIds[0],
+    cityIds: cityIds.length > 0 ? cityIds : undefined,
+    sort: sort === "newest" ? undefined : sort,
     vehicleBrandId: get("vehicle_brand_id"),
     minPrice: num("min_price"),
     maxPrice: num("max_price"),
@@ -123,11 +107,11 @@ export function HomePageListings({
   );
 
   const activeQuery = useMemo(
-    () => filtersToQueryString(activeFilters),
+    () => homeFeedFiltersToQueryString(activeFilters),
     [activeFilters]
   );
   const serverQuery = useMemo(
-    () => filtersToQueryString(initialFilters),
+    () => homeFeedFiltersToQueryString(initialFilters),
     [initialFilters]
   );
 
@@ -206,8 +190,21 @@ export function HomePageListings({
   }, [activeQuery, serverQuery]);
 
   const categoryId = activeFilters.categoryId;
-  const cityId = activeFilters.cityId;
+  const cityIds = activeFilters.cityIds ?? [];
   const vehicleBrandId = activeFilters.vehicleBrandId;
+  const heading =
+    categoryId && catMap.get(categoryId)?.name
+      ? catMap.get(categoryId)?.name
+      : "İlanlar";
+  const citySummary = (() => {
+    if (cityIds.length === 0) return "";
+    const names = cityIds
+      .map((id) => cityMap.get(id)?.name)
+      .filter((n): n is string => Boolean(n));
+    if (names.length === 0) return "";
+    if (names.length <= 2) return names.join(", ");
+    return `${names.length} şehir`;
+  })();
 
   return (
     <div
@@ -220,18 +217,13 @@ export function HomePageListings({
         </aside>
 
         <div className="min-w-0 flex-1">
-          <div
-            className={`mb-4 flex flex-wrap items-center gap-2 ${
-              hasFilters ? "justify-between" : "justify-end"
-            }`}
-          >
-            {categoryId && catMap.get(categoryId)?.name ? (
-              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
-                {catMap.get(categoryId)?.name}
-              </h1>
-            ) : null}
-            <div className="flex items-center gap-2">
+          <div className="mb-3 flex items-center gap-1.5">
+            <h1 className="mr-auto shrink-0 text-sm font-bold text-zinc-900 sm:text-base">
+              {heading}
+            </h1>
+            <div className="flex min-w-0 items-center gap-1">
               <TopCitySelect cities={cities} />
+              <ListingSortSelect />
               <ListingFilters />
             </div>
           </div>
@@ -239,9 +231,7 @@ export function HomePageListings({
           {hasFilters ? (
             <p className="mb-4 text-sm text-zinc-600">
               {showSkeleton ? "Aranıyor…" : `${total} sonuç`}
-              {cityId && cityMap.get(cityId)?.name
-                ? ` · ${cityMap.get(cityId)?.name}`
-                : ""}
+              {citySummary ? ` · ${citySummary}` : ""}
               {vehicleBrandId && brandMap.get(vehicleBrandId)?.name
                 ? ` · ${brandMap.get(vehicleBrandId)?.name}`
                 : ""}

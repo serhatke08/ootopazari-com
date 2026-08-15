@@ -7,6 +7,7 @@ import type {
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
 import { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
+import { homeFeedFiltersToQueryString } from "@/lib/home-listings-feed-filters";
 import { ListingCard } from "@/components/ListingCard";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 
@@ -21,29 +22,7 @@ type Props = {
 
 function filtersToQuery(filters: HomeListingsFeedFilters | undefined): string {
   if (!filters) return "";
-  const p = new URLSearchParams();
-  if (filters.categoryId) p.set("category_id", filters.categoryId);
-  if (filters.cityId) p.set("city_id", filters.cityId);
-  if (filters.vehicleBrandId) p.set("vehicle_brand_id", filters.vehicleBrandId);
-  if (filters.minPrice != null) p.set("min_price", String(filters.minPrice));
-  if (filters.maxPrice != null) p.set("max_price", String(filters.maxPrice));
-  if (filters.minYear != null) p.set("min_year", String(filters.minYear));
-  if (filters.maxYear != null) p.set("max_year", String(filters.maxYear));
-  if (filters.minKm != null) p.set("min_km", String(filters.minKm));
-  if (filters.maxKm != null) p.set("max_km", String(filters.maxKm));
-  if (filters.q) p.set("q", filters.q);
-  if (filters.vehicleModel) p.set("vehicle_model", filters.vehicleModel);
-  if (filters.vehicleBrandModelId) {
-    p.set("vehicle_brand_model_id", filters.vehicleBrandModelId);
-  }
-  if (filters.bodyType) p.set("body_type", filters.bodyType);
-  if (filters.bodyStyleId) p.set("body_style_id", filters.bodyStyleId);
-  if (filters.engineId) p.set("engine_id", filters.engineId);
-  if (filters.vehicleEngineOther) p.set("engine_other", "1");
-  if (filters.vehicleEnginePackageId) {
-    p.set("vehicle_engine_package_id", filters.vehicleEnginePackageId);
-  }
-  const qs = p.toString();
+  const qs = homeFeedFiltersToQueryString(filters);
   return qs ? `&${qs}` : "";
 }
 

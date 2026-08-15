@@ -8,8 +8,11 @@ import {
   buildCategoryMap,
   fetchCategories,
   fetchListingsForUser,
+  isListingExpiredStatus,
   isListingSuspended,
 } from "@/lib/listings-data";
+import { fetchListingQuota } from "@/lib/listing-quota";
+import { ReactivateListingButton } from "@/components/ReactivateListingButton";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import { fetchBoostPaymentInfoByListing } from "@/lib/feature-boost-payment-status";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
@@ -27,9 +30,10 @@ export default async function ProfilIlanlarimPage() {
     return null;
   }
 
-  const [rows, categories] = await Promise.all([
+  const [rows, categories, quota] = await Promise.all([
     fetchListingsForUser(supabase, user.id),
     fetchCategories(supabase),
+    fetchListingQuota(supabase, user.id),
   ]);
 
   const catMap = buildCategoryMap(categories);
@@ -67,12 +71,13 @@ export default async function ProfilIlanlarimPage() {
               ? `#${numStr} · ${String(listing.title ?? "İlan").slice(0, 40)}`
               : String(listing.title ?? "İlan");
             const approved = listing.moderation_status === "approved";
+            const expired = isListingExpiredStatus(listing);
             return (
               <li key={id ?? String(listing.listing_number)}>
                 <ListingFeatureBoostPanel
                   listing={listing}
                   listingLabel={listingLabel}
-                  canBoost={approved && !isListingSuspended(listing)}
+                  canBoost={approved && !isListingSuspended(listing) && !expired}
                   paymentInfo={id ? boostPayments.get(id) ?? null : null}
                 />
                 <ListingCard
@@ -83,6 +88,7 @@ export default async function ProfilIlanlarimPage() {
                   loggedIn={loggedIn}
                   favorited={id ? favSet.has(id) : false}
                   suspended={isListingSuspended(listing)}
+                  expired={expired}
                   suspensionReason={
                     listing.suspension_reason != null
                       ? String(listing.suspension_reason)
@@ -91,6 +97,13 @@ export default async function ProfilIlanlarimPage() {
                   ownerActions={
                     id && numStr ? (
                       <>
+                        {expired ? (
+                          <ReactivateListingButton
+                            listingId={id}
+                            remaining={quota.remaining}
+                            unlimited={quota.unlimited}
+                          />
+                        ) : null}
                         <Link
                           href={`/ilan-duzenle/${numStr}`}
                           className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
