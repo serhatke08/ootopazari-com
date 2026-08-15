@@ -144,9 +144,6 @@ export function LeftNavDrawer({
               onNavigate={handleClose}
             />
             <div className="border-t border-zinc-200 pt-1">
-              <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-                Kategoriler
-              </p>
               <Suspense
                 fallback={
                   <div

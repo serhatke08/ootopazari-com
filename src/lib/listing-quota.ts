@@ -93,22 +93,29 @@ export async function fetchListingQuota(
     };
   }
 
-  const { count, error } = await supabase
-    .from("listing_quota_uses")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", istanbulYearStartIso(year));
+  const yearStart = istanbulYearStartIso(year);
 
-  let used = count ?? 0;
-  if (error) {
-    console.warn("listing_quota_uses:", error.message);
-    const { count: createdCount } = await supabase
+  const [createdRes, reactivateRes] = await Promise.all([
+    supabase
       .from("listings")
       .select("id", { count: "exact", head: true })
+      .eq("user_id", userId),
+    supabase
+      .from("listing_quota_uses")
+      .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .gte("created_at", istanbulYearStartIso(year));
-    used = createdCount ?? 0;
+      .eq("kind", "reactivate")
+      .gte("created_at", yearStart),
+  ]);
+
+  if (createdRes.error) {
+    console.warn("listing quota listings:", createdRes.error.message);
   }
+  if (reactivateRes.error) {
+    console.warn("listing quota reactivations:", reactivateRes.error.message);
+  }
+
+  const used = (createdRes.count ?? 0) + (reactivateRes.count ?? 0);
   return {
     year,
     limit: YEARLY_FREE_LISTING_QUOTA,
