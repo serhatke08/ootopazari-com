@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { CenteredDialog } from "@/components/CenteredDialog";
 
 type Props = {
   listingId: string;
@@ -79,56 +80,47 @@ export function SuspendListingButton({
       </button>
 
       {open ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="suspend-dialog-title"
+        <CenteredDialog
+          title="İlanı askıya al"
+          titleId="suspend-dialog-title"
+          onClose={() => setOpen(false)}
         >
-          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
-            <h2
-              id="suspend-dialog-title"
-              className="text-lg font-semibold text-zinc-900"
+          <p className="text-sm text-zinc-600">{listingLabel}</p>
+          <label htmlFor="suspend-reason" className="mt-4 block text-sm font-medium text-zinc-800">
+            Sebep
+          </label>
+          <textarea
+            id="suspend-reason"
+            rows={4}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Kullanıcıya bildirimde gösterilecek gerekçe…"
+            className="mt-1.5 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/15"
+          />
+          {error ? (
+            <p className="mt-2 text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setOpen(false)}
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
             >
-              İlanı askıya al
-            </h2>
-            <p className="mt-1 text-sm text-zinc-600">{listingLabel}</p>
-            <label htmlFor="suspend-reason" className="mt-4 block text-sm font-medium text-zinc-800">
-              Sebep
-            </label>
-            <textarea
-              id="suspend-reason"
-              rows={4}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Kullanıcıya bildirimde gösterilecek gerekçe…"
-              className="mt-1.5 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/15"
-            />
-            {error ? (
-              <p className="mt-2 text-sm text-red-600" role="alert">
-                {error}
-              </p>
-            ) : null}
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => setOpen(false)}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
-              >
-                Vazgeç
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => void submit()}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {loading ? "Kaydediliyor…" : "Askıya al"}
-              </button>
-            </div>
+              Vazgeç
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void submit()}
+              className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {loading ? "Kaydediliyor…" : "Askıya al"}
+            </button>
           </div>
-        </div>
+        </CenteredDialog>
       ) : null}
     </>
   );

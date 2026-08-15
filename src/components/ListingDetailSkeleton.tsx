@@ -18,14 +18,17 @@ function SpecRowSkeleton() {
 export function ListingDetailSkeleton() {
   return (
     <article
-      className="mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pb-24 pt-0 text-black md:px-6 md:pb-12 md:pt-4"
+      className="mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pb-24 pt-4 text-black md:px-6 md:pb-12 md:pt-4"
       aria-busy="true"
       aria-label="İlan yükleniyor"
     >
       <div className="listing-detail-layout">
-        <div className="listing-detail-gallery min-w-0">
-          <div className="overflow-hidden bg-white md:rounded-xl md:border md:border-black/10">
-            <div className="aspect-[4/3] w-full animate-pulse bg-zinc-200" />
+        <div className="listing-detail-title px-4 md:px-0">
+          <Pulse className="h-8 w-full max-w-2xl sm:h-9" />
+        </div>
+        <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
+          <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
+            <div className="aspect-[16/10] max-h-[15.5rem] w-full animate-pulse bg-zinc-200 sm:max-h-[18rem]" />
             <div className="flex gap-2 p-2">
               {Array.from({ length: 4 }, (_, i) => (
                 <div
@@ -39,8 +42,6 @@ export function ListingDetailSkeleton() {
 
         <div className="listing-detail-intro min-w-0 space-y-2 px-4 md:px-0">
           <Pulse className="h-3 w-56" />
-          <Pulse className="h-8 w-full max-w-2xl sm:h-9" />
-          <Pulse className="h-4 w-40" />
           <div className="flex gap-4">
             <Pulse className="h-5 w-16" />
             <Pulse className="h-5 w-28" />

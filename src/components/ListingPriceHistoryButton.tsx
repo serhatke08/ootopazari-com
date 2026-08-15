@@ -1,21 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { useIsClient } from "@/hooks/use-is-client";
+import { useCallback, useState } from "react";
+import { CenteredDialog } from "@/components/CenteredDialog";
 import {
   formatListingPriceTry,
   formatPriceHistoryDate,
   type PriceHistoryEntry,
 } from "@/lib/listing-price-history";
 import { PRICE_RATING_OPTIONS } from "@/lib/listing-price-ratings";
-
-type AnchorRect = {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-};
 
 type Props = {
   history: PriceHistoryEntry[];
@@ -44,149 +36,72 @@ function HistoryIcon({ className }: { className?: string }) {
 
 export function ListingPriceHistoryButton({
   history,
-  popoverPlacement = "below",
   overlay = false,
 }: Props) {
-  const mounted = useIsClient();
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<AnchorRect | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
 
-  const updateAnchor = useCallback(() => {
-    const el = btnRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setAnchor({
-      top: rect.top,
-      left: rect.left,
-      width: rect.width,
-      height: rect.height,
-    });
+  const toggleOpen = useCallback((e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen((o) => !o);
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    updateAnchor();
-
-    function onScrollOrResize() {
-      updateAnchor();
-    }
-    window.addEventListener("resize", onScrollOrResize);
-    window.addEventListener("scroll", onScrollOrResize, true);
-
-    let removeDocListeners: (() => void) | null = null;
-    const timer = window.setTimeout(() => {
-      function onDoc(e: MouseEvent) {
-        const t = e.target as Node;
-        if (btnRef.current?.contains(t) || popoverRef.current?.contains(t)) return;
-        setOpen(false);
-      }
-      document.addEventListener("mousedown", onDoc);
-      document.addEventListener("touchstart", onDoc as EventListener);
-      removeDocListeners = () => {
-        document.removeEventListener("mousedown", onDoc);
-        document.removeEventListener("touchstart", onDoc as EventListener);
-      };
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timer);
-      removeDocListeners?.();
-      window.removeEventListener("resize", onScrollOrResize);
-      window.removeEventListener("scroll", onScrollOrResize, true);
-    };
-  }, [open, updateAnchor]);
-
-  const toggleOpen = useCallback(
-    (e: React.MouseEvent | React.PointerEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!open) updateAnchor();
-      setOpen((o) => !o);
-    },
-    [open, updateAnchor]
-  );
-
-  const popoverStyle: React.CSSProperties | undefined = anchor
-    ? popoverPlacement === "below"
-      ? {
-          position: "fixed",
-          top: anchor.top + anchor.height + 8,
-          left: Math.min(anchor.left, window.innerWidth - 300),
-          zIndex: 300,
-        }
-      : {
-          position: "fixed",
-          top: anchor.top - 8,
-          left: Math.min(anchor.left, window.innerWidth - 300),
-          transform: "translateY(-100%)",
-          zIndex: 300,
-        }
-    : undefined;
-
-  const popover =
-    open && anchor ? (
-      <div
-        ref={popoverRef}
-        style={popoverStyle}
-        className="w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-black/10 bg-white p-3 shadow-xl"
-        role="dialog"
-        aria-label="Fiyat geçmişi"
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <p className="text-sm font-semibold text-black">Fiyat geçmişi</p>
-        {history.length === 0 ? (
-          <p className="mt-2 text-xs text-black/55">
-            Henüz fiyat değişikliği kaydı yok.
-          </p>
-        ) : (
-          <ul className="mt-2 max-h-56 space-y-2 overflow-y-auto">
-            {history.map((entry) => (
-              <li
-                key={entry.id}
-                className="rounded-lg border border-black/8 bg-black/[0.02] px-2.5 py-2"
-              >
-                <div className="flex items-start gap-2">
-                  <span
-                    className="mt-1.5 h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: entry.indicatorColor }}
-                    title="O dönemdeki fiyat değerlendirmesi"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold tabular-nums text-black">
-                      {formatListingPriceTry(entry.price)}
+  const dialog = open ? (
+    <CenteredDialog
+      title="Fiyat geçmişi"
+      titleId="price-history-dialog-title"
+      onClose={close}
+    >
+      {history.length === 0 ? (
+        <p className="text-sm text-black/55">
+          Henüz fiyat değişikliği kaydı yok.
+        </p>
+      ) : (
+        <ul className="max-h-64 space-y-2 overflow-y-auto">
+          {history.map((entry) => (
+            <li
+              key={entry.id}
+              className="rounded-lg border border-black/8 bg-black/[0.02] px-2.5 py-2"
+            >
+              <div className="flex items-start gap-2">
+                <span
+                  className="mt-1.5 h-3 w-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: entry.indicatorColor }}
+                  title="O dönemdeki fiyat değerlendirmesi"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold tabular-nums text-black">
+                    {formatListingPriceTry(entry.price)}
+                  </p>
+                  <p className="text-[11px] text-black/50">
+                    {formatPriceHistoryDate(entry.recordedAt)}
+                  </p>
+                  {entry.ratingCount > 0 ? (
+                    <p className="mt-1 text-[10px] leading-relaxed text-black/60">
+                      {PRICE_RATING_OPTIONS.map((opt) => (
+                        <span key={opt.value} className="mr-2 inline-block">
+                          {opt.shortLabel}: {entry.counts[opt.countKey]}
+                        </span>
+                      ))}
                     </p>
-                    <p className="text-[11px] text-black/50">
-                      {formatPriceHistoryDate(entry.recordedAt)}
+                  ) : (
+                    <p className="mt-1 text-[10px] text-black/45">
+                      Oylama yoktu
                     </p>
-                    {entry.ratingCount > 0 ? (
-                      <p className="mt-1 text-[10px] leading-relaxed text-black/60">
-                        {PRICE_RATING_OPTIONS.map((opt) => (
-                          <span key={opt.value} className="mr-2 inline-block">
-                            {opt.shortLabel}: {entry.counts[opt.countKey]}
-                          </span>
-                        ))}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-[10px] text-black/45">
-                        Oylama yoktu
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    ) : null;
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </CenteredDialog>
+  ) : null;
 
   return (
     <>
       <button
-        ref={btnRef}
         type="button"
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
@@ -199,7 +114,7 @@ export function ListingPriceHistoryButton({
       >
         <HistoryIcon className="h-4 w-4" />
       </button>
-      {mounted && popover ? createPortal(popover, document.body) : null}
+      {dialog}
     </>
   );
 }

@@ -52,15 +52,16 @@ export function ListingDetailStatsRow({
           {favorites.toLocaleString("tr-TR")}
         </span>
       </span>
-      <span className="inline-flex min-w-0 items-center gap-1">
+      <span className="inline-flex min-w-0 items-center gap-2">
         <ListingPriceRatingDot
           listingId={listingId}
           summary={summary}
           loggedIn={loggedIn}
           size="md"
+          framed
           popoverPlacement="below"
         />
-        <span className="text-sm font-bold tabular-nums text-black">
+        <span className="text-lg font-bold tabular-nums text-black sm:text-xl">
           {priceLabel}
         </span>
       </span>

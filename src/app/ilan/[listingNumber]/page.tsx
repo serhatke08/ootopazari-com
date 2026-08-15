@@ -41,7 +41,6 @@ import {
   resolveListingModelDisplay,
   type ListingSpecRow,
 } from "@/lib/listing-vehicle-display";
-import { CopyListingNumber } from "@/components/CopyListingNumber";
 import { ListingVehicleSpecs } from "@/components/ListingVehicleSpecs";
 import { ExpertizDiagram } from "@/components/ExpertizDiagram";
 import { mergeExpertizWithDefaults, parseExpertizPanels } from "@/lib/expertiz";
@@ -120,17 +119,6 @@ function fmtHorsepower(v: unknown): string | undefined {
   const n = Number(String(v).replace(/[^\d.]/g, ""));
   if (!Number.isFinite(n) || n <= 0) return undefined;
   return `${Math.round(n).toLocaleString("tr-TR")} HP`;
-}
-
-function fmtListingDate(v: unknown): string | undefined {
-  if (v == null || v === "") return undefined;
-  const d = v instanceof Date ? v : new Date(String(v));
-  if (Number.isNaN(d.getTime())) return undefined;
-  return d.toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 function strCell(v: unknown): string | undefined {
@@ -569,7 +557,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     categoryText.includes("motor");
   const isCarLike = !isMotorcycle;
 
-  const listingDateLabel = fmtListingDate(row.created_at);
   const priceLabel =
     listing.price != null
       ? new Intl.NumberFormat("tr-TR", {
@@ -910,7 +897,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
   return (
     <article
-      className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pt-0 text-black md:px-6 md:pb-12 md:pt-4 ${
+      className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pt-4 text-black md:px-6 md:pb-12 md:pt-4 ${
         showContactDock ? "pb-24" : "pb-12"
       } ${
         isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""
@@ -960,8 +947,11 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ) : null}
 
       <div className="listing-detail-layout">
-        <div className="listing-detail-gallery min-w-0">
-          <div className="overflow-hidden bg-white md:rounded-xl md:border md:border-black/10">
+        <h1 className="listing-detail-title px-4 text-xl font-bold leading-tight text-black sm:text-2xl md:px-0">
+          {(listing.title as string) ?? "İlan"}
+        </h1>
+        <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
+          <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
             <ListingImageGallery
               images={galleryUrls}
               alt="İlan görseli"
@@ -1036,25 +1026,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                 </span>
               ))}
             </nav>
-          ) : null}
-          <h1 className="text-xl font-bold leading-tight text-black sm:text-2xl">
-            {(listing.title as string) ?? "İlan"}
-          </h1>
-          {(num != null || cityDisplayResolved || listingDateLabel) ? (
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-black/65">
-              {num != null ? (
-                <CopyListingNumber
-                  text={`#${String(num)}`}
-                  className="font-semibold text-blue-600"
-                />
-              ) : null}
-              {cityDisplayResolved ? (
-                <span className="font-medium text-black/75">{cityDisplayResolved}</span>
-              ) : null}
-              {listingDateLabel ? (
-                <span className="text-black/55">{listingDateLabel}</span>
-              ) : null}
-            </p>
           ) : null}
           {id ? (
             <ListingDetailStatsRow

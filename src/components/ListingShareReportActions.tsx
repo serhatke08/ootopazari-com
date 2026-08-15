@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { LISTING_REPORT_REASONS, type ListingReportReason } from "@/lib/listing-reports";
+import { CenteredDialog } from "@/components/CenteredDialog";
 
 type Props = {
   listingId: string;
@@ -162,93 +163,84 @@ export function ListingShareReportActions({
       </div>
 
       {reportOpen ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="report-dialog-title"
+        <CenteredDialog
+          title="İlanı şikayet et"
+          titleId="report-dialog-title"
+          onClose={() => setReportOpen(false)}
         >
-          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
-            <h2
-              id="report-dialog-title"
-              className="text-lg font-semibold text-zinc-900"
+          <p className="text-sm text-zinc-600">{shareTitle}</p>
+
+          {success ? (
+            <p className="mt-4 text-sm text-green-700" role="status">
+              Şikayetiniz alındı. İnceleme sürecine alınacaktır.
+            </p>
+          ) : (
+            <>
+              <label
+                htmlFor="report-reason"
+                className="mt-4 block text-sm font-medium text-zinc-800"
+              >
+                Konu
+              </label>
+              <select
+                id="report-reason"
+                value={reason}
+                onChange={(e) =>
+                  setReason(e.target.value as ListingReportReason)
+                }
+                className="mt-1.5 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/15"
+              >
+                {LISTING_REPORT_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+
+              <label
+                htmlFor="report-detail"
+                className="mt-3 block text-sm font-medium text-zinc-800"
+              >
+                Açıklama {reason === "Diğer" ? "(zorunlu)" : "(isteğe bağlı)"}
+              </label>
+              <textarea
+                id="report-detail"
+                rows={3}
+                value={detail}
+                onChange={(e) => setDetail(e.target.value)}
+                placeholder="Kısa açıklama…"
+                className="mt-1.5 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/15"
+              />
+
+              {error ? (
+                <p className="mt-2 text-sm text-red-600" role="alert">
+                  {error}
+                </p>
+              ) : null}
+            </>
+          )}
+
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setReportOpen(false)}
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
             >
-              İlanı şikayet et
-            </h2>
-            <p className="mt-1 text-sm text-zinc-600">{shareTitle}</p>
-
-            {success ? (
-              <p className="mt-4 text-sm text-green-700" role="status">
-                Şikayetiniz alındı. İnceleme sürecine alınacaktır.
-              </p>
-            ) : (
-              <>
-                <label
-                  htmlFor="report-reason"
-                  className="mt-4 block text-sm font-medium text-zinc-800"
-                >
-                  Konu
-                </label>
-                <select
-                  id="report-reason"
-                  value={reason}
-                  onChange={(e) =>
-                    setReason(e.target.value as ListingReportReason)
-                  }
-                  className="mt-1.5 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/15"
-                >
-                  {LISTING_REPORT_REASONS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-
-                <label
-                  htmlFor="report-detail"
-                  className="mt-3 block text-sm font-medium text-zinc-800"
-                >
-                  Açıklama {reason === "Diğer" ? "(zorunlu)" : "(isteğe bağlı)"}
-                </label>
-                <textarea
-                  id="report-detail"
-                  rows={3}
-                  value={detail}
-                  onChange={(e) => setDetail(e.target.value)}
-                  placeholder="Kısa açıklama…"
-                  className="mt-1.5 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/15"
-                />
-
-                {error ? (
-                  <p className="mt-2 text-sm text-red-600" role="alert">
-                    {error}
-                  </p>
-                ) : null}
-              </>
-            )}
-
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              {success ? "Kapat" : "Vazgeç"}
+            </button>
+            {!success ? (
               <button
                 type="button"
                 disabled={loading}
-                onClick={() => setReportOpen(false)}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                onClick={() => void submitReport()}
+                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
               >
-                {success ? "Kapat" : "Vazgeç"}
+                {loading ? "Gönderiliyor…" : "Gönder"}
               </button>
-              {!success ? (
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => void submitReport()}
-                  className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-                >
-                  {loading ? "Gönderiliyor…" : "Gönder"}
-                </button>
-              ) : null}
-            </div>
+            ) : null}
           </div>
-        </div>
+        </CenteredDialog>
       ) : null}
     </>
   );
