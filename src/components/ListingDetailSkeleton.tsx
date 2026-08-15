@@ -23,7 +23,8 @@ export function ListingDetailSkeleton() {
       aria-label="İlan yükleniyor"
     >
       <div className="listing-detail-layout">
-        <div className="listing-detail-title px-4 md:px-0">
+        <div className="listing-detail-title flex items-center gap-1 px-4 md:px-0">
+          <Pulse className="h-8 w-8 shrink-0" />
           <Pulse className="h-8 w-full max-w-2xl sm:h-9" />
         </div>
         <div className="listing-detail-gallery min-w-0 px-4 md:px-0">

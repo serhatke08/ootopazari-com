@@ -953,9 +953,12 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ) : null}
 
       <div className="listing-detail-layout">
-        <h1 className="listing-detail-title px-4 text-xl font-bold leading-tight text-black sm:text-2xl md:px-0">
-          {(listing.title as string) ?? "İlan"}
-        </h1>
+        <div className="listing-detail-title flex items-center gap-1 px-4 md:px-0">
+          <ListingBackButton className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-[1.65rem] font-semibold leading-none text-black" />
+          <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight text-black sm:text-2xl">
+            {(listing.title as string) ?? "İlan"}
+          </h1>
+        </div>
         <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
             <ListingImageGallery
@@ -963,9 +966,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
               alt="İlan görseli"
               compact
               overlay={
-                <div className="flex w-full items-start justify-between gap-2">
-                  <ListingBackButton />
-                  <div className="flex items-center gap-1.5">
+                <div className="flex w-full items-start justify-end gap-1.5">
                     {id && !isSuspendedDetailView ? (
                       <FavoriteHeart
                         listingId={id}
@@ -1007,7 +1008,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                         variant="overlay"
                       />
                     ) : null}
-                  </div>
                 </div>
               }
             />

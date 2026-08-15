@@ -18,10 +18,10 @@ export function ListingBackButton({ className }: { className?: string }) {
       }}
       className={
         className ??
-        "inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-xl font-semibold leading-none text-white backdrop-blur-sm"
+        "inline-flex h-8 w-8 items-center justify-center text-[1.65rem] font-semibold leading-none text-black"
       }
     >
-      ‹
+      {"<"}
     </button>
   );
 }
