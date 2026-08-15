@@ -127,6 +127,17 @@ function strCell(v: unknown): string | undefined {
   return s || undefined;
 }
 
+function fmtListingDate(v: unknown): string | undefined {
+  if (v == null || v === "") return undefined;
+  const d = v instanceof Date ? v : new Date(String(v));
+  if (Number.isNaN(d.getTime())) return undefined;
+  return d.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 function firstSpecLine(text: string, labels: string[]): string | undefined {
   for (const label of labels) {
     const value = parseDescriptionSpecLine(text, label);
@@ -742,6 +753,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
   const vehicleSpecRows = compactRows([
     specRow("İlan No", num != null ? `#${String(num)}` : null),
+    specRow("İlan tarihi", fmtListingDate(row.created_at)),
     specRow("Konum", cityDisplayResolved),
     specRow("Marka", brandName),
     specRow("Model", modelForDisplay),
