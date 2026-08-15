@@ -44,6 +44,8 @@ import {
 import { ListingVehicleSpecs } from "@/components/ListingVehicleSpecs";
 import { ExpertizDiagram } from "@/components/ExpertizDiagram";
 import { mergeExpertizWithDefaults, parseExpertizPanels } from "@/lib/expertiz";
+import { categoryAllowsBodyExpertiz } from "@/lib/listing-create";
+import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
 import {
   fetchVehicleBrandModelSeriCode,
   fetchListingEnginePackageLabels,
@@ -580,10 +582,10 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   const categoryText = `${categoryName ?? ""} ${categoryCode ?? ""}`
     .toLocaleLowerCase("tr")
     .trim();
-  const isMotorcycle =
-    categoryText.includes("motosiklet") ||
-    categoryText.includes("motor");
-  const isCarLike = !isMotorcycle;
+  const isMotorcycle = listing.category_id
+    ? categoryIdIsMotorcycle(String(listing.category_id), categories)
+    : categoryText.includes("motosiklet");
+  const showExpertiz = categoryAllowsBodyExpertiz(categoryCode, categoryName);
 
   const priceLabel =
     listing.price != null
@@ -779,14 +781,16 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     specRow("Ağır hasar kayıtlı", heavyDamageFromDesc),
     specRow("Plaka/Uyruk", plateNationalityFromDesc),
     specRow("Plaka", vehiclePlate),
-    specRow(
-      isMotorcycle ? "Ekspertiz / kontrol raporu" : "Ekspertiz raporu",
-      listing.has_expertise === true
-        ? "Var"
-        : listing.has_expertise === false
-          ? "Yok"
-          : null
-    ),
+    showExpertiz
+      ? specRow(
+          "Ekspertiz raporu",
+          listing.has_expertise === true
+            ? "Var"
+            : listing.has_expertise === false
+              ? "Yok"
+              : null
+        )
+      : null,
     specRow(
       "Hasarlı",
       listing.is_damaged === true
@@ -1076,14 +1080,14 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
             descriptionContent={descriptionTabContent}
             equipmentContent={equipmentTabContent}
           />
-          {expertizPanels ? (
+          {showExpertiz && expertizPanels ? (
             <section className="mt-4">
               <h2 className="mb-3 text-lg font-semibold text-black">
                 Ekspertiz bilgileri
               </h2>
               <ExpertizDiagram panels={expertizPanels} />
             </section>
-          ) : expertizRaw != null ? (
+          ) : showExpertiz && expertizRaw != null ? (
             <section className="mt-4 rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
               Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile
               eşleşmesi için panelleri JSON veya beklenen anahtarlarla kaydedin.

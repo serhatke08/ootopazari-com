@@ -22,6 +22,7 @@ import {
   expertizPanelsToJson,
   formatContactPhone,
   isValidTrMobile10,
+  categoryAllowsBodyExpertiz,
   isVehicleCategoryCode,
   moderationPayload,
   normalizePhoneDigits,
@@ -278,6 +279,7 @@ export function CreateListingWizard({
   const categoryCode = selectedCategory?.code ?? null;
   const categoryName = selectedCategory?.name ?? null;
   const isVehicle = isVehicleCategoryCode(categoryCode);
+  const showExpertiz = categoryAllowsBodyExpertiz(categoryCode, categoryName);
   const isMotorcycle = categoryId
     ? categoryIdIsMotorcycle(categoryId, categories)
     : false;
@@ -831,7 +833,7 @@ export function CreateListingWizard({
     }
     
     // Expertiz onay kontrolü
-    if (isVehicle && hasExpertise && !expertizConfirmed) {
+    if (showExpertiz && hasExpertise && !expertizConfirmed) {
       errors.push("Expertiz bilgilerini doğru girdiğinizi onaylamalısınız.");
     }
     
@@ -920,13 +922,17 @@ export function CreateListingWizard({
       if (!engineOther && !packageOther && packageId) {
         base.vehicle_engine_package_id = packageId;
       }
-      base.has_expertise = hasExpertise;
+      base.has_expertise = showExpertiz ? hasExpertise : false;
       base.is_damaged = isDamagedFinal;
       base.is_tradeable = isTradeable;
-      if (isEditMode) {
-        base.expertiz_panels = expertJson ?? null;
-      } else if (expertJson) {
-        base.expertiz_panels = expertJson;
+      if (showExpertiz) {
+        if (isEditMode) {
+          base.expertiz_panels = expertJson ?? null;
+        } else if (expertJson) {
+          base.expertiz_panels = expertJson;
+        }
+      } else if (isEditMode) {
+        base.expertiz_panels = null;
       }
     }
 
@@ -2054,14 +2060,16 @@ export function CreateListingWizard({
                 </select>
               </div>
               <div className="flex flex-wrap gap-4 text-sm">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={hasExpertise}
-                    onChange={(e) => setHasExpertise(e.target.checked)}
-                  />
-                  Expertiz var
-                </label>
+                {showExpertiz ? (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={hasExpertise}
+                      onChange={(e) => setHasExpertise(e.target.checked)}
+                    />
+                    Expertiz var
+                  </label>
+                ) : null}
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -2100,6 +2108,7 @@ export function CreateListingWizard({
                 />
               </div>
 
+              {showExpertiz ? (
               <div>
                 <p className="mb-2 text-sm font-medium text-zinc-800">
                   Kaporta ekspertiz (isteğe bağlı)
@@ -2165,6 +2174,7 @@ export function CreateListingWizard({
                   </label>
                 </div>
               </div>
+              ) : null}
             </>
           ) : null}
         </section>

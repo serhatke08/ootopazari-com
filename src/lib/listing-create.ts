@@ -21,6 +21,40 @@ export function isVehicleCategoryCode(code: string | null | undefined): boolean 
   return VEHICLE_CATEGORY_CODES.has(String(code).trim().toLowerCase());
 }
 
+/** Kaporta ekspertiz şeması: otomobil / SUV / panelvan. Motor, uçak, gemi yok. */
+const BODY_EXPERTIZ_CODES = new Set([
+  "otomobil",
+  "car",
+  "binek",
+  "suv",
+  "suv_pickup",
+  "panelvan",
+  "panel_van",
+]);
+
+const BODY_EXPERTIZ_NAME_RE =
+  /otomobil|\baraba\b|binek|\bsuv\b|panel\s*van|panelvan|hafif\s*ticari/;
+
+const BODY_EXPERTIZ_BLOCK_RE =
+  /motosiklet|motorcycle|\bmoto\b|scooter|deniz|gemi|yat|tekne|hava|u[cç]ak|helikopter|atv|utv|karavan|tar[iı]m/;
+
+export function categoryAllowsBodyExpertiz(
+  code?: string | null,
+  name?: string | null
+): boolean {
+  const c = String(code ?? "")
+    .trim()
+    .toLocaleLowerCase("tr");
+  const n = String(name ?? "")
+    .trim()
+    .toLocaleLowerCase("tr");
+  if (BODY_EXPERTIZ_BLOCK_RE.test(c) || BODY_EXPERTIZ_BLOCK_RE.test(n)) {
+    return false;
+  }
+  if (c && BODY_EXPERTIZ_CODES.has(c)) return true;
+  return BODY_EXPERTIZ_NAME_RE.test(c) || BODY_EXPERTIZ_NAME_RE.test(n);
+}
+
 const RE_SCRIPT = /<script[\s\S]*?>[\s\S]*?<\/script>/gi;
 
 export const ContentFilterService = {
