@@ -11,16 +11,18 @@ export const metadata: Metadata = {
 };
 
 function isComplete(
-  firstName: string | null,
-  lastName: string | null,
+  profileId: string | null,
   fullName: string | null,
-  phone: string | null
+  username: string | null,
+  phone: string | null,
+  countryId: string | null
 ): boolean {
-  const hasName = Boolean(
-    (firstName && lastName) || (fullName && fullName.trim().length > 1)
-  );
+  const hasProfile = Boolean(profileId);
+  const hasName = Boolean(fullName && fullName.trim().length > 1);
+  const hasUsername = Boolean(username && username.trim().length > 2);
   const hasPhone = Boolean(phone && phone.trim().length > 0);
-  return hasName && hasPhone;
+  const hasCountry = Boolean(countryId);
+  return hasProfile && hasName && hasUsername && hasPhone && hasCountry;
 }
 
 export default async function HesapTamamlaPage({
@@ -65,17 +67,27 @@ export default async function HesapTamamlaPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name,phone")
+    .select("id,full_name,username,phone,country_id")
     .eq("id", user.id)
     .maybeSingle();
 
+  const profileId =
+    profile && typeof profile.id === "string" ? profile.id : null;
   const profileFull =
     profile && typeof profile.full_name === "string"
       ? profile.full_name.trim() || null
       : null;
+  const profileUsername =
+    profile && typeof profile.username === "string"
+      ? profile.username.trim() || null
+      : null;
   const profilePhone =
     profile && typeof profile.phone === "string"
       ? profile.phone.trim() || null
+      : null;
+  const profileCountryId =
+    profile && typeof profile.country_id === "string"
+      ? profile.country_id.trim() || null
       : null;
 
   const firstName = metaFirst;
@@ -83,7 +95,7 @@ export default async function HesapTamamlaPage({
   const fullName = profileFull || metaFull;
   const phone = profilePhone || metaPhone;
 
-  if (isComplete(firstName, lastName, fullName, phone)) {
+  if (isComplete(profileId, fullName, profileUsername, phone, profileCountryId)) {
     redirect(nextPath);
   }
 
@@ -98,6 +110,7 @@ export default async function HesapTamamlaPage({
       <CompleteProfileAfterOAuthForm
         initialFirstName={firstName ?? ""}
         initialLastName={lastName ?? ""}
+        initialUsername={profileUsername ?? ""}
         initialPhone={phone ?? ""}
         nextPath={nextPath}
       />

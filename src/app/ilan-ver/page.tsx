@@ -34,12 +34,29 @@ export default async function IlanVerPage() {
     fetchCategories(supabase),
     supabase
       .from("profiles")
-      .select("country_id")
+      .select("id,full_name,username,phone,country_id")
       .eq("id", user.id)
       .maybeSingle(),
   ]);
 
-  const profile = profileRes.data as { country_id?: string | null } | null;
+  const profile = profileRes.data as {
+    id?: string | null;
+    full_name?: string | null;
+    username?: string | null;
+    phone?: string | null;
+    country_id?: string | null;
+  } | null;
+  const profileComplete = Boolean(
+    profile?.id &&
+      profile.full_name?.trim() &&
+      profile.username?.trim() &&
+      profile.phone?.trim() &&
+      profile.country_id
+  );
+  if (!profileComplete) {
+    redirect(`/hesap-tamamla?next=${encodeURIComponent("/ilan-ver")}`);
+  }
+
   const userCountryId =
     profile?.country_id != null ? String(profile.country_id) : null;
 

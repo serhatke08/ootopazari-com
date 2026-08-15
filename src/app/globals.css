@@ -46,8 +46,10 @@ body {
 }
 
 @media (max-width: 47.999rem) {
+  /* Alt menünün gerçek yüksekliği kadar; fazlası footer ile bar arasında
+     boş beyaz şerit bırakıyor. */
   .layout-with-mobile-nav {
-    padding-bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(3.45rem + env(safe-area-inset-bottom, 0px));
   }
 }
 

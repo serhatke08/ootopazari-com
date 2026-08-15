@@ -76,8 +76,8 @@ function IconUser({ className }: { className?: string }) {
   );
 }
 
-/** Yatay çizgi + FAB merkezi (biraz aşağıda hizalı) */
-const LINE_TOP_CLASS = "top-8";
+/** FAB merkezinin sarı zeminin üst kenarına olan uzaklığı. */
+const FAB_TOP_CLASS = "top-5";
 
 export function MobileBottomNav({
   loggedIn,
@@ -115,29 +115,24 @@ export function MobileBottomNav({
       className="fixed bottom-0 left-0 right-0 z-50 block overflow-visible border-0 bg-transparent pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="Alt menü"
     >
-      {/* Sadece çizginin ALTINDA beyaz bar — üstteki beyaz şerit yok */}
+      {/* Sarı zemin nav'ın tamamını kaplar: kısmi kaplamada üstte, footer ile
+          bar arasında boş beyaz bir şerit görünüyordu. */}
       <div
-        className={`pointer-events-none absolute inset-x-0 ${LINE_TOP_CLASS} bottom-0 z-[4] bg-[#ffcc00]/95 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] backdrop-blur-md`}
+        className="pointer-events-none absolute inset-0 z-[4] border-t border-amber-400/90 bg-[#ffcc00]/95 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] backdrop-blur-md"
         suppressHydrationWarning
         aria-hidden
       />
 
-      {/* Tam genişlik çizgi: artı tam ortasından (arkadan) geçer */}
-      <div
-        className={`pointer-events-none absolute inset-x-0 ${LINE_TOP_CLASS} z-[5] h-px bg-amber-400/90`}
-        aria-hidden
-      />
-
-      {/* FAB: merkez çizgiyle çakışır (−translate-y-1/2); z-index ile önde */}
+      {/* FAB: sarı zeminin üst kenarına yakın, ortada */}
       <Link
         href="/ilan-ver"
-        className={`absolute left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] shadow-md ring-1 ring-zinc-800 transition hover:bg-zinc-800 ${LINE_TOP_CLASS} ${ilanVerActive ? "ring-amber-500" : ""}`}
+        className={`absolute left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] shadow-md ring-1 ring-zinc-800 transition hover:bg-zinc-800 ${FAB_TOP_CLASS} ${ilanVerActive ? "ring-amber-500" : ""}`}
         aria-label="İlan ver"
       >
         <IconPlus />
       </Link>
 
-      <div className="relative z-10 mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-0 pt-7">
+      <div className="relative z-10 mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-5">
         <Link
           href="/"
           className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}
@@ -162,7 +157,7 @@ export function MobileBottomNav({
           <span className="max-w-[3.5rem] truncate text-center">Mesajlar</span>
         </Link>
 
-        <div className="flex min-h-[2.5rem] min-w-0 flex-col items-center justify-end">
+        <div className="flex min-w-0 flex-col items-center justify-end">
           <span className="max-w-[4rem] truncate text-center text-[9px] font-bold leading-tight text-zinc-900">
             İlan ver
           </span>

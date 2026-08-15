@@ -221,28 +221,42 @@ export function SiteHeaderClient({
   }, [pathname]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      if (currentScrollY < 10) {
+    // Yön değişimi için eşik: dokunmatik kaydırmanın ve iOS lastik efektinin
+    // ürettiği birkaç piksellik salınımlar başlığı sürekli açıp kapatıyordu.
+    const DIRECTION_THRESHOLD = 8;
+    const ALWAYS_VISIBLE_ABOVE = 64;
+    let queued = false;
+
+    const update = () => {
+      queued = false;
+      // Negatif değerler: iOS'ta üstten aşağı çekince oluşan taşma.
+      const currentScrollY = Math.max(0, window.scrollY);
+      const delta = currentScrollY - lastScrollY.current;
+
+      if (currentScrollY < ALWAYS_VISIBLE_ABOVE) {
         setHeaderVisible(true);
-      } else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        setHeaderVisible(false);
-      } else if (currentScrollY < lastScrollY.current) {
-        setHeaderVisible(true);
+        lastScrollY.current = currentScrollY;
+        return;
       }
-      
+
+      // Eşiğin altındaki hareketlerde referansı güncellemiyoruz ki yavaş
+      // kaydırmada fark birikip yine de tepki verebilsin.
+      if (Math.abs(delta) < DIRECTION_THRESHOLD) return;
+
+      setHeaderVisible(delta < 0);
       lastScrollY.current = currentScrollY;
     };
 
+    const handleScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+
+    lastScrollY.current = Math.max(0, window.scrollY);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    const offset = headerVisible ? "5.5rem" : "0px";
-    document.documentElement.style.setProperty("--header-offset", offset);
-  }, [headerVisible]);
 
   const loggedIn = !!sessionEmail;
   const hasListings = useUserHasListings(hasEnv, loggedIn, serverHasListings);

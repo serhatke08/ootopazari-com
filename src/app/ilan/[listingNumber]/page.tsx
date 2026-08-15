@@ -20,7 +20,11 @@ import { fetchPriceRatingSummary, EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listi
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
-import { buildListingSeoPath, extractListingNumberFromSeoParam } from "@/lib/listing-seo";
+import {
+  buildListingSeoPath,
+  extractListingNumberFromSeoParam,
+  isNonCanonicalListingPath,
+} from "@/lib/listing-seo";
 import { buildListingVehicleJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
@@ -328,8 +332,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     user?.id ?? null,
     { viewerIsAdmin: !!adminMeta }
   );
+  // `notFound()` ve `permanentRedirect()` burada çağrılır çünkü generateMetadata
+  // yanıt başlıkları gönderilmeden önce çözülür. Sayfa gövdesinde çağrılsalardı
+  // `loading.tsx`'in açtığı streaming bağlamı yüzünden Next.js gerçek 404/308
+  // yerine 200 dönüp yönlendirmeyi istemci tarafına bırakırdı.
   if (!detail) {
-    return { title: "İlan bulunamadı" };
+    notFound();
   }
   const listing = detail.listing;
   const titleBase = (listing.title as string) ?? "İlan";
@@ -353,6 +361,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       listing.listing_number != null ? String(listing.listing_number) : listingNumber,
       typeof listing.title === "string" ? listing.title : title
     ) ?? `/ilan/${encodeURIComponent(listingNumber)}`;
+  if (isNonCanonicalListingPath(canonicalPath, listingParam)) {
+    permanentRedirect(canonicalPath);
+  }
   return {
     title,
     description: metaDescription,
@@ -440,9 +451,10 @@ export default async function IlanDetayPage({ params }: Props) {
     fetchCategories(supabase),
   ]);
   
+  // Asıl 404/308 kararı generateMetadata'da verilir; buradakiler yalnızca
+  // güvenlik ağıdır.
   if (!detail) {
-    // İlan bulunamadı - ana sayfaya yönlendir (SEO için daha iyi)
-    permanentRedirect("/?not_found=1");
+    notFound();
   }
 
   const { listing, access: detailAccess } = detail;
@@ -450,11 +462,7 @@ export default async function IlanDetayPage({ params }: Props) {
     listing.listing_number != null ? String(listing.listing_number) : listingNumber,
     typeof listing.title === "string" ? listing.title : null
   );
-  if (
-    expectedSeoPath &&
-    decodeURIComponent(expectedSeoPath.split("/ilan/")[1] ?? "") !==
-      decodeURIComponent(listingParam)
-  ) {
+  if (expectedSeoPath && isNonCanonicalListingPath(expectedSeoPath, listingParam)) {
     permanentRedirect(expectedSeoPath);
   }
 

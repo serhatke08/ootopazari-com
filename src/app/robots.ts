@@ -14,7 +14,8 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
           "/profil",
           "/favoriler",
           "/mesajlar",
-          "/ilan-ver",
+          // `/ilan-ver` bilerek engellenmiyor: sayfa zaten `noindex` veriyor ve
+          // taramayı engellemek Google'ın bu etiketi görmesini de engelliyordu.
           "/ilan-duzenle",
           "/bayilik-basvuru",
           "/api/",

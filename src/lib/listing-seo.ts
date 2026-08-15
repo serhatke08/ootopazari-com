@@ -36,6 +36,22 @@ export function buildListingSeoPath(
   return `/ilan/${encodeURIComponent(n)}-${slug}`;
 }
 
+/**
+ * İstenen `/ilan/<param>` yolunun kanonik SEO yolundan farklı olup olmadığı.
+ * Farklıysa çağıran taraf kanonik yola 308 vermelidir.
+ */
+export function isNonCanonicalListingPath(
+  canonicalPath: string,
+  listingParam: string
+): boolean {
+  const canonicalParam = canonicalPath.split("/ilan/")[1] ?? "";
+  try {
+    return decodeURIComponent(canonicalParam) !== decodeURIComponent(listingParam);
+  } catch {
+    return canonicalParam !== listingParam;
+  }
+}
+
 /** `/ilan/12300024-250-nk-temiz` -> `12300024` */
 export function extractListingNumberFromSeoParam(
   param: string | null | undefined

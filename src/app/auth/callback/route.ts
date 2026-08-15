@@ -70,19 +70,9 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    const m = user.user_metadata as Record<string, unknown> | undefined;
-    const metaFirst =
-      m && typeof m.first_name === "string" ? m.first_name.trim() || null : null;
-    const metaLast =
-      m && typeof m.last_name === "string" ? m.last_name.trim() || null : null;
-    const metaFull =
-      m && typeof m.full_name === "string" ? m.full_name.trim() || null : null;
-    const metaPhone =
-      m && typeof m.phone === "string" ? m.phone.trim() || null : null;
-
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name,phone")
+      .select("id,full_name,phone,username,country_id")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -90,17 +80,26 @@ export async function GET(request: NextRequest) {
       profile && typeof profile.full_name === "string"
         ? profile.full_name.trim() || null
         : null;
+    const profileUsername =
+      profile && typeof profile.username === "string"
+        ? profile.username.trim() || null
+        : null;
     const profilePhone =
       profile && typeof profile.phone === "string"
         ? profile.phone.trim() || null
         : null;
+    const profileCountry =
+      profile && typeof profile.country_id === "string"
+        ? profile.country_id.trim() || null
+        : null;
 
-    const hasName = Boolean(
-      (metaFirst && metaLast) || (profileFull || metaFull)
-    );
-    const hasPhone = Boolean(profilePhone || metaPhone);
+    const hasProfile = Boolean(profile?.id);
+    const hasName = Boolean(profileFull);
+    const hasUsername = Boolean(profileUsername);
+    const hasPhone = Boolean(profilePhone);
+    const hasCountry = Boolean(profileCountry);
 
-    if (!hasName || !hasPhone) {
+    if (!hasProfile || !hasName || !hasUsername || !hasPhone || !hasCountry) {
       return redirectWithAuthCookies(
         `${origin}/hesap-tamamla?next=${encodeURIComponent(next)}`
       );

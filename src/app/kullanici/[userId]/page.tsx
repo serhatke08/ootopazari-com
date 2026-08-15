@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return {
           title,
           description,
+          robots: { index: false, follow: true },
           alternates: {
             canonical: canonicalPath,
           },
@@ -61,6 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: "Kullanıcı Profili",
     description: "Kullanıcının yayındaki ilanları.",
+    robots: { index: false, follow: true },
     alternates: {
       canonical: `/kullanici/${encodeURIComponent(userId)}`,
     },
