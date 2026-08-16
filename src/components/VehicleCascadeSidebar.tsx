@@ -206,14 +206,6 @@ function VehicleCascadeSidebarInner({
 
   const allModelsForNav = selectableModels;
 
-  const visibleCategorySlots = useMemo(() => {
-    if (!categoryCountsReady) return categorySlots;
-    return categorySlots.filter(
-      (slot) =>
-        slot.id === categoryId || (categoryCounts.get(slot.id) ?? 0) > 0
-    );
-  }, [categoryCounts, categoryCountsReady, categoryId, categorySlots]);
-
   const brandIdRef = useRef(brandId);
   const modelIdRef = useRef(modelId);
   const bodyStyleIdRef = useRef(bodyStyleId);
@@ -850,7 +842,7 @@ function VehicleCascadeSidebarInner({
           ))}
         </div>
       ) : null}
-      {visibleCategorySlots.length === 0 ? (
+      {categorySlots.length === 0 ? (
         <p className="text-xs text-zinc-500">
           Kategori listesi boş (Supabase `categories` tablosu).
         </p>
@@ -858,7 +850,7 @@ function VehicleCascadeSidebarInner({
         <>
           {label("Kategori", compact)}
           <ul className={cascadeListClass(fillColumn, compact)}>
-            {visibleCategorySlots.map((slot) => (
+            {categorySlots.map((slot) => (
               <li key={slot.id} className="min-w-0">
                 <button
                   type="button"
