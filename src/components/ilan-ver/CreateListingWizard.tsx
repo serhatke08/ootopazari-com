@@ -232,11 +232,13 @@ export function CreateListingWizard({
   const [otherBodyText, setOtherBodyText] = useState("");
 
   const [engines, setEngines] = useState<EngineOptionRow[]>([]);
+  const [enginesLoading, setEnginesLoading] = useState(false);
   const [engineId, setEngineId] = useState<string | null>(null);
   const [engineOther, setEngineOther] = useState(false);
   const [otherEngineText, setOtherEngineText] = useState("");
 
   const [packages, setPackages] = useState<IdNameRow[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(false);
   const [packageId, setPackageId] = useState<string | null>(null);
   const [packageOther, setPackageOther] = useState(false);
   const [otherPackageText, setOtherPackageText] = useState("");
@@ -511,16 +513,24 @@ export function CreateListingWizard({
     setBodyOther(false);
     setOtherBodyText("");
 
-    if (!resolvedModelId || modelOther || brandOther) return;
+    if (!resolvedModelId || modelOther || brandOther) {
+      setEnginesLoading(false);
+      return;
+    }
 
+    setEnginesLoading(true);
     void (async () => {
-      const en = await fetchEnginesForModel(supabase, resolvedModelId);
-      en.sort((a, b) => {
-        const aNum = parseFloat((a.name || "").replace(/[^\d.]/g, "")) || 0;
-        const bNum = parseFloat((b.name || "").replace(/[^\d.]/g, "")) || 0;
-        return aNum - bNum;
-      });
-      setEngines(en);
+      try {
+        const en = await fetchEnginesForModel(supabase, resolvedModelId);
+        en.sort((a, b) => {
+          const aNum = parseFloat((a.name || "").replace(/[^\d.]/g, "")) || 0;
+          const bNum = parseFloat((b.name || "").replace(/[^\d.]/g, "")) || 0;
+          return aNum - bNum;
+        });
+        setEngines(en);
+      } finally {
+        setEnginesLoading(false);
+      }
     })();
   }, [resolvedModelId, modelOther, brandOther, supabase]);
 
@@ -528,11 +538,17 @@ export function CreateListingWizard({
     if (!engineId || engineOther) {
       setPackages([]);
       setPackageId(null);
+      setPackagesLoading(false);
       return;
     }
+    setPackagesLoading(true);
     void (async () => {
-      const pk = await fetchPackagesForEngine(supabase, engineId);
-      setPackages(pk);
+      try {
+        const pk = await fetchPackagesForEngine(supabase, engineId);
+        setPackages(pk);
+      } finally {
+        setPackagesLoading(false);
+      }
     })();
   }, [engineId, engineOther, supabase]);
 
@@ -1548,99 +1564,73 @@ export function CreateListingWizard({
               !modelOther &&
               !useCustomModelText ? (
                 <>
-                  {engines.length > 0 ? (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
+                      {engineFieldLabel}
+                    </label>
+                    <select
+                      className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                      disabled={enginesLoading}
+                      value={engineOther ? OTHER : engineId ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === OTHER) {
+                          setEngineOther(true);
+                          setEngineId(null);
+                        } else {
+                          setEngineOther(false);
+                          setEngineId(v || null);
+                          if (isMotorcycle && v) {
+                            const eng = engines.find((row) => row.id === v);
+                            const cc = engineCapacityCcFromRow(
+                              eng?.engine_capacity_cc,
+                              eng?.name
+                            );
+                            if (cc != null) setEngineCapacity(String(cc));
+                          }
+                        }
+                      }}
+                    >
+                      <option value="">
+                        {enginesLoading ? "Yükleniyor…" : "Seçin"}
+                      </option>
+                      {engines.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {isMotorcycle
+                            ? formatEngineCcLabel(
+                                p.name,
+                                p.engine_capacity_cc
+                              )
+                            : (p.name ?? p.code ?? p.id)}
+                        </option>
+                      ))}
+                      <option value={OTHER}>Diğer</option>
+                    </select>
+                    {engineOther ? (
+                      <input
+                        className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                        placeholder={
+                          isMotorcycle ? "Motor hacmi (cc)" : "Motor (metin)"
+                        }
+                        value={otherEngineText}
+                        onChange={(e) => setOtherEngineText(e.target.value)}
+                      />
+                    ) : null}
+                  </div>
+
+                  {engineOther && !isMotorcycle ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                        {engineFieldLabel}
+                        Paket (isteğe bağlı)
                       </label>
-                      <select
+                      <input
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                        value={engineOther ? OTHER : engineId ?? ""}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === OTHER) {
-                            setEngineOther(true);
-                            setEngineId(null);
-                          } else {
-                            setEngineOther(false);
-                            setEngineId(v || null);
-                            if (isMotorcycle && v) {
-                              const eng = engines.find((row) => row.id === v);
-                              const cc = engineCapacityCcFromRow(
-                                eng?.engine_capacity_cc,
-                                eng?.name
-                              );
-                              if (cc != null) setEngineCapacity(String(cc));
-                            }
-                          }
-                        }}
-                      >
-                        <option value="">Seçin</option>
-                        {engines.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {isMotorcycle
-                              ? formatEngineCcLabel(
-                                  p.name,
-                                  p.engine_capacity_cc
-                                )
-                              : (p.name ?? p.code ?? p.id)}
-                          </option>
-                        ))}
-                        <option value={OTHER}>Diğer</option>
-                      </select>
-                      {engineOther ? (
-                        <>
-                          <input
-                            className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                            placeholder={
-                              isMotorcycle ? "Motor hacmi (cc)" : "Motor (metin)"
-                            }
-                            value={otherEngineText}
-                            onChange={(e) => setOtherEngineText(e.target.value)}
-                          />
-                          {!isMotorcycle ? (
-                            <div className="mt-2">
-                              <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                                Paket (metin, isteğe bağlı)
-                              </label>
-                              <input
-                                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                                placeholder="Liste yok veya diğer paket"
-                                value={otherPackageText}
-                                onChange={(e) =>
-                                  setOtherPackageText(e.target.value)
-                                }
-                              />
-                            </div>
-                          ) : null}
-                        </>
-                      ) : null}
+                        placeholder="Paket (metin)"
+                        value={otherPackageText}
+                        onChange={(e) => setOtherPackageText(e.target.value)}
+                      />
                     </div>
-                  ) : (
-                    <>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                          Motor (metin)
-                        </label>
-                        <input
-                          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                          placeholder="Örn. 1.6"
-                          value={otherEngineText}
-                          onChange={(e) => setOtherEngineText(e.target.value)}
-                        />
-                      </div>
-                      <div className="mt-2">
-                        <label className="mb-1 block text-xs font-medium uppercase text-zinc-500">
-                          Paket (metin, isteğe bağlı)
-                        </label>
-                        <input
-                          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                          value={otherPackageText}
-                          onChange={(e) => setOtherPackageText(e.target.value)}
-                        />
-                      </div>
-                    </>
-                  )}
+                  ) : null}
 
                   {engineId && !engineOther && !isMotorcycle ? (
                     <div>
@@ -1649,6 +1639,7 @@ export function CreateListingWizard({
                       </label>
                       <select
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                        disabled={packagesLoading}
                         value={packageOther ? OTHER : packageId ?? ""}
                         onChange={(e) => {
                           const v = e.target.value;
@@ -1661,7 +1652,9 @@ export function CreateListingWizard({
                           }
                         }}
                       >
-                        <option value="">Seçin</option>
+                        <option value="">
+                          {packagesLoading ? "Yükleniyor…" : "Seçin"}
+                        </option>
                         {packages.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name ?? p.code ?? p.id}

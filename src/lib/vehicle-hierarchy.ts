@@ -378,6 +378,35 @@ export async function fetchBodyStylesForModel(
   return [];
 }
 
+const ENGINE_SELECT_WITH_CC =
+  "id,name,fuel_type,horsepower,engine_capacity_cc,sort_order";
+const ENGINE_SELECT_BASE = "id,name,fuel_type,horsepower,sort_order";
+
+async function queryBodyStyleEngines(
+  supabase: SupabaseClient,
+  filter: { bodyStyleId?: string; bodyStyleIds?: string[] }
+): Promise<EngineOptionRow[]> {
+  for (const sel of [ENGINE_SELECT_WITH_CC, ENGINE_SELECT_BASE]) {
+    let q = supabase.from("vehicle_body_style_engines").select(sel);
+    if (filter.bodyStyleId) q = q.eq("body_style_id", filter.bodyStyleId);
+    if (filter.bodyStyleIds?.length) {
+      q = q.in("body_style_id", filter.bodyStyleIds);
+    }
+    const { data, error } = await q
+      .order("sort_order", { ascending: true, nullsFirst: false })
+      .order("name", { ascending: true });
+    if (!error && data) return (data ?? []) as EngineOptionRow[];
+    if (
+      error &&
+      !/engine_capacity_cc|column .* does not exist/i.test(error.message)
+    ) {
+      console.warn("vehicle_body_style_engines:", error.message);
+      return [];
+    }
+  }
+  return [];
+}
+
 /**
  * `vehicle_model_body_styles.id` → `vehicle_body_style_engines`
  * (Flutter: `body_style_id` + sort_order; listede `name`).
@@ -386,22 +415,7 @@ export async function fetchEnginesForBodyStyle(
   supabase: SupabaseClient,
   modelBodyStyleId: string
 ): Promise<EngineOptionRow[]> {
-  const { data, error } = await supabase
-    .from("vehicle_body_style_engines")
-    .select("id,name,fuel_type,horsepower,engine_capacity_cc,sort_order")
-    .eq("body_style_id", modelBodyStyleId)
-    .order("sort_order", { ascending: true, nullsFirst: false })
-    .order("name", { ascending: true });
-
-  if (!error && data) {
-    return (data ?? []) as EngineOptionRow[];
-  }
-
-  console.warn(
-    "vehicle_body_style_engines:",
-    error?.message ?? "sorgu başarısız"
-  );
-  return [];
+  return queryBodyStyleEngines(supabase, { bodyStyleId: modelBodyStyleId });
 }
 
 /** Model altındaki tüm kasa kayıtlarından motorları tek listede döner (kasa seçimi yok). */
@@ -413,24 +427,11 @@ export async function fetchEnginesForModel(
   if (bodies.length === 0) return [];
 
   const bodyIds = bodies.map((row) => row.id).filter(Boolean);
-  const { data, error } = await supabase
-    .from("vehicle_body_style_engines")
-    .select("id,name,fuel_type,horsepower,engine_capacity_cc,sort_order")
-    .in("body_style_id", bodyIds)
-    .order("sort_order", { ascending: true, nullsFirst: false })
-    .order("name", { ascending: true });
-
-  if (error || !data) {
-    console.warn(
-      "vehicle_body_style_engines by model:",
-      error?.message ?? "sorgu başarısız"
-    );
-    return [];
-  }
+  const data = await queryBodyStyleEngines(supabase, { bodyStyleIds: bodyIds });
 
   const seen = new Set<string>();
   const rows: EngineOptionRow[] = [];
-  for (const row of data as EngineOptionRow[]) {
+  for (const row of data) {
     const key = (row.name ?? "").trim().toLocaleLowerCase("tr-TR");
     if (key && seen.has(key)) continue;
     if (key) seen.add(key);
