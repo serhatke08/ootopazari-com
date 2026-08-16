@@ -1038,27 +1038,27 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                 </div>
               }
             />
+            {vehicleBreadcrumb.length > 0 ? (
+              <nav
+                className="flex flex-wrap items-center gap-x-1 gap-y-0.5 px-3 pb-3 text-xs text-black/70"
+                aria-label="Kategori ve model"
+              >
+                {vehicleBreadcrumb.map((part, i) => (
+                  <span key={`${part}-${i}`} className="inline-flex items-center">
+                    {i > 0 ? (
+                      <span className="mx-1 font-medium text-black/35" aria-hidden>
+                        &gt;
+                      </span>
+                    ) : null}
+                    <span className="font-medium text-black/85">{part}</span>
+                  </span>
+                ))}
+              </nav>
+            ) : null}
           </div>
         </div>
 
         <div className="listing-detail-intro min-w-0 space-y-2 px-4 md:px-0">
-          {vehicleBreadcrumb.length > 0 ? (
-            <nav
-              className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-black/70"
-              aria-label="Kategori ve model"
-            >
-              {vehicleBreadcrumb.map((part, i) => (
-                <span key={`${part}-${i}`} className="inline-flex items-center">
-                  {i > 0 ? (
-                    <span className="mx-1 font-medium text-black/35" aria-hidden>
-                      &gt;
-                    </span>
-                  ) : null}
-                  <span className="font-medium text-black/85">{part}</span>
-                </span>
-              ))}
-            </nav>
-          ) : null}
           {id ? (
             <div className="min-[80rem]:hidden">
               <ListingDetailStatsRow

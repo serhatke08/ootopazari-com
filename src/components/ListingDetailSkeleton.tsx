@@ -38,11 +38,13 @@ export function ListingDetailSkeleton() {
                 />
               ))}
             </div>
+            <div className="px-3 pb-3">
+              <Pulse className="h-3 w-64" />
+            </div>
           </div>
         </div>
 
         <div className="listing-detail-intro min-w-0 space-y-2 px-4 md:px-0">
-          <Pulse className="h-3 w-56" />
           <div className="flex items-center gap-3 min-[80rem]:hidden">
             <Pulse className="h-5 w-10" />
             <Pulse className="ml-auto h-8 w-36 sm:h-9 sm:w-44" />

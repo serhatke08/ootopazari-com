@@ -351,7 +351,7 @@ export function ListingImageGallery({
         ) : null}
       </div>
 
-      <div className={`min-[80rem]:hidden ${edgeToEdge ? "px-2 pb-2 md:px-0 md:pb-0" : ""}`}>
+      <div className={edgeToEdge ? "px-2 pb-2 md:px-0 md:pb-0" : ""}>
         <GalleryThumbnailStrip
           images={list}
           activeIndex={active}
