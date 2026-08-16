@@ -69,7 +69,9 @@ export default async function ProfilLayout({
   const quotaClient = createSupabaseServiceClient() ?? supabase;
   const [profile, adminProfile, followCounts, serviceSummaries, listingQuota] =
     await Promise.all([
-      user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
+      user.id
+        ? fetchProfilePublic(supabase, user.id, { includePhone: true })
+        : Promise.resolve(null),
       user.id ? fetchAdminProfileByUserId(supabase, user.id) : Promise.resolve(null),
       user.id
         ? fetchFollowCounts(supabase, user.id)

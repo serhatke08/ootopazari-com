@@ -10,22 +10,39 @@ export type AdminProfileRow = {
   email?: string;
 };
 
+function asAdminRow(data: unknown): AdminProfileRow | null {
+  if (!data || typeof data !== "object") return null;
+  const row = data as AdminProfileRow;
+  if (!row.user_id) return null;
+  return row;
+}
+
+/** Rozet / yetki: e-posta kolonu kilitliyse yine çalışır. */
 export async function fetchAdminProfileByUserId(
   supabase: SupabaseClient,
   userId: string
 ): Promise<AdminProfileRow | null> {
-  const { data, error } = await supabase
+  const full = await supabase
+    .from("admin_profiles")
+    .select("user_id,email,display_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!full.error) {
+    return asAdminRow(full.data);
+  }
+
+  const lite = await supabase
     .from("admin_profiles")
     .select("user_id,display_name")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error) {
-    console.warn("admin_profiles:", error.message);
+  if (lite.error) {
+    console.warn("admin_profiles:", lite.error.message);
     return null;
   }
-  if (!data || typeof data !== "object") return null;
-  return data as AdminProfileRow;
+  return asAdminRow(lite.data);
 }
 
 export async function fetchAdminProfilesByUserIds(
@@ -37,18 +54,28 @@ export async function fetchAdminProfilesByUserIds(
   const uniq = [...new Set(userIds.filter(Boolean))];
   if (uniq.length === 0) return map;
 
-  const { data, error } = await supabase
+  const full = await supabase
     .from("admin_profiles")
-    .select("user_id,display_name")
+    .select("user_id,email,display_name")
     .in("user_id", uniq);
 
-  if (error) {
-    console.warn("admin_profiles batch:", error.message);
+  const rows = !full.error
+    ? full.data
+    : (
+        await supabase
+          .from("admin_profiles")
+          .select("user_id,display_name")
+          .in("user_id", uniq)
+      ).data;
+
+  if (full.error && !rows) {
+    console.warn("admin_profiles batch:", full.error.message);
     return map;
   }
-  for (const row of data ?? []) {
-    const r = row as AdminProfileRow;
-    if (r.user_id) map.set(r.user_id, r);
+
+  for (const row of rows ?? []) {
+    const r = asAdminRow(row);
+    if (r) map.set(r.user_id, r);
   }
   return map;
 }

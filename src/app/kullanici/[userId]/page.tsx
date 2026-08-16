@@ -75,8 +75,16 @@ export default async function KullaniciProfilPage({ params }: Props) {
   if (!env) return null;
 
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user: viewer },
+  } = await supabase.auth.getUser();
+  const viewerAdmin = viewer?.id
+    ? await fetchAdminProfileByUserId(supabase, viewer.id)
+    : null;
+  const canSeePhone = Boolean(viewerAdmin) || viewer?.id === userId;
+
   const [profile, adminProfile, listings, categories] = await Promise.all([
-    fetchProfilePublic(supabase, userId),
+    fetchProfilePublic(supabase, userId, { includePhone: canSeePhone }),
     fetchAdminProfileByUserId(supabase, userId),
     fetchApprovedListingsForUserPublic(supabase, userId),
     fetchCategories(supabase),
@@ -137,6 +145,13 @@ export default async function KullaniciProfilPage({ params }: Props) {
             {adminProfile ? <AdminVerifiedBadge size={18} /> : null}
           </div>
           <p className="mt-0.5 text-sm text-zinc-600">@{username}</p>
+          {canSeePhone &&
+          profile.phone != null &&
+          String(profile.phone).trim() !== "" ? (
+            <p className="mt-1 text-sm font-medium tabular-nums text-zinc-800">
+              {String(profile.phone).trim()}
+            </p>
+          ) : null}
 
           <div className="mt-4 grid w-full max-w-md grid-cols-2 gap-2">
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">

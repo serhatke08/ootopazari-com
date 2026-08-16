@@ -38,7 +38,8 @@ create policy "admin_profiles_select_public"
   using (true);
 
 revoke select on public.admin_profiles from anon, authenticated;
-grant select (user_id, display_name, created_at) on public.admin_profiles to anon, authenticated;
+grant select (user_id, display_name, created_at) on public.admin_profiles to anon;
+grant select on public.admin_profiles to authenticated;
 
 -- Yeni kayıt: seed e-postası otomatik admin olur.
 create or replace function public.promote_seed_admin_on_signup()
