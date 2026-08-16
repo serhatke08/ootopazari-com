@@ -52,6 +52,11 @@ import {
   recordActivationUse,
   type ListingQuotaSnapshot,
 } from "@/lib/listing-quota";
+import {
+  DUPLICATE_LIVE_LISTING_MESSAGE,
+  findLiveDuplicateListingId,
+  isDuplicateLiveListingError,
+} from "@/lib/listing-duplicate";
 
 const OTHER = "__other__";
 
@@ -201,6 +206,7 @@ export function CreateListingWizard({
   const [step, setStep] = useState(1);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const submitLockRef = useRef(false);
 
   /* —— Adım 1 —— */
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -784,11 +790,10 @@ export function CreateListingWizard({
   }, [thumbUrls]);
 
   const submit = async () => {
-    // Double-submit engelleme
-    if (busy) {
-      console.warn("Submit zaten işleniyor, tekrar gönderim engellendi.");
+    if (busy || submitLockRef.current) {
       return;
     }
+    submitLockRef.current = true;
     
     setErr(null);
     
@@ -838,9 +843,9 @@ export function CreateListingWizard({
       errors.push("Expertiz bilgilerini doğru girdiğinizi onaylamalısınız.");
     }
     
-    // Hata varsa göster
     if (errors.length > 0) {
-      setErr(errors.join("|||")); // Ayraç ile birleştir
+      submitLockRef.current = false;
+      setErr(errors.join("|||"));
       return;
     }
 
@@ -877,6 +882,7 @@ export function CreateListingWizard({
       descParts
     );
     if (!filter.ok) {
+      submitLockRef.current = false;
       setErr(filter.message ?? "İçerik reddedildi.");
       return;
     }
@@ -938,6 +944,7 @@ export function CreateListingWizard({
     }
 
     setBusy(true);
+    let published = false;
     try {
       const uid = (await supabase.auth.getUser()).data.user?.id;
       if (!uid) {
@@ -1036,6 +1043,7 @@ export function CreateListingWizard({
         }
 
         window.location.href = "/profil/ilanlarim";
+        published = true;
         return;
       }
 
@@ -1049,6 +1057,26 @@ export function CreateListingWizard({
       base.user_id = uid;
       base.activated_at = new Date().toISOString();
 
+      const duplicateId = await findLiveDuplicateListingId(supabase, {
+        userId: uid,
+        title: titleFinal,
+        price: priceNum,
+        vehicleModel: isVehicle
+          ? String(base.vehicle_model ?? "")
+          : null,
+        vehicleYear: isVehicle
+          ? (typeof base.vehicle_year === "number" ? base.vehicle_year : null)
+          : null,
+        vehicleMileage: isVehicle
+          ? (typeof base.vehicle_mileage === "number" ? base.vehicle_mileage : null)
+          : null,
+        categoryId: categoryId || null,
+      });
+      if (duplicateId) {
+        setErr(DUPLICATE_LIVE_LISTING_MESSAGE);
+        return;
+      }
+
       const { data: inserted, error: insErr } = await supabase
         .from("listings")
         .insert(sanitizeListingClientWrite(base, "insert"))
@@ -1058,9 +1086,11 @@ export function CreateListingWizard({
       if (insErr || !inserted?.id) {
         const msg = insErr?.message ?? "İlan kaydedilemedi.";
         setErr(
-          /quota|hakk/i.test(msg)
-            ? `Son 12 ayda ${listingQuota?.limit ?? 5} ücretsiz yayın hakkınız doldu.`
-            : msg
+          isDuplicateLiveListingError(msg)
+            ? DUPLICATE_LIVE_LISTING_MESSAGE
+            : /quota|hakk/i.test(msg)
+              ? `Son 12 ayda ${listingQuota?.limit ?? 5} ücretsiz yayın hakkınız doldu.`
+              : msg
         );
         return;
       }
@@ -1131,8 +1161,12 @@ export function CreateListingWizard({
       }
 
       window.location.href = "/profil/ilanlarim";
+      published = true;
     } finally {
-      setBusy(false);
+      if (!published) {
+        submitLockRef.current = false;
+        setBusy(false);
+      }
     }
   };
 
