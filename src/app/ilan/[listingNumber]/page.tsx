@@ -1060,20 +1060,40 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
             </nav>
           ) : null}
           {id ? (
-            <ListingDetailStatsRow
-              listingId={id}
-              initialFavorites={stats?.favorites ?? 0}
-              priceLabel={priceLabel}
-              summary={priceRating}
-              loggedIn={!!viewer}
-              priceHistory={priceHistory}
-            />
+            <div className="min-[80rem]:hidden">
+              <ListingDetailStatsRow
+                listingId={id}
+                initialFavorites={stats?.favorites ?? 0}
+                priceLabel={priceLabel}
+                summary={priceRating}
+                loggedIn={!!viewer}
+                priceHistory={priceHistory}
+              />
+            </div>
           ) : (
-            <p className="text-sm font-bold tabular-nums text-black">{priceLabel}</p>
+            <p className="text-sm font-bold tabular-nums text-black min-[80rem]:hidden">
+              {priceLabel}
+            </p>
           )}
         </div>
 
         <div className="listing-detail-tabs min-w-0 px-4 md:px-0">
+          {id ? (
+            <div className="mb-2 hidden min-[80rem]:block">
+              <ListingDetailStatsRow
+                listingId={id}
+                initialFavorites={stats?.favorites ?? 0}
+                priceLabel={priceLabel}
+                summary={priceRating}
+                loggedIn={!!viewer}
+                priceHistory={priceHistory}
+              />
+            </div>
+          ) : (
+            <p className="mb-2 hidden text-sm font-bold tabular-nums text-black min-[80rem]:block">
+              {priceLabel}
+            </p>
+          )}
           <ListingDetailTabs
             publishedAt={publishedAt}
             infoContent={<ListingVehicleSpecs rows={vehicleSpecRows} />}

@@ -43,13 +43,16 @@ export function ListingDetailSkeleton() {
 
         <div className="listing-detail-intro min-w-0 space-y-2 px-4 md:px-0">
           <Pulse className="h-3 w-56" />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-[80rem]:hidden">
             <Pulse className="h-5 w-10" />
             <Pulse className="ml-auto h-8 w-36 sm:h-9 sm:w-44" />
           </div>
         </div>
 
         <div className="listing-detail-tabs min-w-0 px-4 md:px-0">
+          <div className="mb-2 hidden min-[80rem]:flex min-[80rem]:items-center min-[80rem]:gap-3">
+            <Pulse className="ml-auto h-8 w-44" />
+          </div>
           <div className="space-y-2">
             <div className="flex gap-1.5">
               <Pulse className="h-8 flex-1 rounded-lg" />

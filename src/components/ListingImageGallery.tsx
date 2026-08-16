@@ -21,7 +21,9 @@ function galleryShellClass(edgeToEdge: boolean) {
 
 function mainFrameClass(compact: boolean) {
   return `relative w-full touch-pan-y overflow-hidden rounded-lg bg-zinc-100 ${
-    compact ? "aspect-[4/3]" : "aspect-[4/3] sm:aspect-[3/2]"
+    compact
+      ? "aspect-[4/3] min-[80rem]:aspect-[16/10] min-[80rem]:max-h-52"
+      : "aspect-[4/3] sm:aspect-[3/2]"
   }`;
 }
 
@@ -349,7 +351,7 @@ export function ListingImageGallery({
         ) : null}
       </div>
 
-      <div className={edgeToEdge ? "px-2 pb-2 md:px-0 md:pb-0" : undefined}>
+      <div className={`min-[80rem]:hidden ${edgeToEdge ? "px-2 pb-2 md:px-0 md:pb-0" : ""}`}>
         <GalleryThumbnailStrip
           images={list}
           activeIndex={active}
