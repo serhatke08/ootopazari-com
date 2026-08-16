@@ -1020,12 +1020,19 @@ export function CreateListingWizard({
 
         const { error: imgErr } = await supabase
           .from("listings")
-          .update({ image_url: coverUrl })
+          .update({ image_url: coverUrl, images: galleryUrlsForDb })
           .eq("id", editListingId)
           .eq("user_id", uid);
         if (imgErr) {
-          setErr(`Kapak güncellenemedi: ${imgErr.message}`);
-          return;
+          const retry = await supabase
+            .from("listings")
+            .update({ image_url: coverUrl })
+            .eq("id", editListingId)
+            .eq("user_id", uid);
+          if (retry.error) {
+            setErr(`Kapak güncellenemedi: ${retry.error.message}`);
+            return;
+          }
         }
 
         window.location.href = "/profil/ilanlarim";
@@ -1090,12 +1097,19 @@ export function CreateListingWizard({
 
         const { error: upListingErr } = await supabase
           .from("listings")
-          .update({ image_url: coverUrl })
+          .update({ image_url: coverUrl, images: galleryUrls })
           .eq("id", listingId)
           .eq("user_id", uid);
 
         if (upListingErr) {
-          throw new Error(`Kapak güncellenemedi: ${upListingErr.message}`);
+          const retry = await supabase
+            .from("listings")
+            .update({ image_url: coverUrl })
+            .eq("id", listingId)
+            .eq("user_id", uid);
+          if (retry.error) {
+            throw new Error(`Kapak güncellenemedi: ${retry.error.message}`);
+          }
         }
         
         uploadSuccess = true;

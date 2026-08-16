@@ -72,6 +72,7 @@ const LISTING_SELECT = [
   "description",
   "price",
   "image_url",
+  "images",
   "city_name",
   "city_id",
   "country_name",

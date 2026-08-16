@@ -158,13 +158,11 @@ export async function fetchHomeListingsFeed(
     }),
   ]);
 
-  if (!lite) {
-    await enrichListingRowsCoverImages(
-      supabase,
-      env,
-      rows as Record<string, unknown>[]
-    );
-  }
+  await enrichListingRowsCoverImages(
+    supabase,
+    env,
+    rows as Record<string, unknown>[]
+  );
 
   const catMap = buildCategoryMap(categories);
   const cityMap = buildCityMap(cities);

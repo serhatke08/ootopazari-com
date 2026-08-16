@@ -52,12 +52,55 @@ export function resolveListingImageUrl(
   imageUrl: string | null | undefined
 ): string | null {
   if (imageUrl == null || imageUrl === "") return null;
-  if (/^https?:\/\//i.test(imageUrl)) {
-    const path = extractPublicBucketPath(imageUrl);
+  const trimmed = String(imageUrl).trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) {
+    const path = extractPublicBucketPath(trimmed);
     if (path) return publicListingImageUrl(env, path);
-    return imageUrl;
+    return trimmed;
   }
-  return publicListingImageUrl(env, imageUrl);
+  return publicListingImageUrl(env, trimmed);
+}
+
+const COVER_FALLBACK_FILES = [
+  "0.jpg",
+  "0.jpeg",
+  "0.png",
+  "0.webp",
+  "0.heic",
+  "1.jpg",
+  "1.jpeg",
+  "1.png",
+];
+
+/** Kartlarda denenecek kapak URL’leri (optimizer’sız yedekler dahil). */
+export function listingCoverCandidateUrls(
+  env: SupabasePublicEnv,
+  imageUrl: string | null | undefined,
+  listingId?: string | null
+): string[] {
+  const out: string[] = [];
+  const push = (u: string | null | undefined) => {
+    const v = u?.trim();
+    if (v && !out.includes(v)) out.push(v);
+  };
+
+  push(listingImageDisplayUrl(env, imageUrl));
+  push(resolveListingImageUrl(env, imageUrl));
+
+  const id = listingId?.trim();
+  if (id) {
+    for (const name of COVER_FALLBACK_FILES) {
+      const path = `${id}/${name}`;
+      const publicUrl = publicListingImageUrl(env, path);
+      if (/\.hei(c|f)$/i.test(name)) {
+        push(listingImageDisplayUrl(env, publicUrl));
+      }
+      push(publicUrl);
+    }
+  }
+
+  return out;
 }
 
 export function isPublicListingImageUrl(

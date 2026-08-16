@@ -103,13 +103,21 @@ export async function collectListingGalleryUrlsWithStorageFallback(
 
   if (error || !data?.length) return fromRow;
 
+  const isImage = (n: string) =>
+    /\.(jpe?g|png|webp|gif|heic|heif|avif)$/i.test(n);
   const names = data
     .map((o) => o.name)
-    .filter((n) => /^\d+\.[a-z0-9]+$/i.test(n))
-    .sort(
-      (a, b) =>
-        parseInt(a.split(".")[0]!, 10) - parseInt(b.split(".")[0]!, 10)
-    );
+    .filter(isImage)
+    .sort((a, b) => {
+      const na = parseInt(a.split(".")[0]!, 10);
+      const nb = parseInt(b.split(".")[0]!, 10);
+      const aNum = Number.isFinite(na);
+      const bNum = Number.isFinite(nb);
+      if (aNum && bNum) return na - nb;
+      if (aNum) return -1;
+      if (bNum) return 1;
+      return a.localeCompare(b);
+    });
 
   if (names.length === 0) return fromRow;
 
@@ -147,14 +155,24 @@ export async function enrichListingRowsCoverImages(
 ): Promise<void> {
   const missing = rows.filter((r) => {
     const url = r.image_url as string | null | undefined;
-    return !resolveListingImageUrl(env, url);
+    return !listingImageDisplayUrl(env, url) && !resolveListingImageUrl(env, url);
   });
   if (missing.length === 0) return;
 
   await Promise.all(
     missing.map(async (row) => {
       const cover = await resolveListingCoverImageUrl(supabase, env, row);
-      if (cover) row.image_url = cover;
+      if (!cover) return;
+      row.image_url = cover;
+      const id = row.id != null ? String(row.id) : "";
+      if (!id) return;
+      void supabase
+        .from("listings")
+        .update({ image_url: cover })
+        .eq("id", id)
+        .then(({ error }) => {
+          if (error) console.warn("cover image_url backfill:", error.message);
+        });
     })
   );
 }

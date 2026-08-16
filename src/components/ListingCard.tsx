@@ -144,7 +144,6 @@ export function ListingCard({
     typeof listing.title === "string" ? listing.title : null
   );
   const listingId = listing.id;
-  const hasImage = Boolean(listing.image_url);
   const price =
     listing.price != null
       ? `${new Intl.NumberFormat("tr-TR", {
@@ -164,20 +163,15 @@ export function ListingCard({
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
-      {hasImage ? (
-        <ListingCoverImage
-          env={env}
-          imageUrl={listing.image_url}
-          alt={listing.title ?? "İlan görseli"}
-          objectFit={isHomeGrid ? "cover" : "contain"}
-          scale={!isHomeGrid}
-          sizes="(max-width: 639px) 50vw, (max-width: 1279px) 25vw, 20vw"
-        />
-      ) : (
-        <div className="flex h-full items-center justify-center text-sm text-zinc-500">
-          Görsel yok
-        </div>
-      )}
+      <ListingCoverImage
+        env={env}
+        imageUrl={listing.image_url}
+        listingId={listingId}
+        alt={listing.title ?? "İlan görseli"}
+        objectFit={isHomeGrid ? "cover" : "contain"}
+        scale={!isHomeGrid}
+        sizes="(max-width: 639px) 50vw, (max-width: 1279px) 25vw, 20vw"
+      />
     </div>
   );
 
