@@ -57,6 +57,7 @@ import {
 } from "@/lib/admin-profile";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import { SuspendListingButton } from "@/components/SuspendListingButton";
+import { DeleteListingButton } from "@/components/DeleteListingButton";
 import { StartConversationButton } from "@/components/messages/StartConversationButton";
 import { ListingContactPhone } from "@/components/ListingContactPhone";
 import { ListingDetailTabs } from "@/components/ListingDetailTabs";
@@ -1027,6 +1028,13 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                       >
                         <EditIcon />
                       </Link>
+                    ) : null}
+                    {isOwner && id ? (
+                      <DeleteListingButton
+                        listingId={id}
+                        listingLabel={`#${String(num ?? "?")} — ${String(listing.title ?? "İlan")}`}
+                        variant="overlay"
+                      />
                     ) : null}
                     {viewerAdminProfile && id && detailAccess === "public" ? (
                       <SuspendListingButton
