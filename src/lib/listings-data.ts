@@ -72,7 +72,6 @@ const LISTING_SELECT = [
   "description",
   "price",
   "image_url",
-  "images",
   "city_name",
   "city_id",
   "country_name",
@@ -114,7 +113,6 @@ const LISTING_EDIT_EXTRA = [
   "is_damaged",
   "is_tradeable",
   "expertiz_panels",
-  "images",
 ] as const;
 
 const LISTING_OWNER_EDIT_SELECT = [
