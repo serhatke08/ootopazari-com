@@ -522,11 +522,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ? fetchPriceRatingSummary(supabase, id, viewer?.id ?? null)
       : Promise.resolve(EMPTY_PRICE_RATING_SUMMARY),
     id ? fetchListingPriceHistory(supabase, id) : Promise.resolve([]),
-    sellerUserId
-      ? fetchProfilePublic(supabase, sellerUserId, {
-          includePhone: Boolean(viewerAdminProfile),
-        })
-      : Promise.resolve(null),
+    sellerUserId ? fetchProfilePublic(supabase, sellerUserId) : Promise.resolve(null),
     sellerUserId
       ? fetchAdminProfileByUserId(supabase, sellerUserId)
       : Promise.resolve(null),
@@ -859,25 +855,18 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       </dl>
     );
 
-  const adminCanSeeContact = Boolean(viewerAdminProfile);
-  const listingPhone =
+  const contactPhone =
     typeof listing.contact_phone === "string"
       ? listing.contact_phone.trim()
       : "";
-  const sellerPhone =
-    seller && typeof seller.phone === "string" ? seller.phone.trim() : "";
-  const contactPhone =
-    listingPhone || (adminCanSeeContact ? sellerPhone : "");
   const showPhone =
     !!contactPhone &&
-    (listing.contact_via_phone === true || adminCanSeeContact) &&
-    (detailAccess === "public" ||
-      detailAccess === "suspended_admin" ||
-      detailAccess === "expired_admin");
+    listing.contact_via_phone === true &&
+    detailAccess === "public";
   const showContactDock =
     !!seller &&
     !isOwner &&
-    (showMessageButton || (showPhone && !adminCanSeeContact));
+    (showMessageButton || showPhone);
 
   const suspensionReason =
     listing.suspension_reason != null

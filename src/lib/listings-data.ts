@@ -942,15 +942,11 @@ export async function fetchListingForOwnerByNumber(
 
 export async function fetchProfilePublic(
   supabase: SupabaseClient,
-  userId: string,
-  options?: { includePhone?: boolean }
+  userId: string
 ): Promise<Record<string, unknown> | null> {
-  const cols = options?.includePhone
-    ? "id,username,full_name,avatar_url,phone,created_at"
-    : "id,username,full_name,avatar_url,created_at";
   const { data, error } = await supabase
     .from("profiles")
-    .select(cols)
+    .select("id,username,full_name,avatar_url,created_at")
     .eq("id", userId)
     .maybeSingle();
 
