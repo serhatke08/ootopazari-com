@@ -22,7 +22,7 @@ function galleryShellClass(edgeToEdge: boolean) {
 function mainFrameClass(compact: boolean) {
   return `relative w-full touch-pan-y overflow-hidden rounded-lg bg-zinc-100 ${
     compact
-      ? "aspect-[4/3] min-[80rem]:aspect-[16/10] min-[80rem]:max-h-52"
+      ? "aspect-[4/3] min-[80rem]:aspect-square min-[80rem]:min-h-[32rem]"
       : "aspect-[4/3] sm:aspect-[3/2]"
   }`;
 }
@@ -253,7 +253,7 @@ export function ListingImageGallery({
   if (!main) {
     return (
       <div className={`relative ${edgeToEdge ? "" : "p-2 sm:p-3"}`}>
-        <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500">
+        <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500 min-[80rem]:aspect-square min-[80rem]:min-h-[32rem]">
           Görsel yok
         </div>
         {overlay ? (
@@ -301,7 +301,7 @@ export function ListingImageGallery({
             style={{ objectFit: "contain" }}
             priority={active === 0}
             loading={active === 0 ? "eager" : "lazy"}
-            sizes="(max-width: 1024px) 100vw, 720px"
+            sizes="(max-width: 1024px) 100vw, 800px"
             onLoad={() => setLoadedSrc(main)}
             onError={() => setLoadedSrc(main)}
           />
