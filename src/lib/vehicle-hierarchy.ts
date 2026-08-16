@@ -378,33 +378,28 @@ export async function fetchBodyStylesForModel(
   return [];
 }
 
-const ENGINE_SELECT_WITH_CC =
-  "id,name,fuel_type,horsepower,engine_capacity_cc,sort_order";
-const ENGINE_SELECT_BASE = "id,name,fuel_type,horsepower,sort_order";
-
 async function queryBodyStyleEngines(
   supabase: SupabaseClient,
   filter: { bodyStyleId?: string; bodyStyleIds?: string[] }
 ): Promise<EngineOptionRow[]> {
-  for (const sel of [ENGINE_SELECT_WITH_CC, ENGINE_SELECT_BASE]) {
-    let q = supabase.from("vehicle_body_style_engines").select(sel);
-    if (filter.bodyStyleId) q = q.eq("body_style_id", filter.bodyStyleId);
-    if (filter.bodyStyleIds?.length) {
-      q = q.in("body_style_id", filter.bodyStyleIds);
-    }
-    const { data, error } = await q
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("name", { ascending: true });
-    if (!error && data) return (data ?? []) as EngineOptionRow[];
-    if (
-      error &&
-      !/engine_capacity_cc|column .* does not exist/i.test(error.message)
-    ) {
-      console.warn("vehicle_body_style_engines:", error.message);
-      return [];
-    }
+  let q = supabase
+    .from("vehicle_body_style_engines")
+    .select("id,name,fuel_type,horsepower,sort_order");
+  if (filter.bodyStyleId) q = q.eq("body_style_id", filter.bodyStyleId);
+  if (filter.bodyStyleIds?.length) {
+    q = q.in("body_style_id", filter.bodyStyleIds);
   }
-  return [];
+  const { data, error } = await q
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
+  if (error || !data) {
+    console.warn(
+      "vehicle_body_style_engines:",
+      error?.message ?? "sorgu başarısız"
+    );
+    return [];
+  }
+  return data as EngineOptionRow[];
 }
 
 /**
