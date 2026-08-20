@@ -21,6 +21,7 @@ import {
 } from "@/lib/seo-brand";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ADSENSE_CLIENT_ID } from "@/lib/adsense";
+import { AppDownloadPromoPopup } from "@/components/AppDownloadPromoPopup";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
@@ -146,6 +147,7 @@ export default async function RootLayout({
             <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />
           </SiteMainShell>
           <ListingNavSkeletonGate />
+          <AppDownloadPromoPopup />
         </SiteSearchProvider>
         <Analytics />
         <SpeedInsights />
