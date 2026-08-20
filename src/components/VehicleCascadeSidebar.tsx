@@ -208,7 +208,10 @@ function VehicleCascadeSidebarInner({
   const [packageCountsReady, setPackageCountsReady] = useState(false);
 
   const visibleCategorySlots = useMemo(() => {
-    if (!categoryCountsReady) return categorySlots;
+    if (!categoryCountsReady) {
+      if (!categoryId) return [];
+      return categorySlots.filter((slot) => slot.id === categoryId);
+    }
     return categorySlots.filter(
       (slot) =>
         slot.id === categoryId || (categoryCounts.get(slot.id) ?? 0) > 0
@@ -859,11 +862,30 @@ function VehicleCascadeSidebarInner({
         </div>
       ) : null}
       {visibleCategorySlots.length === 0 ? (
-        <p className="text-xs text-zinc-500">
-          {categoryCountsReady
-            ? "Yayında ilanı olan kategori yok."
-            : "Kategori listesi boş (Supabase `categories` tablosu)."}
-        </p>
+        !categoryCountsReady && !categoryId ? (
+          <>
+            {label("Kategori", compact)}
+            <ul className={cascadeListClass(fillColumn, compact)} aria-hidden>
+              {Array.from({ length: 8 }, (_, i) => (
+                <li key={i} className="min-w-0">
+                  <div
+                    className={
+                      compact
+                        ? "h-8 w-full animate-pulse rounded-md border border-zinc-200 bg-zinc-100"
+                        : "h-10 w-full animate-pulse rounded-lg border border-zinc-200 bg-zinc-100"
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="text-xs text-zinc-500">
+            {categoryCountsReady
+              ? "Yayında ilanı olan kategori yok."
+              : "Kategori listesi boş (Supabase `categories` tablosu)."}
+          </p>
+        )
       ) : !categoryId ? (
         <>
           {label("Kategori", compact)}

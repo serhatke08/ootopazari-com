@@ -15,8 +15,8 @@ function QuickLinksStripSkeleton() {
               key={d.href}
               className="flex w-[4.35rem] shrink-0 flex-col items-center gap-1"
             >
-              <div className="h-12 w-12 rounded-full bg-zinc-200 ring-1 ring-zinc-900/10 ring-offset-2 ring-offset-white" />
-              <div className="h-2.5 w-10 rounded bg-zinc-200" />
+              <div className="h-12 w-12 animate-pulse rounded-full bg-zinc-200" />
+              <Pulse className="h-2.5 w-10" />
             </div>
           ))}
         </div>
@@ -25,28 +25,20 @@ function QuickLinksStripSkeleton() {
   );
 }
 
+/** Sol sütun: düz satırlar — ikon / sarı yok (gerçek kategori ikonları flash etmesin). */
 function SidebarSkeleton() {
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 space-y-1 overflow-hidden rounded-lg border border-zinc-200 bg-white p-2">
-        {Array.from({ length: 11 }, (_, i) => (
-          <div key={i} className="flex items-center gap-2 rounded-md px-1 py-1.5">
-            <div className="h-7 w-7 shrink-0 animate-pulse rounded-md bg-zinc-200" />
-            <div
-              className="h-3 animate-pulse rounded bg-zinc-200"
-              style={{ width: `${56 + (i % 4) * 12}px` }}
-            />
-          </div>
+        <Pulse className="mb-1 h-2.5 w-14" />
+        {Array.from({ length: 8 }, (_, i) => (
+          <div
+            key={i}
+            className="h-8 w-full animate-pulse rounded-md border border-zinc-100 bg-zinc-100"
+          />
         ))}
       </div>
-      <div
-        className="mt-2 shrink-0 overflow-hidden rounded-lg border border-black/10"
-        style={{ backgroundColor: "#ffcc00" }}
-      >
-        <div className="mx-auto w-[82%] max-w-[200px] py-2">
-          <div className="aspect-[3/4] w-full animate-pulse rounded-md bg-black/10" />
-        </div>
-      </div>
+      <div className="mt-2 h-36 shrink-0 animate-pulse rounded-lg border border-zinc-200 bg-zinc-100" />
     </div>
   );
 }
