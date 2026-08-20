@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   appStoreUrl,
   detectMobileStore,
@@ -24,6 +23,19 @@ export function HomeAppPromoRail() {
   const href = storeUrlForKind(store);
   const desktop = !mounted || store === "other";
 
+  const video = (
+    <video
+      src="/promo/sure.mp4"
+      className="block h-auto w-full"
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      aria-label="Oto Pazarı mobil uygulaması"
+    />
+  );
+
   return (
     <section
       className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 bg-[#ffcc00] shadow-sm"
@@ -32,14 +44,7 @@ export function HomeAppPromoRail() {
       <div className="relative">
         {desktop ? (
           <>
-            <Image
-              src="/promo/app-download.jpg"
-              alt="Oto Pazarı mobil uygulaması"
-              width={682}
-              height={1024}
-              className="block h-auto w-full"
-              sizes="280px"
-            />
+            {video}
             <a
               href={playStoreUrl()}
               target="_blank"
@@ -63,14 +68,7 @@ export function HomeAppPromoRail() {
             className="block"
             aria-label="Uygulamayı indir"
           >
-            <Image
-              src="/promo/app-download.jpg"
-              alt="Oto Pazarı mobil uygulaması"
-              width={682}
-              height={1024}
-              className="block h-auto w-full"
-              sizes="280px"
-            />
+            {video}
           </a>
         )}
       </div>
