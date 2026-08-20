@@ -11,9 +11,9 @@ export function HomeListingsGridSkeleton({ count = 10 }: { count?: number }) {
           className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
         >
           <div className="aspect-square animate-pulse bg-zinc-200 md:aspect-[4/3]" />
-          <div className="space-y-1.5 p-1.5 pt-2 sm:p-2 md:p-1.5 md:pt-1.5">
-            <div className="h-[1.55rem] animate-pulse rounded bg-zinc-200" />
-            <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-200" />
+          <div className="space-y-1.5 p-1.5 pt-2 sm:p-2 md:p-1.5">
+            <div className="h-4 w-full animate-pulse rounded bg-zinc-200" />
+            <div className="h-4 w-[70%] animate-pulse rounded bg-zinc-200" />
             <div className="flex items-center justify-between gap-1 pt-0.5">
               <div className="h-3 w-12 animate-pulse rounded bg-zinc-100" />
               <div className="h-3 w-10 animate-pulse rounded bg-zinc-100" />

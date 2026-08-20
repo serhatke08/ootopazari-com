@@ -2,27 +2,17 @@
 
 import {
   appStoreUrl,
-  detectMobileStore,
   playStoreUrl,
-  storeUrlForKind,
-  type MobileStoreKind,
 } from "@/lib/app-stores";
-import { useEffect, useRef, useState } from "react";
-import { useIsClient } from "@/hooks/use-is-client";
+import { useEffect, useRef } from "react";
 
 const REPLAY_EVERY_MS = 10_000;
+const PROMO_YELLOW = "#ffcc00";
 
 /** PC sol sütun: kategorinin hemen altında dikey uygulama tanıtım paneli */
 export function HomeAppPromoRail() {
-  const mounted = useIsClient();
-  const [store, setStore] = useState<MobileStoreKind>("other");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const replayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!mounted) return;
-    setStore(detectMobileStore(navigator.userAgent));
-  }, [mounted]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -37,7 +27,11 @@ export function HomeAppPromoRail() {
 
     const playOnce = () => {
       clearReplay();
-      el.currentTime = 0;
+      try {
+        el.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
       void el.play().catch(() => {});
     };
 
@@ -46,6 +40,8 @@ export function HomeAppPromoRail() {
       replayTimer.current = setTimeout(playOnce, REPLAY_EVERY_MS);
     };
 
+    el.muted = true;
+    el.playsInline = true;
     el.loop = false;
     el.addEventListener("ended", onEnded);
     playOnce();
@@ -53,64 +49,44 @@ export function HomeAppPromoRail() {
     return () => {
       el.removeEventListener("ended", onEnded);
       clearReplay();
+      el.pause();
     };
-  }, [mounted]);
-
-  const href = storeUrlForKind(store);
-  const desktop = !mounted || store === "other";
-
-  const video = (
-    <video
-      ref={videoRef}
-      src="/promo/sure.mp4"
-      className="mx-auto block h-auto w-[78%] max-w-[220px] bg-[#ffcc00]"
-      style={{ backgroundColor: "#ffcc00" }}
-      muted
-      playsInline
-      preload="metadata"
-      aria-label="Oto Pazarı mobil uygulaması"
-    />
-  );
+  }, []);
 
   return (
     <section
-      className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 px-2 py-2 shadow-sm"
-      style={{ backgroundColor: "#ffcc00" }}
+      className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 shadow-sm"
+      style={{ backgroundColor: PROMO_YELLOW }}
       aria-label="Uygulamamızı indirin"
     >
       <div
-        className="relative mx-auto w-full"
-        style={{ backgroundColor: "#ffcc00" }}
+        className="relative mx-auto w-[82%] max-w-[200px] py-2"
+        style={{ backgroundColor: PROMO_YELLOW }}
       >
-        {desktop ? (
-          <>
-            {video}
-            <a
-              href={playStoreUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Google Play’den indir"
-              className="absolute bottom-[3.5%] left-[8%] h-[9.5%] w-[40%] rounded-md"
-            />
-            <a
-              href={appStoreUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="App Store’dan indir"
-              className="absolute bottom-[3.5%] right-[8%] h-[9.5%] w-[40%] rounded-md"
-            />
-          </>
-        ) : (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
-            aria-label="Uygulamayı indir"
-          >
-            {video}
-          </a>
-        )}
+        <video
+          ref={videoRef}
+          src="/promo/sure.mp4"
+          className="block h-auto w-full"
+          style={{ backgroundColor: PROMO_YELLOW }}
+          muted
+          playsInline
+          preload="auto"
+          aria-label="Oto Pazarı mobil uygulaması"
+        />
+        <a
+          href={playStoreUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Google Play’den indir"
+          className="absolute bottom-[3.5%] left-[8%] z-10 h-[9.5%] w-[40%] rounded-md"
+        />
+        <a
+          href={appStoreUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="App Store’dan indir"
+          className="absolute bottom-[3.5%] right-[8%] z-10 h-[9.5%] w-[40%] rounded-md"
+        />
       </div>
     </section>
   );
