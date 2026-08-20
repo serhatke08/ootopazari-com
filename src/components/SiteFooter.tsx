@@ -27,59 +27,63 @@ export function SiteFooter({
       ];
 
   return (
-    <footer className="site-footer mt-auto w-full border-t border-zinc-200 bg-zinc-50 py-8 sm:border-t-2 sm:border-amber-500/60 sm:bg-[#ffcc00] sm:py-12">
-      <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6">
-        {/* Mobile: Compact Design */}
+    <footer className="site-footer relative mt-auto w-full overflow-hidden border-t border-white/10 py-8 sm:py-12">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[#0a0a0a] bg-[url('/promo/footer-bg.png')] bg-repeat bg-[length:420px_420px] sm:bg-[length:520px_520px]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/70 to-black/85"
+      />
+
+      <div className="relative z-[1] mx-auto w-full max-w-[1400px] px-4 sm:px-6">
+        {/* Mobile */}
         <div className="sm:hidden">
-          {/* Logo & Tagline */}
           <div className="mb-6 text-center">
-            <h2 className="text-xl font-bold text-zinc-900">Oto Pazarı</h2>
-            <p className="mt-1 text-xs text-zinc-600">
+            <h2 className="text-xl font-bold text-white">Oto Pazarı</h2>
+            <p className="mt-1 text-xs text-white/65">
               İkinci el araba ve sıfır araba ilanları
             </p>
           </div>
 
-          {/* Quick Links Grid */}
           <div className="mb-6 grid grid-cols-2 gap-2">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-zinc-900 transition active:bg-zinc-100"
+                className="rounded-lg border border-white/15 bg-white/10 px-4 py-2.5 text-center text-sm font-medium text-white backdrop-blur-[2px] transition active:bg-white/20"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {/* Account Links */}
           <div className="mb-6 flex justify-center gap-4">
             {accountLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-900"
+                className="text-sm font-medium text-white/75 hover:text-white"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {/* Legal */}
-          <div className="mb-6 border-t border-zinc-200 pt-4">
-            <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+          <div className="mb-6 border-t border-white/10 pt-4">
+            <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/45">
               Yasal
             </p>
-            <LegalPageLinks className="justify-center" />
+            <LegalPageLinks tone="onDark" className="justify-center" />
           </div>
 
-          {/* Copyright */}
-          <p className="text-center text-xs text-zinc-500">
+          <p className="text-center text-xs text-white/45">
             © {new Date().getFullYear()} Oto Pazarı
           </p>
         </div>
 
-        {/* Desktop: Original Design */}
+        {/* Desktop */}
         <div className="hidden sm:block">
           <section
             aria-labelledby="footer-seo-heading"
