@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import { appStoreUrl, playStoreUrl } from "@/lib/app-stores";
 
@@ -18,7 +16,7 @@ export function HomeAppPromoRail() {
           height={1024}
           className="block h-auto w-full"
           sizes="280px"
-          priority={false}
+          priority
         />
         <a
           href={playStoreUrl()}
