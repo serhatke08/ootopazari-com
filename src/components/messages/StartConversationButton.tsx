@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
-import { findConversationForListingAndPair } from "@/lib/messages";
+import { findConversationForListingAndPair, unhideOwnConversation } from "@/lib/messages";
 
 type Props = {
   listingId: string;
@@ -88,6 +88,7 @@ export function StartConversationButton({
         return;
       }
 
+      await unhideOwnConversation(supabase, convId, user.id);
       router.push(`/mesajlar/${convId}`);
     } catch {
       setError("Bağlantı kurulamadı. İnternet veya Supabase ayarlarını kontrol edin.");

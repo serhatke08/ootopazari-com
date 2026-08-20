@@ -43,21 +43,79 @@ export async function fetchBlockedPeerIds(
   return set;
 }
 
+export async function fetchHiddenConversationIdsForUser(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("conversation_user_hides")
+    .select("conversation_id")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.warn("conversation_user_hides:", error.message);
+    return new Set();
+  }
+  const set = new Set<string>();
+  for (const row of data ?? []) {
+    const id = (row as { conversation_id?: string }).conversation_id;
+    if (id) set.add(String(id));
+  }
+  return set;
+}
+
+export async function isConversationHiddenForUser(
+  supabase: SupabaseClient,
+  conversationId: string,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("conversation_user_hides")
+    .select("conversation_id")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) {
+    console.warn("conversation hide check:", error.message);
+    return false;
+  }
+  return !!data;
+}
+
+/** Mobilde silinen sohbeti web’den yeniden açınca gizliliği kaldır. */
+export async function unhideOwnConversation(
+  supabase: SupabaseClient,
+  conversationId: string,
+  userId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("conversation_user_hides")
+    .delete()
+    .eq("conversation_id", conversationId)
+    .eq("user_id", userId);
+  if (error) console.warn("unhide conversation:", error.message);
+}
+
 export async function fetchConversationsForUser(
   supabase: SupabaseClient,
   userId: string
 ): Promise<ConversationRow[]> {
-  const { data, error } = await supabase
-    .from("conversations")
-    .select("id,listing_id,sender_id,receiver_id,updated_at,created_at")
-    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-    .order("updated_at", { ascending: false, nullsFirst: false });
+  const [{ data, error }, hiddenIds] = await Promise.all([
+    supabase
+      .from("conversations")
+      .select("id,listing_id,sender_id,receiver_id,updated_at,created_at")
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order("updated_at", { ascending: false, nullsFirst: false }),
+    fetchHiddenConversationIdsForUser(supabase, userId),
+  ]);
 
   if (error) {
     console.warn("conversations:", error.message);
     return [];
   }
-  return (data ?? []) as ConversationRow[];
+  return ((data ?? []) as ConversationRow[]).filter(
+    (c) => !hiddenIds.has(c.id)
+  );
 }
 
 export function otherParticipantId(c: ConversationRow, userId: string): string {

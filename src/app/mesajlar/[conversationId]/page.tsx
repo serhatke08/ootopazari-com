@@ -18,6 +18,7 @@ import {
   fetchMessagesForConversation,
   fetchProfilesByIds,
   fetchUnreadCountsByConversation,
+  isConversationHiddenForUser,
   listingConversationStatus,
   listingSummaryForConversation,
   otherParticipantId,
@@ -70,6 +71,10 @@ export default async function MesajConversationPage({ params }: Props) {
 
   const conv = await fetchConversationById(supabase, conversationId, user.id);
   if (!conv) notFound();
+
+  if (await isConversationHiddenForUser(supabase, conversationId, user.id)) {
+    redirect("/mesajlar");
+  }
 
   let rows = await fetchConversationsForUser(supabase, user.id);
   const otherId = otherParticipantId(conv, user.id);

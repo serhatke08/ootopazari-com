@@ -242,8 +242,6 @@ export function SiteHeaderClient({
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
-  const [headerVisible, setHeaderVisible] = useState(true);
-  const lastScrollY = useRef(0);
   const notifRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const [sessionEmail, setSessionEmail] = useState<string | null>(email);
@@ -285,44 +283,6 @@ export function SiteHeaderClient({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [mobileSearchOpen]);
-
-  useEffect(() => {
-    // Yön değişimi için eşik: dokunmatik kaydırmanın ve iOS lastik efektinin
-    // ürettiği birkaç piksellik salınımlar başlığı sürekli açıp kapatıyordu.
-    const DIRECTION_THRESHOLD = 8;
-    const ALWAYS_VISIBLE_ABOVE = 64;
-    let queued = false;
-
-    const update = () => {
-      queued = false;
-      // Negatif değerler: iOS'ta üstten aşağı çekince oluşan taşma.
-      const currentScrollY = Math.max(0, window.scrollY);
-      const delta = currentScrollY - lastScrollY.current;
-
-      if (currentScrollY < ALWAYS_VISIBLE_ABOVE) {
-        setHeaderVisible(true);
-        lastScrollY.current = currentScrollY;
-        return;
-      }
-
-      // Eşiğin altındaki hareketlerde referansı güncellemiyoruz ki yavaş
-      // kaydırmada fark birikip yine de tepki verebilsin.
-      if (Math.abs(delta) < DIRECTION_THRESHOLD) return;
-
-      setHeaderVisible(delta < 0);
-      lastScrollY.current = currentScrollY;
-    };
-
-    const handleScroll = () => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(update);
-    };
-
-    lastScrollY.current = Math.max(0, window.scrollY);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const loggedIn = !!sessionEmail;
   const hasListings = useUserHasListings(hasEnv, loggedIn, serverHasListings);
@@ -408,9 +368,9 @@ export function SiteHeaderClient({
       />
 
       <header
-        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm transition-transform duration-300 ${
-          headerVisible ? "translate-y-0" : "-translate-y-full"
-        } ${hideTopNavOnMobile ? "hidden md:block" : ""}`}
+        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm ${
+          hideTopNavOnMobile ? "hidden md:block" : ""
+        }`}
       >
         <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
           <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 sm:grid-cols-[minmax(12rem,1fr)_auto_minmax(13rem,1fr)] sm:gap-3">
