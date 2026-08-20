@@ -6,18 +6,18 @@ import { isListingDetailPath } from "@/lib/listing-seo";
 
 function Pulse({ className }: { className: string }) {
   return (
-    <div className={`animate-pulse rounded-md bg-black/15 ${className}`} />
+    <div className={`animate-pulse rounded-md bg-zinc-300/80 ${className}`} />
   );
 }
 
-/** SiteHeader ile aynı grid — Suspense yüklenirken ezilmesin. */
+/** Navbar boyutunu korur; skeleton’da sarı yok. */
 export function SiteHeaderFallback() {
   const pathname = usePathname();
   const hideOnMobileListing = isListingDetailPath(pathname);
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm ${
+      className={`sticky top-0 z-40 border-b border-zinc-200 bg-zinc-100 shadow-sm ${
         hideOnMobileListing ? "hidden md:block" : ""
       }`}
       aria-busy="true"
