@@ -126,16 +126,18 @@ function NavSearchForm({
   const siteSearch = useSiteSearch();
   const onHome = pathname === "/";
   const urlQ = onHome ? (searchParams.get("q") ?? "") : "";
-  const [value, setValue] = useState(urlQ);
-
-  useEffect(() => {
-    if (!onHome) return;
-    if (siteSearch?.homeTextQuery !== undefined) {
-      setValue(siteSearch.homeTextQuery);
-    } else {
-      setValue(urlQ);
-    }
-  }, [onHome, urlQ, siteSearch?.homeTextQuery]);
+  const externalQ = onHome
+    ? siteSearch?.homeTextQuery !== undefined
+      ? siteSearch.homeTextQuery
+      : urlQ
+    : "";
+  const [draft, setDraft] = useState<string | null>(null);
+  const [baseline, setBaseline] = useState(externalQ);
+  if (baseline !== externalQ) {
+    setBaseline(externalQ);
+    setDraft(null);
+  }
+  const value = draft ?? externalQ;
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -169,7 +171,7 @@ function NavSearchForm({
         type="search"
         name="q"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => setDraft(e.target.value)}
         placeholder="Ara…"
         autoComplete="off"
         autoFocus={autoFocus}
