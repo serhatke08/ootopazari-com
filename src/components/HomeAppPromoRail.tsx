@@ -16,7 +16,8 @@ export function HomeAppPromoRail() {
           height={1024}
           className="block h-auto w-full"
           sizes="280px"
-          priority
+          loading="eager"
+          fetchPriority="high"
         />
         <a
           href={playStoreUrl()}

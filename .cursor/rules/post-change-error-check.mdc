@@ -1,0 +1,26 @@
+---
+description: Her kod değişikliğinden sonra zorunlu hata kontrolü
+alwaysApply: true
+---
+
+# Zorunlu hata kontrolü (her işten sonra)
+
+Kod, stil, layout, skeleton, component veya config değişikliğini bitirdikten sonra **yanıt vermeden önce** hata kontrolü yap. Kullanıcı sormasa da uygula.
+
+## Kontrol listesi
+
+1. **Typecheck**: `npx tsc --noEmit` (çıkış kodu 0 olmalı)
+2. **Dev log**: aktif Next terminal çıktısında `hydration`, `Error`, `TypeError`, `⨯`, `failed` ara
+3. **İlgili lint**: değişen dosyalar için linter/diagnostics oku
+4. **Kritik rota**: mümkünse etkilenen sayfaya HTTP isteği at (ör. `GET /` → 200)
+
+## Bulursan
+
+- Hatayı düzelt, sonra kontrolleri **tekrar** çalıştır
+- Kullanıcıya “bitti” demeden önce temiz sonuç göster
+- Bilinen/ilgisiz uyarıları (middleware deprecation, LCP hint) ana hata diye sayma; hydration ve runtime error’ları say
+
+## Yapma
+
+- “Muhtemelen çalışır” deyip kontrol atlama
+- Cache kaynaklı hydration şüphesinde `.next` temizleyip dev’i yenilemeyi dene
