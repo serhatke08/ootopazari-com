@@ -35,7 +35,7 @@ function label(text: string, compact?: boolean) {
     <label
       className={
         compact
-          ? "mb-1 block text-[10px] font-semibold uppercase tracking-wide text-zinc-500"
+          ? "mb-0.5 block text-[10px] font-semibold uppercase tracking-wide text-zinc-500"
           : "mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500"
       }
     >
@@ -47,7 +47,7 @@ function label(text: string, compact?: boolean) {
 function categoryListRowClass(active: boolean, compact?: boolean) {
   const ring = compact ? "ring-1 ring-amber-400/70" : "ring-2 ring-amber-400/70";
   const base = compact
-    ? "flex w-full min-w-0 items-center justify-between gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs font-semibold transition"
+    ? "flex w-full min-w-0 items-center justify-between gap-1 rounded-md border px-1.5 py-1 text-left text-xs font-semibold transition"
     : "flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2.5 text-left text-sm font-semibold transition";
   return [
     base,
@@ -60,7 +60,7 @@ function categoryListRowClass(active: boolean, compact?: boolean) {
 function brandListRowClass(active: boolean, compact?: boolean) {
   const ring = compact ? "ring-1 ring-amber-400/70" : "ring-2 ring-amber-400/70";
   const base = compact
-    ? "flex w-full min-w-0 flex-row items-center gap-1.5 rounded-md border px-1.5 py-1.5 text-left text-[11px] transition"
+    ? "flex w-full min-w-0 flex-row items-center gap-1 rounded-md border px-1.5 py-1 text-left text-[11px] transition"
     : "flex w-full min-w-0 flex-row items-center gap-2 rounded-md border px-2 py-2 text-left text-xs transition";
   return [
     base,
@@ -100,15 +100,15 @@ function listingCountBadge(n: number, compact?: boolean) {
 function cascadeRootClass(fillColumn?: boolean, compact?: boolean) {
   if (fillColumn) {
     return compact
-      ? "flex w-full min-h-0 flex-col gap-1.5"
-      : "flex w-full min-h-0 flex-col gap-2.5";
+      ? "flex w-full min-h-0 flex-col gap-0.5"
+      : "flex w-full min-h-0 flex-col gap-2";
   }
-  return compact ? "w-full space-y-1.5" : "w-full space-y-2";
+  return compact ? "w-full space-y-1" : "w-full space-y-2";
 }
 
 function cascadeListClass(fillColumn?: boolean, compact?: boolean) {
   if (fillColumn) {
-    return compact ? "flex flex-col gap-2" : "flex flex-col gap-3";
+    return compact ? "flex flex-col gap-0.5" : "flex flex-col gap-2";
   }
   return compact ? "flex flex-col gap-0.5" : "flex flex-col gap-1";
 }
@@ -197,12 +197,23 @@ function VehicleCascadeSidebarInner({
   const [seriesIdCounts, setSeriesIdCounts] = useState<Map<string, number>>(
     () => new Map()
   );
+  const [modelCountsReady, setModelCountsReady] = useState(false);
   const [engineIdCounts, setEngineIdCounts] = useState<Map<string, number>>(
     () => new Map()
   );
+  const [engineCountsReady, setEngineCountsReady] = useState(false);
   const [packageIdCounts, setPackageIdCounts] = useState<Map<string, number>>(
     () => new Map()
   );
+  const [packageCountsReady, setPackageCountsReady] = useState(false);
+
+  const visibleCategorySlots = useMemo(() => {
+    if (!categoryCountsReady) return categorySlots;
+    return categorySlots.filter(
+      (slot) =>
+        slot.id === categoryId || (categoryCounts.get(slot.id) ?? 0) > 0
+    );
+  }, [categorySlots, categoryCounts, categoryCountsReady, categoryId]);
 
   const allModelsForNav = selectableModels;
 
@@ -315,36 +326,28 @@ function VehicleCascadeSidebarInner({
   useEffect(() => {
     if (!categoryId || !brandId || expandedBrandId !== brandId) {
       setModelNameCounts(new Map());
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      const m = await fetchApprovedListingCountsByVehicleModel(supabase, {
-        categoryId,
-        vehicleBrandId: brandId,
-      });
-      if (!cancelled) setModelNameCounts(m);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [categoryId, brandId, expandedBrandId, supabase]);
-
-  useEffect(() => {
-    if (!categoryId || !brandId || expandedBrandId !== brandId) {
       setSeriesIdCounts(new Map());
+      setModelCountsReady(false);
       return;
     }
     let cancelled = false;
+    setModelCountsReady(false);
     void (async () => {
-      const m = await fetchApprovedListingCountsByVehicleBrandModelId(
-        supabase,
-        {
+      const [byName, bySeries] = await Promise.all([
+        fetchApprovedListingCountsByVehicleModel(supabase, {
           categoryId,
           vehicleBrandId: brandId,
-        }
-      );
-      if (!cancelled) setSeriesIdCounts(m);
+        }),
+        fetchApprovedListingCountsByVehicleBrandModelId(supabase, {
+          categoryId,
+          vehicleBrandId: brandId,
+        }),
+      ]);
+      if (!cancelled) {
+        setModelNameCounts(byName);
+        setSeriesIdCounts(bySeries);
+        setModelCountsReady(true);
+      }
     })();
     return () => {
       cancelled = true;
@@ -354,11 +357,13 @@ function VehicleCascadeSidebarInner({
   useEffect(() => {
     if (engines.length === 0) {
       setEngineIdCounts(new Map());
+      setEngineCountsReady(false);
       return;
     }
     let cancelled = false;
+    setEngineCountsReady(false);
     void (async () => {
-      const engineIds = engines.map(e => e.id);
+      const engineIds = engines.map((e) => e.id);
       const model = allModelsForNav.find((row) => row.id === modelId);
       const m = await fetchApprovedListingCountsByEnginePackages(
         supabase,
@@ -371,7 +376,10 @@ function VehicleCascadeSidebarInner({
             }
           : undefined
       );
-      if (!cancelled) setEngineIdCounts(m);
+      if (!cancelled) {
+        setEngineIdCounts(m);
+        setEngineCountsReady(true);
+      }
     })();
     return () => {
       cancelled = true;
@@ -381,18 +389,26 @@ function VehicleCascadeSidebarInner({
   useEffect(() => {
     if (packages.length === 0) {
       setPackageIdCounts(new Map());
+      setPackageCountsReady(false);
       return;
     }
     let cancelled = false;
+    setPackageCountsReady(false);
     void (async () => {
-      const packageIds = packages.map(p => p.id);
-      const m = await fetchApprovedListingCountsByField(supabase, "vehicle_engine_package_id");
+      const packageIds = packages.map((p) => p.id);
+      const m = await fetchApprovedListingCountsByField(
+        supabase,
+        "vehicle_engine_package_id"
+      );
       const filtered = new Map<string, number>();
       for (const pkgId of packageIds) {
         const count = m.get(pkgId) ?? 0;
         if (count > 0) filtered.set(pkgId, count);
       }
-      if (!cancelled) setPackageIdCounts(filtered);
+      if (!cancelled) {
+        setPackageIdCounts(filtered);
+        setPackageCountsReady(true);
+      }
     })();
     return () => {
       cancelled = true;
@@ -842,15 +858,17 @@ function VehicleCascadeSidebarInner({
           ))}
         </div>
       ) : null}
-      {categorySlots.length === 0 ? (
+      {visibleCategorySlots.length === 0 ? (
         <p className="text-xs text-zinc-500">
-          Kategori listesi boş (Supabase `categories` tablosu).
+          {categoryCountsReady
+            ? "Yayında ilanı olan kategori yok."
+            : "Kategori listesi boş (Supabase `categories` tablosu)."}
         </p>
       ) : !categoryId ? (
         <>
           {label("Kategori", compact)}
           <ul className={cascadeListClass(fillColumn, compact)}>
-            {categorySlots.map((slot) => (
+            {visibleCategorySlots.map((slot) => (
               <li key={slot.id} className="min-w-0">
                 <button
                   type="button"
@@ -992,13 +1010,22 @@ function VehicleCascadeSidebarInner({
             {selectableModels.length === 0 ? (
               <p className="text-[11px] text-zinc-500">Model yükleniyor...</p>
             ) : (
-              <ul className="space-y-1">
-                {selectableModels.map((m) => {
-                  const mCnt =
-                    seriesIdCounts.get(m.id) ??
-                    modelNameCounts.get(normalizeListingModelKey(rowLabel(m))) ??
-                    0;
-                  return (
+              <ul className={compact ? "space-y-0.5" : "space-y-1"}>
+                {selectableModels
+                  .map((m) => {
+                    const mCnt =
+                      seriesIdCounts.get(m.id) ??
+                      modelNameCounts.get(
+                        normalizeListingModelKey(rowLabel(m))
+                      ) ??
+                      0;
+                    return { m, mCnt };
+                  })
+                  .filter(
+                    ({ m, mCnt }) =>
+                      !modelCountsReady || m.id === modelId || mCnt > 0
+                  )
+                  .map(({ m, mCnt }) => (
                     <li key={m.id} className="min-w-0">
                       <button
                         type="button"
@@ -1012,19 +1039,21 @@ function VehicleCascadeSidebarInner({
                             packageId: "",
                           });
                         }}
-                        className="flex w-full items-center justify-between gap-2 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
+                        className="flex w-full items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
                       >
                         <span className="min-w-0 flex-1 truncate">
                           {rowLabel(m)}
                         </span>
                         {listingCountBadge(mCnt, compact)}
-                        <span className="shrink-0 text-[8px] text-zinc-400" aria-hidden>
+                        <span
+                          className="shrink-0 text-[8px] text-zinc-400"
+                          aria-hidden
+                        >
                           ▶
                         </span>
                       </button>
                     </li>
-                  );
-                })}
+                  ))}
               </ul>
             )}
           </li>
@@ -1052,8 +1081,15 @@ function VehicleCascadeSidebarInner({
                 İlanları göster
               </button>
             ) : (
-              <ul className="space-y-1">
-                {engines.map((eng) => {
+              <ul className={compact ? "space-y-0.5" : "space-y-1"}>
+                {engines
+                  .filter(
+                    (eng) =>
+                      !engineCountsReady ||
+                      eng.id === engineId ||
+                      (engineIdCounts.get(eng.id) ?? 0) > 0
+                  )
+                  .map((eng) => {
                   const engCnt = engineIdCounts.get(eng.id) ?? 0;
                   return (
                     <li key={eng.id} className="min-w-0">
@@ -1069,7 +1105,7 @@ function VehicleCascadeSidebarInner({
                             packageId: "",
                           });
                         }}
-                        className="flex w-full items-center justify-between gap-2 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
+                        className="flex w-full items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
                       >
                         <span className="min-w-0 flex-1 truncate">
                           {rowLabel(eng)}
@@ -1082,6 +1118,7 @@ function VehicleCascadeSidebarInner({
                     </li>
                   );
                 })}
+                {!engineCountsReady || otherEngineCount > 0 || engineOther ? (
                 <li className="min-w-0">
                   <button
                     type="button"
@@ -1095,7 +1132,7 @@ function VehicleCascadeSidebarInner({
                         packageId: "",
                       });
                     }}
-                    className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                    className={`flex w-full items-center justify-between gap-1.5 rounded-md border px-1.5 py-1 text-left text-[11px] font-semibold transition ${
                       engineOther
                         ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
                         : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
@@ -1108,6 +1145,7 @@ function VehicleCascadeSidebarInner({
                     </span>
                   </button>
                 </li>
+                ) : null}
               </ul>
             )}
           </li>
@@ -1130,8 +1168,15 @@ function VehicleCascadeSidebarInner({
                 İlanları göster
               </button>
             ) : (
-              <ul className="space-y-1">
-                {packages.map((pk) => {
+              <ul className={compact ? "space-y-0.5" : "space-y-1"}>
+                {packages
+                  .filter(
+                    (pk) =>
+                      !packageCountsReady ||
+                      pk.id === packageId ||
+                      (packageIdCounts.get(pk.id) ?? 0) > 0
+                  )
+                  .map((pk) => {
                   const pkActive = packageId === pk.id;
                   const pkCnt = packageIdCounts.get(pk.id) ?? 0;
                   return (
@@ -1142,7 +1187,7 @@ function VehicleCascadeSidebarInner({
                           setPackageId(pk.id);
                           navigateToListings({ packageId: pk.id });
                         }}
-                        className={`flex w-full items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold transition ${
+                        className={`flex w-full items-center justify-between gap-1.5 rounded-md border px-1.5 py-1 text-left text-[11px] font-semibold transition ${
                           pkActive
                             ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
                             : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"

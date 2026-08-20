@@ -31,6 +31,8 @@ type Props = {
   hideCategoryAndYear?: boolean;
   /** Ana sayfa: şehir görüntüleme/favori satırının sağında; diğer sayfalarda üstteki şehir·yıl satırında */
   cityOnStatsRow?: boolean;
+  /** Kart görseli üzerinde favori kalbi (varsayılan: açık) */
+  showFavorite?: boolean;
   /** `city_id` ile çözümlenmiş şehir adı (opsiyonel; `city_name` boşsa kullanılır) */
   cityDisplayName?: string | null;
   /** Örn. «İlanlarım»: kart altında düzenle / sil */
@@ -113,6 +115,7 @@ export function ListingCard({
   favorited = false,
   hideCategoryAndYear = false,
   cityOnStatsRow = false,
+  showFavorite = true,
   cityDisplayName,
   ownerActions,
   suspended: suspendedProp,
@@ -185,7 +188,7 @@ export function ListingCard({
       ) : (
         imageFrame
       )}
-      {listingId ? (
+      {showFavorite && listingId ? (
         <div className="absolute right-2 top-2 z-20">
           <FavoriteHeart
             listingId={listingId}

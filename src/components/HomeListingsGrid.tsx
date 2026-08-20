@@ -110,6 +110,7 @@ export function HomeListingsGrid({
             categoryName={item.categoryName}
             hideCategoryAndYear
             cityOnStatsRow
+            showFavorite={false}
             cityDisplayName={item.cityDisplayName}
             stats={item.stats}
             loggedIn={loggedIn}
