@@ -63,7 +63,8 @@ export function HomeAppPromoRail() {
     <video
       ref={videoRef}
       src="/promo/sure.mp4"
-      className="mx-auto block h-auto w-[78%] max-w-[220px]"
+      className="mx-auto block h-auto w-[78%] max-w-[220px] bg-[#ffcc00]"
+      style={{ backgroundColor: "#ffcc00" }}
       muted
       playsInline
       preload="metadata"
@@ -73,10 +74,14 @@ export function HomeAppPromoRail() {
 
   return (
     <section
-      className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 bg-[#ffcc00] px-2 py-2 shadow-sm"
+      className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 px-2 py-2 shadow-sm"
+      style={{ backgroundColor: "#ffcc00" }}
       aria-label="Uygulamamızı indirin"
     >
-      <div className="relative mx-auto w-fit">
+      <div
+        className="relative mx-auto w-full"
+        style={{ backgroundColor: "#ffcc00" }}
+      >
         {desktop ? (
           <>
             {video}
