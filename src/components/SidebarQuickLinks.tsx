@@ -45,13 +45,24 @@ export function SidebarQuickLinks({
             <span
               className={`relative shrink-0 overflow-hidden bg-[#ffcc00] ${iconBox}`}
             >
-              <Image
-                src={item.image}
-                alt=""
-                width={iconSize}
-                height={iconSize}
-                className={compact ? "h-7 w-7 object-cover" : "h-9 w-9 object-cover"}
-              />
+              {item.image.endsWith(".svg") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.image}
+                  alt=""
+                  width={iconSize}
+                  height={iconSize}
+                  className={compact ? "h-7 w-7 object-cover" : "h-9 w-9 object-cover"}
+                />
+              ) : (
+                <Image
+                  src={item.image}
+                  alt=""
+                  width={iconSize}
+                  height={iconSize}
+                  className={compact ? "h-7 w-7 object-cover" : "h-9 w-9 object-cover"}
+                />
+              )}
             </span>
           ) : (
             <span

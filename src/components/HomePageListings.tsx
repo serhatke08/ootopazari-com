@@ -234,8 +234,8 @@ export function HomePageListings({
       id="ilanlar"
       className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6"
     >
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-5">
-        <aside className="hidden w-full shrink-0 lg:sticky lg:top-[5.5rem] lg:flex lg:h-[calc(100dvh-5.5rem)] lg:max-h-[calc(100dvh-5.5rem)] lg:min-h-0 lg:w-[min(280px,22vw)] lg:min-w-[240px] lg:max-w-[300px] lg:flex-col lg:overflow-hidden lg:self-start">
+      <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-4 lg:gap-5">
+        <aside className="hidden w-full shrink-0 md:sticky md:top-[5.5rem] md:flex md:h-[calc(100dvh-5.5rem)] md:max-h-[calc(100dvh-5.5rem)] md:min-h-0 md:w-[min(220px,30vw)] md:min-w-[180px] md:max-w-[240px] md:flex-col md:overflow-hidden md:self-start lg:w-[min(280px,22vw)] lg:min-w-[240px] lg:max-w-[300px]">
           <HomeSidebar categories={categories} />
         </aside>
 

@@ -21,4 +21,14 @@ export const QUICK_ACCESS_LINKS: {
     label: "Ekspertiz",
     image: "/menu/expertiz.png",
   },
+  {
+    href: "/acil",
+    label: "Acil",
+    image: "/menu/acil.svg",
+  },
+  {
+    href: "/vitrin",
+    label: "Vitrin",
+    image: "/menu/vitrin.svg",
+  },
 ];

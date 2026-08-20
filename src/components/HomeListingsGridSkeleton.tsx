@@ -8,13 +8,16 @@ export function HomeListingsGridSkeleton({ count = 10 }: { count?: number }) {
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+          className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
         >
-          <div className="aspect-[4/3] animate-pulse bg-zinc-200" />
-          <div className="space-y-2 p-3">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-200" />
-            <div className="h-5 w-1/2 animate-pulse rounded bg-zinc-200" />
-            <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
+          <div className="aspect-square animate-pulse bg-zinc-200 md:aspect-[4/3]" />
+          <div className="space-y-1.5 p-1.5 pt-2 sm:p-2 md:p-1.5 md:pt-1.5">
+            <div className="h-[1.55rem] animate-pulse rounded bg-zinc-200" />
+            <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-200" />
+            <div className="flex items-center justify-between gap-1 pt-0.5">
+              <div className="h-3 w-12 animate-pulse rounded bg-zinc-100" />
+              <div className="h-3 w-10 animate-pulse rounded bg-zinc-100" />
+            </div>
           </div>
         </div>
       ))}

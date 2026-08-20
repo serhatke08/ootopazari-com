@@ -162,7 +162,7 @@ export function ListingCard({
     <div
       className={
         isHomeGrid
-          ? "relative aspect-square w-full overflow-hidden bg-white"
+          ? "relative aspect-square w-full overflow-hidden bg-white md:aspect-[4/3]"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
@@ -229,7 +229,13 @@ export function ListingCard({
         </div>
       ) : null}
       {imageArea}
-      <div className="flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3">
+      <div
+        className={
+          isHomeGrid
+            ? "flex flex-1 flex-col gap-0.5 p-1.5 pt-2 sm:gap-1 sm:p-2 md:p-1.5 md:pt-1.5"
+            : "flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3"
+        }
+      >
         {ownerName && !isHomeGrid ? (
           ownerHref ? (
             <Link
@@ -282,12 +288,22 @@ export function ListingCard({
         {href ? (
           <Link
             href={href}
-            className="line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold leading-snug text-zinc-900 sm:min-h-[2.2rem] sm:text-[13px]"
+            className={
+              isHomeGrid
+                ? "line-clamp-2 min-h-[1.7rem] text-[11px] font-semibold leading-snug text-zinc-900 md:min-h-[1.55rem] md:text-[12px]"
+                : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold leading-snug text-zinc-900 sm:min-h-[2.2rem] sm:text-[13px]"
+            }
           >
             {listing.title ?? "Başlıksız ilan"}
           </Link>
         ) : (
-          <p className="line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold text-zinc-500 sm:min-h-[2.2rem] sm:text-[13px]">
+          <p
+            className={
+              isHomeGrid
+                ? "line-clamp-2 min-h-[1.7rem] text-[11px] font-semibold text-zinc-500 md:min-h-[1.55rem] md:text-[12px]"
+                : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold text-zinc-500 sm:min-h-[2.2rem] sm:text-[13px]"
+            }
+          >
             {listing.title ?? "Başlıksız ilan"} (ilan no eksik)
           </p>
         )}

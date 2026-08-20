@@ -720,6 +720,34 @@ export async function fetchRecentListings(
   return (data ?? []) as unknown as ListingRow[];
 }
 
+/** Vitrin / Acil: kampanya süresi dolmamış öne çıkarma ilanları. */
+export async function fetchFeaturedLiveListings(
+  supabase: SupabaseClient,
+  limit: number
+): Promise<ListingRow[]> {
+  const nowIso = new Date().toISOString();
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select(LISTING_SELECT)
+  )
+    .gt("featured_until", nowIso)
+    .order("featured_until", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  let { data, error } = await q;
+  if (error && noteApprovedLiveFilterError(error.message)) {
+    ({ data, error } = await applyApprovedLiveFilter(
+      supabase.from("listings").select(LISTING_SELECT)
+    )
+      .gt("featured_until", nowIso)
+      .order("featured_until", { ascending: false, nullsFirst: false })
+      .limit(limit));
+  }
+  if (error) {
+    console.warn("fetchFeaturedLiveListings:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as ListingRow[];
+}
+
 /** SEO URL: `listing_number` benzersiz (8 hane). */
 export async function fetchListingByNumber(
   supabase: SupabaseClient,

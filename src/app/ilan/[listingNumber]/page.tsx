@@ -484,7 +484,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   const row = listing as Record<string, unknown>;
   const sellerUserId = listing.user_id ? String(listing.user_id) : "";
   const showPublicChat =
-    detailAccess === "public" && !!id && !!sellerUserId && !!viewer?.id;
+    detailAccess === "public" && !!id && !!sellerUserId;
   const needCityLookup =
     !(listing.city_name != null && String(listing.city_name).trim()) &&
     !!listing.city_id;
