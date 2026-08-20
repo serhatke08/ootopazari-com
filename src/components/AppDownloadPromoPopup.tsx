@@ -8,14 +8,13 @@ import {
   appStoreUrl,
   detectMobileStore,
   playStoreUrl,
-  storeLabelForKind,
   storeUrlForKind,
   type MobileStoreKind,
 } from "@/lib/app-stores";
 
 const STORAGE_KEY = "oto_app_download_promo_dismissed_at";
-const DISMISS_MS = 3 * 24 * 60 * 60 * 1000; // 3 gün
-const SHOW_DELAY_MS = 900;
+const DISMISS_MS = 3 * 24 * 60 * 60 * 1000;
+const SHOW_DELAY_MS = 700;
 
 function wasRecentlyDismissed(): boolean {
   try {
@@ -71,20 +70,19 @@ export function AppDownloadPromoPopup() {
 
   if (!mounted || !open) return null;
 
-  const primaryHref = storeUrlForKind(store);
-  const primaryLabel = storeLabelForKind(store);
-  const showBoth = store === "other";
+  const href = storeUrlForKind(store);
+  const desktop = store === "other";
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[160] flex items-end justify-center bg-black/55 p-3 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[160] flex items-center justify-center bg-black/70 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="app-download-promo-title"
+      aria-label="Oto Pazarı uygulamasını indir"
       onClick={close}
     >
       <div
-        className="relative w-full max-w-[22rem] overflow-hidden rounded-2xl bg-[#ffcc00] shadow-2xl ring-1 ring-black/10"
+        className="relative w-full max-w-[min(100%,20.5rem)] origin-center opacity-100 [animation:app-promo-in_220ms_ease-out]"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -92,70 +90,64 @@ export function AppDownloadPromoPopup() {
           type="button"
           onClick={close}
           aria-label="Kapat"
-          className="absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-lg font-light leading-none text-white transition hover:bg-black/70"
+          className="absolute -right-1.5 -top-1.5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black text-base font-light leading-none text-white shadow-lg ring-2 ring-white/90 transition hover:bg-zinc-800"
         >
           ×
         </button>
 
-        <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#ffcc00]">
-          <Image
-            src="/promo/app-download.jpg"
-            alt="Oto Pazarı mobil uygulaması"
-            fill
-            priority
-            sizes="(max-width: 480px) 90vw, 352px"
-            className="object-cover object-[center_12%]"
-          />
-        </div>
-
-        <div className="space-y-2.5 border-t border-black/10 bg-[#ffcc00] px-3 pb-3 pt-2.5">
-          <p
-            id="app-download-promo-title"
-            className="text-center text-sm font-extrabold uppercase tracking-wide text-black"
-          >
-            Uygulamamızı indirin
-          </p>
-
-          {showBoth ? (
-            <div className="grid grid-cols-2 gap-2">
-              <a
-                href={appStoreUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={close}
-                className="inline-flex items-center justify-center rounded-xl bg-black px-3 py-2.5 text-center text-xs font-bold text-white transition hover:bg-zinc-800"
-              >
-                App Store
-              </a>
+        <div className="relative overflow-hidden rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] ring-1 ring-black/15">
+          {desktop ? (
+            <>
+              <Image
+                src="/promo/app-download.jpg"
+                alt="Oto Pazarı mobil uygulaması"
+                width={682}
+                height={1024}
+                priority
+                className="block h-auto w-full"
+                sizes="328px"
+              />
               <a
                 href={playStoreUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={close}
-                className="inline-flex items-center justify-center rounded-xl bg-black px-3 py-2.5 text-center text-xs font-bold text-white transition hover:bg-zinc-800"
-              >
-                Google Play
-              </a>
-            </div>
+                aria-label="Google Play’den indir"
+                className="absolute bottom-[3.5%] left-[8%] h-[9.5%] w-[40%] rounded-md"
+              />
+              <a
+                href={appStoreUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={close}
+                aria-label="App Store’dan indir"
+                className="absolute bottom-[3.5%] right-[8%] h-[9.5%] w-[40%] rounded-md"
+              />
+            </>
           ) : (
             <a
-              href={primaryHref}
+              href={href}
               target="_blank"
               rel="noopener noreferrer"
               onClick={close}
-              className="flex w-full items-center justify-center rounded-xl bg-black px-4 py-3 text-sm font-bold text-white transition hover:bg-zinc-800"
+              className="block"
+              aria-label={
+                store === "ios"
+                  ? "App Store’dan Oto Pazarı’nı indir"
+                  : "Google Play’den Oto Pazarı’nı indir"
+              }
             >
-              {primaryLabel}
+              <Image
+                src="/promo/app-download.jpg"
+                alt="Oto Pazarı mobil uygulaması"
+                width={682}
+                height={1024}
+                priority
+                className="block h-auto w-full"
+                sizes="328px"
+              />
             </a>
           )}
-
-          <button
-            type="button"
-            onClick={close}
-            className="w-full py-1 text-center text-xs font-medium text-black/55 transition hover:text-black"
-          >
-            Şimdi değil
-          </button>
         </div>
       </div>
     </div>,
