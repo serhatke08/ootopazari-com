@@ -7,17 +7,53 @@ import {
   storeUrlForKind,
   type MobileStoreKind,
 } from "@/lib/app-stores";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIsClient } from "@/hooks/use-is-client";
+
+const REPLAY_EVERY_MS = 10_000;
 
 /** PC sol sütun: kategorinin hemen altında dikey uygulama tanıtım paneli */
 export function HomeAppPromoRail() {
   const mounted = useIsClient();
   const [store, setStore] = useState<MobileStoreKind>("other");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const replayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!mounted) return;
     setStore(detectMobileStore(navigator.userAgent));
+  }, [mounted]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+
+    const clearReplay = () => {
+      if (replayTimer.current) {
+        clearTimeout(replayTimer.current);
+        replayTimer.current = null;
+      }
+    };
+
+    const playOnce = () => {
+      clearReplay();
+      el.currentTime = 0;
+      void el.play().catch(() => {});
+    };
+
+    const onEnded = () => {
+      clearReplay();
+      replayTimer.current = setTimeout(playOnce, REPLAY_EVERY_MS);
+    };
+
+    el.loop = false;
+    el.addEventListener("ended", onEnded);
+    playOnce();
+
+    return () => {
+      el.removeEventListener("ended", onEnded);
+      clearReplay();
+    };
   }, [mounted]);
 
   const href = storeUrlForKind(store);
@@ -25,11 +61,10 @@ export function HomeAppPromoRail() {
 
   const video = (
     <video
+      ref={videoRef}
       src="/promo/sure.mp4"
-      className="block h-auto w-full"
-      autoPlay
+      className="mx-auto block h-auto w-[78%] max-w-[220px]"
       muted
-      loop
       playsInline
       preload="metadata"
       aria-label="Oto Pazarı mobil uygulaması"
@@ -38,10 +73,10 @@ export function HomeAppPromoRail() {
 
   return (
     <section
-      className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 bg-[#ffcc00] shadow-sm"
+      className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 bg-[#ffcc00] px-2 py-2 shadow-sm"
       aria-label="Uygulamamızı indirin"
     >
-      <div className="relative">
+      <div className="relative mx-auto w-fit">
         {desktop ? (
           <>
             {video}
