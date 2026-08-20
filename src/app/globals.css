@@ -53,6 +53,33 @@ body {
   }
 }
 
+/* Ana sayfa ilan ızgarası: telefon 2, tablet 3, masaüstü 4/5 */
+.home-listings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 27.5rem) {
+  .home-listings-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .home-listings-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .home-listings-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
 .site-footer-inner {
   width: 100%;
   max-width: 1400px;

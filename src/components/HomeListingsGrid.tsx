@@ -101,7 +101,7 @@ export function HomeListingsGrid({
             : "Aradığınız kriterlere uygun ilan bulunamadı."}
         </p>
       ) : (
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="home-listings-grid">
         {visible.map((item) => (
           <ListingCard
             key={item.listing.id ?? String(item.listing.listing_number)}

@@ -1,7 +1,7 @@
 export function HomeListingsGridSkeleton({ count = 10 }: { count?: number }) {
   return (
     <div
-      className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5"
+      className="home-listings-grid"
       aria-busy="true"
       aria-label="İlanlar yükleniyor"
     >
