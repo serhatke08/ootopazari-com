@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { appStoreUrl, playStoreUrl } from "@/lib/app-stores";
 
 /** PC sol sütun: kategorinin hemen altında dikey uygulama tanıtım paneli */
@@ -9,15 +8,15 @@ export function HomeAppPromoRail() {
       aria-label="Uygulamamızı indirin"
     >
       <div className="relative">
-        <Image
+        {/* next/image loading/fetchPriority SSR-client mismatch veriyor; yerel asset için native img */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/promo/app-download.jpg"
           alt="Oto Pazarı mobil uygulaması"
           width={682}
           height={1024}
           className="block h-auto w-full"
-          sizes="280px"
-          loading="eager"
-          fetchPriority="high"
+          decoding="async"
         />
         <a
           href={playStoreUrl()}
