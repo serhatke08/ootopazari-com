@@ -8,15 +8,15 @@ function Pulse({ className }: { className: string }) {
 function QuickLinksStripSkeleton() {
   return (
     <div className="border-b border-zinc-200 bg-white" aria-hidden>
-      <div className="mx-auto max-w-[1400px] px-2 py-3 sm:px-4 md:px-6">
-        <div className="flex gap-2 overflow-hidden">
+      <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 md:px-6">
+        <div className="flex gap-1.5 overflow-hidden">
           {QUICK_ACCESS_LINKS.map((d) => (
             <div
               key={d.href}
-              className="flex w-[4.35rem] shrink-0 flex-col items-center gap-1"
+              className="flex w-[3.75rem] shrink-0 flex-col items-center gap-0.5"
             >
-              <div className="h-12 w-12 animate-pulse rounded-full bg-zinc-200" />
-              <Pulse className="h-2.5 w-10" />
+              <div className="h-10 w-10 animate-pulse rounded-full bg-zinc-200" />
+              <Pulse className="h-2 w-9" />
             </div>
           ))}
         </div>

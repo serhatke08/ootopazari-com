@@ -17,16 +17,16 @@ function dealerBorderColor(label: string): string {
 export function HomeQuickLinksStrip() {
   return (
     <div className="border-b border-zinc-200 bg-white">
-      <div className="mx-auto max-w-[1400px] px-2 py-3 sm:px-4 md:px-6">
-        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 md:px-6">
+        <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {QUICK_ACCESS_LINKS.map((d) => (
             <Link
               key={d.href}
               href={d.href}
-              className="group flex w-[4.35rem] shrink-0 flex-col items-center gap-1"
+              className="group flex w-[3.75rem] shrink-0 flex-col items-center gap-0.5"
             >
               <span
-                className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-[3px] bg-white ring-1 ring-zinc-900/10 ring-offset-2 ring-offset-white transition group-hover:brightness-110"
+                className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-white ring-1 ring-zinc-900/10 ring-offset-1 ring-offset-white transition group-hover:brightness-110"
                 style={{ borderColor: dealerBorderColor(d.label) }}
               >
                 {d.image ? (
@@ -43,16 +43,16 @@ export function HomeQuickLinksStrip() {
                       alt=""
                       fill
                       className="h-full w-full scale-110 object-contain p-0.5"
-                      sizes="48px"
+                      sizes="40px"
                     />
                   )
                 ) : (
-                  <span className="text-xs font-bold text-zinc-700">
+                  <span className="text-[10px] font-bold text-zinc-700">
                     {d.label.slice(0, 1)}
                   </span>
                 )}
               </span>
-              <span className="w-full truncate text-center text-[10px] font-medium leading-tight text-zinc-800">
+              <span className="w-full truncate text-center text-[9px] font-medium leading-tight text-zinc-800">
                 {d.label}
               </span>
             </Link>
