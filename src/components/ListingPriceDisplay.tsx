@@ -71,7 +71,7 @@ export function ListingPriceDisplay({
         size={dotSize}
         popoverPlacement={popoverPlacement}
       />
-      <span className={priceCls} style={{ color: priceColor }}>
+      <span className={`min-w-0 ${priceCls}`} style={{ color: priceColor }}>
         {priceLabel}
       </span>
       {showHistory ? (
