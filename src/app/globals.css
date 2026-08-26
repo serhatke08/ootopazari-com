@@ -92,25 +92,6 @@ html {
   }
 }
 
-/* Ana sayfa Acil satırı — her zaman 3 kart */
-.home-acil-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
-@media (min-width: 27.5rem) {
-  .home-acil-grid {
-    gap: 0.55rem;
-  }
-}
-
-@media (min-width: 64rem) {
-  .home-acil-grid {
-    gap: 0.65rem;
-  }
-}
-
 .site-footer-inner {
   width: 100%;
   max-width: 1400px;

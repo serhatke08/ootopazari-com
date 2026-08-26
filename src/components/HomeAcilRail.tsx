@@ -31,35 +31,38 @@ export function HomeAcilRail({
         </Link>
       </div>
 
-      <div className="home-acil-grid">
-        {slots.map((item, i) =>
-          item ? (
-            <ListingCard
-              key={item.listing.id ?? String(item.listing.listing_number)}
-              listing={item.listing}
-              env={env}
-              categoryName={item.categoryName}
-              hideCategoryAndYear
-              cityOnStatsRow
-              showFavorite={false}
-              showAcilBadge
-              cityDisplayName={item.cityDisplayName}
-              stats={item.stats}
-              loggedIn={loggedIn}
-              favorited={item.favorited}
-              ownerName={item.ownerName}
-              ownerAvatarSrc={item.ownerAvatarSrc}
-              ownerHref={item.ownerHref}
-              priceRating={item.priceRating}
-            />
-          ) : (
-            <div
-              key={`acil-empty-${i}`}
-              className="flex min-h-[10rem] flex-col items-center justify-center rounded-lg border border-dashed border-red-200/80 bg-red-50/40 px-2 py-6 text-center sm:min-h-[12rem]"
-              aria-hidden={true}
-            />
-          )
-        )}
+      <div className="home-listings-grid">
+        {slots.map((item, i) => (
+          <div
+            key={item?.listing.id ?? `acil-slot-${i}`}
+            className="min-w-0 lg:col-span-2"
+          >
+            {item ? (
+              <ListingCard
+                listing={item.listing}
+                env={env}
+                categoryName={item.categoryName}
+                hideCategoryAndYear
+                cityOnStatsRow
+                showFavorite={false}
+                showAcilBadge
+                cityDisplayName={item.cityDisplayName}
+                stats={item.stats}
+                loggedIn={loggedIn}
+                favorited={item.favorited}
+                ownerName={item.ownerName}
+                ownerAvatarSrc={item.ownerAvatarSrc}
+                ownerHref={item.ownerHref}
+                priceRating={item.priceRating}
+              />
+            ) : (
+              <div
+                className="flex min-h-[10rem] flex-col items-center justify-center rounded-lg border border-dashed border-red-200/80 bg-red-50/40 px-2 py-6 text-center sm:min-h-[12rem]"
+                aria-hidden={true}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </section>
   );
