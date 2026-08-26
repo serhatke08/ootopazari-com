@@ -334,6 +334,8 @@ export type ListingListParams = {
   minKm?: number;
   maxKm?: number;
   q?: string;
+  /** Ana sayfa genel akış: aktif acil ilanları hariç tut (Acil satırında gösterilir). */
+  excludeActiveAcil?: boolean;
 };
 
 function applyFuelTypeFilter(q: any, fuel: string): any {
@@ -553,6 +555,11 @@ function applyListingListFilters(
   if (params.q?.trim()) {
     const clause = buildTextSearchOrClause(params.q);
     if (clause) query = query.or(clause);
+  }
+  if (params.excludeActiveAcil) {
+    const nowIso = new Date().toISOString();
+    const quoted = `"${nowIso}"`;
+    query = query.or(`acil_until.is.null,acil_until.lte.${quoted}`);
   }
   return query;
 }

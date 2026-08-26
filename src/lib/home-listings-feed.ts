@@ -19,6 +19,7 @@ import {
   type CityRow,
   type ListingRow,
 } from "@/lib/listings-data";
+import { homeListingsFeedHasFilters } from "@/lib/home-listings-feed-filters";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { publicAvatarUrl } from "@/lib/storage";
 import type {
@@ -122,6 +123,8 @@ export async function fetchHomeListingsFeed(
     await maintainListingLifecycle(admin);
   }
 
+  const excludeActiveAcil = !homeListingsFeedHasFilters(filters);
+
   const [categories, cities, { rows, total }] = await Promise.all([
     fetchCategories(supabase),
     fetchCities(supabase),
@@ -155,6 +158,7 @@ export async function fetchHomeListingsFeed(
         filters.vehicleEngineOtherExcludedPackageIds,
       vehicleEngineOtherExcludedModelTerms:
         filters.vehicleEngineOtherExcludedModelTerms,
+      excludeActiveAcil,
     }),
   ]);
 
