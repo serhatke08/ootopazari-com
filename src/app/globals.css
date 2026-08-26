@@ -65,7 +65,7 @@ html {
   }
 }
 
-/* Ana sayfa ilan ızgarası: telefon 3, tablet+ (sidebar ile) 3/4, masaüstü 5/6 */
+/* Ana sayfa ilan ızgarası: telefon 3, PC (sidebar ile) 6 */
 .home-listings-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -87,22 +87,27 @@ html {
 
 @media (min-width: 64rem) {
   .home-listings-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.65rem;
-  }
-}
-
-@media (min-width: 80rem) {
-  .home-listings-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.7rem;
-  }
-}
-
-@media (min-width: 96rem) {
-  .home-listings-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: 0.45rem;
+  }
+}
+
+/* Ana sayfa Acil satırı — her zaman 3 kart */
+.home-acil-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+@media (min-width: 27.5rem) {
+  .home-acil-grid {
+    gap: 0.55rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .home-acil-grid {
+    gap: 0.65rem;
   }
 }
 

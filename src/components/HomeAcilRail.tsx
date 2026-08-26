@@ -31,7 +31,7 @@ export function HomeAcilRail({
         </Link>
       </div>
 
-      <div className="home-listings-grid">
+      <div className="home-acil-grid">
         {slots.map((item, i) =>
           item ? (
             <ListingCard

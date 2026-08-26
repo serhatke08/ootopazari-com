@@ -177,7 +177,7 @@ export function ListingCard({
         alt={listing.title ?? "İlan görseli"}
         objectFit={isHomeGrid ? "cover" : "contain"}
         scale={!isHomeGrid}
-        sizes="(max-width: 767px) 33vw, (max-width: 1279px) 25vw, 16vw"
+        sizes="(max-width: 767px) 33vw, (max-width: 1023px) 33vw, 16vw"
       />
     </div>
   );
@@ -207,7 +207,7 @@ export function ListingCard({
 
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md sm:rounded-xl ${
+      className={`group relative flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md sm:rounded-xl lg:rounded-lg ${
         inactive ? "opacity-[0.72] grayscale-[0.35]" : ""
       }`}
     >
@@ -237,7 +237,7 @@ export function ListingCard({
       <div
         className={
           isHomeGrid
-            ? "flex min-w-0 flex-1 flex-col gap-0.5 p-1 pt-1.5 sm:gap-1 sm:p-2 md:p-1.5 md:pt-1.5"
+            ? "flex min-w-0 flex-1 flex-col gap-0.5 p-1 pt-1.5 sm:gap-1 sm:p-2 md:p-1.5 md:pt-1.5 lg:gap-0.5 lg:p-1 lg:pt-1"
             : "flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3"
         }
       >
@@ -295,7 +295,7 @@ export function ListingCard({
             href={href}
             className={
               isHomeGrid
-                ? "line-clamp-2 min-h-[2.1em] break-words text-[10px] font-semibold leading-tight text-zinc-900 max-md:min-h-[2.2em] sm:text-[11px] md:min-h-[1.55rem] md:text-[12px]"
+                ? "line-clamp-2 min-h-[2.1em] break-words text-[10px] font-semibold leading-tight text-zinc-900 max-md:min-h-[2.2em] sm:text-[11px] md:min-h-[1.55rem] md:text-[12px] lg:min-h-[2em] lg:text-[10px]"
                 : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold leading-snug text-zinc-900 sm:min-h-[2.2rem] sm:text-[13px]"
             }
           >
@@ -305,7 +305,7 @@ export function ListingCard({
           <p
             className={
               isHomeGrid
-                ? "line-clamp-2 min-h-[2.1em] break-words text-[10px] font-semibold leading-tight text-zinc-500 max-md:min-h-[2.2em] sm:text-[11px] md:min-h-[1.55rem] md:text-[12px]"
+                ? "line-clamp-2 min-h-[2.1em] break-words text-[10px] font-semibold leading-tight text-zinc-500 max-md:min-h-[2.2em] sm:text-[11px] md:min-h-[1.55rem] md:text-[12px] lg:min-h-[2em] lg:text-[10px]"
                 : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold text-zinc-500 sm:min-h-[2.2rem] sm:text-[13px]"
             }
           >
@@ -320,11 +320,11 @@ export function ListingCard({
               summary={ratingSummary}
               loggedIn={loggedIn}
               dotSize="sm"
-              priceClassName="min-w-0 truncate text-[10px] font-bold tabular-nums leading-tight sm:text-[12px] md:text-[13px]"
+              priceClassName="min-w-0 truncate text-[10px] font-bold tabular-nums leading-tight sm:text-[12px] md:text-[13px] lg:text-[10px]"
             />
           </div>
         ) : isHomeGrid ? (
-          <p className="truncate text-[10px] font-bold tabular-nums leading-tight text-emerald-700 sm:text-[12px] md:text-[13px]">
+          <p className="truncate text-[10px] font-bold tabular-nums leading-tight text-emerald-700 sm:text-[12px] md:text-[13px] lg:text-[10px]">
             {price}
           </p>
         ) : null}
@@ -372,24 +372,24 @@ export function ListingCard({
           </div>
         ) : null}
         {isHomeGrid ? (
-          <div className="mt-1 min-w-0 border-t border-zinc-100 pt-1 sm:mt-2 sm:pt-2">
-            <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="mt-1 min-w-0 border-t border-zinc-100 pt-1 sm:mt-2 sm:pt-2 lg:mt-0.5 lg:pt-1">
+            <div className="flex min-w-0 items-center justify-between gap-1 lg:gap-0.5">
               {cityText ? (
                 <span
-                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-[8px] font-medium leading-tight text-zinc-600 sm:text-[10px]"
+                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-[8px] font-medium leading-tight text-zinc-600 sm:text-[10px] lg:text-[9px]"
                   title={cityText}
                 >
-                  <LocationPinIcon className="h-2.5 w-2.5 shrink-0 text-zinc-600 sm:h-[11px] sm:w-[11px]" />
+                  <LocationPinIcon className="h-2.5 w-2.5 shrink-0 text-zinc-600 sm:h-[11px] sm:w-[11px] lg:h-2.5 lg:w-2.5" />
                   <span className="truncate">{cityText}</span>
                 </span>
               ) : (
                 <span className="min-w-0 flex-1" aria-hidden />
               )}
               <span
-                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-[8px] font-semibold tabular-nums leading-tight text-zinc-700 sm:text-[11px]"
+                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-[8px] font-semibold tabular-nums leading-tight text-zinc-700 sm:text-[11px] lg:text-[9px]"
                 title="Kilometre"
               >
-                <SpeedIcon className="h-2.5 w-2.5 shrink-0 text-zinc-700 sm:h-[11px] sm:w-[11px]" />
+                <SpeedIcon className="h-2.5 w-2.5 shrink-0 text-zinc-700 sm:h-[11px] sm:w-[11px] lg:h-2.5 lg:w-2.5" />
                 <span className="truncate">{maskedMileage ?? "Km yok"}</span>
               </span>
             </div>
