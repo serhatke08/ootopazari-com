@@ -367,25 +367,27 @@ export function ListingCard({
           </div>
         ) : null}
         {isHomeGrid ? (
-          <div className="mt-1 flex min-w-0 items-center justify-between gap-1 border-t border-zinc-100 pt-1 text-zinc-500 sm:mt-2 sm:gap-2 sm:pt-2">
-            {cityText ? (
+          <div className="mt-1 min-w-0 border-t border-zinc-100 pt-1 sm:mt-2 sm:pt-2">
+            <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+              {cityText ? (
+                <span
+                  className="inline-flex min-w-0 items-center gap-0.5 text-[8px] font-medium leading-tight text-zinc-600 sm:flex-1 sm:text-[10px]"
+                  title={cityText}
+                >
+                  <LocationPinIcon className="h-2.5 w-2.5 shrink-0 text-zinc-600 sm:h-[11px] sm:w-[11px]" />
+                  <span className="truncate">{cityText}</span>
+                </span>
+              ) : (
+                <span className="hidden min-w-0 sm:block sm:flex-1" aria-hidden />
+              )}
               <span
-                className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-left text-[8px] font-medium leading-tight text-zinc-600 sm:text-[10px]"
-                title="Şehir"
+                className="inline-flex min-w-0 items-center gap-0.5 text-[8px] font-semibold tabular-nums leading-tight text-zinc-700 sm:max-w-[48%] sm:justify-end sm:text-[11px]"
+                title="Kilometre"
               >
-                <LocationPinIcon className="h-2.5 w-2.5 shrink-0 text-zinc-600 sm:h-[11px] sm:w-[11px]" />
-                <span className="truncate">{cityText}</span>
+                <SpeedIcon className="h-2.5 w-2.5 shrink-0 text-zinc-700 sm:h-[11px] sm:w-[11px]" />
+                <span className="truncate">{maskedMileage ?? "Km yok"}</span>
               </span>
-            ) : (
-              <span className="min-w-0 flex-1" aria-hidden />
-            )}
-            <span
-              className="inline-flex max-w-[55%] shrink-0 items-center justify-end gap-0.5 text-right text-[8px] font-semibold tabular-nums leading-tight text-zinc-700 sm:max-w-none sm:text-[11px]"
-              title="Kilometre"
-            >
-              <SpeedIcon className="h-2.5 w-2.5 shrink-0 text-zinc-700 sm:h-[11px] sm:w-[11px]" />
-              <span className="truncate">{maskedMileage ?? "Km yok"}</span>
-            </span>
+            </div>
           </div>
         ) : stats ? (
           <StatsBadges
