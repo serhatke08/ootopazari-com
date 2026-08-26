@@ -2,10 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import type { HomeListingCardItem } from "@/lib/home-listings-feed-types";
-import {
-  listingHomeBoostChromeActive,
-  parseListingDate,
-} from "@/lib/listing-feature-boost";
+import { listingIsAcilActive } from "@/lib/listing-acil";
+import { parseListingDate } from "@/lib/listing-feature-boost";
 import { enrichListingRowsCoverImages } from "@/lib/listing-images";
 import {
   EMPTY_PRICE_RATING_SUMMARY,
@@ -15,6 +13,7 @@ import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import {
   buildCategoryMap,
   buildCityMap,
+  fetchAcilLiveListings,
   fetchCategories,
   fetchCities,
   fetchFeaturedLiveListings,
@@ -71,7 +70,7 @@ function filterRows(kind: SpecialListingKind, rows: ListingRow[]): ListingRow[] 
   const now = new Date();
   if (kind === "acil") {
     return rows
-      .filter((row) => listingHomeBoostChromeActive(row, now))
+      .filter((row) => listingIsAcilActive(row, now))
       .slice(0, SPECIAL_PAGE_SIZE);
   }
   return rows
@@ -87,11 +86,11 @@ export async function fetchSpecialListingsFeed(
   env: SupabasePublicEnv,
   kind: SpecialListingKind
 ): Promise<{ items: HomeListingCardItem[]; loggedIn: boolean }> {
-  const featured = await fetchFeaturedLiveListings(
-    supabase,
-    SPECIAL_PAGE_SIZE * 2
-  );
-  const rows = filterRows(kind, featured);
+  const source =
+    kind === "acil"
+      ? await fetchAcilLiveListings(supabase, SPECIAL_PAGE_SIZE * 2)
+      : await fetchFeaturedLiveListings(supabase, SPECIAL_PAGE_SIZE * 2);
+  const rows = filterRows(kind, source);
 
   if (rows.length === 0) {
     const {
@@ -124,30 +123,23 @@ export async function fetchSpecialListingsFeed(
     ),
   ]);
 
-  const priceRatings = await fetchPriceRatingSummariesMap(
-    supabase,
-    ids,
-    sessionFav.user?.id ?? null
-  );
+  const ratingMap = await fetchPriceRatingSummariesMap(supabase, ids);
 
   const items: HomeListingCardItem[] = rows.map((listing) => {
-    const cid = listing.category_id ?? undefined;
-    const ownerId = listing.user_id ? String(listing.user_id) : null;
-    const owner = ownerId ? owners.get(ownerId) : undefined;
+    const id = String(listing.id);
+    const owner = listing.user_id ? owners.get(String(listing.user_id)) : null;
     return {
       listing,
-      categoryName: cid ? (catMap.get(cid)?.name ?? null) : null,
+      categoryName: listing.category_id
+        ? catMap.get(String(listing.category_id))?.name ?? null
+        : null,
       cityDisplayName: resolveListingCityDisplay(listing, cityMap),
-      stats: listing.id ? (statsMap.get(listing.id) ?? null) : null,
-      favorited: listing.id
-        ? sessionFav.favoriteIds.has(listing.id)
-        : false,
+      stats: statsMap.get(id) ?? null,
+      favorited: sessionFav.favoriteIds.has(id),
       ownerName: owner?.name ?? null,
       ownerAvatarSrc: owner?.avatarSrc ?? null,
       ownerHref: owner?.href ?? null,
-      priceRating: listing.id
-        ? (priceRatings.get(listing.id) ?? EMPTY_PRICE_RATING_SUMMARY)
-        : EMPTY_PRICE_RATING_SUMMARY,
+      priceRating: ratingMap.get(id) ?? EMPTY_PRICE_RATING_SUMMARY,
     };
   });
 

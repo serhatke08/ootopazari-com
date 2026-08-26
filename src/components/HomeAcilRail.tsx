@@ -16,8 +16,8 @@ export function HomeAcilRail({
   const slots = Array.from({ length: 3 }, (_, i) => items[i] ?? null);
 
   return (
-    <section className="mb-5" aria-label="Acil ilanlar">
-      <div className="mb-2 flex items-center justify-between gap-2">
+    <section className="mb-3" aria-label="Acil ilanlar">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
         <Link
           href="/acil"
           className="group inline-flex items-center gap-1 text-sm font-bold text-[#8b0000] sm:text-base"
@@ -42,6 +42,7 @@ export function HomeAcilRail({
               hideCategoryAndYear
               cityOnStatsRow
               showFavorite={false}
+              showAcilBadge
               cityDisplayName={item.cityDisplayName}
               stats={item.stats}
               loggedIn={loggedIn}

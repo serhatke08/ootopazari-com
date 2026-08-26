@@ -246,11 +246,11 @@ export function HomePageListings({
         <div className="min-w-0 flex-1">
           <AdSenseUnit
             slot={ADSENSE_HOME_SLOT}
-            className="mb-4 hidden sm:block"
+            className="mb-2 hidden sm:block"
             label="Sponsorlu"
           />
 
-          <div className="mb-3 flex items-center justify-end gap-1">
+          <div className="mb-1.5 flex items-center justify-end gap-1">
             <TopCitySelect cities={cities} />
             <ListingSortSelect />
             <ListingFilters categories={categories} applied={activeFilters} />
@@ -264,7 +264,7 @@ export function HomePageListings({
             />
           ) : null}
 
-          <div className="mb-3 flex items-center gap-1.5">
+          <div className="mb-2 flex items-center gap-1.5">
             <h2 className="mr-auto shrink-0 text-sm font-bold text-zinc-900 sm:text-base">
               {heading}
             </h2>

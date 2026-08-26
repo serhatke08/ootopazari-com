@@ -11,6 +11,7 @@ import type { SupabasePublicEnv } from "@/lib/env";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingBoostChrome } from "@/components/ListingBoostChrome";
+import { ListingAcilBadge } from "@/components/ListingAcilBadge";
 import { ListingCoverImage } from "@/components/ListingCoverImage";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
@@ -33,6 +34,8 @@ type Props = {
   cityOnStatsRow?: boolean;
   /** Kart görseli üzerinde favori kalbi (varsayılan: açık) */
   showFavorite?: boolean;
+  /** Ana sayfa Acil satırı: görselin sağında Acil etiketi */
+  showAcilBadge?: boolean;
   /** `city_id` ile çözümlenmiş şehir adı (opsiyonel; `city_name` boşsa kullanılır) */
   cityDisplayName?: string | null;
   /** Örn. «İlanlarım»: kart altında düzenle / sil */
@@ -116,6 +119,7 @@ export function ListingCard({
   hideCategoryAndYear = false,
   cityOnStatsRow = false,
   showFavorite = true,
+  showAcilBadge = false,
   cityDisplayName,
   ownerActions,
   suspended: suspendedProp,
@@ -181,6 +185,7 @@ export function ListingCard({
   const imageArea = (
     <div className="relative">
       {isHomeGrid && boostActive ? <ListingBoostChrome /> : null}
+      {showAcilBadge && !inactive ? <ListingAcilBadge /> : null}
       {href ? (
         <Link href={href} className="block">
           {imageFrame}

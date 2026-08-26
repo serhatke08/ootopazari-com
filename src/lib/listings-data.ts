@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  parseListingDate,
   sortListingsByFeedNewest,
 } from "@/lib/listing-feature-boost";
 import {
@@ -40,6 +41,10 @@ export type ListingRow = Record<string, unknown> & {
   featured_started_at?: string | null;
   feature_boost_campaign_start_at?: string | null;
   feature_boost_pack_days?: number | null;
+  /** Acil vitrin — öne çıkarma (featured_*) ile karıştırma. */
+  acil_until?: string | null;
+  acil_started_at?: string | null;
+  acil_pack_days?: number | null;
   activated_at?: string | null;
   expired_at?: string | null;
 };
@@ -94,6 +99,9 @@ const LISTING_SELECT = [
   "featured_started_at",
   "feature_boost_campaign_start_at",
   "feature_boost_pack_days",
+  "acil_until",
+  "acil_started_at",
+  "acil_pack_days",
   "activated_at",
 ].join(", ");
 
@@ -387,6 +395,42 @@ function buildTextSearchOrClause(term: string): string | null {
   return parts.join(",");
 }
 
+/** Kategori / marka / model filtreliyken acil ilanlar öne alınır; genel akışta alınmaz. */
+function listingListPrefersAcilFirst(
+  params: Omit<ListingListParams, "page" | "pageSize">
+): boolean {
+  return Boolean(
+    params.categoryId ||
+      params.vehicleBrandId ||
+      (params.vehicleBrandIds?.length ?? 0) > 0 ||
+      params.vehicleModel?.trim() ||
+      (params.vehicleModels?.length ?? 0) > 0
+  );
+}
+
+function listingIsAcilActiveRow(listing: ListingRow, now: Date): boolean {
+  const until = parseListingDate(listing.acil_until);
+  return until != null && until > now;
+}
+
+function sortListingFeedRows(
+  rows: ListingRow[],
+  params: Omit<ListingListParams, "page" | "pageSize">,
+  now = new Date()
+): ListingRow[] {
+  const secondary = (list: ListingRow[]) => sortListingsByFeedNewest(list, now);
+  if (!listingListPrefersAcilFirst(params)) {
+    return secondary(rows);
+  }
+  const acil: ListingRow[] = [];
+  const rest: ListingRow[] = [];
+  for (const row of rows) {
+    if (listingIsAcilActiveRow(row, now)) acil.push(row);
+    else rest.push(row);
+  }
+  return [...secondary(acil), ...secondary(rest)];
+}
+
 /** Pulse sıralaması için tüm onaylı ilanları belleğe almak gerekir mi? */
 function listingListNeedsFullFeedSort(
   params: Omit<ListingListParams, "page" | "pageSize">
@@ -609,7 +653,7 @@ async function fetchListingsPageFast(
   }
 
   const raw = (data ?? []) as unknown as ListingRow[];
-  const rows = customSort ? raw : sortListingsByFeedNewest(raw);
+  const rows = customSort ? raw : sortListingFeedRows(raw, params);
   return { rows, total: count ?? rows.length };
 }
 
@@ -670,7 +714,7 @@ async function fetchAllApprovedListingsForFeedSort(
       })
     : out;
 
-  return sortListingsByFeedNewest(filtered);
+  return sortListingFeedRows(filtered, params);
 }
 
 export async function fetchListingsPage(
@@ -720,7 +764,7 @@ export async function fetchRecentListings(
   return (data ?? []) as unknown as ListingRow[];
 }
 
-/** Vitrin / Acil: kampanya süresi dolmamış öne çıkarma ilanları. */
+/** Vitrin: kampanya süresi dolmamış öne çıkarma ilanları. */
 export async function fetchFeaturedLiveListings(
   supabase: SupabaseClient,
   limit: number
@@ -743,6 +787,42 @@ export async function fetchFeaturedLiveListings(
   }
   if (error) {
     console.warn("fetchFeaturedLiveListings:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as ListingRow[];
+}
+
+/** Acil vitrin — acil_until; öne çıkarma (featured_*) ile karıştırılmaz. */
+export async function fetchAcilLiveListings(
+  supabase: SupabaseClient,
+  limit: number
+): Promise<ListingRow[]> {
+  const nowIso = new Date().toISOString();
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select(LISTING_SELECT)
+  )
+    .gt("acil_until", nowIso)
+    .order("acil_until", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  let { data, error } = await q;
+  if (error) {
+    if (/acil_until/i.test(error.message)) {
+      console.warn(
+        "fetchAcilLiveListings: acil_until kolonu yok — migration uygula."
+      );
+      return [];
+    }
+    if (noteApprovedLiveFilterError(error.message)) {
+      ({ data, error } = await applyApprovedLiveFilter(
+        supabase.from("listings").select(LISTING_SELECT)
+      )
+        .gt("acil_until", nowIso)
+        .order("acil_until", { ascending: false, nullsFirst: false })
+        .limit(limit));
+    }
+  }
+  if (error) {
+    console.warn("fetchAcilLiveListings:", error.message);
     return [];
   }
   return (data ?? []) as unknown as ListingRow[];
