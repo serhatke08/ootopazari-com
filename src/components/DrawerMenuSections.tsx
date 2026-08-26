@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
-import { DEALER_TYPE_META } from "@/lib/dealer-types";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 import { initialFromName } from "@/lib/user-display-name";
 
@@ -63,6 +62,86 @@ function IconBoostAmber({ className }: { className?: string }) {
 const rowClass =
   "flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-[11px] font-medium leading-snug text-zinc-900 shadow-sm transition hover:border-[#ffcc00] hover:bg-amber-50/50";
 
+const DRAWER_HEADER_BG =
+  "bg-[#0a0a0a] bg-[url('/promo/footer-bg.png')] bg-repeat bg-[length:280px_280px] sm:bg-[length:340px_340px]";
+
+function DrawerPersonalHeader({
+  loggedIn,
+  displayName,
+  avatarUrl,
+  onNavigate,
+  onClose,
+}: {
+  loggedIn: boolean;
+  displayName: string;
+  avatarUrl: string | null;
+  onNavigate?: () => void;
+  onClose?: () => void;
+}) {
+  return (
+    <div className={`relative shrink-0 overflow-hidden ${DRAWER_HEADER_BG}`}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/70 to-black/85"
+      />
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-2 top-[max(0.5rem,env(safe-area-inset-top,0px))] z-10 rounded-md p-1.5 text-white/90 transition hover:bg-white/15"
+          aria-label="Menüyü kapat"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      ) : null}
+      <div className="relative px-3 py-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
+        {loggedIn ? (
+          <Link
+            href="/profil"
+            onClick={() => onNavigate?.()}
+            className="flex items-center gap-3 rounded-lg transition hover:opacity-95"
+          >
+            <DrawerProfileAvatar
+              displayName={displayName}
+              avatarUrl={avatarUrl}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-white">
+                {displayName}
+              </p>
+              <p className="text-[11px] text-white/70">Profilim</p>
+            </div>
+          </Link>
+        ) : (
+          <div className="space-y-3 text-center">
+            <p className="text-sm font-medium text-white/90">
+              Kişisel menü için giriş yapın.
+            </p>
+            <Link
+              href="/giris"
+              onClick={() => onNavigate?.()}
+              className="inline-flex min-w-[7.5rem] items-center justify-center rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-green-700"
+            >
+              Giriş
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DrawerProfileAvatar({
   displayName,
   avatarUrl,
@@ -75,20 +154,20 @@ function DrawerProfileAvatar({
   const initial = initialFromName(displayName);
 
   return (
-    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-200 ring-1 ring-white">
+    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-700 ring-2 ring-white/80">
       {showPhoto ? (
         <Image
           src={avatarUrl as string}
           alt=""
-          width={32}
-          height={32}
+          width={36}
+          height={36}
           unoptimized
           referrerPolicy="no-referrer"
-          className="h-8 w-8 object-cover"
+          className="h-9 w-9 object-cover"
           onError={() => setBrokenSrc(avatarUrl)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-xs font-bold text-zinc-500">
+        <div className="flex h-full w-full items-center justify-center text-xs font-bold text-white/80">
           {initial}
         </div>
       )}
@@ -98,11 +177,13 @@ function DrawerProfileAvatar({
 
 export function DrawerMenuSections({
   drawerProfile,
-  dealerApplications,
+  dealerApplications: _dealerApplications,
   sessionEmail = null,
   unreadMessageCount,
   hasListings = false,
   onNavigate,
+  onClose,
+  mode = "all",
 }: {
   drawerProfile: { displayName: string; avatarUrl: string | null } | null;
   dealerApplications: BayiApplicationMenuRow[];
@@ -110,6 +191,9 @@ export function DrawerMenuSections({
   unreadMessageCount: number;
   hasListings?: boolean;
   onNavigate?: () => void;
+  onClose?: () => void;
+  /** `header` = yalnız üst banner, `links` = kişisel menü linkleri, `all` = ikisi */
+  mode?: "all" | "header" | "links";
 }) {
   const loggedIn = !!drawerProfile || !!sessionEmail;
   const displayName =
@@ -118,73 +202,60 @@ export function DrawerMenuSections({
       ? sessionEmail.split("@")[0]?.trim() || sessionEmail
       : "");
 
+  const showHeader = mode === "all" || mode === "header";
+  const showLinks = (mode === "all" || mode === "links") && loggedIn;
+
   return (
-    <div className="space-y-1.5">
-      {loggedIn ? (
-        <Link
-          href="/profil"
-          onClick={() => onNavigate?.()}
-          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2 py-1.5 shadow-sm transition hover:border-amber-300 hover:bg-amber-50/40"
-        >
-          <DrawerProfileAvatar
-            displayName={displayName}
-            avatarUrl={drawerProfile?.avatarUrl ?? null}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-semibold text-zinc-900">
-              {displayName}
-            </p>
-            <p className="text-[10px] text-zinc-500">Profilim</p>
-          </div>
-        </Link>
-      ) : (
-        <div className="rounded-lg border border-dashed border-zinc-300 bg-zinc-50/80 px-2 py-2 text-center">
-          <p className="text-[11px] text-zinc-600">Kişisel menü için giriş yapın.</p>
-          <Link
-            href="/giris"
-            onClick={() => onNavigate?.()}
-            className="mt-1 inline-block text-[11px] font-semibold text-emerald-800 underline-offset-2 hover:underline"
-          >
-            Giriş yap
-          </Link>
-        </div>
-      )}
-
-      <Link href="/ilan-ver" onClick={() => onNavigate?.()} className={rowClass}>
-        <IconPlusGreen />
-        <span>İlan ver</span>
-      </Link>
-
-      {hasListings ? (
-        <Link
-          href="/ilan-one-cikar"
-          onClick={() => onNavigate?.()}
-          className={rowClass}
-        >
-          <IconBoostAmber />
-          <span>İlan öne çıkar</span>
-        </Link>
+    <>
+      {showHeader ? (
+        <DrawerPersonalHeader
+          loggedIn={loggedIn}
+          displayName={displayName}
+          avatarUrl={drawerProfile?.avatarUrl ?? null}
+          onNavigate={onNavigate}
+          onClose={onClose}
+        />
       ) : null}
 
-      <Link href="/favoriler" onClick={() => onNavigate?.()} className={rowClass}>
-        <IconHeartRed />
-        <span>Favoriler</span>
-      </Link>
+      {showLinks ? (
+        <div className="space-y-1.5 px-1.5 pt-2">
+          <Link href="/ilan-ver" onClick={() => onNavigate?.()} className={rowClass}>
+            <IconPlusGreen />
+            <span>İlan ver</span>
+          </Link>
 
-      <Link
-        href="/mesajlar"
-        onClick={() => onNavigate?.()}
-        className={`${rowClass} relative`}
-      >
-        <IconMessageBlue />
-        <span className="flex min-w-0 flex-1 items-center gap-2">
-          Mesajlarım
-          <MessageUnreadBadge
-            count={unreadMessageCount}
-            className="min-h-[1.1rem] min-w-[1.1rem] text-[10px]"
-          />
-        </span>
-      </Link>
-    </div>
+          {hasListings ? (
+            <Link
+              href="/ilan-one-cikar"
+              onClick={() => onNavigate?.()}
+              className={rowClass}
+            >
+              <IconBoostAmber />
+              <span>İlan öne çıkar</span>
+            </Link>
+          ) : null}
+
+          <Link href="/favoriler" onClick={() => onNavigate?.()} className={rowClass}>
+            <IconHeartRed />
+            <span>Favoriler</span>
+          </Link>
+
+          <Link
+            href="/mesajlar"
+            onClick={() => onNavigate?.()}
+            className={`${rowClass} relative`}
+          >
+            <IconMessageBlue />
+            <span className="flex min-w-0 flex-1 items-center gap-2">
+              Mesajlarım
+              <MessageUnreadBadge
+                count={unreadMessageCount}
+                className="min-h-[1.1rem] min-w-[1.1rem] text-[10px]"
+              />
+            </span>
+          </Link>
+        </div>
+      ) : null}
+    </>
   );
 }

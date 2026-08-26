@@ -2,16 +2,18 @@
 
 import { useState, type ReactNode } from "react";
 
-type Tab = "info" | "description" | "equipment";
+type Tab = "info" | "description" | "equipment" | "expertiz";
 
 type Props = {
   infoContent: ReactNode;
   descriptionContent: ReactNode;
   equipmentContent: ReactNode;
+  /** Kaporta ekspertiz şeması; verildiğinde dördüncü sekme açılır */
+  expertizContent?: ReactNode | null;
   publishedAt?: string | null;
 };
 
-const TABS: Array<{ id: Tab; label: string }> = [
+const BASE_TABS: Array<{ id: Tab; label: string }> = [
   { id: "info", label: "Araç bilgileri" },
   { id: "description", label: "Açıklama" },
   { id: "equipment", label: "Donanım" },
@@ -29,10 +31,15 @@ export function ListingDetailTabs({
   infoContent,
   descriptionContent,
   equipmentContent,
+  expertizContent,
   publishedAt,
 }: Props) {
+  const tabs = expertizContent
+    ? [...BASE_TABS, { id: "expertiz" as const, label: "Ekspertiz" }]
+    : BASE_TABS;
   const [activeTab, setActiveTab] = useState<Tab>("info");
-  const activeLabel = TABS.find((t) => t.id === activeTab)?.label ?? "Araç bilgileri";
+  const activeLabel =
+    tabs.find((t) => t.id === activeTab)?.label ?? "Araç bilgileri";
 
   return (
     <div className="space-y-2">
@@ -41,7 +48,7 @@ export function ListingDetailTabs({
         role="tablist"
         aria-label="İlan detay sekmeleri"
       >
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -75,6 +82,9 @@ export function ListingDetailTabs({
         ) : null}
         {activeTab === "equipment" ? (
           <div className="p-2.5 sm:p-3">{equipmentContent}</div>
+        ) : null}
+        {activeTab === "expertiz" && expertizContent ? (
+          <div className="p-3">{expertizContent}</div>
         ) : null}
       </div>
     </div>

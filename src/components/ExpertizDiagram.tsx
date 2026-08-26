@@ -32,24 +32,39 @@ export function ExpertizCarPreview({
   const sablonSrc = expertizAssetUrl(SABLON_FILENAME);
 
   return (
-    <div
-      className={`relative mx-auto aspect-square w-full max-w-sm bg-white ${className}`.trim()}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element -- Türkçe yol; Next/Image çift encode yapıyor */}
-      <img
-        src={sablonSrc}
-        alt="Ekspertiz şablonu"
-        className="absolute inset-0 h-full w-full object-contain"
-      />
-      {overlayUrls.map((src) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={src}
-          src={src}
-          alt=""
-          className="pointer-events-none absolute inset-0 h-full w-full object-contain"
-        />
-      ))}
+    <div className={`mx-auto w-full max-w-sm ${className}`.trim()}>
+      {/*
+        aspect-square + yalnızca absolute img bazı mobil tarayıcılarda yükseklik 0 oluyor;
+        padding-bottom ile kare alan garanti edilir.
+      */}
+      <div
+        className="relative w-full overflow-hidden rounded-md bg-zinc-900"
+        style={{ paddingBottom: "100%" }}
+      >
+        <div className="absolute inset-0">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Türkçe dosya adı; Next/Image çift encode */}
+          <img
+            src={sablonSrc}
+            alt="Ekspertiz şablonu"
+            width={500}
+            height={500}
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+          {overlayUrls.map((src) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={src}
+              src={src}
+              alt=""
+              width={500}
+              height={500}
+              decoding="async"
+              className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

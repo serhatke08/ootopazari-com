@@ -134,16 +134,14 @@ export function parseExpertizPanels(
   return Object.keys(out).length ? out : null;
 }
 
-/** `public/car_brands/...` altındaki klasör (şablon + parça PNG’leri) */
-export const EXPERTIZ_ASSET_DIR = "Adsız tasarım (6)";
+/** `public/expertiz/` — şablon + parça PNG’leri (ASCII yol; mobil tarayıcı uyumu) */
+export const EXPERTIZ_ASSET_DIR = "expertiz";
 
-/** Tarayıcıda güvenli URL (Türkçe / boşluk için segment bazlı encode) */
+/** Tarayıcıda güvenli URL (Türkçe dosya adları için segment bazlı encode) */
 export function expertizAssetUrl(filename: string): string {
   return (
     "/" +
-    ["car_brands", EXPERTIZ_ASSET_DIR, filename]
-      .map(encodeURIComponent)
-      .join("/")
+    [EXPERTIZ_ASSET_DIR, filename].map(encodeURIComponent).join("/")
   );
 }
 

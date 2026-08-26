@@ -857,6 +857,24 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       </dl>
     );
 
+  const expertizTabContent =
+    showExpertiz && expertizPanels ? (
+      <ExpertizDiagram panels={expertizPanels} />
+    ) : showExpertiz && expertizRaw != null && expertizPanelsParsed == null ? (
+      <div className="rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
+        Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile eşleşmesi için
+        panelleri JSON veya beklenen anahtarlarla kaydedin.
+        <details className="mt-2">
+          <summary className="cursor-pointer font-medium">Ham veri</summary>
+          <pre className="mt-2 max-h-64 overflow-auto rounded border border-black/10 bg-white p-2 text-xs text-black">
+            {typeof expertizRaw === "string"
+              ? expertizRaw
+              : JSON.stringify(expertizRaw, null, 2)}
+          </pre>
+        </details>
+      </div>
+    ) : null;
+
   const contactPhone =
     typeof listing.contact_phone === "string"
       ? listing.contact_phone.trim()
@@ -1108,28 +1126,8 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
             infoContent={<ListingVehicleSpecs rows={vehicleSpecRows} />}
             descriptionContent={descriptionTabContent}
             equipmentContent={equipmentTabContent}
+            expertizContent={expertizTabContent}
           />
-          {showExpertiz && expertizPanels ? (
-            <section className="mt-4">
-              <h2 className="mb-3 text-lg font-semibold text-black">
-                Ekspertiz bilgileri
-              </h2>
-              <ExpertizDiagram panels={expertizPanels} />
-            </section>
-          ) : showExpertiz && expertizRaw != null && expertizPanelsParsed == null ? (
-            <section className="mt-4 rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
-              Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile
-              eşleşmesi için panelleri JSON veya beklenen anahtarlarla kaydedin.
-              <details className="mt-2">
-                <summary className="cursor-pointer font-medium">Ham veri</summary>
-                <pre className="mt-2 max-h-64 overflow-auto rounded border border-black/10 bg-white p-2 text-xs text-black">
-                  {typeof expertizRaw === "string"
-                    ? expertizRaw
-                    : JSON.stringify(expertizRaw, null, 2)}
-                </pre>
-              </details>
-            </section>
-          ) : null}
         </div>
 
         <div className="listing-detail-aside min-w-0 px-4 md:px-0">

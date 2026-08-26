@@ -115,34 +115,32 @@ export function LeftNavDrawer({
         aria-modal="true"
         aria-label="Site menüsü"
         aria-hidden={!open}
-        className={`fixed inset-y-0 left-0 z-[70] flex w-[min(88vw,20rem)] flex-col border-r border-amber-400/50 bg-white shadow-2xl transition-transform duration-300 ease-out lg:w-[25vw] lg:max-w-[17rem] ${
+        className={`fixed inset-y-0 left-0 z-[70] flex w-[50vw] max-w-[50vw] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex shrink-0 items-center justify-between gap-1 border-b border-amber-400/80 bg-[#ffcc00] px-2 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top,0px))]">
-          <span className="text-xs font-black tracking-tight text-zinc-900">
-            Menü
-          </span>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-md p-1 text-zinc-900 hover:bg-black/10"
-            aria-label="Menüyü kapat"
-          >
-            <IconClose className="h-4 w-4" />
-          </button>
-        </div>
+        <DrawerMenuSections
+          drawerProfile={drawerProfile}
+          dealerApplications={dealerApplications}
+          sessionEmail={sessionEmail}
+          unreadMessageCount={unreadMessageCount}
+          hasListings={hasListings}
+          onNavigate={handleClose}
+          onClose={handleClose}
+          mode="header"
+        />
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1.5 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="space-y-2.5">
-            <DrawerMenuSections
-              drawerProfile={drawerProfile}
-              dealerApplications={dealerApplications}
-              sessionEmail={sessionEmail}
-              unreadMessageCount={unreadMessageCount}
-              hasListings={hasListings}
-              onNavigate={handleClose}
-            />
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <DrawerMenuSections
+            drawerProfile={drawerProfile}
+            dealerApplications={dealerApplications}
+            sessionEmail={sessionEmail}
+            unreadMessageCount={unreadMessageCount}
+            hasListings={hasListings}
+            onNavigate={handleClose}
+            mode="links"
+          />
+          <div className="space-y-2.5 px-1.5 pb-1.5 pt-1">
             <div className="border-t border-zinc-200 pt-1">
               <Suspense
                 fallback={
