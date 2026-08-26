@@ -86,6 +86,7 @@ export function SpecialListingsPageView({
               hideCategoryAndYear
               cityOnStatsRow
               showFavorite={false}
+              showAcilBadge={isAcil}
               cityDisplayName={item.cityDisplayName}
               stats={item.stats}
               loggedIn={loggedIn}
