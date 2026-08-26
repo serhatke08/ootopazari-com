@@ -395,13 +395,8 @@ export function SiteHeaderClient({
             onClick={() => setDrawerOpen(false)}
           >
             {pathname.startsWith("/acil") ? (
-              <span className="flex flex-col items-center leading-none">
-                <span className="rounded-md border-2 border-[#8b0000] px-2 py-0.5 text-base font-extrabold tracking-tight text-[#8b0000] sm:text-lg md:text-xl">
-                  Acil
-                </span>
-                <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#8b0000]/85 sm:text-[10px]">
-                  Acil ilanlar
-                </span>
+              <span className="rounded-md border-2 border-[#8b0000] px-2 py-0.5 text-base font-extrabold tracking-tight text-[#8b0000] sm:text-lg md:text-xl">
+                Acil
               </span>
             ) : (
               <span className="whitespace-nowrap text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
