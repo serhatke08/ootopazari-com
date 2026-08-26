@@ -67,11 +67,6 @@ html {
     overscroll-behavior-y: none;
   }
 
-  /* İlan detay: alt menü yok — alttaki boşluk kalksın */
-  html.mobile-hide-bottom-nav .layout-with-mobile-nav {
-    padding-bottom: 0;
-  }
-
   /* Ana sayfa mobil: gövde sabit, içerik kayar — tarayıcı URL çubuğu davranışı */
   html.mobile-home-scroll-mode {
     height: 100%;

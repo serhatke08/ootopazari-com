@@ -73,24 +73,8 @@ function useMobileHomeScrollMode() {
   return enabled;
 }
 
-function useMobileChromeMode() {
-  const pathname = usePathname();
-  const hideBottomNav = isListingDetailPath(pathname);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (hideBottomNav) {
-      root.classList.add("mobile-hide-bottom-nav");
-    } else {
-      root.classList.remove("mobile-hide-bottom-nav");
-    }
-    return () => root.classList.remove("mobile-hide-bottom-nav");
-  }, [hideBottomNav]);
-}
-
 export function SiteMainShell({ children }: { children: ReactNode }) {
   const mobileHomeScroll = useMobileHomeScrollMode();
-  useMobileChromeMode();
 
   if (mobileHomeScroll) {
     return (

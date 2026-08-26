@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
-import { isListingDetailPath } from "@/lib/listing-seo";
 
 function IconHome({ className }: { className?: string }) {
   return (
@@ -88,7 +87,7 @@ export function MobileBottomNav({
 }) {
   const pathname = usePathname();
 
-  if (!hasEnv || isListingDetailPath(pathname)) return null;
+  if (!hasEnv) return null;
 
   const homeActive = pathname === "/";
   const msgActive = pathname.startsWith("/mesajlar");
