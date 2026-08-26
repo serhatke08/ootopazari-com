@@ -32,7 +32,7 @@ export function ListingDetailContactDock({
     <div
       className="fixed inset-x-0 z-[45] border-t border-zinc-200 bg-white/95 px-3 py-1.5 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur-md md:hidden"
       style={{
-        bottom: "calc(3.45rem + env(safe-area-inset-bottom, 0px))",
+        bottom: "calc(var(--mobile-bottom-nav-h, 3.25rem) + env(safe-area-inset-bottom, 0px))",
       }}
     >
       <div className="mx-auto flex max-w-lg flex-col gap-1.5">

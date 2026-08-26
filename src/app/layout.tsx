@@ -29,6 +29,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: "#ffcc00",
   colorScheme: "light",
+  interactiveWidget: "overlays-content",
 };
 
 export const metadata: Metadata = {

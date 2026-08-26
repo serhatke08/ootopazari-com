@@ -76,9 +76,6 @@ function IconUser({ className }: { className?: string }) {
   );
 }
 
-/** FAB merkezinin sarı zeminin üst kenarına olan uzaklığı. */
-const FAB_TOP_CLASS = "top-5";
-
 export function MobileBottomNav({
   loggedIn,
   hasEnv,
@@ -112,72 +109,65 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed bottom-0 left-0 right-0 z-50 block overflow-visible border-0 bg-[#ffcc00] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-amber-400/90 bg-[#ffcc00] shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden"
       aria-label="Alt menü"
     >
-      {/* Sarı zemin + home indicator alanı (safe-area) tek parça; altta beyaz şerit kalmasın */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-[4] border-t border-amber-400/90 bg-[#ffcc00] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
-        style={{ bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))" }}
-        suppressHydrationWarning
-        aria-hidden
-      />
-
-      {/* FAB: sarı zeminin üst kenarına yakın, ortada */}
-      <Link
-        href="/ilan-ver"
-        className={`absolute left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] shadow-md ring-1 ring-zinc-800 transition hover:bg-zinc-800 ${FAB_TOP_CLASS} ${ilanVerActive ? "ring-amber-500" : ""}`}
-        aria-label="İlan ver"
-      >
-        <IconPlus />
-      </Link>
-
-      <div className="relative z-10 mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-5">
+      <div className="relative pb-[env(safe-area-inset-bottom,0px)]">
         <Link
-          href="/"
-          className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}
+          href="/ilan-ver"
+          className={`absolute left-1/2 top-0 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] shadow-md ring-1 ring-zinc-800 transition hover:bg-zinc-800 ${ilanVerActive ? "ring-amber-500" : ""}`}
+          aria-label="İlan ver"
         >
-          <IconHome className="shrink-0" />
-          <span className="max-w-[3.5rem] truncate text-center">Ana sayfa</span>
+          <IconPlus />
         </Link>
 
-        <Link
-          href="/mesajlar"
-          className={`${tabBase} relative ${msgActive ? tabActive : tabIdle}`}
-        >
-          <span className="relative inline-flex">
-            <IconMessage className="shrink-0" />
-            {loggedIn && unreadMessageCount > 0 ? (
-              <MessageUnreadBadge
-                count={unreadMessageCount}
-                className="absolute -right-2 -top-2 z-10 min-h-[0.95rem] min-w-[0.95rem] px-0.5 text-[9px]"
-              />
-            ) : null}
-          </span>
-          <span className="max-w-[3.5rem] truncate text-center">Mesajlar</span>
-        </Link>
+        <div className="mx-auto grid h-[var(--mobile-bottom-nav-h,3.25rem)] max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-0.5 pt-2">
+          <Link
+            href="/"
+            className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}
+          >
+            <IconHome className="shrink-0" />
+            <span className="max-w-[3.5rem] truncate text-center">Ana sayfa</span>
+          </Link>
 
-        <div className="flex min-w-0 flex-col items-center justify-end">
-          <span className="max-w-[4rem] truncate text-center text-[9px] font-bold leading-tight text-zinc-900">
-            İlan ver
-          </span>
+          <Link
+            href="/mesajlar"
+            className={`${tabBase} relative ${msgActive ? tabActive : tabIdle}`}
+          >
+            <span className="relative inline-flex">
+              <IconMessage className="shrink-0" />
+              {loggedIn && unreadMessageCount > 0 ? (
+                <MessageUnreadBadge
+                  count={unreadMessageCount}
+                  className="absolute -right-2 -top-2 z-10 min-h-[0.95rem] min-w-[0.95rem] px-0.5 text-[9px]"
+                />
+              ) : null}
+            </span>
+            <span className="max-w-[3.5rem] truncate text-center">Mesajlar</span>
+          </Link>
+
+          <div className="flex min-w-0 flex-col items-center justify-end">
+            <span className="max-w-[4rem] truncate text-center text-[9px] font-bold leading-tight text-zinc-900">
+              İlan ver
+            </span>
+          </div>
+
+          <Link
+            href="/favoriler"
+            className={`${tabBase} ${favActive ? tabActive : tabIdle}`}
+          >
+            <IconHeart className="shrink-0" />
+            <span className="max-w-[3.5rem] truncate text-center">Favoriler</span>
+          </Link>
+
+          <Link
+            href={accountHref}
+            className={`${tabBase} ${accountActive ? tabActive : tabIdle}`}
+          >
+            <IconUser className="shrink-0" />
+            <span className="max-w-[3.5rem] truncate text-center">Hesabım</span>
+          </Link>
         </div>
-
-        <Link
-          href="/favoriler"
-          className={`${tabBase} ${favActive ? tabActive : tabIdle}`}
-        >
-          <IconHeart className="shrink-0" />
-          <span className="max-w-[3.5rem] truncate text-center">Favoriler</span>
-        </Link>
-
-        <Link
-          href={accountHref}
-          className={`${tabBase} ${accountActive ? tabActive : tabIdle}`}
-        >
-          <IconUser className="shrink-0" />
-          <span className="max-w-[3.5rem] truncate text-center">Hesabım</span>
-        </Link>
       </div>
     </nav>
   );

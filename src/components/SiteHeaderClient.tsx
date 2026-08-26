@@ -246,6 +246,8 @@ export function SiteHeaderClient({
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const isHome = pathname === "/";
+  const [mobileHeaderAtTop, setMobileHeaderAtTop] = useState(true);
   const [sessionEmail, setSessionEmail] = useState<string | null>(email);
 
   useEffect(() => {
@@ -275,7 +277,34 @@ export function SiteHeaderClient({
     setDrawerOpen(false);
     setNotifOpen(false);
     setMobileSearchOpen(false);
+    setMobileHeaderAtTop(true);
   }, [pathname]);
+
+  /** Ana sayfa mobil: üst bar yalnızca en üstte — yukarı kaydırınca hemen açılmasın. */
+  useEffect(() => {
+    if (!isHome) {
+      setMobileHeaderAtTop(true);
+      return;
+    }
+
+    const mq = window.matchMedia("(max-width: 47.999rem)");
+
+    const sync = () => {
+      if (!mq.matches) {
+        setMobileHeaderAtTop(true);
+        return;
+      }
+      setMobileHeaderAtTop(window.scrollY <= 6);
+    };
+
+    sync();
+    window.addEventListener("scroll", sync, { passive: true });
+    mq.addEventListener("change", sync);
+    return () => {
+      window.removeEventListener("scroll", sync);
+      mq.removeEventListener("change", sync);
+    };
+  }, [isHome]);
 
   useEffect(() => {
     if (!mobileSearchOpen) return;
@@ -355,6 +384,8 @@ export function SiteHeaderClient({
   }
 
   const hideTopNavOnMobile = isListingDetailPath(pathname);
+  const collapseMobileHeader =
+    isHome && !mobileHeaderAtTop && !hideTopNavOnMobile;
 
   return (
     <>
@@ -370,9 +401,9 @@ export function SiteHeaderClient({
       />
 
       <header
-        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] pt-[env(safe-area-inset-top,0px)] shadow-sm ${
-          hideTopNavOnMobile ? "hidden md:block" : ""
-        }`}
+        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] pt-[env(safe-area-inset-top,0px)] shadow-sm transition-transform duration-200 will-change-transform md:translate-y-0 ${
+          collapseMobileHeader ? "-translate-y-full" : "translate-y-0"
+        } ${hideTopNavOnMobile ? "hidden md:block" : ""}`}
       >
         <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-3">
