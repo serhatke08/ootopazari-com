@@ -917,7 +917,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
   return (
     <article
-      className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pt-4 text-black md:px-6 md:pb-12 md:pt-4 ${
+      className={`mx-auto w-full max-w-[1400px] flex-1 bg-white px-0 pt-[max(1rem,env(safe-area-inset-top,0px))] text-black md:px-6 md:pb-12 md:pt-4 ${
         showContactDock ? "pb-28" : "pb-12"
       } ${
         isSuspendedDetailView ? "opacity-[0.88] grayscale-[0.15]" : ""

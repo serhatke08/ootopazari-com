@@ -112,13 +112,13 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed bottom-0 left-0 right-0 z-50 block overflow-visible border-0 bg-transparent pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 block overflow-visible border-0 bg-[#ffcc00] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Alt menü"
     >
-      {/* Sarı zemin nav'ın tamamını kaplar: kısmi kaplamada üstte, footer ile
-          bar arasında boş beyaz bir şerit görünüyordu. */}
+      {/* Sarı zemin + home indicator alanı (safe-area) tek parça; altta beyaz şerit kalmasın */}
       <div
-        className="pointer-events-none absolute inset-0 z-[4] border-t border-amber-400/90 bg-[#ffcc00]/95 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] backdrop-blur-md"
+        className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-[4] border-t border-amber-400/90 bg-[#ffcc00] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
+        style={{ bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))" }}
         suppressHydrationWarning
         aria-hidden
       />

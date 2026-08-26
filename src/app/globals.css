@@ -19,6 +19,18 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  min-height: 100dvh;
+}
+
+/* Mobil: notch / home indicator + tarayıcı overscroll boşlukları sarı (beyaz şerit olmasın) */
+html {
+  background-color: #ffcc00;
+}
+
+@media (min-width: 48rem) {
+  html {
+    background-color: var(--background);
+  }
 }
 
 /* Ana sayfa sol kategori cascade — iç kaydırma (marka/model/motor paneli) */

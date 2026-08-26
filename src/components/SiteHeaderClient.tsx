@@ -370,7 +370,7 @@ export function SiteHeaderClient({
       />
 
       <header
-        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] shadow-sm ${
+        className={`sticky top-0 z-40 border-b border-amber-400/80 bg-[#ffcc00] pt-[env(safe-area-inset-top,0px)] shadow-sm ${
           hideTopNavOnMobile ? "hidden md:block" : ""
         }`}
       >

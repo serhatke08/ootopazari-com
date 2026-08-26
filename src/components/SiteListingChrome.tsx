@@ -17,7 +17,7 @@ export function SiteHeaderFallback() {
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b border-zinc-200 bg-zinc-100 shadow-sm ${
+      className={`sticky top-0 z-40 border-b border-zinc-200 bg-zinc-100 pt-[env(safe-area-inset-top,0px)] shadow-sm ${
         hideOnMobileListing ? "hidden md:block" : ""
       }`}
       aria-busy="true"

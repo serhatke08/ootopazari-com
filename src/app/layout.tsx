@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -22,6 +22,14 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ADSENSE_CLIENT_ID } from "@/lib/adsense";
 import { AppDownloadPromoPopup } from "@/components/AppDownloadPromoPopup";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#ffcc00",
+  colorScheme: "light",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
@@ -69,6 +77,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     title: SITE_DISPLAY_NAME,
     capable: true,
+    statusBarStyle: "black-translucent",
   },
   icons: {
     icon: [

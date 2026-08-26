@@ -119,7 +119,7 @@ export function LeftNavDrawer({
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex shrink-0 items-center justify-between gap-1 border-b border-amber-400/80 bg-[#ffcc00] px-2 py-1.5">
+        <div className="flex shrink-0 items-center justify-between gap-1 border-b border-amber-400/80 bg-[#ffcc00] px-2 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top,0px))]">
           <span className="text-xs font-black tracking-tight text-zinc-900">
             Menü
           </span>
