@@ -370,10 +370,15 @@ export function SiteHeaderClient({
       />
 
       <header
-        className={`sticky top-0 z-40 shrink-0 border-b border-amber-400/80 bg-[#ffcc00] pt-[env(safe-area-inset-top,0px)] shadow-sm ${
+        className={`sticky top-0 z-40 shrink-0 shadow-sm ${
           hideTopNavOnMobile ? "hidden md:block" : ""
         }`}
       >
+        <div
+          className="h-[env(safe-area-inset-top,0px)] shrink-0 md:hidden"
+          aria-hidden
+        />
+        <div className="border-b border-amber-400/80 bg-[#ffcc00]">
         <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-3">
           <div className="flex min-w-0 items-center gap-2 justify-self-start">
@@ -596,6 +601,7 @@ export function SiteHeaderClient({
               </Suspense>
             </div>
           ) : null}
+        </div>
         </div>
       </header>
 

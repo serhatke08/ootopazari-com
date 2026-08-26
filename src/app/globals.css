@@ -22,9 +22,12 @@ body {
   min-height: 100dvh;
 }
 
-/* Mobil: notch / home indicator + tarayıcı overscroll boşlukları sarı (beyaz şerit olmasın) */
+/* Mobil: notch / home indicator + tarayıcı overscroll — footer deseni (navbar/alt menü sarı kalır) */
 html {
-  background-color: #ffcc00;
+  background-color: #0a0a0a;
+  background-image: url("/promo/footer-bg.png");
+  background-repeat: repeat;
+  background-size: 420px 420px;
 }
 
 @media (min-width: 48rem) {

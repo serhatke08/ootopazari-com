@@ -17,12 +17,17 @@ export function SiteHeaderFallback() {
 
   return (
     <header
-      className={`sticky top-0 z-40 shrink-0 border-b border-zinc-200 bg-zinc-100 pt-[env(safe-area-inset-top,0px)] shadow-sm ${
+      className={`sticky top-0 z-40 shrink-0 shadow-sm ${
         hideOnMobileListing ? "hidden md:block" : ""
       }`}
       aria-busy="true"
       aria-label="Menü yükleniyor"
     >
+      <div
+        className="h-[env(safe-area-inset-top,0px)] shrink-0 md:hidden"
+        aria-hidden
+      />
+      <div className="border-b border-zinc-200 bg-zinc-100">
       <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
         <div className="grid h-10 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 sm:h-11 sm:grid-cols-[minmax(12rem,1fr)_auto_minmax(13rem,1fr)] sm:gap-3">
           <div className="flex min-w-0 items-center gap-2">
@@ -41,6 +46,7 @@ export function SiteHeaderFallback() {
             <Pulse className="h-8 w-8 shrink-0 rounded-full" />
           </nav>
         </div>
+      </div>
       </div>
     </header>
   );

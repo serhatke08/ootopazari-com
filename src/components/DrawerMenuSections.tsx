@@ -131,7 +131,7 @@ function DrawerPersonalHeader({
             <Link
               href="/giris"
               onClick={() => onNavigate?.()}
-              className="inline-flex min-w-[7.5rem] items-center justify-center rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-green-700"
+              className="mx-auto inline-flex w-full max-w-[11rem] items-center justify-center rounded-md border border-green-500/70 bg-green-600 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-green-700"
             >
               Giriş
             </Link>
