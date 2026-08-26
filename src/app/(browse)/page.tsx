@@ -24,6 +24,8 @@ import { HomePageListings } from "@/components/HomePageListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
+import { fetchSpecialListingsFeed } from "@/lib/special-listings-feed";
+import type { HomeListingCardItem } from "@/lib/home-listings-feed-types";
 import {
   SITE_DISPLAY_NAME,
   SITE_HOME_DESCRIPTION,
@@ -108,7 +110,7 @@ export default async function AnaSayfa({
   const supabase = await createSupabaseServerClient();
   const listFilters = await resolveHomeListingsFeedFilters(supabase, get);
 
-  const [categories, cities, brands, feed] = await Promise.all([
+  const [categories, cities, brands, feed, acilFeed] = await Promise.all([
     fetchCategories(supabase),
     fetchCities(supabase),
     listFilters.categoryId
@@ -121,9 +123,13 @@ export default async function AnaSayfa({
       HOME_LISTINGS_PAGE_SIZE,
       listFilters
     ),
+    homeListingsFeedHasFilters(listFilters)
+      ? Promise.resolve({ items: [] as HomeListingCardItem[], loggedIn: false })
+      : fetchSpecialListingsFeed(supabase, env, "acil"),
   ]);
 
   const { items, total, loggedIn } = feed;
+  const acilItems = acilFeed.items.slice(0, 3);
   const hasListFilters = homeListingsFeedHasFilters(listFilters);
 
   const seoJsonLdPayload = hasListFilters
@@ -164,6 +170,7 @@ export default async function AnaSayfa({
           initialTotal={total}
           initialLoggedIn={loggedIn}
           initialFilters={listFilters}
+          acilItems={acilItems}
       />
     </>
   );

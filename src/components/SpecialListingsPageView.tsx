@@ -10,8 +10,7 @@ const COPY: Record<
 > = {
   acil: {
     title: "Acil İlanlar",
-    subtitle:
-      "Bugün öne çıkarılan, acil görünürlükteki araç ilanları.",
+    subtitle: "Acil görünürlükteki araç ilanları.",
     empty: "Şu an aktif acil ilan yok.",
     accent: "border-red-200 bg-red-50",
   },
@@ -35,40 +34,45 @@ export function SpecialListingsPageView({
   loggedIn: boolean;
 }) {
   const copy = COPY[kind];
+  const isAcil = kind === "acil";
 
   return (
     <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
-      <div className={`mb-6 rounded-xl border p-5 sm:p-6 ${copy.accent}`}>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-          {copy.title}
-        </h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-zinc-700 sm:text-base">
-          {copy.subtitle}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            href="/ilan-one-cikar"
-            className="rounded-lg bg-[#ffc400] px-4 py-2 text-sm font-bold text-black transition hover:bg-[#ffd24d]"
-          >
-            İlanımı öne çıkar
-          </Link>
-          <Link
-            href="/"
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:border-zinc-400"
-          >
-            Ana sayfa
-          </Link>
-        </div>
+      <div className="mb-4 flex items-center gap-2">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-800 hover:border-zinc-400"
+        >
+          ← Ana sayfa
+        </Link>
       </div>
 
+      {isAcil ? (
+        <div className="mb-5">
+          <h1 className="text-xl font-extrabold tracking-tight text-[#8b0000] sm:text-2xl">
+            Acil İlanlar
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600">{copy.subtitle}</p>
+        </div>
+      ) : (
+        <div className={`mb-6 rounded-xl border p-5 sm:p-6 ${copy.accent}`}>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+            {copy.title}
+          </h1>
+          <p className="mt-1.5 max-w-2xl text-sm text-zinc-700 sm:text-base">
+            {copy.subtitle}
+          </p>
+        </div>
+      )}
+
       {items.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-6 py-12 text-center">
+        <div className="rounded-xl border border-dashed border-red-200 bg-red-50/50 px-6 py-12 text-center">
           <p className="text-sm text-zinc-600">{copy.empty}</p>
           <Link
-            href="/ilan-one-cikar"
-            className="mt-4 inline-block text-sm font-semibold text-emerald-700 hover:underline"
+            href="/"
+            className="mt-4 inline-block text-sm font-semibold text-[#8b0000] hover:underline"
           >
-            Öne çıkarma paketlerine göz at
+            Ana sayfaya dön
           </Link>
         </div>
       ) : (

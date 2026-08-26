@@ -29,6 +29,7 @@ import {
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
 import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
 import { HomeSidebar } from "@/components/HomeSidebar";
+import { HomeAcilRail } from "@/components/HomeAcilRail";
 import { TopCitySelect } from "@/components/TopCitySelect";
 import { ListingSortSelect } from "@/components/ListingSortSelect";
 import {
@@ -48,6 +49,8 @@ type Props = {
   initialTotal: number;
   initialLoggedIn: boolean;
   initialFilters: HomeListingsFeedFilters;
+  /** Ana sayfa ilk sıra: acil vitrini (en fazla 3). */
+  acilItems?: HomeListingCardItem[];
 };
 
 function filtersFromUrl(
@@ -109,6 +112,7 @@ export function HomePageListings({
   initialTotal,
   initialLoggedIn,
   initialFilters,
+  acilItems = [],
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -240,10 +244,24 @@ export function HomePageListings({
         </aside>
 
         <div className="min-w-0 flex-1">
+          <AdSenseUnit
+            slot={ADSENSE_HOME_SLOT}
+            className="mb-4 hidden sm:block"
+            label="Sponsorlu"
+          />
+
+          {!hasFilters ? (
+            <HomeAcilRail
+              items={acilItems}
+              env={env}
+              loggedIn={loggedIn}
+            />
+          ) : null}
+
           <div className="mb-3 flex items-center gap-1.5">
-            <h1 className="mr-auto shrink-0 text-sm font-bold text-zinc-900 sm:text-base">
+            <h2 className="mr-auto shrink-0 text-sm font-bold text-zinc-900 sm:text-base">
               {heading}
-            </h1>
+            </h2>
             <div className="flex min-w-0 items-center gap-1">
               <TopCitySelect cities={cities} />
               <ListingSortSelect />
@@ -276,12 +294,6 @@ export function HomePageListings({
               onChange={(next) => pushHomeFeedFilters(router, next)}
             />
           ) : null}
-
-          <AdSenseUnit
-            slot={ADSENSE_HOME_SLOT}
-            className="mb-4 hidden sm:block"
-            label="Sponsorlu"
-          />
 
           {showSkeleton ? (
             <HomeListingsGridSkeleton count={10} />

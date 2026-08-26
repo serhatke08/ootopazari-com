@@ -6,9 +6,8 @@ import { fetchSpecialListingsFeed } from "@/lib/special-listings-feed";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Acil İlanlar",
-  description:
-    "Bugün öne çıkarılan acil görünürlükteki araç ilanlarını inceleyin.",
+  title: "Acil",
+  description: "Acil ilanları inceleyin.",
 };
 
 export default async function AcilPage() {

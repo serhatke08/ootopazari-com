@@ -390,13 +390,24 @@ export function SiteHeaderClient({
           </div>
 
           <Link
-            href="/"
+            href={pathname.startsWith("/acil") ? "/acil" : "/"}
             className="justify-self-center px-1 py-0.5 text-center"
             onClick={() => setDrawerOpen(false)}
           >
-            <span className="whitespace-nowrap text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
-              Oto Pazarı
-            </span>
+            {pathname.startsWith("/acil") ? (
+              <span className="flex flex-col items-center leading-none">
+                <span className="rounded-md border-2 border-[#8b0000] px-2 py-0.5 text-base font-extrabold tracking-tight text-[#8b0000] sm:text-lg md:text-xl">
+                  Acil
+                </span>
+                <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#8b0000]/85 sm:text-[10px]">
+                  Acil ilanlar
+                </span>
+              </span>
+            ) : (
+              <span className="whitespace-nowrap text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
+                Oto Pazarı
+              </span>
+            )}
           </Link>
 
           <nav className="flex min-w-0 items-center justify-end gap-x-1 gap-y-1 text-sm sm:gap-x-2 md:gap-x-2 lg:gap-x-3">
