@@ -4,7 +4,7 @@ import { appStoreUrl, playStoreUrl } from "@/lib/app-stores";
 export function HomeAppPromoRail() {
   return (
     <section
-      className="mt-2 w-full overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm"
+      className="w-full overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm"
       aria-label="Uygulamamızı indirin"
     >
       <div className="relative">
