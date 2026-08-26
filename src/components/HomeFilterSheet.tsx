@@ -635,60 +635,98 @@ export function HomeFilterSheet({
               </div>
 
               <div className="border-b border-zinc-100 px-4 py-3">
-                <p className="mb-2 text-sm font-semibold text-zinc-900">Yıl & km</p>
-                <div className="mb-2 flex items-center gap-2">
-                  <input
-                    inputMode="numeric"
-                    placeholder="Min yıl"
-                    value={draft.minYear}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        minYear: e.target.value.replace(/\D/g, ""),
-                      }))
-                    }
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  />
-                  <span className="text-zinc-400">–</span>
-                  <input
-                    inputMode="numeric"
-                    placeholder="Max yıl"
-                    value={draft.maxYear}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        maxYear: e.target.value.replace(/\D/g, ""),
-                      }))
-                    }
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  />
+                <p className="mb-1.5 text-sm font-semibold text-zinc-900">
+                  Model yılı
+                </p>
+                <p className="mb-2 text-[11px] text-zinc-500">
+                  Örn. 2015 – 2024
+                </p>
+                <div className="mb-4 flex items-end gap-2">
+                  <label className="min-w-0 flex-1">
+                    <span className="mb-1 block text-[11px] font-medium text-zinc-600">
+                      En eski
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="2015"
+                      value={draft.minYear}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          minYear: e.target.value.replace(/\D/g, "").slice(0, 4),
+                        }))
+                      }
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm tabular-nums"
+                    />
+                  </label>
+                  <span className="pb-2.5 text-zinc-400" aria-hidden>
+                    –
+                  </span>
+                  <label className="min-w-0 flex-1">
+                    <span className="mb-1 block text-[11px] font-medium text-zinc-600">
+                      En yeni
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="2024"
+                      value={draft.maxYear}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          maxYear: e.target.value.replace(/\D/g, "").slice(0, 4),
+                        }))
+                      }
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm tabular-nums"
+                    />
+                  </label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    inputMode="numeric"
-                    placeholder="Min km"
-                    value={formatTrInt(draft.minKm)}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        minKm: e.target.value.replace(/\D/g, ""),
-                      }))
-                    }
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  />
-                  <span className="text-zinc-400">–</span>
-                  <input
-                    inputMode="numeric"
-                    placeholder="Max km"
-                    value={formatTrInt(draft.maxKm)}
-                    onChange={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        maxKm: e.target.value.replace(/\D/g, ""),
-                      }))
-                    }
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  />
+
+                <p className="mb-1.5 text-sm font-semibold text-zinc-900">
+                  Kilometre
+                </p>
+                <p className="mb-2 text-[11px] text-zinc-500">
+                  Örn. 0 – 150.000
+                </p>
+                <div className="flex items-end gap-2">
+                  <label className="min-w-0 flex-1">
+                    <span className="mb-1 block text-[11px] font-medium text-zinc-600">
+                      En az
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={formatTrInt(draft.minKm)}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          minKm: e.target.value.replace(/\D/g, ""),
+                        }))
+                      }
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm tabular-nums"
+                    />
+                  </label>
+                  <span className="pb-2.5 text-zinc-400" aria-hidden>
+                    –
+                  </span>
+                  <label className="min-w-0 flex-1">
+                    <span className="mb-1 block text-[11px] font-medium text-zinc-600">
+                      En fazla
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      placeholder="150.000"
+                      value={formatTrInt(draft.maxKm)}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          maxKm: e.target.value.replace(/\D/g, ""),
+                        }))
+                      }
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm tabular-nums"
+                    />
+                  </label>
                 </div>
               </div>
 

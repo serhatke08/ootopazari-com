@@ -8,8 +8,8 @@ function Pulse({ className }: { className: string }) {
 function QuickLinksStripSkeleton() {
   return (
     <div className="border-b border-zinc-200 bg-white" aria-hidden>
-      <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 md:px-6">
-        <div className="flex gap-1.5 overflow-hidden">
+      <div className="mx-auto max-w-[1400px] sm:px-4 md:px-6">
+        <div className="flex gap-1.5 overflow-hidden px-2 py-1.5">
           {QUICK_ACCESS_LINKS.map((d) => (
             <div
               key={d.href}

@@ -388,7 +388,11 @@ function HomeFilterChips({
     filters.maxPrice,
     "₺"
   );
-  const yearLabel = formatHomeFilterRangeChip(filters.minYear, filters.maxYear);
+  const yearLabel = formatHomeFilterRangeChip(
+    filters.minYear,
+    filters.maxYear,
+    "yıl"
+  );
   const kmLabel = formatHomeFilterRangeChip(filters.minKm, filters.maxKm, "km");
 
   return (

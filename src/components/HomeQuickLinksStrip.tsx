@@ -17,16 +17,21 @@ function dealerBorderColor(label: string): string {
 export function HomeQuickLinksStrip() {
   return (
     <div className="border-b border-zinc-200 bg-white">
-      <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 md:px-6">
-        <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mx-auto max-w-[1400px] sm:px-4 md:px-6">
+        <div
+          className="flex gap-1.5 overflow-x-auto overscroll-x-contain px-2 py-1.5 touch-pan-x [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="list"
+          aria-label="Bayilik kısayolları"
+        >
           {QUICK_ACCESS_LINKS.map((d) => (
             <Link
               key={d.href}
               href={d.href}
+              role="listitem"
               className="group flex w-[3.75rem] shrink-0 flex-col items-center gap-0.5"
             >
               <span
-                className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-white ring-1 ring-zinc-900/10 ring-offset-1 ring-offset-white transition group-hover:brightness-110"
+                className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-white ring-1 ring-zinc-900/10 transition group-hover:brightness-110"
                 style={{ borderColor: dealerBorderColor(d.label) }}
               >
                 {d.image ? (
@@ -35,14 +40,14 @@ export function HomeQuickLinksStrip() {
                     <img
                       src={d.image}
                       alt=""
-                      className="h-full w-full scale-110 object-contain p-0.5"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
                     <Image
                       src={d.image}
                       alt=""
                       fill
-                      className="h-full w-full scale-110 object-contain p-0.5"
+                      className="object-cover"
                       sizes="40px"
                     />
                   )
