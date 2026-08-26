@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { isListingDetailPath } from "@/lib/listing-seo";
 
 function Pulse({ className }: { className: string }) {
@@ -17,7 +17,7 @@ export function SiteHeaderFallback() {
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b border-zinc-200 bg-zinc-100 pt-[env(safe-area-inset-top,0px)] shadow-sm ${
+      className={`sticky top-0 z-40 shrink-0 border-b border-zinc-200 bg-zinc-100 pt-[env(safe-area-inset-top,0px)] shadow-sm ${
         hideOnMobileListing ? "hidden md:block" : ""
       }`}
       aria-busy="true"
@@ -46,7 +46,46 @@ export function SiteHeaderFallback() {
   );
 }
 
+/** Ana sayfa mobil: iç kaydırma — tarayıcı URL çubuğu yalnızca en üstte açılır (Safari/Chrome). */
+function useMobileHomeScrollMode() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 47.999rem)");
+    const sync = () => setEnabled(isHome && mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, [isHome]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (enabled) {
+      root.classList.add("mobile-home-scroll-mode");
+    } else {
+      root.classList.remove("mobile-home-scroll-mode");
+    }
+    return () => root.classList.remove("mobile-home-scroll-mode");
+  }, [enabled]);
+
+  return enabled;
+}
+
 export function SiteMainShell({ children }: { children: ReactNode }) {
+  const mobileHomeScroll = useMobileHomeScrollMode();
+
+  if (mobileHomeScroll) {
+    return (
+      <div className="layout-with-mobile-nav flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mobile-home-scroll-pane min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="layout-with-mobile-nav flex flex-1 flex-col">{children}</div>
   );

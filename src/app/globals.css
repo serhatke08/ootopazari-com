@@ -67,6 +67,23 @@ html {
     overscroll-behavior-y: none;
   }
 
+  /* Ana sayfa mobil: gövde sabit, içerik kayar — tarayıcı URL çubuğu davranışı */
+  html.mobile-home-scroll-mode {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html.mobile-home-scroll-mode body {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mobile-home-scroll-pane {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* Alt menü yüksekliği kadar içerik boşluğu — safe-area nav içinde */
   .layout-with-mobile-nav {
     padding-bottom: calc(var(--mobile-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
