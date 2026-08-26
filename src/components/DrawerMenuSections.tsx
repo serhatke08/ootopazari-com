@@ -178,6 +178,7 @@ function DrawerProfileAvatar({
 export function DrawerMenuSections({
   drawerProfile,
   dealerApplications: _dealerApplications,
+  loggedIn,
   sessionEmail = null,
   unreadMessageCount,
   hasListings = false,
@@ -187,6 +188,7 @@ export function DrawerMenuSections({
 }: {
   drawerProfile: { displayName: string; avatarUrl: string | null } | null;
   dealerApplications: BayiApplicationMenuRow[];
+  loggedIn: boolean;
   sessionEmail?: string | null;
   unreadMessageCount: number;
   hasListings?: boolean;
@@ -195,7 +197,6 @@ export function DrawerMenuSections({
   /** `header` = yalnız üst banner, `links` = kişisel menü linkleri, `all` = ikisi */
   mode?: "all" | "header" | "links";
 }) {
-  const loggedIn = !!drawerProfile || !!sessionEmail;
   const displayName =
     drawerProfile?.displayName ??
     (sessionEmail

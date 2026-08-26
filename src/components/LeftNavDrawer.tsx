@@ -54,6 +54,7 @@ export function LeftNavDrawer({
   categories,
   dealerApplications,
   drawerProfile,
+  loggedIn,
   sessionEmail = null,
   unreadMessageCount = 0,
   hasListings = false,
@@ -63,6 +64,7 @@ export function LeftNavDrawer({
   categories: CategoryRow[];
   dealerApplications: BayiApplicationMenuRow[];
   drawerProfile: { displayName: string; avatarUrl: string | null } | null;
+  loggedIn: boolean;
   /** İstemci oturumu (SSR profili gecikmeli gelse bile menüde girişli gösterim). */
   sessionEmail?: string | null;
   unreadMessageCount?: number;
@@ -122,6 +124,7 @@ export function LeftNavDrawer({
         <DrawerMenuSections
           drawerProfile={drawerProfile}
           dealerApplications={dealerApplications}
+          loggedIn={loggedIn}
           sessionEmail={sessionEmail}
           unreadMessageCount={unreadMessageCount}
           hasListings={hasListings}
@@ -134,6 +137,7 @@ export function LeftNavDrawer({
           <DrawerMenuSections
             drawerProfile={drawerProfile}
             dealerApplications={dealerApplications}
+            loggedIn={loggedIn}
             sessionEmail={sessionEmail}
             unreadMessageCount={unreadMessageCount}
             hasListings={hasListings}

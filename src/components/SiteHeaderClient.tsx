@@ -246,6 +246,7 @@ export function SiteHeaderClient({
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const [sessionEmail, setSessionEmail] = useState<string | null>(email);
 
   useEffect(() => {
@@ -265,11 +266,21 @@ export function SiteHeaderClient({
       });
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSessionEmail(session?.user?.email ?? null);
+      if (event === "SIGNED_OUT") {
+        setDrawerOpen(false);
+        router.refresh();
+      }
     });
     return () => subscription.unsubscribe();
-  }, [hasEnv]);
+  }, [hasEnv, router]);
+
+  const loggedIn = !!sessionEmail;
+  const drawerProfileForMenu = loggedIn ? drawerProfile : null;
+  const hasListings = useUserHasListings(hasEnv, loggedIn, serverHasListings);
+  const unreadMessageCount = useUnreadMessageCount(hasEnv, loggedIn);
+  const unreadNotificationCount = useUnreadNotificationCount(hasEnv, loggedIn);
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -285,11 +296,6 @@ export function SiteHeaderClient({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [mobileSearchOpen]);
-
-  const loggedIn = !!sessionEmail;
-  const hasListings = useUserHasListings(hasEnv, loggedIn, serverHasListings);
-  const unreadMessageCount = useUnreadMessageCount(hasEnv, loggedIn);
-  const unreadNotificationCount = useUnreadNotificationCount(hasEnv, loggedIn);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -363,7 +369,8 @@ export function SiteHeaderClient({
         onClose={() => setDrawerOpen(false)}
         categories={categories}
         dealerApplications={dealerApplications}
-        drawerProfile={drawerProfile}
+        drawerProfile={drawerProfileForMenu}
+        loggedIn={loggedIn}
         sessionEmail={sessionEmail}
         unreadMessageCount={unreadMessageCount}
         hasListings={hasListings}
@@ -562,11 +569,11 @@ export function SiteHeaderClient({
                     </div>
                     <NavProfileAvatar
                       displayName={
-                        drawerProfile?.displayName ??
+                        drawerProfileForMenu?.displayName ??
                         sessionEmail?.split("@")[0] ??
                         "Hesabım"
                       }
-                      avatarUrl={drawerProfile?.avatarUrl ?? null}
+                      avatarUrl={drawerProfileForMenu?.avatarUrl ?? null}
                       title={sessionEmail ?? undefined}
                     />
                   </>
