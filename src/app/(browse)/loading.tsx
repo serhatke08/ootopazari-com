@@ -58,15 +58,17 @@ export default function RootLoading() {
           </aside>
 
           <div className="min-w-0 flex-1">
+            <div className="mb-3 flex items-center justify-end gap-1.5">
+              <Pulse className="h-7 w-24" />
+              <Pulse className="h-7 w-16" />
+              <Pulse className="h-7 w-14" />
+            </div>
             <div className="mb-5">
               <Pulse className="mb-2 h-4 w-28" />
               <HomeListingsGridSkeleton count={3} />
             </div>
-            <div className="mb-3 flex items-center gap-1.5">
-              <Pulse className="mr-auto h-5 w-16 sm:h-6 sm:w-20" />
-              <Pulse className="h-7 w-24" />
-              <Pulse className="h-7 w-16" />
-              <Pulse className="h-7 w-14" />
+            <div className="mb-3">
+              <Pulse className="h-5 w-16 sm:h-6 sm:w-20" />
             </div>
             <HomeListingsGridSkeleton count={12} />
           </div>

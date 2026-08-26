@@ -375,8 +375,8 @@ export function SiteHeaderClient({
         }`}
       >
         <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 sm:grid-cols-[minmax(12rem,1fr)_auto_minmax(13rem,1fr)] sm:gap-3">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 justify-self-start">
             <HamburgerButton
               open={drawerOpen}
               onClick={() => setDrawerOpen((o) => !o)}
@@ -395,7 +395,7 @@ export function SiteHeaderClient({
             onClick={() => setDrawerOpen(false)}
           >
             {pathname.startsWith("/acil") ? (
-              <span className="rounded-md border-2 border-[#8b0000] px-2 py-0.5 text-base font-extrabold tracking-tight text-[#8b0000] sm:text-lg md:text-xl">
+              <span className="inline-block rounded-md border-2 border-[#8b0000] px-2 py-0.5 text-base font-extrabold tracking-tight text-[#8b0000] sm:text-lg md:text-xl">
                 Acil
               </span>
             ) : (
@@ -405,7 +405,7 @@ export function SiteHeaderClient({
             )}
           </Link>
 
-          <nav className="flex min-w-0 items-center justify-end gap-x-1 gap-y-1 text-sm sm:gap-x-2 md:gap-x-2 lg:gap-x-3">
+          <nav className="flex min-w-0 items-center justify-end justify-self-end gap-x-1 gap-y-1 text-sm sm:gap-x-2 md:gap-x-2 lg:gap-x-3">
             <button
               type="button"
               data-mobile-search-toggle="true"

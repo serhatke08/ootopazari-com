@@ -250,6 +250,12 @@ export function HomePageListings({
             label="Sponsorlu"
           />
 
+          <div className="mb-3 flex items-center justify-end gap-1">
+            <TopCitySelect cities={cities} />
+            <ListingSortSelect />
+            <ListingFilters categories={categories} applied={activeFilters} />
+          </div>
+
           {!hasFilters ? (
             <HomeAcilRail
               items={acilItems}
@@ -262,11 +268,6 @@ export function HomePageListings({
             <h2 className="mr-auto shrink-0 text-sm font-bold text-zinc-900 sm:text-base">
               {heading}
             </h2>
-            <div className="flex min-w-0 items-center gap-1">
-              <TopCitySelect cities={cities} />
-              <ListingSortSelect />
-              <ListingFilters categories={categories} applied={activeFilters} />
-            </div>
           </div>
 
           {hasFilters ? (
