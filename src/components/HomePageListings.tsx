@@ -236,7 +236,7 @@ export function HomePageListings({
   return (
     <div
       id="ilanlar"
-      className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6"
+      className="mx-auto w-full max-w-[1400px] flex-1 px-4 pt-1.5 pb-6 sm:px-6"
     >
       <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-4 lg:gap-5">
         <aside className="hidden w-full shrink-0 md:sticky md:top-[5.5rem] md:flex md:h-[calc(100dvh-5.5rem)] md:max-h-[calc(100dvh-5.5rem)] md:min-h-0 md:w-[min(220px,30vw)] md:min-w-[180px] md:max-w-[240px] md:flex-col md:overflow-hidden md:self-start lg:w-[min(280px,22vw)] lg:min-w-[240px] lg:max-w-[300px]">
@@ -246,11 +246,11 @@ export function HomePageListings({
         <div className="min-w-0 flex-1">
           <AdSenseUnit
             slot={ADSENSE_HOME_SLOT}
-            className="mb-2 hidden sm:block"
+            className="mb-1.5 hidden sm:block"
             label="Sponsorlu"
           />
 
-          <div className="mb-1.5 flex items-center justify-end gap-1">
+          <div className="mb-1 flex items-center justify-end gap-1">
             <TopCitySelect cities={cities} />
             <ListingSortSelect />
             <ListingFilters categories={categories} applied={activeFilters} />
