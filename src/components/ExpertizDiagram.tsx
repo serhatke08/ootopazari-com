@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { ExpertizDurum } from "@/lib/expertiz";
 import {
   PANEL_LABELS,
@@ -36,16 +35,14 @@ export function ExpertizCarPreview({
     <div
       className={`relative mx-auto aspect-square w-full max-w-sm bg-white ${className}`.trim()}
     >
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element -- Türkçe yol; Next/Image çift encode yapıyor */}
+      <img
         src={sablonSrc}
         alt="Ekspertiz şablonu"
-        fill
-        className="object-contain"
-        sizes="400px"
-        priority={false}
+        className="absolute inset-0 h-full w-full object-contain"
       />
       {overlayUrls.map((src) => (
-        // eslint-disable-next-line @next/next/no-img-element -- üst üste tam tuval PNG
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           key={src}
           src={src}

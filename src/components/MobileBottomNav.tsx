@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
+import { isListingDetailPath } from "@/lib/listing-seo";
 
 function IconHome({ className }: { className?: string }) {
   return (
@@ -83,12 +84,11 @@ export function MobileBottomNav({
 }: {
   loggedIn: boolean;
   hasEnv: boolean;
-  /** Giriş yapmış kullanıcı için okunmamış mesaj sayısı (üst bar ile aynı kaynak). */
   unreadMessageCount?: number;
 }) {
   const pathname = usePathname();
 
-  if (!hasEnv) return null;
+  if (!hasEnv || isListingDetailPath(pathname)) return null;
 
   const homeActive = pathname === "/";
   const msgActive = pathname.startsWith("/mesajlar");
@@ -109,10 +109,10 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-amber-400/90 bg-[#ffcc00] shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-amber-400/90 bg-[#ffcc00] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden"
       aria-label="Alt menü"
     >
-      <div className="relative pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="relative mx-auto h-[var(--mobile-bottom-nav-h,3.25rem)] max-w-lg px-0.5">
         <Link
           href="/ilan-ver"
           className={`absolute left-1/2 top-0 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] shadow-md ring-1 ring-zinc-800 transition hover:bg-zinc-800 ${ilanVerActive ? "ring-amber-500" : ""}`}
@@ -121,7 +121,7 @@ export function MobileBottomNav({
           <IconPlus />
         </Link>
 
-        <div className="mx-auto grid h-[var(--mobile-bottom-nav-h,3.25rem)] max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-0.5 pt-2">
+        <div className="grid h-full grid-cols-5 items-end gap-0 pb-0.5 pt-2">
           <Link
             href="/"
             className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}

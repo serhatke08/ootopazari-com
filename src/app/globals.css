@@ -67,6 +67,11 @@ html {
     overscroll-behavior-y: none;
   }
 
+  /* İlan detay: alt menü yok — alttaki boşluk kalksın */
+  html.mobile-hide-bottom-nav .layout-with-mobile-nav {
+    padding-bottom: 0;
+  }
+
   /* Ana sayfa mobil: gövde sabit, içerik kayar — tarayıcı URL çubuğu davranışı */
   html.mobile-home-scroll-mode {
     height: 100%;
@@ -84,7 +89,7 @@ html {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Alt menü yüksekliği kadar içerik boşluğu — safe-area nav içinde */
+  /* Alt menü yüksekliği + safe-area (nav pb içinde) */
   .layout-with-mobile-nav {
     padding-bottom: calc(var(--mobile-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
   }

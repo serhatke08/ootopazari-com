@@ -610,7 +610,8 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   const expertizRaw = row.expertiz_panels;
   const expertizPanelsParsed = parseExpertizPanels(expertizRaw);
   const expertizPanels =
-    expertizPanelsParsed != null
+    showExpertiz &&
+    (listing.has_expertise === true || expertizPanelsParsed != null)
       ? mergeExpertizWithDefaults(expertizPanelsParsed)
       : null;
 
@@ -1115,7 +1116,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
               </h2>
               <ExpertizDiagram panels={expertizPanels} />
             </section>
-          ) : showExpertiz && expertizRaw != null ? (
+          ) : showExpertiz && expertizRaw != null && expertizPanelsParsed == null ? (
             <section className="mt-4 rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
               Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile
               eşleşmesi için panelleri JSON veya beklenen anahtarlarla kaydedin.

@@ -46,7 +46,7 @@ export function SiteHeaderFallback() {
   );
 }
 
-/** Ana sayfa mobil: iç kaydırma — tarayıcı URL çubuğu yalnızca en üstte açılır (Safari/Chrome). */
+/** Ana sayfa mobil: iç kaydırma — tarayıcı URL çubuğu davranışı */
 function useMobileHomeScrollMode() {
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -73,8 +73,24 @@ function useMobileHomeScrollMode() {
   return enabled;
 }
 
+function useMobileChromeMode() {
+  const pathname = usePathname();
+  const hideBottomNav = isListingDetailPath(pathname);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (hideBottomNav) {
+      root.classList.add("mobile-hide-bottom-nav");
+    } else {
+      root.classList.remove("mobile-hide-bottom-nav");
+    }
+    return () => root.classList.remove("mobile-hide-bottom-nav");
+  }, [hideBottomNav]);
+}
+
 export function SiteMainShell({ children }: { children: ReactNode }) {
   const mobileHomeScroll = useMobileHomeScrollMode();
+  useMobileChromeMode();
 
   if (mobileHomeScroll) {
     return (
