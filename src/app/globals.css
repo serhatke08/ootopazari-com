@@ -22,15 +22,14 @@ body {
   min-height: 100dvh;
 }
 
-/* Mobil: overscroll / home-indicator arkasında sarı (alt menü ile aynı) */
+/* Mobil: tarayıcı chrome / overscroll / safe-area arkası siyah (sarı sadece uygulama menülerinde) */
 html {
-  background-color: #ffcc00;
+  background-color: #000000;
 }
 
 @media (min-width: 48rem) {
   html {
     background-color: var(--background);
-    background-image: none;
   }
 }
 
