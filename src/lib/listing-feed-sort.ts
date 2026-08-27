@@ -5,6 +5,8 @@
 
 export type FeedSortListingRow = Record<string, unknown>;
 
+const LISTING_ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
+
 function parseDate(raw: unknown): Date | null {
   if (raw == null) return null;
   const d = new Date(String(raw));
@@ -142,6 +144,28 @@ export function listingCoverQualityScore(listing: FeedSortListingRow): number | 
   return Number.isFinite(n) ? n : null;
 }
 
+function listingActivatedAt(listing: FeedSortListingRow): Date | null {
+  const raw = listing.activated_at ?? listing.created_at;
+  if (raw == null || raw === "") return null;
+  const d = new Date(String(raw));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** 30 günlük yayın penceresi doldu mu (mobil ListingRightsService ile aynı). */
+export function listingIsPastActiveWindow(listing: FeedSortListingRow): boolean {
+  const at = listingActivatedAt(listing);
+  if (!at) return false;
+  return at.getTime() < Date.now() - LISTING_ACTIVE_MS;
+}
+
+/** Sıralama anahtarı: puan varsa puan; 30 gün içi puansız üstte; süresi dolmuş puansız en alta. */
+function listingCoverQualitySortKey(listing: FeedSortListingRow): number | null {
+  const score = listingCoverQualityScore(listing);
+  if (score != null) return score;
+  if (!listingIsPastActiveWindow(listing)) return Number.POSITIVE_INFINITY;
+  return null;
+}
+
 /** DB feed_sort_tier ile aynı: 0=üst (>8), 1=düşük görünürlük (5–8), 2=pasif (<5). */
 export function listingCoverQualitySortTier(listing: FeedSortListingRow): number {
   if (listing.feed_sort_tier != null) {
@@ -172,12 +196,11 @@ export function compareListingFeedSort(
   const tierB = listingCoverQualitySortTier(b);
   if (tierA !== tierB) return tierA - tierB;
 
-  const sa = listingCoverQualityScore(a);
-  const sb = listingCoverQualityScore(b);
-  if (sa != null || sb != null) {
-    // Puansız yeni ilanlar önce; puanlandıktan sonra gerçek skora göre sıralanır.
-    const na = sa ?? Number.POSITIVE_INFINITY;
-    const nb = sb ?? Number.POSITIVE_INFINITY;
+  const ka = listingCoverQualitySortKey(a);
+  const kb = listingCoverQualitySortKey(b);
+  if (ka != null || kb != null) {
+    const na = ka ?? -1;
+    const nb = kb ?? -1;
     if (na !== nb) return nb - na;
   }
 

@@ -293,10 +293,35 @@ async function selectApprovedOlderThanWindow(
   return (fallback.data ?? []) as ExpireRow[];
 }
 
+export async function expireStaleActiveListings(
+  supabase: SupabaseClient
+): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc("expire_stale_active_listings");
+    if (error) {
+      if (!/expire_stale_active_listings/i.test(error.message)) {
+        console.warn("expire_stale_active_listings:", error.message);
+      }
+      return 0;
+    }
+    if (typeof data === "number" && Number.isFinite(data)) return data;
+    if (typeof data === "string") {
+      const n = Number(data);
+      return Number.isFinite(n) ? n : 0;
+    }
+    return 0;
+  } catch (err) {
+    console.warn("expire_stale_active_listings:", err);
+    return 0;
+  }
+}
+
 export async function expireDueListings(
   supabase: SupabaseClient,
   options?: { userId?: string; listingId?: string }
 ): Promise<number> {
+  await expireStaleActiveListings(supabase);
+
   const rows = await selectApprovedOlderThanWindow(supabase, options);
   const due = rows.filter((row) => listingIsPastActiveWindow(row));
   if (due.length === 0) return 0;

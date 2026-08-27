@@ -132,6 +132,28 @@ export function listingCoverQualityScore(listing: ListingRow): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+const LISTING_ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function listingActivatedAt(listing: ListingRow): Date | null {
+  const raw = listing.activated_at ?? listing.created_at;
+  if (raw == null || raw === "") return null;
+  const d = new Date(String(raw));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function listingIsPastActiveWindow(listing: ListingRow): boolean {
+  const at = listingActivatedAt(listing);
+  if (!at) return false;
+  return at.getTime() < Date.now() - LISTING_ACTIVE_MS;
+}
+
+function listingCoverQualitySortKey(listing: ListingRow): number | null {
+  const score = listingCoverQualityScore(listing);
+  if (score != null) return score;
+  if (!listingIsPastActiveWindow(listing)) return Number.POSITIVE_INFINITY;
+  return null;
+}
+
 export function listingCoverQualitySortTier(listing: ListingRow): number {
   if (listing.feed_sort_tier != null) {
     const t = Number(listing.feed_sort_tier);
@@ -150,11 +172,11 @@ export function compareListingFeedSort(a: ListingRow, b: ListingRow): number {
   const tierB = listingCoverQualitySortTier(b);
   if (tierA !== tierB) return tierA - tierB;
 
-  const sa = listingCoverQualityScore(a);
-  const sb = listingCoverQualityScore(b);
-  if (sa != null || sb != null) {
-    const na = sa ?? Number.POSITIVE_INFINITY;
-    const nb = sb ?? Number.POSITIVE_INFINITY;
+  const ka = listingCoverQualitySortKey(a);
+  const kb = listingCoverQualitySortKey(b);
+  if (ka != null || kb != null) {
+    const na = ka ?? -1;
+    const nb = kb ?? -1;
     if (na !== nb) return nb - na;
   }
 
