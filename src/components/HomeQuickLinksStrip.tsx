@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { QUICK_ACCESS_LINKS } from "@/lib/quick-access-links";
 
 function dealerBorderColor(label: string): string {
@@ -31,6 +31,7 @@ function QuickLinkItem({
     <Link
       href={href}
       className="group flex w-[4.25rem] shrink-0 flex-col items-center gap-0.5 sm:w-[4.5rem]"
+      draggable={false}
     >
       <span
         className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-white ring-1 ring-zinc-900/10 transition group-hover:brightness-110"
@@ -47,6 +48,7 @@ function QuickLinkItem({
               fill
               className="object-cover"
               sizes="40px"
+              draggable={false}
             />
           )
         ) : (
@@ -62,65 +64,92 @@ function QuickLinkItem({
   );
 }
 
-/** Bayilik şeridi: taşan öğeler yavaş sola kayar (marquee). */
+const AUTO_PX_PER_SEC = 18;
+const RESUME_MS = 2200;
+
+/** Bayilik şeridi: elle kaydırılabilir + yavaş otomatik sola kayma. */
 export function HomeQuickLinksStrip() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [loop, setLoop] = useState(false);
-  const [paused, setPaused] = useState(false);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const lastTsRef = useRef<number | null>(null);
+  const reduceMotionRef = useRef(false);
+  const autoScrollingRef = useRef(false);
 
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-
-    const measure = () => {
-      const parent = el.parentElement;
-      if (!parent) return;
-      // Tek set genişliği ekranı aşıyorsa döngü animasyonu aç
-      const half = el.scrollWidth / 2;
-      setLoop(half > parent.clientWidth + 8);
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    if (el.parentElement) ro.observe(el.parentElement);
-    return () => ro.disconnect();
+  const pauseAuto = useCallback(() => {
+    if (autoScrollingRef.current) return;
+    pausedRef.current = true;
+    lastTsRef.current = null;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      pausedRef.current = false;
+    }, RESUME_MS);
   }, []);
 
-  const items = [...QUICK_ACCESS_LINKS, ...QUICK_ACCESS_LINKS];
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    reduceMotionRef.current = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    const onUserIntent = () => pauseAuto();
+    scroller.addEventListener("wheel", onUserIntent, { passive: true });
+    scroller.addEventListener("touchstart", onUserIntent, { passive: true });
+    scroller.addEventListener("pointerdown", onUserIntent, { passive: true });
+    scroller.addEventListener("scroll", onUserIntent, { passive: true });
+
+    const tick = (ts: number) => {
+      rafRef.current = requestAnimationFrame(tick);
+      if (reduceMotionRef.current || pausedRef.current) {
+        lastTsRef.current = ts;
+        return;
+      }
+      const last = lastTsRef.current;
+      lastTsRef.current = ts;
+      if (last == null) return;
+
+      const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+      if (maxScroll <= 1) return;
+
+      const dt = Math.min(64, ts - last) / 1000;
+      let next = scroller.scrollLeft + AUTO_PX_PER_SEC * dt;
+      if (next >= maxScroll - 0.5) next = 0;
+      autoScrollingRef.current = true;
+      scroller.scrollLeft = next;
+      // scroll event senkron; flag’i hemen kaldır
+      autoScrollingRef.current = false;
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      scroller.removeEventListener("wheel", onUserIntent);
+      scroller.removeEventListener("touchstart", onUserIntent);
+      scroller.removeEventListener("pointerdown", onUserIntent);
+      scroller.removeEventListener("scroll", onUserIntent);
+    };
+  }, [pauseAuto]);
 
   return (
     <div className="border-b border-zinc-200 bg-white">
       <div className="mx-auto max-w-[1400px] sm:px-4 md:px-6">
         <div
-          className="relative overflow-hidden px-2 py-1.5"
+          ref={scrollerRef}
+          className="flex gap-1.5 overflow-x-auto overscroll-x-contain px-2 py-1.5 touch-pan-x [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           role="list"
           aria-label="Bayilik kısayolları"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          onTouchStart={() => setPaused(true)}
-          onTouchEnd={() => setPaused(false)}
+          onMouseEnter={pauseAuto}
         >
-          <div
-            ref={trackRef}
-            className={`flex w-max gap-1.5 ${
-              loop ? "home-quick-links-marquee" : ""
-            } ${paused ? "home-quick-links-marquee-paused" : ""}`}
-          >
-            {items.map((d, i) => (
-              <div
-                key={`${d.href}-${i}`}
-                role="listitem"
-                aria-hidden={i >= QUICK_ACCESS_LINKS.length ? true : undefined}
-              >
-                <QuickLinkItem
-                  href={d.href}
-                  label={d.label}
-                  image={d.image}
-                />
-              </div>
-            ))}
-          </div>
+          {QUICK_ACCESS_LINKS.map((d) => (
+            <div key={d.href} role="listitem">
+              <QuickLinkItem href={d.href} label={d.label} image={d.image} />
+            </div>
+          ))}
         </div>
       </div>
     </div>

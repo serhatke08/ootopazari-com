@@ -120,31 +120,6 @@ html {
   }
 }
 
-/* Bayilik kısayol şeridi — yavaş sola kayma */
-@keyframes home-quick-links-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.home-quick-links-marquee {
-  animation: home-quick-links-marquee 28s linear infinite;
-  will-change: transform;
-}
-
-.home-quick-links-marquee-paused {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-quick-links-marquee {
-    animation: none;
-  }
-}
-
 .site-footer-inner {
   width: 100%;
   max-width: 1400px;
