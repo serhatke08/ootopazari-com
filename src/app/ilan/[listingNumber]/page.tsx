@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { MissingEnv } from "@/components/MissingEnv";
 import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
 import { loadListingDetailRequest } from "@/lib/listing-detail-request";
-import { formatListingPurgeCountdown } from "@/lib/listing-quota";
+import { formatListingPurgeCountdown, listingActivatedAt } from "@/lib/listing-quota";
 import {
   buildCategoryMap,
   buildCityMap,
@@ -755,7 +755,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     ]) ?? hierarchyLabels.horsepower ?? catalogParts.horsepower
   );
 
-  const publishedAt = fmtListingDate(row.created_at);
+  const publishedAt = fmtListingDate(listingActivatedAt(row));
 
   const vehicleSpecRows = compactRows([
     specRow("İlan No", num != null ? `#${String(num)}` : null),
