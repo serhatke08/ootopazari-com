@@ -1,20 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdminServiceClient } from "@/lib/admin-api";
 
+/** Web admin: yalnızca sil + askıya al — service_role backend. */
 export async function POST(req: Request) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  }
-
-  const admin = await fetchAdminProfileByUserId(supabase, user.id);
-  if (!admin) {
-    return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  const auth = await requireAdminServiceClient();
+  if (!auth.ok) {
+    return NextResponse.json(
+      { ok: false, error: auth.error, message: auth.message },
+      { status: auth.status }
+    );
   }
 
   let body: { listingId?: unknown; reason?: unknown };
@@ -40,20 +34,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!url || !serviceKey) {
-    return NextResponse.json(
-      { ok: false, error: "server_config", message: "SUPABASE_SERVICE_ROLE_KEY eksik." },
-      { status: 500 }
-    );
-  }
-
-  const adminClient = createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data: listing, error: fetchErr } = await adminClient
+  const { data: listing, error: fetchErr } = await auth.service
     .from("listings")
     .select("id,user_id,listing_number,title,moderation_status")
     .eq("id", listingId)
@@ -77,7 +58,7 @@ export async function POST(req: Request) {
   }
 
   const now = new Date().toISOString();
-  const { error: updErr } = await adminClient
+  const { error: updErr } = await auth.service
     .from("listings")
     .update({
       moderation_status: "suspended",
@@ -87,7 +68,7 @@ export async function POST(req: Request) {
     .eq("id", listingId);
 
   if (updErr) {
-    console.warn("suspend listing:", updErr.message);
+    console.warn("admin suspend listing:", updErr.message);
     return NextResponse.json(
       { ok: false, error: "update_failed", message: updErr.message },
       { status: 500 }
@@ -97,7 +78,7 @@ export async function POST(req: Request) {
   const ownerId = row.user_id;
   if (ownerId) {
     const num = row.listing_number != null ? String(row.listing_number) : "";
-    const { error: notifErr } = await adminClient.from("user_notifications").insert({
+    const { error: notifErr } = await auth.service.from("user_notifications").insert({
       user_id: ownerId,
       type: "listing_suspended",
       title: "İlanınız askıya alındı",

@@ -8,11 +8,16 @@ const tabClass =
 const inactive = "border-transparent text-zinc-500 hover:text-zinc-800";
 const active = "border-zinc-900 text-zinc-900";
 
-export function ProfilSubnav() {
+type Props = {
+  isAdmin?: boolean;
+};
+
+export function ProfilSubnav({ isAdmin = false }: Props) {
   const pathname = usePathname();
   const isIlanlarim = pathname.startsWith("/profil/ilanlarim");
   const isOdemeler = pathname.startsWith("/profil/odemeler");
   const isDestek = pathname.startsWith("/profil/destek");
+  const isAdminIlanlar = pathname.startsWith("/profil/admin/ilanlar");
 
   return (
     <nav
@@ -37,6 +42,14 @@ export function ProfilSubnav() {
       >
         Destek
       </Link>
+      {isAdmin ? (
+        <Link
+          href="/profil/admin/ilanlar"
+          className={`${tabClass} ${isAdminIlanlar ? active : inactive}`}
+        >
+          Admin ilanlar
+        </Link>
+      ) : null}
     </nav>
   );
 }

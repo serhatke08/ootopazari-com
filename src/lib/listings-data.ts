@@ -1,13 +1,14 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  parseListingDate,
-  sortListingsByFeedNewest,
-} from "@/lib/listing-feature-boost";
+import { parseListingDate } from "@/lib/listing-feature-boost";
 import {
   listingActiveCutoffIso,
   listingIsPastActiveWindow,
 } from "@/lib/listing-quota";
+import {
+  compareListingFeedSort,
+  listingExcludedFromPublicVitrine,
+} from "@/lib/listing-feed-sort";
 import { fetchBrandModels } from "@/lib/vehicle-hierarchy";
 import type { HomeListingsSort } from "@/lib/home-listings-feed-types";
 
@@ -41,6 +42,11 @@ export type ListingRow = Record<string, unknown> & {
   featured_started_at?: string | null;
   feature_boost_campaign_start_at?: string | null;
   feature_boost_pack_days?: number | null;
+  activation_status?: string | null;
+  quality_demoted_at?: string | null;
+  cover_quality_score?: number | null;
+  cover_quality_source?: string | null;
+  feed_sort_tier?: number | null;
   /** Acil vitrin — öne çıkarma (featured_*) ile karıştırma. */
   acil_until?: string | null;
   acil_started_at?: string | null;
@@ -103,6 +109,11 @@ const LISTING_SELECT = [
   "featured_started_at",
   "feature_boost_campaign_start_at",
   "feature_boost_pack_days",
+  "activation_status",
+  "quality_demoted_at",
+  "cover_quality_score",
+  "cover_quality_source",
+  "feed_sort_tier",
   "acil_until",
   "acil_started_at",
   "acil_pack_days",
@@ -422,12 +433,18 @@ function listingIsAcilActiveRow(listing: ListingRow, now: Date): boolean {
   return until != null && until > now;
 }
 
+function sortRowsByFeedAlgorithm(rows: ListingRow[]): ListingRow[] {
+  return [...rows]
+    .filter((row) => !listingExcludedFromPublicVitrine(row))
+    .sort(compareListingFeedSort);
+}
+
 function sortListingFeedRows(
   rows: ListingRow[],
   params: Omit<ListingListParams, "page" | "pageSize">,
   now = new Date()
 ): ListingRow[] {
-  const secondary = (list: ListingRow[]) => sortListingsByFeedNewest(list, now);
+  const secondary = (list: ListingRow[]) => sortRowsByFeedAlgorithm(list);
   if (!listingListPrefersAcilFirst(params)) {
     return secondary(rows);
   }
@@ -572,11 +589,15 @@ function applyListingListFilters(
 }
 
 let publicLiveFilterMode: "activated" | "created" = "activated";
+let activationStatusFilterEnabled = true;
 
 function applyApprovedLiveFilter(q: any): any {
   const cutoff = listingActiveCutoffIso();
   const quoted = `"${cutoff}"`;
   let query = q.eq("moderation_status", "approved");
+  if (activationStatusFilterEnabled) {
+    query = query.eq("activation_status", "active");
+  }
   if (publicLiveFilterMode === "created") {
     return query.gte("created_at", cutoff);
   }
@@ -586,6 +607,13 @@ function applyApprovedLiveFilter(q: any): any {
 }
 
 function noteApprovedLiveFilterError(message: string): boolean {
+  if (
+    activationStatusFilterEnabled &&
+    /activation_status/i.test(message)
+  ) {
+    activationStatusFilterEnabled = false;
+    return true;
+  }
   if (
     publicLiveFilterMode === "activated" &&
     /activated_at/i.test(message)
@@ -1041,7 +1069,7 @@ export async function fetchListingsForUser(
     console.warn("fetchListingsForUser:", error.message);
     return [];
   }
-  return sortListingsByFeedNewest((data ?? []) as unknown as ListingRow[]);
+  return (data ?? []) as unknown as ListingRow[];
 }
 
 /** Herkesin görebileceği profil ziyaret sayfası için: yalnızca onaylı ilanlar. */

@@ -139,7 +139,7 @@ export default async function ProfilLayout({
 
       <PaymentServiceCompactSummary summaries={serviceSummaries} />
 
-      <ProfilSubnav />
+      <ProfilSubnav isAdmin={!!adminProfile} />
 
       {children}
     </div>
