@@ -294,6 +294,7 @@ const LISTING_CLIENT_INSERT_ONLY_KEYS = new Set([
   "activated_at",
   "moderation_status",
   "moderation_reason",
+  "created_client",
 ]);
 
 /** Tarayıcıdan gelen ilan yazımında öne çıkar / askı / sahte user_id yok. */

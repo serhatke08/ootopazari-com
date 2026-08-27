@@ -35,7 +35,9 @@ export default function GizlilikPolitikasiPage() {
         <p className="mt-2">
           Veriler hesap güvenliği, ilan yayını, alıcı-satıcı iletişimi, ödeme
           doğrulama, kötüye kullanım önleme, yasal yükümlülükler ve kullanıcı
-          desteği amacıyla kullanılır.
+          desteği amacıyla kullanılır. Kayıt ve ilan işlemlerinde hangi
+          platformdan (web, iOS veya Android uygulaması) işlem yapıldığı
+          istatistik ve hizmet geliştirme amacıyla kaydedilir.
         </p>
         <h2 className="mt-6 text-xl font-black text-zinc-950">
           Saklama ve güvenlik

@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  signupMetadataForAuth,
+  stampSignupClientIfMissing,
+  WEB_CLIENT_CHANNEL,
+} from "@/lib/client-analytics";
 
 type Props = {
   initialFirstName: string;
@@ -75,6 +80,14 @@ export function CompleteProfileAfterOAuthForm({
         return;
       }
 
+      await stampSignupClientIfMissing(supabase);
+
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id, signup_client")
+        .eq("id", user.id)
+        .maybeSingle();
+
       const { data: usernameTaken, error: usernameErr } = await supabase
         .from("profiles")
         .select("id")
@@ -103,7 +116,7 @@ export function CompleteProfileAfterOAuthForm({
       }
 
       const fullName = `${f} ${l}`.trim();
-      const payload = {
+      const payload: Record<string, unknown> = {
         email,
         full_name: fullName,
         username: u,
@@ -111,6 +124,13 @@ export function CompleteProfileAfterOAuthForm({
         country_id: TURKEY_COUNTRY_ID,
         language_id: TURKISH_LANGUAGE_ID,
       };
+      const existingSignupClient =
+        typeof existingProfile?.signup_client === "string"
+          ? existingProfile.signup_client.trim()
+          : "";
+      if (!existingSignupClient) {
+        payload.signup_client = WEB_CLIENT_CHANNEL;
+      }
 
       const { error: upErr } = await supabase
         .from("profiles")
@@ -129,6 +149,7 @@ export function CompleteProfileAfterOAuthForm({
           phone: p,
           avatar_url: null,
           picture: null,
+          ...(!existingSignupClient ? signupMetadataForAuth() : {}),
         },
       });
       if (metaErr) {

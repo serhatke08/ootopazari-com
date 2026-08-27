@@ -32,6 +32,7 @@ import {
   formatMileageThousandsTr,
   sanitizeListingClientWrite,
 } from "@/lib/listing-create";
+import { listingCreatedClientField } from "@/lib/client-analytics";
 import {
   STEP3_BODY_USE_STEP1,
   computeListingBodyTypeFinal,
@@ -1072,6 +1073,7 @@ export function CreateListingWizard({
 
       base.user_id = uid;
       base.activated_at = new Date().toISOString();
+      Object.assign(base, listingCreatedClientField());
 
       const duplicateId = await findLiveDuplicateListingId(supabase, {
         userId: uid,

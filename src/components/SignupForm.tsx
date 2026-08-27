@@ -8,6 +8,7 @@ import { GoogleIcon } from "@/components/GoogleIcon";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { buildOAuthRedirectTo, safeNextPath } from "@/lib/oauth-redirect";
 import { markOAuthRedirect } from "@/lib/app-nav-memory";
+import { signupMetadataForAuth } from "@/lib/client-analytics";
 
 const inputClass =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder:text-zinc-400 shadow-sm transition-colors hover:border-zinc-400 hover:bg-white focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80";
@@ -45,6 +46,7 @@ export function SignupForm() {
           queryParams: {
             prompt: "select_account",
           },
+          data: signupMetadataForAuth(),
         },
       };
 
@@ -122,6 +124,7 @@ export function SignupForm() {
             last_name: ln,
             full_name: fullName,
             phone: phoneTrim,
+            ...signupMetadataForAuth(),
           },
         },
       });

@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import type { CategoryRow } from "@/lib/listings-data";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { stampSignupClientIfMissing } from "@/lib/client-analytics";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
 import { HamburgerButton, LeftNavDrawer } from "@/components/LeftNavDrawer";
 import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
@@ -268,6 +269,9 @@ export function SiteHeaderClient({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSessionEmail(session?.user?.email ?? null);
+      if (event === "SIGNED_IN" && session) {
+        void stampSignupClientIfMissing(supabase);
+      }
       if (event === "SIGNED_OUT") {
         setDrawerOpen(false);
         router.refresh();

@@ -3,6 +3,7 @@ import type { CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { safeNextPath } from "@/lib/oauth-redirect";
+import { stampSignupClientIfMissing } from "@/lib/client-analytics";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -70,6 +71,8 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (user) {
+    await stampSignupClientIfMissing(supabase);
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("id,full_name,phone,username,country_id")
