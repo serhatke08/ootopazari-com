@@ -117,7 +117,7 @@ export function LeftNavDrawer({
         aria-modal="true"
         aria-label="Site menüsü"
         aria-hidden={!open}
-        className={`fixed inset-y-0 left-0 z-[70] flex w-[50vw] max-w-[50vw] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 left-0 z-[70] flex w-[50vw] max-w-[50vw] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out md:w-[25vw] md:max-w-[25vw] ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
