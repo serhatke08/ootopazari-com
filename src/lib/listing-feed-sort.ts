@@ -142,7 +142,7 @@ export function listingCoverQualityScore(listing: FeedSortListingRow): number | 
   return Number.isFinite(n) ? n : null;
 }
 
-/** DB feed_sort_tier ile aynı: 0=üst, 1=geride, 2=düşük. */
+/** DB feed_sort_tier ile aynı: 0=üst (>8), 1=düşük görünürlük (5–8), 2=pasif (<5). */
 export function listingCoverQualitySortTier(listing: FeedSortListingRow): number {
   if (listing.feed_sort_tier != null) {
     const t = Number(listing.feed_sort_tier);
@@ -152,7 +152,7 @@ export function listingCoverQualitySortTier(listing: FeedSortListingRow): number
   const score = listingCoverQualityScore(listing);
   if (score == null) return listingQualityIsDemoted(listing) ? 1 : 0;
   if (score < 5) return 2;
-  if (score < 8) return 1;
+  if (score <= 8) return 1;
   return 0;
 }
 
@@ -172,10 +172,12 @@ export function compareListingFeedSort(
   const tierB = listingCoverQualitySortTier(b);
   if (tierA !== tierB) return tierA - tierB;
 
-  if (tierA === 1) {
-    const sa = listingCoverQualityScore(a) ?? 5;
-    const sb = listingCoverQualityScore(b) ?? 5;
-    if (sa !== sb) return sb - sa;
+  const sa = listingCoverQualityScore(a);
+  const sb = listingCoverQualityScore(b);
+  if (sa != null || sb != null) {
+    const na = sa ?? -1;
+    const nb = sb ?? -1;
+    if (na !== nb) return nb - na;
   }
 
   const demoteA = listingQualityIsDemoted(a) ? 1 : 0;
@@ -198,7 +200,7 @@ export function assignFeedRanks<T extends FeedSortListingRow>(
 }
 
 export function feedSortTierLabel(tier: number): string {
-  if (tier === 0) return "Normal";
-  if (tier === 1) return "Geride";
-  return "Düşük kapak";
+  if (tier === 0) return "Üst vitrin";
+  if (tier === 1) return "Düşük görünürlük";
+  return "Pasif";
 }

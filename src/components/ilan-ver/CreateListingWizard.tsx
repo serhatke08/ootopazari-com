@@ -1926,9 +1926,8 @@ export function CreateListingWizard({
                 Önemli — ilan kalitesi
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-amber-950/90">
-                Kapakta araç tam ve net görünmeli; kırpık, bulanık, alakasız
-                görseller veya eksik expertiz bilgisi ilanın geride kalmasına veya
-                yayından kaldırılmasına yol açabilir.
+                Kapakta araç tam/net görünmeli; kırpık/bulanık/alakasız veya eksik
+                expertiz → ilan geride veya yayından kaldırılır.
               </p>
               <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-amber-950">
                 <input
