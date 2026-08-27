@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
 import { QUICK_ACCESS_LINKS } from "@/lib/quick-access-links";
 
@@ -22,16 +23,30 @@ function QuickLinkItem({
   href,
   label,
   image,
+  wasDragged,
 }: {
   href: string;
   label: string;
   image?: string;
+  wasDragged: () => boolean;
 }) {
+  const router = useRouter();
+
   return (
     <Link
       href={href}
+      prefetch
       className="group flex w-[4.25rem] shrink-0 flex-col items-center gap-0.5 sm:w-[4.5rem]"
       draggable={false}
+      onClick={(e) => {
+        // Yatay kaydırma sonrası sahte click’i yut; gerçek dokunuşta kesin git
+        if (wasDragged()) {
+          e.preventDefault();
+          return;
+        }
+        e.preventDefault();
+        router.push(href);
+      }}
     >
       <span
         className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-white ring-1 ring-zinc-900/10 transition group-hover:brightness-110"
@@ -66,6 +81,7 @@ function QuickLinkItem({
 
 const AUTO_PX_PER_SEC = 18;
 const RESUME_MS = 2200;
+const DRAG_THRESHOLD_PX = 10;
 
 /** Bayilik şeridi: elle kaydırılabilir + yavaş otomatik sola kayma. */
 export function HomeQuickLinksStrip() {
@@ -76,6 +92,10 @@ export function HomeQuickLinksStrip() {
   const lastTsRef = useRef<number | null>(null);
   const reduceMotionRef = useRef(false);
   const autoScrollingRef = useRef(false);
+  const pointerRef = useRef<{ x: number; y: number; dragged: boolean } | null>(
+    null
+  );
+  const draggedRef = useRef(false);
 
   const pauseAuto = useCallback(() => {
     if (autoScrollingRef.current) return;
@@ -87,6 +107,8 @@ export function HomeQuickLinksStrip() {
     }, RESUME_MS);
   }, []);
 
+  const wasDragged = useCallback(() => draggedRef.current, []);
+
   useEffect(() => {
     const scroller = scrollerRef.current;
     if (!scroller) return;
@@ -95,15 +117,53 @@ export function HomeQuickLinksStrip() {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    const onUserIntent = () => pauseAuto();
-    scroller.addEventListener("wheel", onUserIntent, { passive: true });
-    scroller.addEventListener("touchstart", onUserIntent, { passive: true });
-    scroller.addEventListener("pointerdown", onUserIntent, { passive: true });
-    scroller.addEventListener("scroll", onUserIntent, { passive: true });
+    const onPointerDown = (e: PointerEvent) => {
+      pauseAuto();
+      draggedRef.current = false;
+      pointerRef.current = { x: e.clientX, y: e.clientY, dragged: false };
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      const p = pointerRef.current;
+      if (!p) return;
+      if (
+        Math.abs(e.clientX - p.x) > DRAG_THRESHOLD_PX ||
+        Math.abs(e.clientY - p.y) > DRAG_THRESHOLD_PX
+      ) {
+        p.dragged = true;
+        draggedRef.current = true;
+        pauseAuto();
+      }
+    };
+
+    const onPointerUp = () => {
+      const p = pointerRef.current;
+      if (p?.dragged) draggedRef.current = true;
+      pointerRef.current = null;
+      pauseAuto();
+    };
+
+    const onWheel = () => pauseAuto();
+    const onScroll = () => {
+      if (autoScrollingRef.current) return;
+      pauseAuto();
+    };
+
+    scroller.addEventListener("pointerdown", onPointerDown, { passive: true });
+    scroller.addEventListener("pointermove", onPointerMove, { passive: true });
+    scroller.addEventListener("pointerup", onPointerUp, { passive: true });
+    scroller.addEventListener("pointercancel", onPointerUp, { passive: true });
+    scroller.addEventListener("wheel", onWheel, { passive: true });
+    scroller.addEventListener("scroll", onScroll, { passive: true });
 
     const tick = (ts: number) => {
       rafRef.current = requestAnimationFrame(tick);
-      if (reduceMotionRef.current || pausedRef.current) {
+      // Parmak basılıyken otomatik kayma yok — tıklama bozulmasın
+      if (
+        reduceMotionRef.current ||
+        pausedRef.current ||
+        pointerRef.current != null
+      ) {
         lastTsRef.current = ts;
         return;
       }
@@ -119,7 +179,6 @@ export function HomeQuickLinksStrip() {
       if (next >= maxScroll - 0.5) next = 0;
       autoScrollingRef.current = true;
       scroller.scrollLeft = next;
-      // scroll event senkron; flag’i hemen kaldır
       autoScrollingRef.current = false;
     };
 
@@ -128,10 +187,12 @@ export function HomeQuickLinksStrip() {
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
-      scroller.removeEventListener("wheel", onUserIntent);
-      scroller.removeEventListener("touchstart", onUserIntent);
-      scroller.removeEventListener("pointerdown", onUserIntent);
-      scroller.removeEventListener("scroll", onUserIntent);
+      scroller.removeEventListener("pointerdown", onPointerDown);
+      scroller.removeEventListener("pointermove", onPointerMove);
+      scroller.removeEventListener("pointerup", onPointerUp);
+      scroller.removeEventListener("pointercancel", onPointerUp);
+      scroller.removeEventListener("wheel", onWheel);
+      scroller.removeEventListener("scroll", onScroll);
     };
   }, [pauseAuto]);
 
@@ -147,7 +208,12 @@ export function HomeQuickLinksStrip() {
         >
           {QUICK_ACCESS_LINKS.map((d) => (
             <div key={d.href} role="listitem">
-              <QuickLinkItem href={d.href} label={d.label} image={d.image} />
+              <QuickLinkItem
+                href={d.href}
+                label={d.label}
+                image={d.image}
+                wasDragged={wasDragged}
+              />
             </div>
           ))}
         </div>
