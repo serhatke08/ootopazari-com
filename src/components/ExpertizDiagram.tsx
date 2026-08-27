@@ -38,7 +38,7 @@ export function ExpertizCarPreview({
         padding-bottom ile kare alan garanti edilir.
       */}
       <div
-        className="relative w-full overflow-hidden rounded-md bg-zinc-900"
+        className="relative w-full overflow-hidden rounded-md bg-white"
         style={{ paddingBottom: "100%" }}
       >
         <div className="absolute inset-0">

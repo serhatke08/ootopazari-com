@@ -857,11 +857,16 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       </dl>
     );
 
-  const expertizTabContent =
+  const expertizBelowInfo =
     showExpertiz && expertizPanels ? (
-      <ExpertizDiagram panels={expertizPanels} />
+      <section className="mt-4">
+        <h2 className="mb-3 text-base font-semibold text-black">
+          Ekspertiz bilgileri
+        </h2>
+        <ExpertizDiagram panels={expertizPanels} />
+      </section>
     ) : showExpertiz && expertizRaw != null && expertizPanelsParsed == null ? (
-      <div className="rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
+      <section className="mt-4 rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
         Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile eşleşmesi için
         panelleri JSON veya beklenen anahtarlarla kaydedin.
         <details className="mt-2">
@@ -872,7 +877,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
               : JSON.stringify(expertizRaw, null, 2)}
           </pre>
         </details>
-      </div>
+      </section>
     ) : null;
 
   const contactPhone =
@@ -1126,8 +1131,8 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
             infoContent={<ListingVehicleSpecs rows={vehicleSpecRows} />}
             descriptionContent={descriptionTabContent}
             equipmentContent={equipmentTabContent}
-            expertizContent={expertizTabContent}
           />
+          {expertizBelowInfo}
         </div>
 
         <div className="listing-detail-aside min-w-0 px-4 md:px-0">
