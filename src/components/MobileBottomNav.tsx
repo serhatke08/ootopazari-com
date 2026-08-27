@@ -108,10 +108,9 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed inset-x-0 bottom-0 z-50 flex flex-col md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-amber-400/90 bg-[#ffcc00] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden"
       aria-label="Alt menü"
     >
-      <div className="border-t border-amber-400/90 bg-[#ffcc00] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
       <div className="relative mx-auto h-[var(--mobile-bottom-nav-h,3.25rem)] max-w-lg px-0.5">
         <Link
           href="/ilan-ver"
@@ -169,11 +168,6 @@ export function MobileBottomNav({
           </Link>
         </div>
       </div>
-      </div>
-      <div
-        className="h-[env(safe-area-inset-bottom,0px)] shrink-0"
-        aria-hidden
-      />
     </nav>
   );
 }
