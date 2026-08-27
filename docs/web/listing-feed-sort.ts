@@ -153,8 +153,8 @@ export function compareListingFeedSort(a: ListingRow, b: ListingRow): number {
   const sa = listingCoverQualityScore(a);
   const sb = listingCoverQualityScore(b);
   if (sa != null || sb != null) {
-    const na = sa ?? -1;
-    const nb = sb ?? -1;
+    const na = sa ?? Number.POSITIVE_INFINITY;
+    const nb = sb ?? Number.POSITIVE_INFINITY;
     if (na !== nb) return nb - na;
   }
 

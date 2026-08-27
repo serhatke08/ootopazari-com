@@ -175,8 +175,9 @@ export function compareListingFeedSort(
   const sa = listingCoverQualityScore(a);
   const sb = listingCoverQualityScore(b);
   if (sa != null || sb != null) {
-    const na = sa ?? -1;
-    const nb = sb ?? -1;
+    // Puansız yeni ilanlar önce; puanlandıktan sonra gerçek skora göre sıralanır.
+    const na = sa ?? Number.POSITIVE_INFINITY;
+    const nb = sb ?? Number.POSITIVE_INFINITY;
     if (na !== nb) return nb - na;
   }
 
