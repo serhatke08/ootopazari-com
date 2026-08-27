@@ -49,6 +49,20 @@ export function listingActivatedAt(listing: {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** Vitrin / detay — son yayına alma (activated_at; yoksa created_at). */
+export function formatListingPublishedAt(
+  listing: { activated_at?: unknown; created_at?: unknown },
+  locale = "tr-TR"
+): string | undefined {
+  const at = listingActivatedAt(listing);
+  if (!at) return undefined;
+  return at.toLocaleDateString(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export function listingActiveCutoffIso(now = Date.now()): string {
   return new Date(now - LISTING_ACTIVE_DAYS * MS_DAY).toISOString();
 }

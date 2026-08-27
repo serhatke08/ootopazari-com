@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { MissingEnv } from "@/components/MissingEnv";
 import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
 import { loadListingDetailRequest } from "@/lib/listing-detail-request";
-import { formatListingPurgeCountdown, listingActivatedAt } from "@/lib/listing-quota";
+import { formatListingPurgeCountdown, formatListingPublishedAt } from "@/lib/listing-quota";
 import {
   buildCategoryMap,
   buildCityMap,
@@ -127,17 +127,6 @@ function strCell(v: unknown): string | undefined {
   if (v == null || v === "") return undefined;
   const s = String(v).trim();
   return s || undefined;
-}
-
-function fmtListingDate(v: unknown): string | undefined {
-  if (v == null || v === "") return undefined;
-  const d = v instanceof Date ? v : new Date(String(v));
-  if (Number.isNaN(d.getTime())) return undefined;
-  return d.toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 function firstSpecLine(text: string, labels: string[]): string | undefined {
@@ -755,7 +744,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     ]) ?? hierarchyLabels.horsepower ?? catalogParts.horsepower
   );
 
-  const publishedAt = fmtListingDate(listingActivatedAt(row));
+  const publishedAt = formatListingPublishedAt(row);
 
   const vehicleSpecRows = compactRows([
     specRow("İlan No", num != null ? `#${String(num)}` : null),

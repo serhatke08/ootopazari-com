@@ -81,6 +81,7 @@ export async function POST(req: Request) {
   const now = new Date().toISOString();
   const payload = {
     moderation_status: "approved",
+    activation_status: "active",
     activated_at: now,
     expired_at: null,
     suspension_reason: null,
