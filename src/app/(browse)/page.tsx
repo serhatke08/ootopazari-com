@@ -129,7 +129,7 @@ export default async function AnaSayfa({
   ]);
 
   const { items, total, loggedIn } = feed;
-  const acilItems = acilFeed.items.slice(0, 3);
+  const acilItems = acilFeed.items.slice(0, 6);
   const hasListFilters = homeListingsFeedHasFilters(listFilters);
 
   const seoJsonLdPayload = hasListFilters

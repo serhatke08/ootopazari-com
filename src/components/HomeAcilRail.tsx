@@ -3,7 +3,7 @@ import type { SupabasePublicEnv } from "@/lib/env";
 import type { HomeListingCardItem } from "@/lib/home-listings-feed-types";
 import { ListingCard } from "@/components/ListingCard";
 
-/** Ana sayfa ilk sıra: Acil İlanlar > + 3 kart (boş olabilir). */
+/** Ana sayfa ilk sıra: Acil İlanlar — mobil grid kadar, PC’de 6’ya kadar (boş slot yok). */
 export function HomeAcilRail({
   items,
   env,
@@ -13,7 +13,7 @@ export function HomeAcilRail({
   env: SupabasePublicEnv;
   loggedIn: boolean;
 }) {
-  const slots = Array.from({ length: 3 }, (_, i) => items[i] ?? null);
+  if (items.length === 0) return null;
 
   return (
     <section className="mb-3" aria-label="Acil ilanlar">
@@ -32,35 +32,25 @@ export function HomeAcilRail({
       </div>
 
       <div className="home-listings-grid">
-        {slots.map((item, i) => (
-          <div
-            key={item?.listing.id ?? `acil-slot-${i}`}
-            className="min-w-0 lg:col-span-2"
-          >
-            {item ? (
-              <ListingCard
-                listing={item.listing}
-                env={env}
-                categoryName={item.categoryName}
-                hideCategoryAndYear
-                cityOnStatsRow
-                showFavorite={false}
-                showAcilBadge
-                cityDisplayName={item.cityDisplayName}
-                stats={item.stats}
-                loggedIn={loggedIn}
-                favorited={item.favorited}
-                ownerName={item.ownerName}
-                ownerAvatarSrc={item.ownerAvatarSrc}
-                ownerHref={item.ownerHref}
-                priceRating={item.priceRating}
-              />
-            ) : (
-              <div
-                className="flex min-h-[10rem] flex-col items-center justify-center rounded-lg border border-dashed border-red-200/80 bg-red-50/40 px-2 py-6 text-center sm:min-h-[12rem]"
-                aria-hidden={true}
-              />
-            )}
+        {items.map((item) => (
+          <div key={item.listing.id} className="min-w-0">
+            <ListingCard
+              listing={item.listing}
+              env={env}
+              categoryName={item.categoryName}
+              hideCategoryAndYear
+              cityOnStatsRow
+              showFavorite={false}
+              showAcilBadge
+              cityDisplayName={item.cityDisplayName}
+              stats={item.stats}
+              loggedIn={loggedIn}
+              favorited={item.favorited}
+              ownerName={item.ownerName}
+              ownerAvatarSrc={item.ownerAvatarSrc}
+              ownerHref={item.ownerHref}
+              priceRating={item.priceRating}
+            />
           </div>
         ))}
       </div>

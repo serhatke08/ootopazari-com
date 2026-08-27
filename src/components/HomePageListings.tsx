@@ -49,7 +49,7 @@ type Props = {
   initialTotal: number;
   initialLoggedIn: boolean;
   initialFilters: HomeListingsFeedFilters;
-  /** Ana sayfa ilk sıra: acil vitrini (en fazla 3). */
+  /** Ana sayfa ilk sıra: acil vitrini (en fazla 6; grid ile aynı sütun). */
   acilItems?: HomeListingCardItem[];
 };
 
