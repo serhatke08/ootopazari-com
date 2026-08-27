@@ -45,6 +45,10 @@ export type ListingRow = Record<string, unknown> & {
   acil_until?: string | null;
   acil_started_at?: string | null;
   acil_pack_days?: number | null;
+  /** Sıfır araçlar vitrini — acil / featured ile karıştırma. */
+  sifir_until?: string | null;
+  sifir_started_at?: string | null;
+  sifir_pack_days?: number | null;
   activated_at?: string | null;
   expired_at?: string | null;
 };
@@ -102,6 +106,9 @@ const LISTING_SELECT = [
   "acil_until",
   "acil_started_at",
   "acil_pack_days",
+  "sifir_until",
+  "sifir_started_at",
+  "sifir_pack_days",
   "activated_at",
 ].join(", ");
 
@@ -830,6 +837,42 @@ export async function fetchAcilLiveListings(
   }
   if (error) {
     console.warn("fetchAcilLiveListings:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as ListingRow[];
+}
+
+/** Sıfır araçlar vitrini — sifir_until; acil / featured ile karıştırılmaz. */
+export async function fetchSifirLiveListings(
+  supabase: SupabaseClient,
+  limit: number
+): Promise<ListingRow[]> {
+  const nowIso = new Date().toISOString();
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select(LISTING_SELECT)
+  )
+    .gt("sifir_until", nowIso)
+    .order("sifir_until", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  let { data, error } = await q;
+  if (error) {
+    if (/sifir_until/i.test(error.message)) {
+      console.warn(
+        "fetchSifirLiveListings: sifir_until kolonu yok — migration uygula."
+      );
+      return [];
+    }
+    if (noteApprovedLiveFilterError(error.message)) {
+      ({ data, error } = await applyApprovedLiveFilter(
+        supabase.from("listings").select(LISTING_SELECT)
+      )
+        .gt("sifir_until", nowIso)
+        .order("sifir_until", { ascending: false, nullsFirst: false })
+        .limit(limit));
+    }
+  }
+  if (error) {
+    console.warn("fetchSifirLiveListings:", error.message);
     return [];
   }
   return (data ?? []) as unknown as ListingRow[];

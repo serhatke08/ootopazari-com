@@ -14,11 +14,11 @@ const COPY: Record<
     empty: "Şu an aktif acil ilan yok.",
     accent: "border-red-200 bg-red-50",
   },
-  vitrin: {
-    title: "Vitrin",
-    subtitle: "Öne çıkarma paketindeki vitrin ilanları.",
-    empty: "Şu an vitrinde ilan yok.",
-    accent: "border-teal-200 bg-teal-50",
+  sifir: {
+    title: "Sıfır Araçlar",
+    subtitle: "Sıfır araçlar vitrinindeki güncel ilanlar.",
+    empty: "Şu an sıfır araçlar vitrininde ilan yok.",
+    accent: "border-emerald-200 bg-emerald-50",
   },
 };
 

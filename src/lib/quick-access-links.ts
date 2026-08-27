@@ -27,8 +27,8 @@ export const QUICK_ACCESS_LINKS: {
     image: "/menu/acil.svg",
   },
   {
-    href: "/vitrin",
-    label: "Vitrin",
+    href: "/sifir-araclar",
+    label: "Sıfır Araçlar",
     image: "/menu/vitrin.svg",
   },
 ];

@@ -3,7 +3,7 @@ import type { SupabasePublicEnv } from "@/lib/env";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import type { HomeListingCardItem } from "@/lib/home-listings-feed-types";
 import { listingIsAcilActive } from "@/lib/listing-acil";
-import { parseListingDate } from "@/lib/listing-feature-boost";
+import { listingIsSifirActive } from "@/lib/listing-sifir";
 import { enrichListingRowsCoverImages } from "@/lib/listing-images";
 import {
   EMPTY_PRICE_RATING_SUMMARY,
@@ -16,14 +16,14 @@ import {
   fetchAcilLiveListings,
   fetchCategories,
   fetchCities,
-  fetchFeaturedLiveListings,
+  fetchSifirLiveListings,
   resolveListingCityDisplay,
   type ListingRow,
 } from "@/lib/listings-data";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { publicAvatarUrl } from "@/lib/storage";
 
-export type SpecialListingKind = "acil" | "vitrin";
+export type SpecialListingKind = "acil" | "sifir";
 
 const SPECIAL_PAGE_SIZE = 48;
 
@@ -74,10 +74,7 @@ function filterRows(kind: SpecialListingKind, rows: ListingRow[]): ListingRow[] 
       .slice(0, SPECIAL_PAGE_SIZE);
   }
   return rows
-    .filter((row) => {
-      const until = parseListingDate(row.featured_until);
-      return until != null && until > now;
-    })
+    .filter((row) => listingIsSifirActive(row, now))
     .slice(0, SPECIAL_PAGE_SIZE);
 }
 
@@ -89,7 +86,7 @@ export async function fetchSpecialListingsFeed(
   const source =
     kind === "acil"
       ? await fetchAcilLiveListings(supabase, SPECIAL_PAGE_SIZE * 2)
-      : await fetchFeaturedLiveListings(supabase, SPECIAL_PAGE_SIZE * 2);
+      : await fetchSifirLiveListings(supabase, SPECIAL_PAGE_SIZE * 2);
   const rows = filterRows(kind, source);
 
   if (rows.length === 0) {
