@@ -33,6 +33,13 @@ import {
   sanitizeListingClientWrite,
 } from "@/lib/listing-create";
 import { listingCreatedClientField } from "@/lib/client-analytics";
+import { compressListingImageFiles } from "@/lib/compress-listing-image";
+import {
+  coverAspectRatioHintText,
+  MAX_LISTING_PHOTOS,
+} from "@/lib/listing-feed-cover";
+import { evaluateListingQualityAfterSave } from "@/lib/listing-quality";
+import { ListingHomeCoverPreview } from "@/components/ilan-ver/ListingHomeCoverPreview";
 import {
   STEP3_BODY_USE_STEP1,
   computeListingBodyTypeFinal,
@@ -252,6 +259,9 @@ export function CreateListingWizard({
   const [priceStr, setPriceStr] = useState("");
   const [isFixedPrice, setIsFixedPrice] = useState(true);
   const [isNegotiable, setIsNegotiable] = useState(false);
+  const [listingQualityNoticeConfirmed, setListingQualityNoticeConfirmed] =
+    useState(false);
+  const [viewportWidth, setViewportWidth] = useState(390);
 
   /* —— Adım 3 —— */
   const [cities, setCities] = useState<{ id: string; name: string | null }[]>(
@@ -718,13 +728,35 @@ export function CreateListingWizard({
 
   const validateStep2 = useCallback((): string | null => {
     const totalPhotos = initialGalleryUrls.length + files.length;
-    if (totalPhotos < 2) return "En az 2 fotoğraf yükleyin.";
-    if (coverIndex < 0 || coverIndex >= totalPhotos)
+    if (totalPhotos < 2) return "En az 2 fotoğraf ekleyin.";
+    if (totalPhotos > MAX_LISTING_PHOTOS) {
+      return `En fazla ${MAX_LISTING_PHOTOS} fotoğraf ekleyebilirsiniz.`;
+    }
+    const coverIdx = Math.min(
+      Math.max(coverIndex, 0),
+      Math.max(totalPhotos - 1, 0)
+    );
+    if (totalPhotos > 0 && (coverIdx < 0 || coverIdx >= totalPhotos)) {
       return "Kapak fotoğrafı seçin.";
+    }
+    if (!title.trim()) return "Lütfen ilan başlığı girin.";
+    if (!userDescription.trim()) return "Lütfen ilan açıklaması girin.";
+    if (isVehicle && !listingQualityNoticeConfirmed) {
+      return "Önemli notu okuyup onay kutusunu işaretleyin.";
+    }
     const p = parsePriceTry(priceStr);
     if (p == null) return "Geçerli bir fiyat girin.";
     return null;
-  }, [initialGalleryUrls.length, files.length, coverIndex, priceStr]);
+  }, [
+    initialGalleryUrls.length,
+    files.length,
+    coverIndex,
+    title,
+    userDescription,
+    isVehicle,
+    listingQualityNoticeConfirmed,
+    priceStr,
+  ]);
 
   const validateStep3 = useCallback((): string | null => {
     if (!cityId) return "Şehir seçin.";
@@ -778,8 +810,14 @@ export function CreateListingWizard({
       );
       return;
     }
+    const total = initialGalleryUrls.length + files.length;
+    const remaining = MAX_LISTING_PHOTOS - total;
+    if (remaining <= 0) {
+      setErr(`En fazla ${MAX_LISTING_PHOTOS} fotoğraf ekleyebilirsiniz.`);
+      return;
+    }
     setErr(null);
-    const next = [...files, ...accepted];
+    const next = [...files, ...accepted.slice(0, remaining)];
     setFiles(next);
     if (coverIndex >= next.length) setCoverIndex(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -805,6 +843,30 @@ export function CreateListingWizard({
       for (const u of thumbUrls) URL.revokeObjectURL(u);
     };
   }, [thumbUrls]);
+
+  useEffect(() => {
+    const sync = () => setViewportWidth(window.innerWidth);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
+
+  const totalPhotoCount = initialGalleryUrls.length + files.length;
+  const coverAspectHint = coverAspectRatioHintText(viewportWidth);
+
+  const openPhotoPicker = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const coverPreviewUrl = useMemo(() => {
+    if (totalPhotoCount <= 0) return null;
+    const idx = Math.min(Math.max(coverIndex, 0), totalPhotoCount - 1);
+    if (idx < initialGalleryUrls.length) {
+      return initialGalleryUrls[idx] ?? null;
+    }
+    const fileIdx = idx - initialGalleryUrls.length;
+    return thumbUrls[fileIdx] ?? null;
+  }, [totalPhotoCount, coverIndex, initialGalleryUrls, thumbUrls]);
 
   const submit = async () => {
     if (busy || submitLockRef.current) {
@@ -893,7 +955,24 @@ export function CreateListingWizard({
       plakaUyruk,
     });
 
-    const titleFinal = title.trim() || "İlan";
+    const titleTrim = title.trim();
+    if (!titleTrim) {
+      submitLockRef.current = false;
+      setErr("Lütfen ilan başlığı girin.");
+      return;
+    }
+    if (!userDescription.trim()) {
+      submitLockRef.current = false;
+      setErr("Lütfen ilan açıklaması girin.");
+      return;
+    }
+    if (isVehicle && !listingQualityNoticeConfirmed) {
+      submitLockRef.current = false;
+      setErr("Önemli notu okuyup onay kutusunu işaretleyin.");
+      return;
+    }
+
+    const titleFinal = titleTrim;
     const filter = ContentFilterService.validateListingContent(
       titleFinal,
       descParts
@@ -983,6 +1062,7 @@ export function CreateListingWizard({
         }
 
         if (files.length > 0) {
+          const preparedFiles = await compressListingImageFiles(files);
           const { data: listed, error: listErr } = await supabase.storage
             .from("listings-images")
             .list(editListingId);
@@ -996,8 +1076,8 @@ export function CreateListingWizard({
             if (m) maxI = Math.max(maxI, parseInt(m[1], 10));
           }
           const start = maxI + 1;
-          for (let i = 0; i < files.length; i++) {
-            const f = files[i];
+          for (let i = 0; i < preparedFiles.length; i++) {
+            const f = preparedFiles[i];
             const ext = extForFile(f);
             const path = `${editListingId}/${start + i}.${ext}`;
             const { error: upFi } = await supabase.storage
@@ -1058,6 +1138,8 @@ export function CreateListingWizard({
             return;
           }
         }
+
+        await evaluateListingQualityAfterSave(supabase, editListingId, "listings");
 
         window.location.href = "/profil/ilanlarim";
         published = true;
@@ -1124,9 +1206,10 @@ export function CreateListingWizard({
       // Görsel yükleme - hata olursa ilan silinecek
       let uploadSuccess = false;
       try {
+        const preparedFiles = await compressListingImageFiles(files);
         const galleryUrls: string[] = [];
-        for (let i = 0; i < files.length; i++) {
-          const f = files[i];
+        for (let i = 0; i < preparedFiles.length; i++) {
+          const f = preparedFiles[i];
           const ext = extForFile(f);
           const path = `${listingId}/${i}.${ext}`;
           const { error: upErr } = await supabase.storage
@@ -1141,7 +1224,11 @@ export function CreateListingWizard({
           galleryUrls.push(publicListingImageUrl(env, path));
         }
 
-        const coverUrl = galleryUrls[coverIndex] ?? galleryUrls[0];
+        const coverIdx = Math.min(
+          Math.max(coverIndex, 0),
+          Math.max(galleryUrls.length - 1, 0)
+        );
+        const coverUrl = galleryUrls[coverIdx] ?? galleryUrls[0];
 
         const { error: upListingErr } = await supabase
           .from("listings")
@@ -1168,7 +1255,7 @@ export function CreateListingWizard({
           .delete()
           .eq("id", listingId)
           .eq("user_id", uid);
-        
+
         setErr(err instanceof Error ? err.message : "İlan oluşturulamadı.");
         return;
       }
@@ -1177,6 +1264,8 @@ export function CreateListingWizard({
         setErr("İlan kaydedilemedi.");
         return;
       }
+
+      await evaluateListingQualityAfterSave(supabase, listingId, "listings");
 
       window.location.href = "/profil/ilanlarim";
       published = true;
@@ -1686,12 +1775,30 @@ export function CreateListingWizard({
           <h2 className="text-lg font-semibold text-zinc-900">
             Fotoğraf ve içerik
           </h2>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.heic,.heif"
+            multiple
+            className="sr-only"
+            onChange={(e) => onPickFiles(e.target.files)}
+          />
           <div>
-            <p className="mb-2 block text-sm font-medium text-zinc-700">
-              Fotoğraflar * (en az 2)
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-base font-bold text-zinc-900">Fotoğraflar *</p>
+              <button
+                type="button"
+                onClick={openPhotoPicker}
+                className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                Fotoğraf ekle
+              </button>
+            </div>
+            <p className="mb-3 text-xs leading-relaxed text-zinc-600">
+              {coverAspectHint}
             </p>
-            <label
-              className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-emerald-200/80 bg-gradient-to-b from-emerald-50/90 to-zinc-50 px-4 py-10 text-center transition hover:border-emerald-400 hover:from-emerald-50 hover:to-zinc-50 sm:py-12"
+            <div
+              className="flex gap-2 overflow-x-auto pb-2"
               onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1702,170 +1809,142 @@ export function CreateListingWizard({
                 onPickFiles(e.dataTransfer.files);
               }}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.heic,.heif"
-                multiple
-                className="sr-only"
-                onChange={(e) => onPickFiles(e.target.files)}
-              />
-              <PhotoUploadVisual />
-              <span className="text-lg font-semibold text-zinc-900">
-                Fotoğraf ekle
-              </span>
-              <span className="mt-1 text-sm font-medium text-emerald-800">
-                En az 2 görsel — yeşil alana dokunun veya sürükleyin
-              </span>
-              <span className="mt-2 max-w-sm text-xs leading-relaxed text-zinc-600">
-                JPG, PNG, WebP ve iPhone (HEIC). Kapak için aşağıdan birini
-                işaretleyin.
-              </span>
-              {isEditMode && initialGalleryUrls.length > 0 ? (
-                <span className="mt-3 text-xs font-medium text-zinc-600">
-                  {initialGalleryUrls.length} mevcut görsel korunur; yeni fotoğraf
-                  ekleyebilirsiniz.
-                </span>
-              ) : null}
-              {files.length > 0 ? (
-                <span className="mt-3 text-xs font-medium text-emerald-700">
-                  {files.length} yeni dosya — aşağıdan kapak işaretleyin
-                </span>
-              ) : null}
-            </label>
-            <button
-              type="button"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 shadow-sm transition hover:bg-emerald-50"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white">
-                <svg
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={3}
-                  stroke="currentColor"
-                  aria-hidden
+              <button
+                type="button"
+                onClick={openPhotoPicker}
+                className="flex h-[132px] w-28 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/60 text-emerald-800 transition hover:border-emerald-500 hover:bg-emerald-50"
+                aria-label="Fotoğraf ekle"
+              >
+                <span className="text-2xl font-light leading-none">+</span>
+                <span className="mt-1 text-[11px] font-semibold">Ekle</span>
+              </button>
+              {initialGalleryUrls.map((url, i) => (
+                <button
+                  key={`ex-${i}-${url.slice(-24)}`}
+                  type="button"
+                  onClick={() => setCoverIndex(i)}
+                  className={`relative h-[132px] w-28 shrink-0 overflow-hidden rounded-xl border-2 bg-zinc-100 transition ${
+                    coverIndex === i
+                      ? "border-emerald-600 ring-2 ring-emerald-400/50"
+                      : "border-zinc-200 hover:border-zinc-300"
+                  }`}
                 >
-                  <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-                </svg>
-              </span>
-              Başka fotoğraf ekle
-            </button>
-            {initialGalleryUrls.length + files.length > 0 ? (
-              <div className="mt-4">
-                <p className="mb-2 text-sm font-medium text-zinc-800">
-                  Önizleme —{" "}
-                  <span className="font-normal text-zinc-600">
-                    kapak için bir küçük resme tıklayın
-                  </span>
-                </p>
-                <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                  {initialGalleryUrls.map((url, i) => (
-                    <li key={`ex-${i}-${url.slice(-24)}`} className="relative list-none">
-                      <button
-                        type="button"
-                        onClick={() => setCoverIndex(i)}
-                        className={`relative w-full overflow-hidden rounded-xl border-2 bg-zinc-100 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
-                          coverIndex === i
-                            ? "border-emerald-600 shadow-md ring-2 ring-emerald-400/50"
-                            : "border-zinc-200 hover:border-zinc-300"
-                        }`}
-                      >
-                        <span className="block aspect-[4/3] w-full">
-                          {/* eslint-disable-next-line @next/next/no-img-element -- harici / mevcut ilan URL */}
-                          <img
-                            src={url}
-                            alt={`Mevcut görsel ${i + 1}`}
-                            className="h-full w-full object-cover"
-                          />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Mevcut görsel ${i + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                  {coverIndex === i ? (
+                    <span className="absolute left-1.5 top-1.5 rounded bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
+                      Kapak
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+              {files.map((f, j) => {
+                const i = initialGalleryUrls.length + j;
+                const src = thumbUrls[j];
+                return (
+                  <div key={`${f.lastModified}-${j}-${f.name}`} className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setCoverIndex(i)}
+                      className={`relative h-[132px] w-28 overflow-hidden rounded-xl border-2 bg-zinc-100 transition ${
+                        coverIndex === i
+                          ? "border-emerald-600 ring-2 ring-emerald-400/50"
+                          : "border-zinc-200 hover:border-zinc-300"
+                      }`}
+                    >
+                      {src ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={src}
+                          alt={`Yeni görsel ${j + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                      {coverIndex === i ? (
+                        <span className="absolute left-1.5 top-1.5 rounded bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
+                          Kapak
                         </span>
-                        <span className="block truncate px-2 py-1.5 text-[10px] text-zinc-600">
-                          Mevcut
-                        </span>
-                        {coverIndex === i ? (
-                          <span className="absolute left-2 top-2 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow">
-                            Kapak
-                          </span>
-                        ) : null}
-                      </button>
-                    </li>
-                  ))}
-                  {files.map((f, j) => {
-                    const i = initialGalleryUrls.length + j;
-                    const src = thumbUrls[j];
-                    return (
-                      <li
-                        key={`${f.lastModified}-${j}-${f.name}`}
-                        className="relative list-none"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setCoverIndex(i)}
-                          className={`relative w-full overflow-hidden rounded-xl border-2 bg-zinc-100 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
-                            coverIndex === i
-                              ? "border-emerald-600 shadow-md ring-2 ring-emerald-400/50"
-                              : "border-zinc-200 hover:border-zinc-300"
-                          }`}
-                        >
-                          {src ? (
-                            <span className="block aspect-[4/3] w-full">
-                              {/* eslint-disable-next-line @next/next/no-img-element -- blob: önizleme */}
-                              <img
-                                src={src}
-                                alt={`Yeni görsel ${j + 1}`}
-                                className="h-full w-full object-cover"
-                              />
-                            </span>
-                          ) : null}
-                          <span className="block truncate px-2 py-1.5 text-[10px] text-zinc-600">
-                            {f.name}
-                          </span>
-                          {coverIndex === i ? (
-                            <span className="absolute left-2 top-2 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow">
-                              Kapak
-                            </span>
-                          ) : null}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeNewFileAt(j);
-                          }}
-                          className="absolute -right-1 -top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 bg-white text-sm font-bold leading-none text-red-600 shadow-md hover:bg-red-50"
-                          aria-label={`${f.name} kaldır`}
-                        >
-                          ×
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+                      ) : null}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeNewFileAt(j)}
+                      className="absolute -right-1 -top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 bg-white text-xs font-bold text-red-600 shadow"
+                      aria-label={`${f.name} kaldır`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {totalPhotoCount > 0 ? (
+              <p className="mt-2 text-xs text-zinc-600">
+                Kapak fotoğrafı seçmek için fotoğrafa dokunun ({totalPhotoCount}/
+                {MAX_LISTING_PHOTOS})
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-zinc-500">
+                En az 2 fotoğraf gerekli.
+              </p>
+            )}
+            {isEditMode && initialGalleryUrls.length > 0 ? (
+              <p className="mt-1 text-xs text-zinc-500">
+                {initialGalleryUrls.length} mevcut görsel korunur.
+              </p>
             ) : null}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
-              İlan başlığı
+              İlan başlığı *
             </label>
             <input
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Boş bırakılırsa «İlan»"
+              required
             />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
-              Açıklama
+              Açıklama *
             </label>
             <textarea
               className="min-h-[120px] w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               value={userDescription}
               onChange={(e) => setUserDescription(e.target.value)}
+              required
             />
           </div>
+          {isVehicle ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4">
+              <h3 className="text-sm font-bold text-amber-950">
+                Önemli — ilan kalitesi
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-amber-950/90">
+                Kapakta araç tam ve net görünmeli; kırpık, bulanık, alakasız
+                görseller veya eksik expertiz bilgisi ilanın geride kalmasına veya
+                yayından kaldırılmasına yol açabilir.
+              </p>
+              <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-amber-950">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={listingQualityNoticeConfirmed}
+                  onChange={(e) =>
+                    setListingQualityNoticeConfirmed(e.target.checked)
+                  }
+                />
+                <span>
+                  Okudum, anladım ve ilan kalitesi kurallarına uyacağım.
+                </span>
+              </label>
+            </div>
+          ) : null}
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
               Fiyat (TRY) *
@@ -1905,6 +1984,11 @@ export function CreateListingWizard({
               Pazarlık var
             </label>
           </div>
+          <ListingHomeCoverPreview
+            coverImageUrl={coverPreviewUrl}
+            titlePreview={title}
+            onOpenGallery={openPhotoPicker}
+          />
         </section>
       ) : null}
 
