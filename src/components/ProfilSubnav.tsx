@@ -18,7 +18,6 @@ export function ProfilSubnav({ isAdmin = false }: Props) {
   const isOdemeler = pathname.startsWith("/profil/odemeler");
   const isDestek = pathname.startsWith("/profil/destek");
   const isAdminIlanlar = pathname.startsWith("/profil/admin/ilanlar");
-  const isAdminKalite = pathname.startsWith("/profil/admin/kalite-onay");
 
   return (
     <nav
@@ -44,20 +43,12 @@ export function ProfilSubnav({ isAdmin = false }: Props) {
         Destek
       </Link>
       {isAdmin ? (
-        <>
-          <Link
-            href="/profil/admin/ilanlar"
-            className={`${tabClass} ${isAdminIlanlar ? active : inactive}`}
-          >
-            Admin ilanlar
-          </Link>
-          <Link
-            href="/profil/admin/kalite-onay"
-            className={`${tabClass} ${isAdminKalite ? active : inactive}`}
-          >
-            Kalite onayı
-          </Link>
-        </>
+        <Link
+          href="/profil/admin/ilanlar"
+          className={`${tabClass} ${isAdminIlanlar ? active : inactive}`}
+        >
+          Admin ilanlar
+        </Link>
       ) : null}
     </nav>
   );
