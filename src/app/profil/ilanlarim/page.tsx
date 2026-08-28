@@ -12,6 +12,7 @@ import {
   isListingSuspended,
 } from "@/lib/listings-data";
 import { fetchListingQuota } from "@/lib/listing-quota";
+import { listingQualityResubmitPending } from "@/lib/listing-quality";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { ReactivateListingButton } from "@/components/ReactivateListingButton";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
@@ -72,8 +73,11 @@ export default async function ProfilIlanlarimPage() {
             const listingLabel = numStr
               ? `#${numStr} · ${String(listing.title ?? "İlan").slice(0, 40)}`
               : String(listing.title ?? "İlan");
-            const approved = listing.moderation_status === "approved";
+            const approved =
+              listing.moderation_status === "approved" &&
+              !listingQualityResubmitPending(listing);
             const expired = isListingExpiredStatus(listing);
+            const pendingReview = listingQualityResubmitPending(listing);
             return (
               <li key={id ?? String(listing.listing_number)}>
                 <ListingFeatureBoostPanel
@@ -91,6 +95,7 @@ export default async function ProfilIlanlarimPage() {
                   favorited={id ? favSet.has(id) : false}
                   suspended={isListingSuspended(listing)}
                   expired={expired}
+                  qualityReviewPending={pendingReview}
                   suspensionReason={
                     listing.suspension_reason != null
                       ? String(listing.suspension_reason)

@@ -38,7 +38,10 @@ import {
   coverAspectRatioHintText,
   MAX_LISTING_PHOTOS,
 } from "@/lib/listing-feed-cover";
-import { evaluateListingQualityAfterSave } from "@/lib/listing-quality";
+import {
+  evaluateListingQualityAfterSave,
+  listingNeedsQualityResubmitOnEdit,
+} from "@/lib/listing-quality";
 import { ListingHomeCoverPreview } from "@/components/ilan-ver/ListingHomeCoverPreview";
 import {
   STEP3_BODY_USE_STEP1,
@@ -294,6 +297,11 @@ export function CreateListingWizard({
   >({});
 
   const editPrefilled = useRef(false);
+  const editOpenedSnapshot = useRef<{
+    moderation_status?: unknown;
+    quality_passive_source?: unknown;
+    cover_quality_score?: unknown;
+  } | null>(null);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const categoryCode = selectedCategory?.code ?? null;
@@ -329,6 +337,11 @@ export function CreateListingWizard({
     }
     editPrefilled.current = true;
     const row = initialListingPayload;
+    editOpenedSnapshot.current = {
+      moderation_status: row.moderation_status,
+      quality_passive_source: row.quality_passive_source,
+      cover_quality_score: row.cover_quality_score,
+    };
     const cat = categories.find((c) => c.id === String(row.category_id ?? ""));
     const rowIsVehicle = isVehicleCategoryCode(cat?.code ?? null);
 
@@ -1050,9 +1063,17 @@ export function CreateListingWizard({
       const env = getSupabaseEnv();
 
       if (isEditMode && editListingId) {
+        const qualityResubmitPending = editOpenedSnapshot.current
+          ? listingNeedsQualityResubmitOnEdit(editOpenedSnapshot.current)
+          : false;
+
         const { error: upErr } = await supabase
           .from("listings")
-          .update(sanitizeListingClientWrite(base, "update"))
+          .update(
+            sanitizeListingClientWrite(base, "update", {
+              qualityResubmitPending,
+            })
+          )
           .eq("id", editListingId)
           .eq("user_id", uid);
 
@@ -1139,7 +1160,13 @@ export function CreateListingWizard({
           }
         }
 
-        await evaluateListingQualityAfterSave(supabase, editListingId, "listings");
+        if (!qualityResubmitPending) {
+          await evaluateListingQualityAfterSave(
+            supabase,
+            editListingId,
+            "listings"
+          );
+        }
 
         window.location.href = "/profil/ilanlarim";
         published = true;

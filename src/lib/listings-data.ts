@@ -44,6 +44,8 @@ export type ListingRow = Record<string, unknown> & {
   feature_boost_pack_days?: number | null;
   activation_status?: string | null;
   quality_demoted_at?: string | null;
+  quality_passive_source?: string | null;
+  quality_resubmit_at?: string | null;
   cover_quality_score?: number | null;
   cover_quality_source?: string | null;
   feed_sort_tier?: number | null;
@@ -111,6 +113,8 @@ const LISTING_SELECT = [
   "feature_boost_pack_days",
   "activation_status",
   "quality_demoted_at",
+  "quality_passive_source",
+  "quality_resubmit_at",
   "cover_quality_score",
   "cover_quality_source",
   "feed_sort_tier",

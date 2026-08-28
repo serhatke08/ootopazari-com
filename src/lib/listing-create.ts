@@ -300,7 +300,8 @@ const LISTING_CLIENT_INSERT_ONLY_KEYS = new Set([
 /** Tarayıcıdan gelen ilan yazımında öne çıkar / askı / sahte user_id yok. */
 export function sanitizeListingClientWrite(
   raw: Record<string, unknown>,
-  mode: "insert" | "update"
+  mode: "insert" | "update",
+  options?: { qualityResubmitPending?: boolean }
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(raw)) {
@@ -311,6 +312,9 @@ export function sanitizeListingClientWrite(
     if (mode === "insert" && LISTING_CLIENT_INSERT_ONLY_KEYS.has(key)) {
       out[key] = value;
     }
+  }
+  if (mode === "update" && options?.qualityResubmitPending) {
+    out.moderation_status = "pending";
   }
   return out;
 }

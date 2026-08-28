@@ -43,6 +43,8 @@ type Props = {
   /** Askıya alınmış ilan: soluk görünüm + etiket */
   suspended?: boolean;
   expired?: boolean;
+  /** Kalite düzeltmesi — yönetici onayı bekleniyor. */
+  qualityReviewPending?: boolean;
   suspensionReason?: string | null;
   /** Kartta görsel altında küçük profil satırı. */
   ownerName?: string | null;
@@ -124,6 +126,7 @@ export function ListingCard({
   ownerActions,
   suspended: suspendedProp,
   expired: expiredProp,
+  qualityReviewPending = false,
   suspensionReason,
   ownerName,
   ownerAvatarSrc,
@@ -134,7 +137,7 @@ export function ListingCard({
   const suspended =
     suspendedProp ?? isListingSuspended(listing);
   const expired = expiredProp ?? isListingExpiredStatus(listing);
-  const inactive = suspended || expired;
+  const inactive = suspended || expired || qualityReviewPending;
   const boostActive =
     !inactive && listingHomeBoostChromeActive(listing);
   const cityText =
@@ -219,6 +222,16 @@ export function ListingCard({
           <p className="mt-0.5 text-center text-[10px] text-amber-900/80 sm:text-[11px]">
             30 günlük yayın bitti. {formatListingPurgeCountdown(listing)} Tekrar
             aktif etmek 1 ilan hakkı kullanır.
+          </p>
+        </div>
+      ) : qualityReviewPending ? (
+        <div className="border-b border-violet-100 bg-violet-50 px-2 py-1.5 sm:px-4">
+          <p className="text-center text-[10px] font-bold uppercase tracking-wide text-violet-800 sm:text-[11px]">
+            Onay aşamasında
+          </p>
+          <p className="mt-0.5 text-center text-[10px] text-violet-900/80 sm:text-[11px]">
+            İlanınız düzenlendi; yönetici onayı bekleniyor. Onaylanınca yeniden
+            yayınlanır.
           </p>
         </div>
       ) : suspended ? (
