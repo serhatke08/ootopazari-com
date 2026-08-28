@@ -7,6 +7,11 @@ export type FeedSortListingRow = Record<string, unknown>;
 
 const LISTING_ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
+/** Bundan sonra oluşturulan puansız ilanlar, puan gelene kadar katmanda öne alınır (eski puansızlar değil). */
+export const LISTING_UNSCORED_BOOST_SINCE_MS = Date.parse(
+  "2026-08-28T15:11:00+03:00"
+);
+
 function parseDate(raw: unknown): Date | null {
   if (raw == null) return null;
   const d = new Date(String(raw));
@@ -158,11 +163,18 @@ export function listingIsPastActiveWindow(listing: FeedSortListingRow): boolean 
   return at.getTime() < Date.now() - LISTING_ACTIVE_MS;
 }
 
-/** Sıralama anahtarı: puan varsa puan; 30 gün içi puansız üstte; süresi dolmuş puansız en alta. */
+/** Sıralama anahtarı: kapak puanı; yalnızca yeni puansızlar geçici önde (Infinity). */
 function listingCoverQualitySortKey(listing: FeedSortListingRow): number | null {
   const score = listingCoverQualityScore(listing);
   if (score != null) return score;
-  if (!listingIsPastActiveWindow(listing)) return Number.POSITIVE_INFINITY;
+
+  const created = parseDate(listing.created_at);
+  if (
+    created != null &&
+    created.getTime() >= LISTING_UNSCORED_BOOST_SINCE_MS
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
   return null;
 }
 

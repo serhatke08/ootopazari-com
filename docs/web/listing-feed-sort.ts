@@ -134,6 +134,10 @@ export function listingCoverQualityScore(listing: ListingRow): number | null {
 
 const LISTING_ACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
+export const LISTING_UNSCORED_BOOST_SINCE_MS = Date.parse(
+  "2026-08-28T15:11:00+03:00"
+);
+
 function listingActivatedAt(listing: ListingRow): Date | null {
   const raw = listing.activated_at ?? listing.created_at;
   if (raw == null || raw === "") return null;
@@ -150,7 +154,13 @@ export function listingIsPastActiveWindow(listing: ListingRow): boolean {
 function listingCoverQualitySortKey(listing: ListingRow): number | null {
   const score = listingCoverQualityScore(listing);
   if (score != null) return score;
-  if (!listingIsPastActiveWindow(listing)) return Number.POSITIVE_INFINITY;
+  const created = parseDate(listing.created_at);
+  if (
+    created != null &&
+    created.getTime() >= LISTING_UNSCORED_BOOST_SINCE_MS
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
   return null;
 }
 
