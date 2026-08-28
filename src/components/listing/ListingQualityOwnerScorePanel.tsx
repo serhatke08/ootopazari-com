@@ -11,6 +11,9 @@ type Props = {
     listing_number?: number | string | null;
   };
   editHref?: string | null;
+  /** Kart üstü tek satır (İlanlarım grid). */
+  variant?: "full" | "inline";
+  /** @deprecated `variant="inline"` kullanın */
   compact?: boolean;
 };
 
@@ -48,6 +51,7 @@ const toneStyles = {
 export function ListingQualityOwnerScorePanel({
   listing,
   editHref = null,
+  variant = "full",
   compact = false,
 }: Props) {
   const score = listingCoverQualityScoreValue(listing);
@@ -55,15 +59,34 @@ export function ListingQualityOwnerScorePanel({
   const styles = toneStyles[tone];
   const scoreLabel =
     score != null ? `${score.toFixed(1)} / 10` : "— / 10";
+  const resolvedVariant = compact ? "inline" : variant;
 
-  if (compact) {
+  if (resolvedVariant === "inline") {
+    const showMediumHint =
+      score != null && score >= 5 && score <= 8;
     return (
-      <span
-        className={`inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-extrabold text-white ${styles.badge}`}
-        title="İlan kalite puanı"
+      <div
+        className={`mb-1.5 flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] leading-tight ${styles.border} ${styles.bg}`}
       >
-        {score != null ? score.toFixed(1) : "—"}
-      </span>
+        <span
+          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-black text-white ${styles.badge}`}
+        >
+          {score != null ? score.toFixed(1) : "—"}
+        </span>
+        <span className={`min-w-0 flex-1 font-medium ${styles.text}`}>
+          {showMediumHint
+            ? "8+ puan vitrinde önde — puanı yükseltin"
+            : styles.status}
+        </span>
+        {editHref && (score == null || score <= 8) ? (
+          <Link
+            href={editHref}
+            className={`shrink-0 font-semibold underline ${styles.text}`}
+          >
+            Düzelt
+          </Link>
+        ) : null}
+      </div>
     );
   }
 

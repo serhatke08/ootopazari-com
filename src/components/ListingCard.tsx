@@ -225,12 +225,12 @@ export function ListingCard({
           </p>
         </div>
       ) : qualityReviewPending ? (
-        <div className="border-b border-violet-100 bg-violet-50 px-2 py-1.5 sm:px-4">
-          <p className="text-center text-[10px] font-bold uppercase tracking-wide text-violet-800 sm:text-[11px]">
-            Onay aşamasında
+        <div className="border-b border-amber-200 bg-amber-50 px-2 py-1.5 sm:px-4">
+          <p className="text-center text-[10px] font-bold uppercase tracking-wide text-amber-900 sm:text-[11px]">
+            İncelemede
           </p>
-          <p className="mt-0.5 text-center text-[10px] text-violet-900/80 sm:text-[11px]">
-            İlanınız düzenlendi; yönetici onayı bekleniyor. Onaylanınca yeniden
+          <p className="mt-0.5 text-center text-[10px] text-amber-950/90 sm:text-[11px]">
+            İlanınız düzenlendi; onay bekleniyor. Onaylanınca yeniden
             yayınlanır.
           </p>
         </div>

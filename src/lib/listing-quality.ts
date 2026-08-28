@@ -45,12 +45,18 @@ export function listingNeedsQualityResubmitOnEdit(listing: {
 export function listingQualityResubmitPending(listing: {
   moderation_status?: unknown;
   quality_resubmit_at?: unknown;
+  quality_passive_source?: unknown;
+  cover_quality_score?: unknown;
 }): boolean {
   if (String(listing.moderation_status ?? "").toLowerCase() !== "pending") {
     return false;
   }
   const at = listing.quality_resubmit_at;
-  return at != null && String(at).trim() !== "";
+  if (at != null && String(at).trim() !== "") return true;
+  const src = String(listing.quality_passive_source ?? "").trim();
+  if (src === "algorithm" || src === "admin") return true;
+  if (listingCoverQualityScoreValue(listing) != null) return true;
+  return false;
 }
 
 export type ListingQualityScoreTone = "excellent" | "medium" | "low" | "pending";

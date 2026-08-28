@@ -86,10 +86,12 @@ export default async function ProfilIlanlarimPage() {
                   listingLabel={listingLabel}
                   canBoost={approved && !isListingSuspended(listing) && !expired}
                   paymentInfo={id ? boostPayments.get(id) ?? null : null}
+                  compact
                 />
                 <ListingQualityOwnerScorePanel
                   listing={listing}
                   editHref={numStr ? `/ilan-duzenle/${numStr}` : null}
+                  variant="inline"
                 />
                 <ListingCard
                   listing={listing}
@@ -98,7 +100,7 @@ export default async function ProfilIlanlarimPage() {
                   stats={id ? statsMap.get(id) ?? null : null}
                   loggedIn={loggedIn}
                   favorited={id ? favSet.has(id) : false}
-                  suspended={isListingSuspended(listing)}
+                  suspended={isListingSuspended(listing) && !pendingReview}
                   expired={expired}
                   qualityReviewPending={pendingReview}
                   suspensionReason={

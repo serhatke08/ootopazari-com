@@ -16,6 +16,8 @@ type Props = {
   listingLabel: string;
   canBoost: boolean;
   paymentInfo?: ListingBoostPaymentInfo | null;
+  /** İlanlarım grid: pasifken tek satır */
+  compact?: boolean;
 };
 
 const toneClasses = {
@@ -28,6 +30,7 @@ export function ListingFeatureBoostPanel({
   listing,
   canBoost,
   paymentInfo,
+  compact = false,
 }: Props) {
   const phase = listingFeatureBoostOwnerPhase(listing);
   const status = featureBoostOwnerStatusCopy(listing);
@@ -45,6 +48,22 @@ export function ListingFeatureBoostPanel({
     phase === "legacyActive" ||
     phase === "waitingNextPulse" ||
     phase === "packDaysDone";
+
+  if (compact && !isActive && !endDisplay && !purchasedLabel) {
+    return (
+      <div className="mb-1.5 flex items-center justify-between gap-2 rounded-lg border border-amber-200/90 bg-amber-50/90 px-2.5 py-1.5 text-[11px] leading-tight text-amber-950">
+        <span className="min-w-0 font-semibold">{status.title}</span>
+        {canBoost && listingNumber ? (
+          <Link
+            href={`/ilan-one-cikar?listing=${encodeURIComponent(listingNumber)}`}
+            className="shrink-0 font-bold text-amber-900 underline"
+          >
+            Öne çıkar
+          </Link>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div
