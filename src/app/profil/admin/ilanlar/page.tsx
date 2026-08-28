@@ -35,8 +35,9 @@ export default async function AdminListingsPage() {
         Web admin — ilanlar
       </h1>
       <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-        Yalnızca silme ve askıya alma. Kapak puanlama, algoritma öğretme ve
-        pasiften onay mobil admin panelindedir.
+        Yalnızca silme ve askıya alma. Kapak puanı onayı için{" "}
+        <span className="font-medium text-zinc-800">Kalite onayı</span> sekmesine
+        bakın.
       </p>
       <AdminListingsTable initialRows={rows} />
     </div>

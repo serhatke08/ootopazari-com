@@ -66,6 +66,7 @@ import { ListingShareReportActions } from "@/components/ListingShareReportAction
 import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { ListingPublicChatPanelLoader } from "@/components/listing/ListingPublicChatPanelLoader";
+import { ListingQualityOwnerScorePanel } from "@/components/listing/ListingQualityOwnerScorePanel";
 import { fetchListingPublicComments } from "@/lib/listing-public-comments";
 import { displayNameFromAuthUser } from "@/lib/user-display-name";
 type Props = { params: Promise<{ listingNumber: string }> };
@@ -1080,6 +1081,12 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
         </div>
 
         <div className="listing-detail-intro min-w-0 space-y-2 px-4 md:px-0">
+          {isOwner ? (
+            <ListingQualityOwnerScorePanel
+              listing={listing}
+              editHref={`/ilan-duzenle/${encodeURIComponent(listingNumber)}`}
+            />
+          ) : null}
           {id ? (
             <div className="min-[80rem]:hidden">
               <ListingDetailStatsRow

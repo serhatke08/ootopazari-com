@@ -37,6 +37,27 @@ export async function requireAdminServiceClient(): Promise<AdminApiContext> {
   return { ok: true, userId: user.id, service };
 }
 
+/** admin_* RPC — oturum açmış admin JWT (service_role auth.uid() vermez). */
+export async function requireAdminSessionClient(): Promise<
+  | { ok: true; userId: string; supabase: SupabaseClient }
+  | { ok: false; status: 401 | 403; error: string }
+> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, status: 401, error: "unauthorized" };
+  }
+
+  const admin = await fetchAdminProfileByUserId(supabase, user.id);
+  if (!admin) {
+    return { ok: false, status: 403, error: "forbidden" };
+  }
+
+  return { ok: true, userId: user.id, supabase };
+}
+
 export const ADMIN_LISTING_TABLES = [
   "listings",
   "kiralik_listings",

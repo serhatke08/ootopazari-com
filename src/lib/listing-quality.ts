@@ -52,3 +52,22 @@ export function listingQualityResubmitPending(listing: {
   const at = listing.quality_resubmit_at;
   return at != null && String(at).trim() !== "";
 }
+
+export type ListingQualityScoreTone = "excellent" | "medium" | "low" | "pending";
+
+export function listingQualityScoreTone(
+  score: number | null
+): ListingQualityScoreTone {
+  if (score == null) return "pending";
+  if (score > 8) return "excellent";
+  if (score >= 5) return "medium";
+  return "low";
+}
+
+export const LISTING_QUALITY_SCORE_TIPS = [
+  "Kapak fotoğrafı net olsun — araç tam kadrajda, ana sayfadaki gibi dikey (yaklaşık 6:7) oran.",
+  "En az 2 net fotoğraf, farklı açılardan ekleyin.",
+  "Başlık ve açıklamayı eksiksiz yazın (durum, donanım, dürüst bilgi).",
+  "Bulanık, yarım veya alakasız görseller kullanmayın.",
+  "Araç ve expertiz/kaporta alanlarını doğru doldurun.",
+] as const;
