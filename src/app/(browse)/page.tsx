@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -21,6 +22,7 @@ import {
   resolveHomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-filters";
 import { HomePageListings } from "@/components/HomePageListings";
+import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
@@ -161,7 +163,8 @@ export default async function AnaSayfa({
         />
       ) : null}
       <HomeQuickLinksStrip />
-      <HomePageListings
+      <Suspense fallback={<HomeListingsGridSkeleton />}>
+        <HomePageListings
           env={env}
           categories={categories}
           cities={cities}
@@ -171,7 +174,8 @@ export default async function AnaSayfa({
           initialLoggedIn={loggedIn}
           initialFilters={listFilters}
           acilItems={acilItems}
-      />
+        />
+      </Suspense>
     </>
   );
 }
