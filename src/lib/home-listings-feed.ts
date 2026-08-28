@@ -27,8 +27,6 @@ import type {
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
 import { enrichListingRowsCoverImages } from "@/lib/listing-images";
-import { maintainListingLifecycle } from "@/lib/listing-quota";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export type { HomeListingCardItem, HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
 export { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
@@ -118,10 +116,7 @@ export async function fetchHomeListingsFeed(
   loggedIn: boolean;
 }> {
   const lite = options?.lite ?? false;
-  const admin = createSupabaseServiceClient();
-  if (admin) {
-    await maintainListingLifecycle(admin);
-  }
+  // İlan süresi / pasif: yalnızca /api/cron/expire-listings (Vercel cron) — sayfa yükünde değil.
 
   const excludeActiveAcil = !homeListingsFeedHasFilters(filters);
 
