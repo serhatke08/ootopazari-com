@@ -78,16 +78,13 @@ function IconUser({ className }: { className?: string }) {
 
 export function MobileBottomNav({
   loggedIn,
-  hasEnv,
   unreadMessageCount = 0,
 }: {
   loggedIn: boolean;
-  hasEnv: boolean;
+  hasEnv?: boolean;
   unreadMessageCount?: number;
 }) {
   const pathname = usePathname();
-
-  if (!hasEnv) return null;
 
   const homeActive = pathname === "/";
   const msgActive = pathname.startsWith("/mesajlar");
@@ -108,7 +105,7 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed inset-x-0 bottom-0 z-[100] bg-[#ffcc00] pt-[1.125rem] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="z-[100] w-full shrink-0 bg-[#ffcc00] pt-[1.125rem] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Alt menü"
     >
       <div className="relative border-t border-black bg-[#ffcc00]">

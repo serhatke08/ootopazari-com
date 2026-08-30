@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useUnreadMessageCount } from "@/hooks/useUnreadMessageCount";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -13,16 +12,26 @@ function hasPublicEnv() {
   );
 }
 
-/** Alt menü: body'ye portal — overflow:hidden (ana sayfa scroll) içinde kaybolmasın. */
-export function MobileBottomNavRoot() {
+class BottomNavErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
+function MobileBottomNavAuthed() {
   const hasEnv = hasPublicEnv();
-  const [mounted, setMounted] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const unreadMessageCount = useUnreadMessageCount(hasEnv, loggedIn);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!hasEnv) return;
@@ -41,14 +50,24 @@ export function MobileBottomNavRoot() {
     return () => subscription.unsubscribe();
   }, [hasEnv]);
 
-  if (!mounted || !hasEnv) return null;
-
-  return createPortal(
+  return (
     <MobileBottomNav
       loggedIn={loggedIn}
       hasEnv={hasEnv}
       unreadMessageCount={unreadMessageCount}
-    />,
-    document.body
+    />
+  );
+}
+
+/** Alt menü layout akışında — overflow:hidden / portal yüzünden kaybolmasın. */
+export function MobileBottomNavRoot() {
+  return (
+    <BottomNavErrorBoundary
+      fallback={
+        <MobileBottomNav loggedIn={false} hasEnv={false} unreadMessageCount={0} />
+      }
+    >
+      <MobileBottomNavAuthed />
+    </BottomNavErrorBoundary>
   );
 }

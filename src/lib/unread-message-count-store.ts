@@ -98,16 +98,26 @@ function startSubscription() {
   });
   authUnsubscribe = () => subscription.unsubscribe();
 
-  channel = supabase
-    .channel("global-unread-messages")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "messages" },
-      () => {
-        void loadCount();
+  try {
+    for (const existing of supabase.getChannels()) {
+      if (existing.topic.includes("global-unread-messages")) {
+        void supabase.removeChannel(existing);
       }
-    )
-    .subscribe();
+    }
+
+    channel = supabase
+      .channel("global-unread-messages")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => {
+          void loadCount();
+        }
+      )
+      .subscribe();
+  } catch {
+    channel = null;
+  }
 
   document.addEventListener("visibilitychange", onVisible);
   window.addEventListener(UNREAD_MESSAGES_REFRESH_EVENT, onManualRefresh);

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { isListingDetailPath } from "@/lib/listing-seo";
 
 function Pulse({ className }: { className: string }) {
@@ -52,51 +52,10 @@ export function SiteHeaderFallback() {
   );
 }
 
-/** Ana sayfa mobil: iç kaydırma — tarayıcı URL çubuğu davranışı */
-function useMobileHomeScrollMode() {
-  const pathname = usePathname();
-  const isHome = pathname === "/";
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 47.999rem)");
-    const sync = () => setIsMobile(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
-  const enabled = isHome && isMobile;
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (enabled) {
-      root.classList.add("mobile-home-scroll-mode");
-    } else {
-      root.classList.remove("mobile-home-scroll-mode");
-    }
-    return () => root.classList.remove("mobile-home-scroll-mode");
-  }, [enabled]);
-
-  return enabled;
-}
-
 export function SiteMainShell({ children }: { children: ReactNode }) {
-  const mobileHomeScroll = useMobileHomeScrollMode();
-
   return (
-    <div
-      className={`layout-with-mobile-nav flex flex-1 flex-col ${
-        mobileHomeScroll ? "min-h-0 overflow-hidden" : ""
-      }`}
-    >
-      <div
-        className={
-          mobileHomeScroll
-            ? "mobile-home-scroll-pane min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
-            : "flex min-h-0 flex-1 flex-col"
-        }
-      >
+    <div className="layout-with-mobile-nav flex min-h-0 flex-1 flex-col">
+      <div className="mobile-shell-scroll flex min-h-0 flex-1 flex-col">
         {children}
       </div>
     </div>

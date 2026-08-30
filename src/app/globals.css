@@ -63,49 +63,41 @@ html {
     --mobile-bottom-nav-h: 4.625rem;
   }
 
-  [data-mobile-bottom-nav="true"] {
-    position: fixed;
-    z-index: 100;
-  }
-
   html,
   body {
+    height: 100%;
+    overflow: hidden;
     overscroll-behavior-y: none;
   }
 
-  /* Ana sayfa mobil: gövde sabit, içerik kayar — tarayıcı URL çubuğu davranışı */
-  html.mobile-home-scroll-mode {
-    height: 100%;
-    overflow: hidden;
+  body {
+    min-height: 0;
   }
 
-  html.mobile-home-scroll-mode body {
+  .site-app-shell {
     height: 100%;
     min-height: 0;
     overflow: hidden;
   }
 
-  .mobile-home-scroll-pane {
+  [data-mobile-bottom-nav="true"] {
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+
+  .layout-with-mobile-nav {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mobile-shell-scroll {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     background-color: var(--background);
-  }
-
-  /* Alt menü yüksekliği + safe-area (nav pb içinde) */
-  .layout-with-mobile-nav {
-    padding-bottom: calc(var(--mobile-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* Alt nav arkasındaki boşluk — tüm sayfayı sarıya boyama */
-  .layout-with-mobile-nav::after {
-    content: "";
-    position: fixed;
-    inset-inline: 0;
-    bottom: 0;
-    z-index: 0;
-    height: calc(var(--mobile-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
-    background-color: #ffcc00;
-    pointer-events: none;
   }
 }
 

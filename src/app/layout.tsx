@@ -121,6 +121,7 @@ export default function RootLayout({
           }}
         />
         <SiteSearchProvider>
+          <div className="site-app-shell flex min-h-full flex-1 flex-col">
           <Suspense fallback={null}>
             <AppNavigationMemory />
           </Suspense>
@@ -134,6 +135,7 @@ export default function RootLayout({
           <NavSkeletonGate />
           <MobileBottomNavRoot />
           <AppDownloadPromoPopup />
+          </div>
         </SiteSearchProvider>
         <Analytics />
         <SpeedInsights />
