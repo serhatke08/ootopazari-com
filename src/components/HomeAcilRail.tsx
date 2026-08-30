@@ -8,10 +8,13 @@ export function HomeAcilRail({
   items,
   env,
   loggedIn,
+  deferCovers = false,
 }: {
   items: HomeListingCardItem[];
   env: SupabasePublicEnv;
   loggedIn: boolean;
+  /** Ana grid ilk sırası bitene kadar görselleri beklet. */
+  deferCovers?: boolean;
 }) {
   if (items.length === 0) return null;
 
@@ -50,6 +53,7 @@ export function HomeAcilRail({
               ownerAvatarSrc={item.ownerAvatarSrc}
               ownerHref={item.ownerHref}
               priceRating={item.priceRating}
+              coverDefer={deferCovers}
             />
           </div>
         ))}

@@ -15,6 +15,12 @@ type Props = {
   objectFit?: "cover" | "contain";
   scale?: boolean;
   priority?: boolean;
+  /** true iken yalnızca ilk aday URL (hızlı ilk sıra). */
+  fastPath?: boolean;
+  /** true iken görsel isteği başlamaz (sıralı yükleme). */
+  deferLoad?: boolean;
+  fetchPriority?: "high" | "low" | "auto";
+  onLoaded?: () => void;
 };
 
 export function ListingCoverImage({
@@ -27,11 +33,16 @@ export function ListingCoverImage({
   objectFit = "cover",
   scale = false,
   priority = false,
+  fastPath = false,
+  deferLoad = false,
+  fetchPriority = "auto",
+  onLoaded,
 }: Props) {
-  const candidates = useMemo(
-    () => listingCoverCandidateUrls(env, imageUrl, listingId),
-    [env, imageUrl, listingId]
-  );
+  const candidates = useMemo(() => {
+    const all = listingCoverCandidateUrls(env, imageUrl, listingId);
+    if (fastPath && all.length > 0) return [all[0]!];
+    return all;
+  }, [env, imageUrl, listingId, fastPath]);
   const [index, setIndex] = useState(0);
   const [useNative, setUseNative] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -45,7 +56,7 @@ export function ListingCoverImage({
   const src = candidates[index] ?? null;
   const imgClass = [
     objectFit === "cover" ? "object-cover" : "object-contain",
-    "object-center transition duration-300 group-hover:opacity-[0.97]",
+    "object-center transition duration-150 group-hover:opacity-[0.97]",
     scale ? "scale-[1.14]" : "",
     loaded ? "opacity-100" : "opacity-0",
     className ?? "",
@@ -53,9 +64,10 @@ export function ListingCoverImage({
     .filter(Boolean)
     .join(" ");
 
-  if (!src) {
-    return <div className="h-full w-full bg-zinc-100" aria-hidden />;
-  }
+  const markLoaded = () => {
+    setLoaded(true);
+    onLoaded?.();
+  };
 
   const tryNext = () => {
     setLoaded(false);
@@ -66,10 +78,28 @@ export function ListingCoverImage({
     if (!useNative) {
       setUseNative(true);
       setIndex(0);
+      return;
     }
+    markLoaded();
   };
 
-  const markLoaded = () => setLoaded(true);
+  useEffect(() => {
+    if (!deferLoad && candidates.length === 0) {
+      onLoaded?.();
+    }
+  }, [candidates.length, deferLoad, onLoaded]);
+
+  if (deferLoad) {
+    return (
+      <div className="relative h-full w-full overflow-hidden bg-zinc-200">
+        <div className="absolute inset-0 animate-pulse bg-zinc-200" aria-hidden />
+      </div>
+    );
+  }
+
+  if (!src) {
+    return <div className="h-full w-full bg-zinc-100" aria-hidden />;
+  }
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-zinc-200">
@@ -87,6 +117,7 @@ export function ListingCoverImage({
           className={`absolute inset-0 h-full w-full ${imgClass}`}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
+          fetchPriority={fetchPriority}
           onLoad={markLoaded}
           onError={tryNext}
         />
@@ -97,6 +128,7 @@ export function ListingCoverImage({
           fill
           unoptimized
           priority={priority}
+          fetchPriority={fetchPriority}
           className={imgClass}
           sizes={sizes}
           onLoad={markLoaded}

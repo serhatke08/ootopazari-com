@@ -40,6 +40,12 @@ type Props = {
   cityDisplayName?: string | null;
   /** Örn. «İlanlarım»: kart altında düzenle / sil */
   ownerActions?: ReactNode;
+  /** Ana sayfa: ilk sıra öncelikli kapak */
+  coverPriority?: boolean;
+  coverFastPath?: boolean;
+  coverDefer?: boolean;
+  coverFetchPriority?: "high" | "low" | "auto";
+  onCoverLoaded?: () => void;
   /** Askıya alınmış ilan: soluk görünüm + etiket */
   suspended?: boolean;
   expired?: boolean;
@@ -132,6 +138,11 @@ export function ListingCard({
   ownerAvatarSrc,
   ownerHref,
   priceRating,
+  coverPriority = false,
+  coverFastPath = false,
+  coverDefer = false,
+  coverFetchPriority = "auto",
+  onCoverLoaded,
 }: Props) {
   const ratingSummary = priceRating ?? EMPTY_PRICE_RATING_SUMMARY;
   const suspended =
@@ -181,6 +192,11 @@ export function ListingCard({
         objectFit={isHomeGrid ? "cover" : "contain"}
         scale={!isHomeGrid}
         sizes="(max-width: 767px) 33vw, (max-width: 1023px) 33vw, 16vw"
+        priority={coverPriority}
+        fastPath={coverFastPath}
+        deferLoad={coverDefer}
+        fetchPriority={coverFetchPriority}
+        onLoaded={onCoverLoaded}
       />
     </div>
   );

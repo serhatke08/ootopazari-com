@@ -110,7 +110,7 @@ export function MobileBottomNav({
     >
       <div className="relative bg-[#ffcc00]">
         <div
-          className="pointer-events-none absolute inset-x-0 top-3 flex h-px items-center"
+          className="pointer-events-none absolute inset-x-0 top-1.5 flex h-px items-center"
           aria-hidden
         >
           <div className="h-px flex-1 bg-black" />
@@ -121,7 +121,7 @@ export function MobileBottomNav({
           href="/ilan-ver"
           prefetch
           aria-label="İlan ver"
-          className={`absolute left-1/2 top-3 z-20 flex h-8 w-8 -translate-x-1/2 translate-y-[calc(-50%+8px)] items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-1 ring-offset-[#ffcc00]" : ""}`}
+          className={`absolute left-1/2 top-1.5 z-20 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-1 ring-offset-[#ffcc00]" : ""}`}
         >
           <IconPlus className="h-4 w-4" />
         </Link>

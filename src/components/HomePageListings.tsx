@@ -147,6 +147,7 @@ export function HomePageListings({
   const [settledQuery, setSettledQuery] = useState(serverQuery);
   const [error, setError] = useState<string | null>(null);
   const fetchGen = useRef(0);
+  const [mainGridFirstRowDone, setMainGridFirstRowDone] = useState(false);
 
   const serverSnapshotRef = useRef({
     items: initialItems,
@@ -175,6 +176,10 @@ export function HomePageListings({
       setError(null);
     }
   }, [initialItems, initialTotal, initialLoggedIn, serverQuery, activeQuery]);
+
+  useEffect(() => {
+    setMainGridFirstRowDone(false);
+  }, [activeQuery]);
 
   useEffect(() => {
     if (prevSpRef.current === spString) return;
@@ -261,6 +266,7 @@ export function HomePageListings({
               items={acilItems}
               env={env}
               loggedIn={loggedIn}
+              deferCovers={!mainGridFirstRowDone}
             />
           ) : null}
 
@@ -316,6 +322,7 @@ export function HomePageListings({
               env={env}
               loggedIn={loggedIn}
               filters={activeFilters}
+              onFirstRowComplete={() => setMainGridFirstRowDone(true)}
             />
           )}
         </div>

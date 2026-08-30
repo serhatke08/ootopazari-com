@@ -7,6 +7,7 @@ import type {
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
 import { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
+import { HOME_GRID_FIRST_ROW_SIZE } from "@/lib/home-grid-image-load";
 import { homeFeedFiltersToQueryString } from "@/lib/home-listings-feed-filters";
 import { filterHomeListingItems } from "@/lib/home-filter-client";
 import { ListingCard } from "@/components/ListingCard";
@@ -19,6 +20,8 @@ type Props = {
   env: SupabasePublicEnv;
   loggedIn: boolean;
   filters?: HomeListingsFeedFilters;
+  /** Ana grid ilk sırası bitince (acil vitrinini geciktirmek için). */
+  onFirstRowComplete?: () => void;
 };
 
 function filtersToQuery(filters: HomeListingsFeedFilters | undefined): string {
@@ -34,18 +37,38 @@ export function HomeListingsGrid({
   env,
   loggedIn: initialLoggedIn,
   filters,
+  onFirstRowComplete,
 }: Props) {
   const [items, setItems] = useState(initialItems);
   const [page, setPage] = useState(1);
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sequentialReady, setSequentialReady] = useState(0);
+  const [firstRowDone, setFirstRowDone] = useState(false);
 
   // URL değişince (şehir filtresi vb.) sunucu verisine dön; client arama override'ını sıfırla
   useEffect(() => {
     setItems(initialItems);
     setPage(1);
+    setSequentialReady(0);
+    setFirstRowDone(false);
   }, [initialItems]);
+
+  const handleCoverLoaded = useCallback(
+    (index: number) => {
+      setSequentialReady((ready) => {
+        if (index !== ready) return ready;
+        const next = ready + 1;
+        if (next >= HOME_GRID_FIRST_ROW_SIZE && !firstRowDone) {
+          setFirstRowDone(true);
+          onFirstRowComplete?.();
+        }
+        return next;
+      });
+    },
+    [firstRowDone, onFirstRowComplete]
+  );
 
   const visible = filterHomeListingItems(items, filters ?? {});
   const hasMore = items.length < total;
@@ -102,7 +125,12 @@ export function HomeListingsGrid({
         </p>
       ) : (
       <div className="home-listings-grid">
-        {visible.map((item) => (
+        {visible.map((item, index) => {
+          const inFirstRow = index < HOME_GRID_FIRST_ROW_SIZE;
+          const coverDefer =
+            inFirstRow && index > 0 && index > sequentialReady;
+
+          return (
           <ListingCard
             key={item.listing.id ?? String(item.listing.listing_number)}
             listing={item.listing}
@@ -124,8 +152,16 @@ export function HomeListingsGrid({
               typeof item.listing.title === "string" ? item.listing.title : null
             )}
             priceRating={item.priceRating}
+            coverPriority={index === 0}
+            coverFastPath={inFirstRow}
+            coverDefer={coverDefer}
+            coverFetchPriority={inFirstRow ? "high" : "auto"}
+            onCoverLoaded={
+              inFirstRow ? () => handleCoverLoaded(index) : undefined
+            }
           />
-        ))}
+          );
+        })}
       </div>
       )}
 

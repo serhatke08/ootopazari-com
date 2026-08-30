@@ -22,6 +22,7 @@ import {
   resolveHomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-filters";
 import { HomePageListings } from "@/components/HomePageListings";
+import { HomeFeedImagePreloads } from "@/components/HomeFeedImagePreloads";
 import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
@@ -191,6 +192,7 @@ async function HomeListingsLoader({
           __html: JSON.stringify(seoJsonLdPayload),
         }}
       />
+      <HomeFeedImagePreloads env={env} items={items} />
       <HomePageListings
         env={env}
         categories={categories}
