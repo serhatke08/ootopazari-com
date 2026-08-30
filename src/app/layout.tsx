@@ -5,11 +5,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { ListingNavSkeletonGate } from "@/components/ListingNavSkeletonGate";
+import { NavSkeletonGate } from "@/components/NavSkeletonGate";
 import { SiteHeaderFallback, SiteMainShell } from "@/components/SiteListingChrome";
 import { AppNavigationMemory } from "@/components/AppNavigationMemory";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
-import { tryGetSupabaseEnv } from "@/lib/env";
+import { AppDownloadPromoPopup } from "@/components/AppDownloadPromoPopup";
 import { getSiteOrigin } from "@/lib/site-url";
 import {
   SITE_DISPLAY_NAME,
@@ -19,9 +19,7 @@ import {
   SITE_HOME_TWITTER_DESCRIPTION,
   SITE_KEYWORDS,
 } from "@/lib/seo-brand";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ADSENSE_CLIENT_ID } from "@/lib/adsense";
-import { AppDownloadPromoPopup } from "@/components/AppDownloadPromoPopup";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -90,35 +88,11 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let footerLoggedIn = false;
-  let footerHasListings = false;
-  if (tryGetSupabaseEnv()) {
-    try {
-      const supabase = await createSupabaseServerClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      footerLoggedIn = !!user;
-      if (user) {
-        const { count } = await supabase
-          .from("listings")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id);
-        footerHasListings = (count ?? 0) > 0;
-      }
-    } catch {
-      footerLoggedIn = false;
-      footerHasListings = false;
-    }
-  }
-
   return (
     <html lang="tr" className="h-full antialiased">
       <head>
@@ -154,9 +128,9 @@ export default async function RootLayout({
           </Suspense>
           <SiteMainShell>
             <main className="flex min-h-0 flex-1 flex-col bg-zinc-50">{children}</main>
-            <SiteFooter loggedIn={footerLoggedIn} hasListings={footerHasListings} />
+            <SiteFooter loggedIn={false} hasListings={false} />
           </SiteMainShell>
-          <ListingNavSkeletonGate />
+          <NavSkeletonGate />
           <AppDownloadPromoPopup />
         </SiteSearchProvider>
         <Analytics />

@@ -59,7 +59,8 @@ html {
 
 @media (max-width: 47.999rem) {
   :root {
-    --mobile-bottom-nav-h: 3.25rem;
+    /* Sarı bar + ilan-ver butonunun üst taşıması */
+    --mobile-bottom-nav-h: 4.375rem;
   }
 
   html,
@@ -82,11 +83,24 @@ html {
   .mobile-home-scroll-pane {
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    background-color: var(--background);
   }
 
   /* Alt menü yüksekliği + safe-area (nav pb içinde) */
   .layout-with-mobile-nav {
     padding-bottom: calc(var(--mobile-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Alt nav arkasındaki boşluk — tüm sayfayı sarıya boyama */
+  .layout-with-mobile-nav::after {
+    content: "";
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 0;
+    height: calc(var(--mobile-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    background-color: #ffcc00;
+    pointer-events: none;
   }
 }
 

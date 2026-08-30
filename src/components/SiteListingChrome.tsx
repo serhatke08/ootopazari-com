@@ -56,15 +56,17 @@ export function SiteHeaderFallback() {
 function useMobileHomeScrollMode() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const [enabled, setEnabled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 47.999rem)");
-    const sync = () => setEnabled(isHome && mq.matches);
+    const sync = () => setIsMobile(mq.matches);
     sync();
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
-  }, [isHome]);
+  }, []);
+
+  const enabled = isHome && isMobile;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -82,17 +84,21 @@ function useMobileHomeScrollMode() {
 export function SiteMainShell({ children }: { children: ReactNode }) {
   const mobileHomeScroll = useMobileHomeScrollMode();
 
-  if (mobileHomeScroll) {
-    return (
-      <div className="layout-with-mobile-nav flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mobile-home-scroll-pane min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
-          {children}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="layout-with-mobile-nav flex flex-1 flex-col">{children}</div>
+    <div
+      className={`layout-with-mobile-nav flex flex-1 flex-col ${
+        mobileHomeScroll ? "min-h-0 overflow-hidden" : ""
+      }`}
+    >
+      <div
+        className={
+          mobileHomeScroll
+            ? "mobile-home-scroll-pane min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+            : "flex min-h-0 flex-1 flex-col"
+        }
+      >
+        {children}
+      </div>
+    </div>
   );
 }

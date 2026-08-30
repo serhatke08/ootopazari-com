@@ -108,13 +108,14 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed inset-x-0 bottom-0 z-50 bg-black pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 bg-[#ffcc00] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Alt menü"
     >
-      <div className="border-t border-amber-400/90 bg-[#ffcc00] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
-        <div className="relative mx-auto h-[var(--mobile-bottom-nav-h,3.25rem)] max-w-lg px-0.5">
+      <div className="border-t border-amber-400/90 bg-[#ffcc00] pt-[1.125rem] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
+        <div className="relative mx-auto h-[3.25rem] max-w-lg px-0.5">
           <Link
             href="/ilan-ver"
+            prefetch
             className={`absolute left-1/2 top-0 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] shadow-md ring-1 ring-zinc-800 transition hover:bg-zinc-800 ${ilanVerActive ? "ring-amber-500" : ""}`}
             aria-label="İlan ver"
           >
@@ -124,6 +125,7 @@ export function MobileBottomNav({
           <div className="grid h-full grid-cols-5 items-end gap-0 pb-0.5 pt-2">
             <Link
               href="/"
+              prefetch
               className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}
             >
               <IconHome className="shrink-0" />
@@ -132,6 +134,7 @@ export function MobileBottomNav({
 
             <Link
               href="/mesajlar"
+              prefetch
               className={`${tabBase} relative ${msgActive ? tabActive : tabIdle}`}
             >
               <span className="relative inline-flex">
@@ -154,6 +157,7 @@ export function MobileBottomNav({
 
             <Link
               href="/favoriler"
+              prefetch
               className={`${tabBase} ${favActive ? tabActive : tabIdle}`}
             >
               <IconHeart className="shrink-0" />
@@ -162,6 +166,7 @@ export function MobileBottomNav({
 
             <Link
               href={accountHref}
+              prefetch
               className={`${tabBase} ${accountActive ? tabActive : tabIdle}`}
             >
               <IconUser className="shrink-0" />

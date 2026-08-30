@@ -109,6 +109,44 @@ export default async function AnaSayfa({
     redirect(`/ilan/${directListingNo}`);
   }
 
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(seoJsonLd),
+        }}
+      />
+      <HomeQuickLinksStrip />
+      <Suspense fallback={<HomeListingsFallback />}>
+        <HomeListingsLoader env={env} get={get} siteOrigin={siteOrigin} />
+      </Suspense>
+    </>
+  );
+}
+
+function HomeListingsFallback() {
+  return (
+    <div
+      id="ilanlar"
+      className="mx-auto w-full max-w-[1400px] flex-1 px-4 pt-1.5 pb-6 sm:px-6"
+    >
+      <div className="mb-2 h-5 w-16 animate-pulse rounded bg-zinc-200" />
+      <HomeListingsGridSkeleton count={12} />
+    </div>
+  );
+}
+
+async function HomeListingsLoader({
+  env,
+  get,
+  siteOrigin,
+}: {
+  env: NonNullable<ReturnType<typeof tryGetSupabaseEnv>>;
+  get: (k: string) => string | undefined;
+  siteOrigin: string;
+}) {
   const supabase = await createSupabaseServerClient();
   const listFilters = await resolveHomeListingsFeedFilters(supabase, get);
 
@@ -123,7 +161,8 @@ export default async function AnaSayfa({
       env,
       1,
       HOME_LISTINGS_PAGE_SIZE,
-      listFilters
+      listFilters,
+      { lite: true }
     ),
     homeListingsFeedHasFilters(listFilters)
       ? Promise.resolve({ items: [] as HomeListingCardItem[], loggedIn: false })
@@ -133,9 +172,8 @@ export default async function AnaSayfa({
   const { items, total, loggedIn } = feed;
   const acilItems = acilFeed.items.slice(0, 6);
   const hasListFilters = homeListingsFeedHasFilters(listFilters);
-
   const seoJsonLdPayload = hasListFilters
-    ? seoJsonLd
+    ? buildHomeSeoJsonLd({ siteOrigin })
     : buildHomeSeoJsonLd({
         siteOrigin,
         listings: items.slice(0, 12).map((item) => ({
@@ -153,29 +191,17 @@ export default async function AnaSayfa({
           __html: JSON.stringify(seoJsonLdPayload),
         }}
       />
-      {SHOW_HOME_HERO ? (
-        <HomeHero
-          categories={categories}
-          cities={cities}
-          selectedCategoryId={listFilters.categoryId}
-          selectedCityId={listFilters.cityId}
-          q={q}
-        />
-      ) : null}
-      <HomeQuickLinksStrip />
-      <Suspense fallback={<HomeListingsGridSkeleton />}>
-        <HomePageListings
-          env={env}
-          categories={categories}
-          cities={cities}
-          brands={brands}
-          initialItems={items}
-          initialTotal={total}
-          initialLoggedIn={loggedIn}
-          initialFilters={listFilters}
-          acilItems={acilItems}
-        />
-      </Suspense>
+      <HomePageListings
+        env={env}
+        categories={categories}
+        cities={cities}
+        brands={brands}
+        initialItems={items}
+        initialTotal={total}
+        initialLoggedIn={loggedIn}
+        initialFilters={listFilters}
+        acilItems={acilItems}
+      />
     </>
   );
 }

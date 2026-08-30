@@ -127,6 +127,22 @@ const LISTING_SELECT = [
   "activated_at",
 ].join(", ");
 
+/** Vitrin sıralaması — tam satır çekmeden id sırası. */
+const FEED_SORT_SELECT = [
+  "id",
+  "created_at",
+  "activated_at",
+  "featured_until",
+  "featured_started_at",
+  "feature_boost_campaign_start_at",
+  "feature_boost_pack_days",
+  "cover_quality_score",
+  "quality_demoted_at",
+  "feed_sort_tier",
+  "vehicle_engine_package_id",
+  "vehicle_model",
+].join(", ");
+
 const LISTING_EDIT_EXTRA = [
   "contact_phone",
   "contact_via_phone",
@@ -703,7 +719,7 @@ async function fetchListingsPageFast(
   return { rows, total: count ?? rows.length };
 }
 
-/** Onaylı ilanlar — pulse + created_at birleşik sıralama için (sayfalı). */
+/** Onaylı ilanlar — pulse + created_at birleşik sıralama için (ince kolon). */
 async function fetchAllApprovedListingsForFeedSort(
   supabase: SupabaseClient,
   params: Omit<ListingListParams, "page" | "pageSize">
@@ -711,17 +727,26 @@ async function fetchAllApprovedListingsForFeedSort(
   const batchSize = 1000;
   let from = 0;
   const out: ListingRow[] = [];
+  let selectCols = FEED_SORT_SELECT;
 
   for (;;) {
     let q = applyApprovedLiveFilter(
-      supabase.from("listings").select(LISTING_SELECT)
+      supabase.from("listings").select(selectCols)
     ).order("created_at", { ascending: false, nullsFirst: false });
 
     q = applyListingListFilters(q, params);
     let { data, error } = await q.range(from, from + batchSize - 1);
+    if (error && /feed_sort_tier|cover_quality_score|activated_at|feature_boost/i.test(error.message)) {
+      selectCols = "id, created_at, featured_until, featured_started_at, cover_quality_score, quality_demoted_at, vehicle_model";
+      q = applyApprovedLiveFilter(
+        supabase.from("listings").select(selectCols)
+      ).order("created_at", { ascending: false, nullsFirst: false });
+      q = applyListingListFilters(q, params);
+      ({ data, error } = await q.range(from, from + batchSize - 1));
+    }
     if (error && noteApprovedLiveFilterError(error.message)) {
       q = applyApprovedLiveFilter(
-        supabase.from("listings").select(LISTING_SELECT)
+        supabase.from("listings").select(selectCols)
       ).order("created_at", { ascending: false, nullsFirst: false });
       q = applyListingListFilters(q, params);
       ({ data, error } = await q.range(from, from + batchSize - 1));
@@ -763,6 +788,34 @@ async function fetchAllApprovedListingsForFeedSort(
   return sortListingFeedRows(filtered, params);
 }
 
+async function fetchListingsByIdsPreserveOrder(
+  supabase: SupabaseClient,
+  ids: string[]
+): Promise<ListingRow[]> {
+  if (ids.length === 0) return [];
+  let q = applyApprovedLiveFilter(
+    supabase.from("listings").select(LISTING_SELECT).in("id", ids)
+  );
+  let { data, error } = await q;
+  if (error && noteApprovedLiveFilterError(error.message)) {
+    ({ data, error } = await applyApprovedLiveFilter(
+      supabase.from("listings").select(LISTING_SELECT).in("id", ids)
+    ));
+  }
+  if (error) {
+    console.warn("fetchListingsByIdsPreserveOrder:", error.message);
+    return [];
+  }
+  const map = new Map(
+    ((data ?? []) as unknown as ListingRow[])
+      .filter((row) => row.id)
+      .map((row) => [String(row.id), row])
+  );
+  return ids
+    .map((id) => map.get(id))
+    .filter((row): row is ListingRow => row != null);
+}
+
 export async function fetchListingsPage(
   supabase: SupabaseClient,
   params: ListingListParams
@@ -778,9 +831,14 @@ export async function fetchListingsPage(
     filterParams
   );
   const start = (page - 1) * pageSize;
+  const slice = sorted.slice(start, start + pageSize);
+  const ids = slice
+    .map((row) => (row.id != null ? String(row.id) : ""))
+    .filter(Boolean);
+  const rows = await fetchListingsByIdsPreserveOrder(supabase, ids);
 
   return {
-    rows: sorted.slice(start, start + pageSize),
+    rows,
     total: sorted.length,
   };
 }
