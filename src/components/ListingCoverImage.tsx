@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { listingCoverCandidateUrls } from "@/lib/storage";
 
@@ -46,11 +46,13 @@ export function ListingCoverImage({
   const [index, setIndex] = useState(0);
   const [useNative, setUseNative] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const notifiedRef = useRef(false);
 
   useEffect(() => {
     setIndex(0);
     setUseNative(false);
     setLoaded(false);
+    notifiedRef.current = false;
   }, [imageUrl, listingId]);
 
   const src = candidates[index] ?? null;
@@ -66,7 +68,10 @@ export function ListingCoverImage({
 
   const markLoaded = () => {
     setLoaded(true);
-    onLoaded?.();
+    if (!notifiedRef.current) {
+      notifiedRef.current = true;
+      onLoaded?.();
+    }
   };
 
   const tryNext = () => {
@@ -85,9 +90,11 @@ export function ListingCoverImage({
 
   useEffect(() => {
     if (!deferLoad && candidates.length === 0) {
-      onLoaded?.();
+      markLoaded();
     }
-  }, [candidates.length, deferLoad, onLoaded]);
+    // markLoaded intentionally omitted — only empty-candidate path
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidates.length, deferLoad]);
 
   if (deferLoad) {
     return (

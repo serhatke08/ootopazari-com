@@ -1,20 +1,18 @@
 import Link from "next/link";
 import type { SupabasePublicEnv } from "@/lib/env";
 import type { HomeListingCardItem } from "@/lib/home-listings-feed-types";
+import { HOME_ACIL_PRIORITY_SIZE } from "@/lib/home-grid-image-load";
 import { ListingCard } from "@/components/ListingCard";
 
-/** Ana sayfa ilk sıra: Acil İlanlar — mobil grid kadar, PC’de 6’ya kadar (boş slot yok). */
+/** Ana sayfa ilk sıra: Acil İlanlar — kapaklar her zaman öncelikli yüklenir. */
 export function HomeAcilRail({
   items,
   env,
   loggedIn,
-  deferCovers = false,
 }: {
   items: HomeListingCardItem[];
   env: SupabasePublicEnv;
   loggedIn: boolean;
-  /** Ana grid ilk sırası bitene kadar görselleri beklet. */
-  deferCovers?: boolean;
 }) {
   if (items.length === 0) return null;
 
@@ -35,28 +33,33 @@ export function HomeAcilRail({
       </div>
 
       <div className="home-listings-grid">
-        {items.map((item) => (
-          <div key={item.listing.id} className="min-w-0">
-            <ListingCard
-              listing={item.listing}
-              env={env}
-              categoryName={item.categoryName}
-              hideCategoryAndYear
-              cityOnStatsRow
-              showFavorite={false}
-              showAcilBadge
-              cityDisplayName={item.cityDisplayName}
-              stats={item.stats}
-              loggedIn={loggedIn}
-              favorited={item.favorited}
-              ownerName={item.ownerName}
-              ownerAvatarSrc={item.ownerAvatarSrc}
-              ownerHref={item.ownerHref}
-              priceRating={item.priceRating}
-              coverDefer={deferCovers}
-            />
-          </div>
-        ))}
+        {items.map((item, index) => {
+          const priority = index < HOME_ACIL_PRIORITY_SIZE;
+          return (
+            <div key={item.listing.id} className="min-w-0">
+              <ListingCard
+                listing={item.listing}
+                env={env}
+                categoryName={item.categoryName}
+                hideCategoryAndYear
+                cityOnStatsRow
+                showFavorite={false}
+                showAcilBadge
+                cityDisplayName={item.cityDisplayName}
+                stats={item.stats}
+                loggedIn={loggedIn}
+                favorited={item.favorited}
+                ownerName={item.ownerName}
+                ownerAvatarSrc={item.ownerAvatarSrc}
+                ownerHref={item.ownerHref}
+                priceRating={item.priceRating}
+                coverPriority={priority}
+                coverFastPath={priority}
+                coverFetchPriority={priority ? "high" : "low"}
+              />
+            </div>
+          );
+        })}
       </div>
     </section>
   );

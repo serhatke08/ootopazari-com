@@ -147,7 +147,6 @@ export function HomePageListings({
   const [settledQuery, setSettledQuery] = useState(serverQuery);
   const [error, setError] = useState<string | null>(null);
   const fetchGen = useRef(0);
-  const [mainGridFirstRowDone, setMainGridFirstRowDone] = useState(false);
 
   const serverSnapshotRef = useRef({
     items: initialItems,
@@ -176,10 +175,6 @@ export function HomePageListings({
       setError(null);
     }
   }, [initialItems, initialTotal, initialLoggedIn, serverQuery, activeQuery]);
-
-  useEffect(() => {
-    setMainGridFirstRowDone(false);
-  }, [activeQuery]);
 
   useEffect(() => {
     if (prevSpRef.current === spString) return;
@@ -262,12 +257,7 @@ export function HomePageListings({
           </div>
 
           {!hasFilters ? (
-            <HomeAcilRail
-              items={acilItems}
-              env={env}
-              loggedIn={loggedIn}
-              deferCovers={!mainGridFirstRowDone}
-            />
+            <HomeAcilRail items={acilItems} env={env} loggedIn={loggedIn} />
           ) : null}
 
           <div className="mb-2 flex items-center gap-1.5">
@@ -322,7 +312,6 @@ export function HomePageListings({
               env={env}
               loggedIn={loggedIn}
               filters={activeFilters}
-              onFirstRowComplete={() => setMainGridFirstRowDone(true)}
             />
           )}
         </div>

@@ -192,7 +192,7 @@ async function HomeListingsLoader({
           __html: JSON.stringify(seoJsonLdPayload),
         }}
       />
-      <HomeFeedImagePreloads env={env} items={items} />
+      <HomeFeedImagePreloads env={env} items={items} acilItems={acilItems} />
       <HomePageListings
         env={env}
         categories={categories}

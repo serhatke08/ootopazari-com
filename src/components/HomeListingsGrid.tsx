@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { SupabasePublicEnv } from "@/lib/env";
 import type {
   HomeListingCardItem,
@@ -20,8 +20,6 @@ type Props = {
   env: SupabasePublicEnv;
   loggedIn: boolean;
   filters?: HomeListingsFeedFilters;
-  /** Ana grid ilk sırası bitince (acil vitrinini geciktirmek için). */
-  onFirstRowComplete?: () => void;
 };
 
 function filtersToQuery(filters: HomeListingsFeedFilters | undefined): string {
@@ -37,40 +35,18 @@ export function HomeListingsGrid({
   env,
   loggedIn: initialLoggedIn,
   filters,
-  onFirstRowComplete,
 }: Props) {
   const [items, setItems] = useState(initialItems);
   const [page, setPage] = useState(1);
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sequentialReady, setSequentialReady] = useState(0);
-  const firstRowNotifiedRef = useRef(false);
 
-  // URL değişince (şehir filtresi vb.) sunucu verisine dön; client arama override'ını sıfırla
+  // URL değişince (şehir filtresi vb.) sunucu verisine dön
   useEffect(() => {
     setItems(initialItems);
     setPage(1);
-    setSequentialReady(0);
-    firstRowNotifiedRef.current = false;
   }, [initialItems]);
-
-  useEffect(() => {
-    if (
-      sequentialReady >= HOME_GRID_FIRST_ROW_SIZE &&
-      !firstRowNotifiedRef.current
-    ) {
-      firstRowNotifiedRef.current = true;
-      onFirstRowComplete?.();
-    }
-  }, [sequentialReady, onFirstRowComplete]);
-
-  const handleCoverLoaded = useCallback((index: number) => {
-    setSequentialReady((ready) => {
-      if (index !== ready) return ready;
-      return ready + 1;
-    });
-  }, []);
 
   const visible = filterHomeListingItems(items, filters ?? {});
   const hasMore = items.length < total;
@@ -126,45 +102,41 @@ export function HomeListingsGrid({
             : "Aradığınız kriterlere uygun ilan bulunamadı."}
         </p>
       ) : (
-      <div className="home-listings-grid">
-        {visible.map((item, index) => {
-          const inFirstRow = index < HOME_GRID_FIRST_ROW_SIZE;
-          const coverDefer =
-            inFirstRow && index > 0 && index > sequentialReady;
+        <div className="home-listings-grid">
+          {visible.map((item, index) => {
+            const inFirstRow = index < HOME_GRID_FIRST_ROW_SIZE;
 
-          return (
-          <ListingCard
-            key={item.listing.id ?? String(item.listing.listing_number)}
-            listing={item.listing}
-            env={env}
-            categoryName={item.categoryName}
-            hideCategoryAndYear
-            cityOnStatsRow
-            showFavorite={false}
-            cityDisplayName={item.cityDisplayName}
-            stats={item.stats}
-            loggedIn={loggedIn}
-            favorited={item.favorited}
-            ownerName={item.ownerName}
-            ownerAvatarSrc={item.ownerAvatarSrc}
-            ownerHref={buildListingSeoPath(
-              item.listing.listing_number != null
-                ? String(item.listing.listing_number)
-                : null,
-              typeof item.listing.title === "string" ? item.listing.title : null
-            )}
-            priceRating={item.priceRating}
-            coverPriority={index === 0}
-            coverFastPath={inFirstRow}
-            coverDefer={coverDefer}
-            coverFetchPriority={inFirstRow ? "high" : "auto"}
-            onCoverLoaded={
-              inFirstRow ? () => handleCoverLoaded(index) : undefined
-            }
-          />
-          );
-        })}
-      </div>
+            return (
+              <ListingCard
+                key={item.listing.id ?? String(item.listing.listing_number)}
+                listing={item.listing}
+                env={env}
+                categoryName={item.categoryName}
+                hideCategoryAndYear
+                cityOnStatsRow
+                showFavorite={false}
+                cityDisplayName={item.cityDisplayName}
+                stats={item.stats}
+                loggedIn={loggedIn}
+                favorited={item.favorited}
+                ownerName={item.ownerName}
+                ownerAvatarSrc={item.ownerAvatarSrc}
+                ownerHref={buildListingSeoPath(
+                  item.listing.listing_number != null
+                    ? String(item.listing.listing_number)
+                    : null,
+                  typeof item.listing.title === "string"
+                    ? item.listing.title
+                    : null
+                )}
+                priceRating={item.priceRating}
+                coverPriority={inFirstRow}
+                coverFastPath={inFirstRow}
+                coverFetchPriority={inFirstRow ? "high" : "low"}
+              />
+            );
+          })}
+        </div>
       )}
 
       {hasMore ? (
