@@ -72,12 +72,14 @@ html {
 
   body {
     min-height: 0;
+    background-color: #000000;
   }
 
   .site-app-shell {
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    background-color: #000000;
   }
 
   [data-mobile-bottom-nav="true"] {

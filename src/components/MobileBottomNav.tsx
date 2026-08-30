@@ -105,11 +105,11 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="z-[100] w-full shrink-0 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="relative z-[100] -mt-[1.125rem] w-full shrink-0 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Alt menü"
     >
-      {/* Çizgi + buton: üstte sarı yok, siyah çizgi artının ortasından ikiye ayrılır */}
-      <div className="relative h-[1.125rem]">
+      {/* Üst bant: siyah — scroll’daki beyaz arka planı kapatır, çizgi + ortadan ikiye */}
+      <div className="relative h-[1.125rem] bg-black">
         <div
           className="absolute inset-x-0 bottom-0 flex h-px items-center"
           aria-hidden
@@ -122,7 +122,7 @@ export function MobileBottomNav({
           href="/ilan-ver"
           prefetch
           aria-label="İlan ver"
-          className={`absolute bottom-0 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-2 ring-offset-[#ffcc00]" : ""}`}
+          className={`absolute bottom-0 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 translate-y-[calc(50%+5px)] items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-2 ring-offset-[#ffcc00]" : ""}`}
         >
           <IconPlus />
         </Link>
