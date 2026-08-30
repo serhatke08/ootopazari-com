@@ -96,7 +96,7 @@ export function MobileBottomNav({
   const accountActive = pathname.startsWith("/profil") || pathname.startsWith("/giris") || pathname.startsWith("/kayit");
 
   const tabBase =
-    "flex min-w-0 flex-col items-center gap-0.5 rounded-md py-0.5 text-[9px] font-semibold leading-none transition-colors";
+    "flex min-w-0 flex-col items-center gap-0 rounded-md py-0 text-[8px] font-semibold leading-none transition-colors";
   const tabIdle = "text-zinc-700 hover:text-zinc-900";
   const tabActive = "text-zinc-900";
 
@@ -110,23 +110,23 @@ export function MobileBottomNav({
     >
       <div className="relative bg-[#ffcc00]">
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 flex h-px items-center"
+          className="pointer-events-none absolute inset-x-0 top-3 flex h-px items-center"
           aria-hidden
         >
           <div className="h-px flex-1 bg-black" />
-          <div className="w-9 shrink-0" />
+          <div className="w-8 shrink-0" />
           <div className="h-px flex-1 bg-black" />
         </div>
         <Link
           href="/ilan-ver"
           prefetch
           aria-label="İlan ver"
-          className={`absolute left-1/2 top-0 z-20 flex h-9 w-9 -translate-x-1/2 translate-y-[calc(-50%+5px)] items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-2 ring-offset-[#ffcc00]" : ""}`}
+          className={`absolute left-1/2 top-3 z-20 flex h-8 w-8 -translate-x-1/2 translate-y-[calc(-50%+8px)] items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-1 ring-offset-[#ffcc00]" : ""}`}
         >
-          <IconPlus />
+          <IconPlus className="h-4 w-4" />
         </Link>
 
-        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1.5 pt-5">
+        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-2">
           <Link
             href="/"
             prefetch
@@ -154,7 +154,7 @@ export function MobileBottomNav({
           </Link>
 
           <div className="flex min-w-0 flex-col items-center justify-end">
-            <span className="max-w-[4rem] truncate text-center text-[9px] font-bold leading-tight text-zinc-900">
+            <span className="max-w-[4rem] truncate text-center text-[8px] font-bold leading-tight text-zinc-900">
               İlan ver
             </span>
           </div>
