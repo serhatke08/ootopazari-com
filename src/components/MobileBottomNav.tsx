@@ -109,9 +109,9 @@ export function MobileBottomNav({
       aria-label="Alt menü"
     >
       <div className="relative bg-[#ffcc00]">
-        {/* Üstteki siyah ayırıcı — biraz aşağı */}
+        {/* Siyah çizgi sarı bandın en üstünde — üstte sarı şerit yok */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-1.5 z-10 flex h-px items-center"
+          className="pointer-events-none relative z-10 flex h-px items-center"
           aria-hidden
         >
           <div className="h-px flex-1 bg-black" />
@@ -119,7 +119,7 @@ export function MobileBottomNav({
           <div className="h-px flex-1 bg-black" />
         </div>
 
-        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-2">
+        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-1.5">
           <Link
             href="/"
             prefetch
