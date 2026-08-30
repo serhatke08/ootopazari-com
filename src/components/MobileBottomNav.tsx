@@ -109,6 +109,7 @@ export function MobileBottomNav({
       aria-label="Alt menü"
     >
       <div className="relative bg-[#ffcc00]">
+        {/* Üstteki siyah ayırıcı — konum sabit; artı bunun altında */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-px items-center"
           aria-hidden
@@ -117,16 +118,8 @@ export function MobileBottomNav({
           <div className="w-8 shrink-0" />
           <div className="h-px flex-1 bg-black" />
         </div>
-        <Link
-          href="/ilan-ver"
-          prefetch
-          aria-label="İlan ver"
-          className={`absolute left-1/2 top-0.5 z-20 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-1 ring-offset-[#ffcc00]" : ""}`}
-        >
-          <IconPlus className="h-4 w-4" />
-        </Link>
 
-        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-9">
+        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1 pt-2">
           <Link
             href="/"
             prefetch
@@ -153,7 +146,15 @@ export function MobileBottomNav({
             <span className="max-w-[3.5rem] truncate text-center">Mesajlar</span>
           </Link>
 
-          <div className="flex min-w-0 flex-col items-center justify-end">
+          <div className="flex min-w-0 flex-col items-center justify-end gap-0.5">
+            <Link
+              href="/ilan-ver"
+              prefetch
+              aria-label="İlan ver"
+              className={`flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-1 ring-offset-[#ffcc00]" : ""}`}
+            >
+              <IconPlus className="h-4 w-4" />
+            </Link>
             <span className="max-w-[4rem] truncate text-center text-[8px] font-bold leading-tight text-zinc-900">
               İlan ver
             </span>
