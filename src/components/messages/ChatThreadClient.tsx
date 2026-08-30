@@ -3,7 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MessageRow } from "@/lib/messages";
+import {
+  discardEmptyConversationIfAbandoned,
+  type MessageRow,
+} from "@/lib/messages";
 import { dispatchUnreadMessagesRefresh } from "@/lib/unread-messages-events";
 import { mapMessagingError } from "@/lib/messaging-errors";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -20,6 +23,7 @@ type Props = {
   otherUserName: string;
   otherUserAvatarUrl: string | null;
   blocked: boolean;
+  isSupportConversation?: boolean;
 };
 
 export function ChatThreadClient({
@@ -34,12 +38,14 @@ export function ChatThreadClient({
   otherUserName,
   otherUserAvatarUrl,
   blocked,
+  isSupportConversation = false,
 }: Props) {
   const [messages, setMessages] = useState<MessageRow[]>(initialMessages);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hasMessagesRef = useRef(initialMessages.length > 0);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const scrollToBottom = useCallback(() => {
@@ -49,6 +55,28 @@ export function ChatThreadClient({
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    hasMessagesRef.current = messages.length > 0;
+  }, [messages]);
+
+  /** Mesaj yazılmadan çıkılırsa boş sohbeti listeden kaldır. */
+  useEffect(() => {
+    if (isSupportConversation) return;
+    return () => {
+      if (hasMessagesRef.current) return;
+      void discardEmptyConversationIfAbandoned(
+        supabase,
+        conversationId,
+        currentUserId
+      );
+    };
+  }, [
+    conversationId,
+    currentUserId,
+    isSupportConversation,
+    supabase,
+  ]);
 
   /** Açılışta karşı tarafın okunmamış mesajlarını okundu işaretle (mobil ile uyumlu). */
   useEffect(() => {

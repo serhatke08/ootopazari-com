@@ -201,6 +201,7 @@ export default async function MesajConversationPage({ params }: Props) {
             otherUserName={otherName}
             otherUserAvatarUrl={otherAvatarUrl}
             blocked={blocked}
+            isSupportConversation={supportChat}
           />
         </section>
       </div>

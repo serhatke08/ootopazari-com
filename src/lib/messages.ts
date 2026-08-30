@@ -100,6 +100,60 @@ export async function unhideOwnConversation(
   if (error) console.warn("unhide conversation:", error.message);
 }
 
+export async function hideConversationForUser(
+  supabase: SupabaseClient,
+  conversationId: string,
+  userId: string
+): Promise<void> {
+  const { error } = await supabase.from("conversation_user_hides").insert({
+    conversation_id: conversationId,
+    user_id: userId,
+  });
+  if (error && error.code !== "23505") {
+    console.warn("hide conversation:", error.message);
+  }
+}
+
+/** Mesaj yazılmadan terk edilen boş sohbeti listeden kaldır. */
+export async function discardEmptyConversationIfAbandoned(
+  supabase: SupabaseClient,
+  conversationId: string,
+  userId: string
+): Promise<void> {
+  const { count, error } = await supabase
+    .from("messages")
+    .select("*", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+  if (error || (count ?? 0) > 0) return;
+  await hideConversationForUser(supabase, conversationId, userId);
+}
+
+async function fetchConversationIdsHavingMessages(
+  supabase: SupabaseClient,
+  conversationIds: string[]
+): Promise<Set<string>> {
+  const withMessages = new Set<string>();
+  if (conversationIds.length === 0) return withMessages;
+
+  const chunkSize = 80;
+  for (let i = 0; i < conversationIds.length; i += chunkSize) {
+    const chunk = conversationIds.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from("messages")
+      .select("conversation_id")
+      .in("conversation_id", chunk);
+    if (error) {
+      console.warn("conversations with messages:", error.message);
+      continue;
+    }
+    for (const row of data ?? []) {
+      const id = (row as { conversation_id?: string }).conversation_id;
+      if (id) withMessages.add(String(id));
+    }
+  }
+  return withMessages;
+}
+
 export async function fetchConversationsForUser(
   supabase: SupabaseClient,
   userId: string
@@ -117,9 +171,14 @@ export async function fetchConversationsForUser(
     console.warn("conversations:", error.message);
     return [];
   }
-  return ((data ?? []) as ConversationRow[]).filter(
+  const visible = ((data ?? []) as ConversationRow[]).filter(
     (c) => !hiddenIds.has(c.id)
   );
+  const withMessages = await fetchConversationIdsHavingMessages(
+    supabase,
+    visible.map((c) => c.id)
+  );
+  return visible.filter((c) => withMessages.has(c.id));
 }
 
 export function otherParticipantId(c: ConversationRow, userId: string): string {
