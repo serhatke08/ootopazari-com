@@ -59,8 +59,8 @@ html {
 
 @media (max-width: 47.999rem) {
   :root {
-    /* Sarı bar + yarım taşan ilan-ver butonu */
-    --mobile-bottom-nav-h: 4.625rem;
+    /* Sarı bar — çizgi üstünde sarı yok */
+    --mobile-bottom-nav-h: 4.25rem;
   }
 
   html,
