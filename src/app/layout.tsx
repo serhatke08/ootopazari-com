@@ -6,6 +6,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { NavSkeletonGate } from "@/components/NavSkeletonGate";
+import { MobileBottomNavRoot } from "@/components/MobileBottomNavRoot";
 import { SiteHeaderFallback, SiteMainShell } from "@/components/SiteListingChrome";
 import { AppNavigationMemory } from "@/components/AppNavigationMemory";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
@@ -131,6 +132,7 @@ export default function RootLayout({
             <SiteFooter loggedIn={false} hasListings={false} />
           </SiteMainShell>
           <NavSkeletonGate />
+          <MobileBottomNavRoot />
           <AppDownloadPromoPopup />
         </SiteSearchProvider>
         <Analytics />

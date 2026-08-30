@@ -10,7 +10,6 @@ import { stampSignupClientIfMissing } from "@/lib/client-analytics";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
 import { HamburgerButton, LeftNavDrawer } from "@/components/LeftNavDrawer";
 import { MessageUnreadBadge } from "@/components/MessageUnreadBadge";
-import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useUnreadMessageCount } from "@/hooks/useUnreadMessageCount";
 import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
 import { useUserHasListings } from "@/hooks/useUserHasListings";
@@ -615,12 +614,6 @@ export function SiteHeaderClient({
         </div>
         </div>
       </header>
-
-      <MobileBottomNav
-        loggedIn={loggedIn}
-        hasEnv={hasEnv}
-        unreadMessageCount={unreadMessageCount}
-      />
     </>
   );
 }

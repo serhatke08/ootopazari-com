@@ -59,8 +59,13 @@ html {
 
 @media (max-width: 47.999rem) {
   :root {
-    /* Sarı bar + ilan-ver butonunun üst taşıması */
-    --mobile-bottom-nav-h: 4.375rem;
+    /* Sarı bar + yarım taşan ilan-ver butonu */
+    --mobile-bottom-nav-h: 4.625rem;
+  }
+
+  [data-mobile-bottom-nav="true"] {
+    position: fixed;
+    z-index: 100;
   }
 
   html,

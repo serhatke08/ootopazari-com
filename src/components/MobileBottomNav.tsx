@@ -99,8 +99,8 @@ export function MobileBottomNav({
   const accountActive = pathname.startsWith("/profil") || pathname.startsWith("/giris") || pathname.startsWith("/kayit");
 
   const tabBase =
-    "flex min-w-0 flex-col items-center gap-0 rounded-md py-0.5 text-[9px] font-semibold leading-none transition-colors";
-  const tabIdle = "text-zinc-600 hover:text-zinc-900";
+    "flex min-w-0 flex-col items-center gap-0.5 rounded-md py-0.5 text-[9px] font-semibold leading-none transition-colors";
+  const tabIdle = "text-zinc-700 hover:text-zinc-900";
   const tabActive = "text-zinc-900";
 
   const accountHref = loggedIn ? "/profil" : `/giris?next=${encodeURIComponent("/profil")}`;
@@ -108,71 +108,69 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="fixed inset-x-0 bottom-0 z-50 bg-[#ffcc00] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-[100] bg-[#ffcc00] pt-[1.125rem] pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Alt menü"
     >
-      <div className="border-t border-amber-400/90 bg-[#ffcc00] pt-[1.125rem] shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
-        <div className="relative mx-auto h-[3.25rem] max-w-lg px-0.5">
+      <div className="relative border-t border-black bg-[#ffcc00]">
+        <Link
+          href="/ilan-ver"
+          prefetch
+          aria-label="İlan ver"
+          className={`absolute left-1/2 top-0 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] ring-1 ring-black transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900" : ""}`}
+        >
+          <IconPlus />
+        </Link>
+
+        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1.5 pt-[1.125rem]">
           <Link
-            href="/ilan-ver"
+            href="/"
             prefetch
-            className={`absolute left-1/2 top-0 z-20 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] shadow-md ring-1 ring-zinc-800 transition hover:bg-zinc-800 ${ilanVerActive ? "ring-amber-500" : ""}`}
-            aria-label="İlan ver"
+            className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}
           >
-            <IconPlus />
+            <IconHome className="shrink-0" />
+            <span className="max-w-[3.5rem] truncate text-center">Ana sayfa</span>
           </Link>
 
-          <div className="grid h-full grid-cols-5 items-end gap-0 pb-0.5 pt-2">
-            <Link
-              href="/"
-              prefetch
-              className={`${tabBase} ${homeActive ? tabActive : tabIdle}`}
-            >
-              <IconHome className="shrink-0" />
-              <span className="max-w-[3.5rem] truncate text-center">Ana sayfa</span>
-            </Link>
+          <Link
+            href="/mesajlar"
+            prefetch
+            className={`${tabBase} relative ${msgActive ? tabActive : tabIdle}`}
+          >
+            <span className="relative inline-flex">
+              <IconMessage className="shrink-0" />
+              {loggedIn && unreadMessageCount > 0 ? (
+                <MessageUnreadBadge
+                  count={unreadMessageCount}
+                  className="absolute -right-2 -top-2 z-10 min-h-[0.95rem] min-w-[0.95rem] px-0.5 text-[9px]"
+                />
+              ) : null}
+            </span>
+            <span className="max-w-[3.5rem] truncate text-center">Mesajlar</span>
+          </Link>
 
-            <Link
-              href="/mesajlar"
-              prefetch
-              className={`${tabBase} relative ${msgActive ? tabActive : tabIdle}`}
-            >
-              <span className="relative inline-flex">
-                <IconMessage className="shrink-0" />
-                {loggedIn && unreadMessageCount > 0 ? (
-                  <MessageUnreadBadge
-                    count={unreadMessageCount}
-                    className="absolute -right-2 -top-2 z-10 min-h-[0.95rem] min-w-[0.95rem] px-0.5 text-[9px]"
-                  />
-                ) : null}
-              </span>
-              <span className="max-w-[3.5rem] truncate text-center">Mesajlar</span>
-            </Link>
-
-            <div className="flex min-w-0 flex-col items-center justify-end">
-              <span className="max-w-[4rem] truncate text-center text-[9px] font-bold leading-tight text-zinc-900">
-                İlan ver
-              </span>
-            </div>
-
-            <Link
-              href="/favoriler"
-              prefetch
-              className={`${tabBase} ${favActive ? tabActive : tabIdle}`}
-            >
-              <IconHeart className="shrink-0" />
-              <span className="max-w-[3.5rem] truncate text-center">Favoriler</span>
-            </Link>
-
-            <Link
-              href={accountHref}
-              prefetch
-              className={`${tabBase} ${accountActive ? tabActive : tabIdle}`}
-            >
-              <IconUser className="shrink-0" />
-              <span className="max-w-[3.5rem] truncate text-center">Hesabım</span>
-            </Link>
+          <div className="flex min-w-0 flex-col items-center justify-end">
+            <span className="max-w-[4rem] truncate text-center text-[9px] font-bold leading-tight text-zinc-900">
+              İlan ver
+            </span>
           </div>
+
+          <Link
+            href="/favoriler"
+            prefetch
+            className={`${tabBase} ${favActive ? tabActive : tabIdle}`}
+          >
+            <IconHeart className="shrink-0" />
+            <span className="max-w-[3.5rem] truncate text-center">Favoriler</span>
+          </Link>
+
+          <Link
+            href={accountHref}
+            prefetch
+            className={`${tabBase} ${accountActive ? tabActive : tabIdle}`}
+          >
+            <IconUser className="shrink-0" />
+            <span className="max-w-[3.5rem] truncate text-center">Hesabım</span>
+          </Link>
         </div>
       </div>
     </nav>
