@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabasePublicEnv } from "@/lib/env";
 import type {
   HomeListingCardItem,
@@ -45,30 +45,32 @@ export function HomeListingsGrid({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sequentialReady, setSequentialReady] = useState(0);
-  const [firstRowDone, setFirstRowDone] = useState(false);
+  const firstRowNotifiedRef = useRef(false);
 
   // URL değişince (şehir filtresi vb.) sunucu verisine dön; client arama override'ını sıfırla
   useEffect(() => {
     setItems(initialItems);
     setPage(1);
     setSequentialReady(0);
-    setFirstRowDone(false);
+    firstRowNotifiedRef.current = false;
   }, [initialItems]);
 
-  const handleCoverLoaded = useCallback(
-    (index: number) => {
-      setSequentialReady((ready) => {
-        if (index !== ready) return ready;
-        const next = ready + 1;
-        if (next >= HOME_GRID_FIRST_ROW_SIZE && !firstRowDone) {
-          setFirstRowDone(true);
-          onFirstRowComplete?.();
-        }
-        return next;
-      });
-    },
-    [firstRowDone, onFirstRowComplete]
-  );
+  useEffect(() => {
+    if (
+      sequentialReady >= HOME_GRID_FIRST_ROW_SIZE &&
+      !firstRowNotifiedRef.current
+    ) {
+      firstRowNotifiedRef.current = true;
+      onFirstRowComplete?.();
+    }
+  }, [sequentialReady, onFirstRowComplete]);
+
+  const handleCoverLoaded = useCallback((index: number) => {
+    setSequentialReady((ready) => {
+      if (index !== ready) return ready;
+      return ready + 1;
+    });
+  }, []);
 
   const visible = filterHomeListingItems(items, filters ?? {});
   const hasMore = items.length < total;
