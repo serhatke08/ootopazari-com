@@ -59,8 +59,8 @@ html {
 
 @media (max-width: 47.999rem) {
   :root {
-    /* Sarı alt menü */
-    --mobile-bottom-nav-h: 3rem;
+    /* Sarı alt menü (+ buton çizginin altında) */
+    --mobile-bottom-nav-h: 3.75rem;
   }
 
   html,
