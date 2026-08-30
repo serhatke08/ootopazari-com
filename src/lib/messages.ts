@@ -234,6 +234,8 @@ export type ListingMessageSummary = {
   image_url: string | null;
   listing_number: number | string | null;
   moderation_status?: string | null;
+  activation_status?: string | null;
+  activated_at?: string | null;
 };
 
 export type ListingConversationStatus =
@@ -274,7 +276,7 @@ export function listingSummaryForConversation(
   return map.get(key);
 }
 
-/** Mesajlaşmaya açık mı? (silinmiş / askıda / onaysız ilanlar kapalı). */
+/** Mesajlaşmaya açık mı? (DB trigger listing_is_active_for_messaging ile uyumlu). */
 export function listingConversationStatus(
   listing: ListingMessageSummary | null | undefined
 ): ListingConversationStatus {
@@ -288,39 +290,65 @@ export function listingConversationStatus(
   const status = String(listing.moderation_status ?? "approved")
     .trim()
     .toLowerCase();
-  if (!status || status === "approved") {
-    return { active: true };
+  if (status && status !== "approved") {
+    switch (status) {
+      case "suspended":
+        return {
+          active: false,
+          message: "Bu ilan askıya alındı. Yeni mesaj gönderilemez.",
+        };
+      case "pending":
+        return {
+          active: false,
+          message: "Bu ilan onay bekliyor. Yeni mesaj gönderilemez.",
+        };
+      case "rejected":
+        return {
+          active: false,
+          message: "Bu ilan yayında değil. Yeni mesaj gönderilemez.",
+        };
+      case "expired":
+        return {
+          active: false,
+          message: "Bu ilanın süresi doldu. Yeni mesaj gönderilemez.",
+        };
+      default:
+        break;
+    }
   }
 
-  switch (status) {
-    case "suspended":
-      return {
-        active: false,
-        message: "Bu ilan askıya alındı. Yeni mesaj gönderilemez.",
-      };
-    case "pending":
-      return {
-        active: false,
-        message: "Bu ilan onay bekliyor. Yeni mesaj gönderilemez.",
-      };
-    case "rejected":
-      return {
-        active: false,
-        message: "Bu ilan yayında değil. Yeni mesaj gönderilemez.",
-      };
-    case "expired":
-      return {
-        active: false,
-        message: "Bu ilanın süresi doldu. Yeni mesaj gönderilemez.",
-      };
-    default:
-      return { active: true };
+  const activation = String(listing.activation_status ?? "active")
+    .trim()
+    .toLowerCase();
+  if (activation && activation !== "active") {
+    return {
+      active: false,
+      message: "Bu ilan artık aktif değil. Yeni mesaj gönderilemez.",
+    };
   }
+
+  if (listing.activated_at) {
+    const liveSince = new Date(listing.activated_at);
+    if (!Number.isNaN(liveSince.getTime())) {
+      const expiresAt = liveSince.getTime() + 30 * 24 * 60 * 60 * 1000;
+      if (expiresAt < Date.now()) {
+        return {
+          active: false,
+          message: "Bu ilanın yayın süresi doldu. Yeni mesaj gönderilemez.",
+        };
+      }
+    }
+  }
+
+  return { active: true };
 }
 
 const LISTING_SUMMARY_SELECT =
-  "id,title,image_url,listing_number,moderation_status";
+  "id,title,image_url,listing_number,moderation_status,activation_status,activated_at";
 const LISTING_SUMMARY_CHUNK = 80;
+
+const LISTING_SUMMARY_SELECT_LEGACY =
+  "id,title,image_url,listing_number,moderation_status";
 
 async function fetchListingSummaryRows(
   supabase: SupabaseClient,
@@ -330,10 +358,26 @@ async function fetchListingSummaryRows(
   const out: ListingMessageSummary[] = [];
   for (let i = 0; i < values.length; i += LISTING_SUMMARY_CHUNK) {
     const chunk = values.slice(i, i + LISTING_SUMMARY_CHUNK);
-    const { data, error } = await supabase
+    let data:
+      | ListingMessageSummary[]
+      | null = null;
+    let error: { message: string } | null = null;
+
+    const primary = await supabase
       .from("listings")
       .select(LISTING_SUMMARY_SELECT)
       .in(column, chunk);
+    data = (primary.data ?? null) as ListingMessageSummary[] | null;
+    error = primary.error;
+
+    if (error && /activation_status|activated_at/i.test(error.message)) {
+      const legacy = await supabase
+        .from("listings")
+        .select(LISTING_SUMMARY_SELECT_LEGACY)
+        .in(column, chunk);
+      data = (legacy.data ?? null) as ListingMessageSummary[] | null;
+      error = legacy.error;
+    }
     if (error) {
       console.warn(`listings batch (messages ${column}):`, error.message);
       continue;

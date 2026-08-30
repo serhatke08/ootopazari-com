@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MessageRow } from "@/lib/messages";
 import { dispatchUnreadMessagesRefresh } from "@/lib/unread-messages-events";
+import { mapMessagingError } from "@/lib/messaging-errors";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Props = {
@@ -127,21 +128,57 @@ export function ChatThreadClient({
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed || blocked || !listingActive) return;
+    if (!trimmed || blocked || !listingActive || sending) return;
     setSendError(null);
     setSending(true);
     try {
-      const { error } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: currentUserId,
-        content: trimmed,
-        is_read: false,
-      });
+      const clientMessageId = `${currentUserId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      let { data, error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: conversationId,
+          sender_id: currentUserId,
+          content: trimmed,
+          is_read: false,
+          client_message_id: clientMessageId,
+        })
+        .select("id,conversation_id,sender_id,content,is_read,created_at")
+        .single();
+
+      if (error && /client_message_id/i.test(error.message)) {
+        ({ data, error } = await supabase
+          .from("messages")
+          .insert({
+            conversation_id: conversationId,
+            sender_id: currentUserId,
+            content: trimmed,
+            is_read: false,
+          })
+          .select("id,conversation_id,sender_id,content,is_read,created_at")
+          .single());
+      }
+
       if (error) {
-        setSendError(error.message || "Gönderilemedi.");
+        setSendError(mapMessagingError(error.message));
         return;
       }
+
+      if (data) {
+        const row = data as MessageRow;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === row.id)) return prev;
+          return [...prev, row];
+        });
+      }
+
       setText("");
+      void supabase
+        .from("conversations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", conversationId);
+      dispatchUnreadMessagesRefresh();
+    } catch {
+      setSendError("Bağlantı hatası. Tekrar deneyin.");
     } finally {
       setSending(false);
     }

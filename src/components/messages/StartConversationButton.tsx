@@ -5,6 +5,7 @@ import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
 import { findConversationForListingAndPair, unhideOwnConversation } from "@/lib/messages";
+import { mapMessagingError } from "@/lib/messaging-errors";
 
 type Props = {
   listingId: string;
@@ -66,21 +67,58 @@ export function StartConversationButton({
 
       let convId = existing?.id;
       if (!convId) {
-        const { data: inserted, error: insErr } = await supabase
-          .from("conversations")
-          .insert({
+        const insertPayload: Record<string, string> = {
             listing_id: listingId,
             sender_id: user.id,
             receiver_id: ownerUserId,
+          };
+        const { data: inserted, error: insErr } = await supabase
+          .from("conversations")
+          .insert({
+            ...insertPayload,
+            listing_table: "listings",
           })
           .select("id")
           .single();
 
         if (insErr) {
-          setError(insErr.message || "Konuşma oluşturulamadı.");
-          return;
+          if (insErr.code === "23505") {
+            const raced = await findConversationForListingAndPair(
+              supabase,
+              listingId,
+              user.id,
+              ownerUserId
+            );
+            convId = raced?.id;
+          } else if (/listing_table/i.test(insErr.message)) {
+            const { data: legacyInsert, error: legacyErr } = await supabase
+              .from("conversations")
+              .insert(insertPayload)
+              .select("id")
+              .single();
+            if (legacyErr) {
+              if (legacyErr.code === "23505") {
+                const raced = await findConversationForListingAndPair(
+                  supabase,
+                  listingId,
+                  user.id,
+                  ownerUserId
+                );
+                convId = raced?.id;
+              } else {
+                setError(mapMessagingError(legacyErr.message));
+                return;
+              }
+            } else {
+              convId = legacyInsert?.id as string | undefined;
+            }
+          } else {
+            setError(mapMessagingError(insErr.message));
+            return;
+          }
+        } else {
+          convId = inserted?.id as string | undefined;
         }
-        convId = inserted?.id as string | undefined;
       }
 
       if (!convId) {
