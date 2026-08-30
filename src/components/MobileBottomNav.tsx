@@ -105,13 +105,12 @@ export function MobileBottomNav({
   return (
     <nav
       data-mobile-bottom-nav="true"
-      className="relative z-[100] -mt-[1.125rem] w-full shrink-0 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+      className="relative z-[100] w-full shrink-0 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
       aria-label="Alt menü"
     >
-      {/* Üst bant: siyah — scroll’daki beyaz arka planı kapatır, çizgi + ortadan ikiye */}
-      <div className="relative h-[1.125rem] bg-black">
+      <div className="relative bg-[#ffcc00]">
         <div
-          className="absolute inset-x-0 bottom-0 flex h-px items-center"
+          className="pointer-events-none absolute inset-x-0 top-0 flex h-px items-center"
           aria-hidden
         >
           <div className="h-px flex-1 bg-black" />
@@ -122,14 +121,12 @@ export function MobileBottomNav({
           href="/ilan-ver"
           prefetch
           aria-label="İlan ver"
-          className={`absolute bottom-0 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 translate-y-[calc(50%+5px)] items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-2 ring-offset-[#ffcc00]" : ""}`}
+          className={`absolute left-1/2 top-0 z-20 flex h-9 w-9 -translate-x-1/2 translate-y-[calc(-50%+5px)] items-center justify-center rounded-full bg-zinc-900 text-[#ffcc00] transition hover:bg-zinc-800 ${ilanVerActive ? "ring-2 ring-zinc-900 ring-offset-2 ring-offset-[#ffcc00]" : ""}`}
         >
           <IconPlus />
         </Link>
-      </div>
 
-      <div className="bg-[#ffcc00]">
-        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1.5 pt-2">
+        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-0 px-0.5 pb-1.5 pt-5">
           <Link
             href="/"
             prefetch
