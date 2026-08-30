@@ -109,9 +109,9 @@ export function MobileBottomNav({
       aria-label="Alt menü"
     >
       <div className="relative bg-[#ffcc00]">
-        {/* Üstteki siyah ayırıcı — konum sabit; artı bunun altında */}
+        {/* Üstteki siyah ayırıcı — biraz aşağı */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-px items-center"
+          className="pointer-events-none absolute inset-x-0 top-1.5 z-10 flex h-px items-center"
           aria-hidden
         >
           <div className="h-px flex-1 bg-black" />
