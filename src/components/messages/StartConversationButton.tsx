@@ -6,6 +6,10 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getClientAuthUser } from "@/lib/supabase/auth-client";
 import { findConversationForListingAndPair, unhideOwnConversation } from "@/lib/messages";
 import { mapMessagingError } from "@/lib/messaging-errors";
+import {
+  isListingMessagingAllowed,
+  listingMessagingBlockedMessage,
+} from "@/lib/listing-messaging";
 
 type Props = {
   listingId: string;
@@ -37,6 +41,24 @@ export function StartConversationButton({
         return;
       }
       if (user.id === ownerUserId) return;
+
+      const { data: listingRow } = await supabase
+        .from("listings")
+        .select(
+          "moderation_status,activation_status,activated_at,created_at,contact_via_message"
+        )
+        .eq("id", listingId)
+        .maybeSingle();
+
+      if (!listingRow?.contact_via_message) {
+        setError("Bu ilan için mesajlaşma kapalı.");
+        return;
+      }
+
+      if (!isListingMessagingAllowed(listingRow)) {
+        setError(listingMessagingBlockedMessage(listingRow));
+        return;
+      }
 
       const [{ data: b1 }, { data: b2 }] = await Promise.all([
         supabase

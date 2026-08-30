@@ -7,6 +7,7 @@ import { MissingEnv } from "@/components/MissingEnv";
 import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
 import { loadListingDetailRequest } from "@/lib/listing-detail-request";
 import { formatListingPurgeCountdown, formatListingPublishedAt } from "@/lib/listing-quota";
+import { isListingMessagingAllowed } from "@/lib/listing-messaging";
 import {
   buildCategoryMap,
   buildCityMap,
@@ -592,6 +593,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     !!id &&
     !!sellerUserId &&
     !!listing.contact_via_message &&
+    isListingMessagingAllowed(listing) &&
     (!viewer?.id || viewer.id !== sellerUserId);
   const isOwner =
     !!viewer?.id && !!sellerUserId && viewer.id === sellerUserId;

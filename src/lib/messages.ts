@@ -1,4 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  isListingMessagingAllowed,
+  listingMessagingBlockedMessage,
+} from "@/lib/listing-messaging";
 
 /** Okunmamış: `false` veya `null` (Postgres’te varsayılan / eski satırlar null olabilir). */
 export const MESSAGES_UNREAD_FILTER = "is_read.is.null,is_read.eq.false";
@@ -280,67 +284,13 @@ export function listingSummaryForConversation(
 export function listingConversationStatus(
   listing: ListingMessageSummary | null | undefined
 ): ListingConversationStatus {
-  if (!listing) {
-    return {
-      active: false,
-      message: "Bu ilan artık aktif değil. Yeni mesaj gönderilemez.",
-    };
+  if (isListingMessagingAllowed(listing)) {
+    return { active: true };
   }
-
-  const status = String(listing.moderation_status ?? "approved")
-    .trim()
-    .toLowerCase();
-  if (status && status !== "approved") {
-    switch (status) {
-      case "suspended":
-        return {
-          active: false,
-          message: "Bu ilan askıya alındı. Yeni mesaj gönderilemez.",
-        };
-      case "pending":
-        return {
-          active: false,
-          message: "Bu ilan onay bekliyor. Yeni mesaj gönderilemez.",
-        };
-      case "rejected":
-        return {
-          active: false,
-          message: "Bu ilan yayında değil. Yeni mesaj gönderilemez.",
-        };
-      case "expired":
-        return {
-          active: false,
-          message: "Bu ilanın süresi doldu. Yeni mesaj gönderilemez.",
-        };
-      default:
-        break;
-    }
-  }
-
-  const activation = String(listing.activation_status ?? "active")
-    .trim()
-    .toLowerCase();
-  if (activation && activation !== "active") {
-    return {
-      active: false,
-      message: "Bu ilan artık aktif değil. Yeni mesaj gönderilemez.",
-    };
-  }
-
-  if (listing.activated_at) {
-    const liveSince = new Date(listing.activated_at);
-    if (!Number.isNaN(liveSince.getTime())) {
-      const expiresAt = liveSince.getTime() + 30 * 24 * 60 * 60 * 1000;
-      if (expiresAt < Date.now()) {
-        return {
-          active: false,
-          message: "Bu ilanın yayın süresi doldu. Yeni mesaj gönderilemez.",
-        };
-      }
-    }
-  }
-
-  return { active: true };
+  return {
+    active: false,
+    message: listingMessagingBlockedMessage(listing),
+  };
 }
 
 const LISTING_SUMMARY_SELECT =
