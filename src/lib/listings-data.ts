@@ -684,10 +684,15 @@ async function fetchListingsPageFast(
   );
 
   const runPage = async () => {
+    // Toplam: acil hariç tutma uygulanmaz (aktif ilan sayısı doğru kalsın).
+    const countFilters = {
+      ...filterParams,
+      excludeActiveAcil: false,
+    };
     let countQ = applyApprovedLiveFilter(
       supabase.from("listings").select("id", { count: "exact", head: true })
     );
-    countQ = applyListingListFilters(countQ, filterParams);
+    countQ = applyListingListFilters(countQ, countFilters);
 
     let dataQ = applyApprovedLiveFilter(
       supabase.from("listings").select(LISTING_SELECT)
@@ -837,9 +842,33 @@ export async function fetchListingsPage(
     .filter(Boolean);
   const rows = await fetchListingsByIdsPreserveOrder(supabase, ids);
 
+  // Acil satırına alınanlar listeden çıkarılır ama toplam aktif sayıya dahil.
+  let total = sorted.length;
+  if (filterParams.excludeActiveAcil) {
+    let countQ = applyApprovedLiveFilter(
+      supabase.from("listings").select("id", { count: "exact", head: true })
+    );
+    countQ = applyListingListFilters(countQ, {
+      ...filterParams,
+      excludeActiveAcil: false,
+    });
+    let { count, error } = await countQ;
+    if (error && noteApprovedLiveFilterError(error.message)) {
+      countQ = applyApprovedLiveFilter(
+        supabase.from("listings").select("id", { count: "exact", head: true })
+      );
+      countQ = applyListingListFilters(countQ, {
+        ...filterParams,
+        excludeActiveAcil: false,
+      });
+      ({ count, error } = await countQ);
+    }
+    if (!error && count != null) total = count;
+  }
+
   return {
     rows,
-    total: sorted.length,
+    total,
   };
 }
 

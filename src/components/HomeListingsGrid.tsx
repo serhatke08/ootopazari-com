@@ -41,15 +41,20 @@ export function HomeListingsGrid({
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Acil ilanlar grid’de yok ama total’e dahil → sayfa doluluğuyla hasMore.
+  const [feedExhausted, setFeedExhausted] = useState(
+    initialItems.length < pageSize
+  );
 
   // URL değişince (şehir filtresi vb.) sunucu verisine dön
   useEffect(() => {
     setItems(initialItems);
     setPage(1);
-  }, [initialItems]);
+    setFeedExhausted(initialItems.length < pageSize);
+  }, [initialItems, pageSize]);
 
   const visible = filterHomeListingItems(items, filters ?? {});
-  const hasMore = items.length < total;
+  const hasMore = !feedExhausted;
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -69,6 +74,7 @@ export function HomeListingsGrid({
         throw new Error(data.error ?? "Yükleme başarısız");
       }
       const newItems = data.items ?? [];
+      if (newItems.length < pageSize) setFeedExhausted(true);
       setItems((prev) => {
         const seen = new Set(prev.map((x) => x.listing.id).filter(Boolean));
         const merged = [...prev];
@@ -150,7 +156,7 @@ export function HomeListingsGrid({
             {loading ? "Yükleniyor…" : "Daha fazla yükle"}
           </button>
           <p className="text-xs text-zinc-500">
-            {items.length} / {total} ilan gösteriliyor
+            {items.length} / {total} aktif ilan
           </p>
           {error ? (
             <p className="text-xs text-red-600" role="alert">
@@ -160,7 +166,7 @@ export function HomeListingsGrid({
         </div>
       ) : total > pageSize ? (
         <p className="text-center text-xs text-zinc-500">
-          Tüm ilanlar yüklendi ({total})
+          Tüm ilanlar · {total} aktif
         </p>
       ) : null}
     </div>
