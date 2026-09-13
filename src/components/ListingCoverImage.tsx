@@ -60,7 +60,6 @@ export function ListingCoverImage({
     objectFit === "cover" ? "object-cover" : "object-contain",
     "object-center transition duration-150 group-hover:opacity-[0.97]",
     scale ? "scale-[1.14]" : "",
-    loaded ? "opacity-100" : "opacity-0",
     className ?? "",
   ]
     .filter(Boolean)

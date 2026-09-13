@@ -180,7 +180,7 @@ export function ListingCard({
     <div
       className={
         isHomeGrid
-          ? "relative aspect-[3/4] w-full overflow-hidden bg-white md:aspect-[2/3]"
+          ? "relative aspect-[4/5] w-full overflow-hidden bg-zinc-100 md:aspect-[4/3]"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
@@ -189,7 +189,7 @@ export function ListingCard({
         imageUrl={listing.image_url}
         listingId={listingId}
         alt={listing.title ?? "İlan görseli"}
-        objectFit={isHomeGrid ? "cover" : "contain"}
+        objectFit="contain"
         scale={!isHomeGrid}
         sizes="(max-width: 767px) 33vw, (max-width: 1023px) 33vw, 16vw"
         priority={coverPriority}

@@ -102,24 +102,50 @@ export function ListPageSkeleton({ titleWidth = "w-36" }: { titleWidth?: string 
 export function HomeBrowseSkeleton() {
   return (
     <div aria-busy="true" aria-label="Ana sayfa yükleniyor">
-      <div className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-[1400px] gap-2 overflow-hidden px-2 py-1.5 sm:px-4">
-          {Array.from({ length: 7 }, (_, i) => (
-            <div key={i} className="flex w-[3.75rem] shrink-0 flex-col items-center gap-1">
-              <SkeletonPulse className="h-10 w-10 rounded-full" />
-              <SkeletonPulse className="h-2 w-9" />
+      {/* Quick links — ince şerit, abartısız */}
+      <div className="border-b border-zinc-100 bg-white">
+        <div className="mx-auto flex max-w-[1400px] gap-3 overflow-hidden px-3 py-2 sm:px-6">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div
+              key={i}
+              className="flex w-14 shrink-0 flex-col items-center gap-1.5"
+            >
+              <div className="h-9 w-9 animate-pulse rounded-full bg-zinc-100" />
+              <div className="h-2 w-10 animate-pulse rounded bg-zinc-50" />
             </div>
           ))}
         </div>
       </div>
-      <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 pt-1.5 pb-6 sm:px-6">
-        <div className="mb-1.5 flex justify-end gap-1.5">
-          <SkeletonPulse className="h-7 w-24" />
-          <SkeletonPulse className="h-7 w-16" />
-          <SkeletonPulse className="h-7 w-14" />
+
+      <div
+        id="ilanlar"
+        className="mx-auto w-full max-w-[1400px] flex-1 px-4 pt-1.5 pb-6 sm:px-6"
+      >
+        <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-4 lg:gap-5">
+          {/* PC sidebar placeholder — layout sıçramasını azaltır */}
+          <aside className="hidden w-full shrink-0 md:sticky md:top-[5.5rem] md:block md:w-[min(220px,30vw)] md:min-w-[180px] md:max-w-[240px] lg:w-[min(280px,22vw)] lg:min-w-[240px] lg:max-w-[300px]">
+            <div className="space-y-2 rounded-xl border border-zinc-100 bg-white p-3">
+              <div className="h-4 w-24 animate-pulse rounded bg-zinc-100" />
+              {Array.from({ length: 10 }, (_, i) => (
+                <div
+                  key={i}
+                  className="h-8 w-full animate-pulse rounded-lg bg-zinc-50"
+                />
+              ))}
+            </div>
+          </aside>
+
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 flex justify-end gap-1.5">
+              <div className="h-7 w-24 animate-pulse rounded-md bg-zinc-100" />
+              <div className="h-7 w-16 animate-pulse rounded-md bg-zinc-100" />
+              <div className="h-7 w-14 animate-pulse rounded-md bg-zinc-100" />
+            </div>
+            <div className="mb-2 h-4 w-28 animate-pulse rounded bg-zinc-100" />
+            {/* PC’de 6 sütun × 2 sıra = 12; abartmadan soft kartlar */}
+            <HomeListingsGridSkeleton count={12} />
+          </div>
         </div>
-        <SkeletonPulse className="mb-3 h-4 w-28" />
-        <HomeListingsGridSkeleton count={12} />
       </div>
     </div>
   );
