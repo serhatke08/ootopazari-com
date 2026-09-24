@@ -299,6 +299,7 @@ export type ListingMessageSummary = {
   moderation_status?: string | null;
   activation_status?: string | null;
   activated_at?: string | null;
+  created_at?: string | null;
 };
 
 export type ListingConversationStatus =
@@ -353,11 +354,11 @@ export function listingConversationStatus(
 }
 
 const LISTING_SUMMARY_SELECT =
-  "id,title,image_url,listing_number,moderation_status,activation_status,activated_at";
+  "id,title,image_url,listing_number,moderation_status,activation_status,activated_at,created_at";
 const LISTING_SUMMARY_CHUNK = 80;
 
 const LISTING_SUMMARY_SELECT_LEGACY =
-  "id,title,image_url,listing_number,moderation_status";
+  "id,title,image_url,listing_number,moderation_status,created_at";
 
 async function fetchListingSummaryRows(
   supabase: SupabaseClient,

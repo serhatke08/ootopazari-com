@@ -82,9 +82,22 @@ export default async function MesajConversationPage({ params }: Props) {
   rows = rows.filter((c) => !blockedSet.has(otherParticipantId(c, user.id)));
   const blocked = blockedSet.has(otherId);
 
-  const convIds = rows.map((c) => c.id);
-  const listingIds = [...new Set(rows.map((c) => c.listing_id))];
-  const otherIds = [...new Set(rows.map((c) => otherParticipantId(c, user.id)))];
+  // Açık sohbet henüz mesajsız olabilir (listeden elenir) — ilan/profil yine çekilmeli.
+  const convIds = [...new Set([conversationId, ...rows.map((c) => c.id)])];
+  const listingIds = [
+    ...new Set(
+      [conv.listing_id, ...rows.map((c) => c.listing_id)].filter(
+        (id): id is string => Boolean(id)
+      )
+    ),
+  ];
+  const otherIds = [
+    ...new Set(
+      [otherId, ...rows.map((c) => otherParticipantId(c, user.id))].filter(
+        Boolean
+      )
+    ),
+  ];
 
   const [messages, listingMap, profileMap, lastMap, unreadMap, adminMap] = await Promise.all([
     fetchMessagesForConversation(supabase, conversationId),
