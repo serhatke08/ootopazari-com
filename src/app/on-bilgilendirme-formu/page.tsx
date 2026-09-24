@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Ön Bilgilendirme Formu",
   description:
     "Oto Pazarı ücretli dijital hizmetler için ön bilgilendirme formu.",
+  robots: { index: false, follow: true },
   alternates: { canonical: "/on-bilgilendirme-formu" },
 };
 

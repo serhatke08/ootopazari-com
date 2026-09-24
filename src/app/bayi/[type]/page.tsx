@@ -14,6 +14,7 @@ import {
   type DealerType,
 } from "@/lib/bayi-types";
 import { normalizeDealerState } from "@/lib/bayi-application-status";
+import { getSeoHubByPath } from "@/lib/seo-hubs";
 
 type Props = {
   params: Promise<{ type: string }>;
@@ -28,15 +29,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Bayi Bulunamadı" };
   }
 
-  const title = `${DEALER_TYPE_LABELS[dealerType]} Bayileri`;
-  const description = DEALER_TYPE_DESCRIPTIONS[dealerType];
+  const path = `/bayi/${dealerType}`;
+  const hub = getSeoHubByPath(path);
+  const title = hub?.title ?? `${DEALER_TYPE_LABELS[dealerType]} Bayileri`;
+  const description =
+    hub?.description ?? DEALER_TYPE_DESCRIPTIONS[dealerType];
 
   return {
     title,
     description,
+    alternates: { canonical: path },
     openGraph: {
       title: `${title} | Oto Pazarı`,
       description,
+      url: path,
+      type: "website",
     },
   };
 }

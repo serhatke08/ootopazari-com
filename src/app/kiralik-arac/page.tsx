@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { MissingEnv } from "@/components/MissingEnv";
+import { BayiCard } from "@/components/BayiCard";
 import { SeoHubContent } from "@/components/SeoHubContent";
-import { SpecialListingsPageView } from "@/components/SpecialListingsPageView";
+import { fetchPublicDealers } from "@/lib/bayi-data";
 import { tryGetSupabaseEnv } from "@/lib/env";
-import { fetchSpecialListingsFeed } from "@/lib/special-listings-feed";
 import { getSeoHubBySlug } from "@/lib/seo-hubs";
 import { SITE_DISPLAY_NAME } from "@/lib/seo-brand";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const hub = getSeoHubBySlug("sifir-arac")!;
+const hub = getSeoHubBySlug("kiralik-arac")!;
 
 export const metadata: Metadata = {
   title: hub.title,
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function SifirAraclarPage() {
+export default async function KiralikAracPage() {
   const env = tryGetSupabaseEnv();
   if (!env) {
     return (
@@ -33,21 +33,29 @@ export default async function SifirAraclarPage() {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { items, loggedIn } = await fetchSpecialListingsFeed(
-    supabase,
-    env,
-    "sifir"
-  );
+  const dealers = await fetchPublicDealers(supabase, "kiralama", { limit: 24 });
 
   return (
     <SeoHubContent hub={hub}>
-      <SpecialListingsPageView
-        kind="sifir"
-        items={items}
-        env={env}
-        loggedIn={loggedIn}
-        embed
-      />
+      <h2 className="mb-3 text-lg font-bold text-zinc-900">
+        Kiralama bayileri
+      </h2>
+      {dealers.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-10 text-center text-sm text-zinc-600">
+          Şu an listelenen kiralama bayisi yok.
+        </p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {dealers.map((dealer) => (
+            <BayiCard
+              key={dealer.id}
+              dealer={dealer}
+              dealerType="kiralama"
+              supabaseUrl={env.url}
+            />
+          ))}
+        </div>
+      )}
     </SeoHubContent>
   );
 }

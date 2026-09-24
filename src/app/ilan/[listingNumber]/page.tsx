@@ -317,7 +317,8 @@ function extractDescriptionBody(text: string): string {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { listingNumber: listingParam } = await params;
-  const { env, listingNumber, detail } = await loadListingDetailRequest(listingParam);
+  const { env, listingNumber, detail, seoLabel } =
+    await loadListingDetailRequest(listingParam);
   if (!env) {
     return { title: "İlan" };
   }
@@ -328,7 +329,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     notFound();
   }
   const listing = detail.listing;
-  const titleBase = (listing.title as string) ?? "İlan";
+  const titleBase = seoLabel?.trim() || "İlan";
   const title =
     detail.access === "expired_owner" || detail.access === "expired_admin"
       ? `Süresi doldu — ${titleBase}`
@@ -339,17 +340,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     (listing.city_name as string) ||
     (listing.district as string) ||
     "";
-  const desc =
-    typeof listing.description === "string"
-      ? listing.description.slice(0, 140)
-      : `${title}${city ? ` — ${city}` : ""}`;
-  const metaDescription = `${desc} — Oto Pazarı'nda ikinci el araba ilanı.`;
+  const year =
+    listing.vehicle_year != null && String(listing.vehicle_year).trim()
+      ? String(listing.vehicle_year).trim()
+      : "";
+  const metaDescription = [
+    year,
+    titleBase,
+    city ? `— ${city}` : null,
+    "Oto Pazarı'nda güncel araç ilanı.",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const imageRaw = typeof listing.image_url === "string" ? listing.image_url : null;
   const imageUrl = imageRaw ? resolveListingImageUrl(env, imageRaw) : null;
   const canonicalPath =
     buildListingSeoPath(
       listing.listing_number != null ? String(listing.listing_number) : listingNumber,
-      typeof listing.title === "string" ? listing.title : title
+      titleBase
     ) ?? `/ilan/${encodeURIComponent(listingNumber)}`;
   if (isNonCanonicalListingPath(canonicalPath, listingParam)) {
     permanentRedirect(canonicalPath);
@@ -434,7 +442,7 @@ export default async function IlanDetayPage({ params }: Props) {
     ctx.detail.listing.listing_number != null
       ? String(ctx.detail.listing.listing_number)
       : ctx.listingNumber,
-    typeof ctx.detail.listing.title === "string" ? ctx.detail.listing.title : null
+    ctx.seoLabel
   );
   if (expectedSeoPath && isNonCanonicalListingPath(expectedSeoPath, listingParam)) {
     permanentRedirect(expectedSeoPath);
@@ -459,9 +467,10 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   }
 
   const { listing, access: detailAccess } = ctx.detail;
+  const seoLabel = ctx.seoLabel?.trim() || String(listing.title ?? "İlan");
   const expectedSeoPath = buildListingSeoPath(
     listing.listing_number != null ? String(listing.listing_number) : listingNumber,
-    typeof listing.title === "string" ? listing.title : null
+    seoLabel
   );
 
   const isSuspendedOwnerView = detailAccess === "suspended_owner";
@@ -890,7 +899,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ? String(listing.suspension_reason).trim()
       : "";
 
-  const listingTitle = String(listing.title ?? "İlan");
+  const listingTitle = seoLabel;
   const canonicalPath =
     expectedSeoPath ??
     `/ilan/${encodeURIComponent(listingNumber)}`;

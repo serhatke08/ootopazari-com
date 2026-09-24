@@ -41,6 +41,7 @@ export function HomeAcilRail({
                 listing={item.listing}
                 env={env}
                 categoryName={item.categoryName}
+                brandName={item.brandName}
                 hideCategoryAndYear
                 cityOnStatsRow
                 showFavorite={false}

@@ -13,10 +13,12 @@ import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import {
   buildCategoryMap,
   buildCityMap,
+  buildBrandMap,
   fetchAcilLiveListings,
   fetchCategories,
   fetchCities,
   fetchSifirLiveListings,
+  fetchVehicleBrands,
   resolveListingCityDisplay,
   type ListingRow,
 } from "@/lib/listings-data";
@@ -102,12 +104,14 @@ export async function fetchSpecialListingsFeed(
     rows as Record<string, unknown>[]
   );
 
-  const [categories, cities] = await Promise.all([
+  const [categories, cities, brands] = await Promise.all([
     fetchCategories(supabase),
     fetchCities(supabase),
+    fetchVehicleBrands(supabase),
   ]);
   const catMap = buildCategoryMap(categories);
   const cityMap = buildCityMap(cities);
+  const brandMap = buildBrandMap(brands);
   const ids = rows.map((r) => r.id).filter(Boolean) as string[];
 
   const [sessionFav, statsMap, owners] = await Promise.all([
@@ -125,11 +129,16 @@ export async function fetchSpecialListingsFeed(
   const items: HomeListingCardItem[] = rows.map((listing) => {
     const id = String(listing.id);
     const owner = listing.user_id ? owners.get(String(listing.user_id)) : null;
+    const bid = listing.vehicle_brand_id
+      ? String(listing.vehicle_brand_id)
+      : "";
+    const brand = bid ? brandMap.get(bid) : null;
     return {
       listing,
       categoryName: listing.category_id
         ? catMap.get(String(listing.category_id))?.name ?? null
         : null,
+      brandName: brand?.name?.trim() || brand?.code?.trim() || null,
       cityDisplayName: resolveListingCityDisplay(listing, cityMap),
       stats: statsMap.get(id) ?? null,
       favorited: sessionFav.favoriteIds.has(id),

@@ -90,32 +90,39 @@ export function SiteFooter({
             className="site-footer-seo"
           >
             <h2 id="footer-seo-heading">
-              Oto Pazarı — İkinci el araba ve sıfır araba ilanları
+              Oto Pazarı — İkinci el, sıfır, kiralık araç ve yedek parça
             </h2>
             <div className="site-footer-seo-text">
               <p>
-                <strong>Oto Pazarı</strong>, ikinci el araba ve sıfır araba
-                ilanlarını tek yerde toplayan Türkiye geneli bir{" "}
-                <strong>oto pazarı</strong>
-                dır. İkinci el otomobil ve sıfır otomobil ilanlarını marka,
-                model, şehir ve fiyat filtreleriyle tarayın; ücretsiz araba
-                ilanı verin ve satıcıyla doğrudan mesajlaşın.
+                <strong>Oto Pazarı</strong>, ikinci el araç, sıfır araç, kiralık
+                araç ve oto yedek parça ilanlarını tek yerde toplayan Türkiye
+                geneli bir <strong>oto pazarı</strong>dır. Marka, model, motor ve
+                paket bilgisiyle ilanları tarayın; ücretsiz ilan verin, satıcıyla
+                mesajlaşın.
               </p>
               <p>
-                Ücretsiz araba ilanı vererek ikinci el araba veya sıfır araba
-                ilanınızı Oto Pazarı&apos;nda yayınlayın. Galeri, ekspertiz,
-                parça ve kiralık kategorilerinde de ilan oluşturabilirsiniz.
+                Galeri, ekspertiz, parça ve kiralama bayileriyle güvenli alım-satım
+                ve hizmet keşfi. Acil ve sıfır vitrinleriyle hızlı karar verin.
               </p>
             </div>
             <nav aria-label="Oto Pazarı kategorileri" className="site-footer-tags">
               <Link href="/" className="site-footer-tag">
                 Oto pazarı
               </Link>
-              <Link href="/?q=ikinci+el+araba" className="site-footer-tag">
-                İkinci el araba
+              <Link href="/ikinci-el-arac" className="site-footer-tag">
+                İkinci el araç
               </Link>
-              <Link href="/?q=sıfır+araba" className="site-footer-tag">
-                Sıfır araba
+              <Link href="/sifir-araclar" className="site-footer-tag">
+                Sıfır araç
+              </Link>
+              <Link href="/kiralik-arac" className="site-footer-tag">
+                Kiralık araç
+              </Link>
+              <Link href="/parca" className="site-footer-tag">
+                Yedek parça
+              </Link>
+              <Link href="/rehber" className="site-footer-tag">
+                Rehber
               </Link>
               <Link href="/ilan-ver" className="site-footer-tag">
                 Ücretsiz ilan ver
@@ -133,7 +140,11 @@ export function SiteFooter({
             <div className="site-footer-col">
               <p className="site-footer-col-title">Keşfet</p>
               <Link href="/">Ana Sayfa</Link>
-              <Link href="/ilanlar">Tüm İlanlar</Link>
+              <Link href="/ikinci-el-arac">İkinci El Araç</Link>
+              <Link href="/sifir-araclar">Sıfır Araçlar</Link>
+              <Link href="/kiralik-arac">Kiralık Araç</Link>
+              <Link href="/parca">Yedek Parça</Link>
+              <Link href="/rehber">Rehber</Link>
               <Link href="/ilan-ver">Ücretsiz İlan Ver</Link>
               {hasListings ? (
                 <Link href="/ilan-one-cikar">İlan Öne Çıkar</Link>

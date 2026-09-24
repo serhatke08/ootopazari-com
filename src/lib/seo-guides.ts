@@ -62,6 +62,28 @@ export const SEO_GUIDE_PAGES: SeoGuidePage[] = [
       "Ekspertiz raporu, bakım geçmişi ve hasar bilgilerini açıkça paylaşın. Oto Pazarı mesajlaşma özelliğiyle alıcı sorularını hızlı yanıtlayarak satış sürecinizi kısaltabilirsiniz.",
     ],
   },
+  {
+    slug: "kiralik-arac-rehberi",
+    title: "Kiralık Araç ve Araç Kiralama Rehberi",
+    navLabel: "Kiralık araç",
+    description:
+      "Kiralık araç alırken dikkat edilecekler: süre, sigorta, km limiti ve Oto Pazarı kiralama bayileri.",
+    paragraphs: [
+      "Kısa veya uzun dönem kiralık araç ihtiyacında önce kullanım amacınızı ve bütçenizi netleştirin. Sigorta kapsamı, kilometre limiti, depozito ve yakıt politikasını bayiyle yazılı olarak teyit edin.",
+      "Oto Pazarı'nda kiralama bayilerini şehir bazında listeleyebilir, mesajlaşarak teklif alabilirsiniz. Filo işleten işletmeler bayilik başvurusuyla platformda görünürlük kazanır.",
+    ],
+  },
+  {
+    slug: "oto-yedek-parca-rehberi",
+    title: "Oto Yedek Parça Alma Rehberi",
+    navLabel: "Yedek parça",
+    description:
+      "Sıfır ve ikinci el oto yedek parça alırken uyumluluk, parça kodu ve satıcı doğrulama — Oto Pazarı Parça Pazarı.",
+    paragraphs: [
+      "Parça alırken araç marka–model–yıl uyumunu ve OEM / muadil bilgisini kontrol edin. Sıfır veya ikinci el durumunu, faturayı ve iade koşullarını satıcıdan sorun.",
+      "Oto Pazarı Parça Pazarı'nda parçacı bayilerin ilanlarını fiyat ve durum bilgisiyle karşılaştırabilirsiniz. Şüpheli fiyatlarda acele etmeyin; mümkünse parça kodunu doğrulayın.",
+    ],
+  },
 ];
 
 export function getSeoGuideBySlug(slug: string): SeoGuidePage | undefined {

@@ -10,11 +10,11 @@ export const QUICK_ACCESS_LINKS: {
     image: "/menu/pazar.png",
   },
   {
-    href: "/bayi/kiralama",
+    href: "/kiralik-arac",
     label: "Kiralama",
     image: "/menu/kiralama.png",
   },
-  { href: "/bayi/parcaci", label: "Parça", image: "/menu/parca.png" },
+  { href: "/parca", label: "Parça", image: "/menu/parca.png" },
   { href: "/bayi/galeri", label: "Galeri", image: "/menu/galeri.png" },
   {
     href: "/bayi/expertiz",
@@ -30,5 +30,10 @@ export const QUICK_ACCESS_LINKS: {
     href: "/sifir-araclar",
     label: "Sıfır Araçlar",
     image: "/menu/vitrin.svg",
+  },
+  {
+    href: "/ikinci-el-arac",
+    label: "İkinci El",
+    image: "/menu/pazar.png",
   },
 ];

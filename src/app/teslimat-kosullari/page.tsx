@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Teslimat Koşulları",
   description:
     "Oto Pazarı dijital hizmetler için teslimat ve ifa koşulları. Fiziksel kargo yapılmaz.",
+  robots: { index: false, follow: true },
   alternates: { canonical: "/teslimat-kosullari" },
 };
 

@@ -11,13 +11,16 @@ import {
 import {
   buildCategoryMap,
   buildCityMap,
+  buildBrandMap,
   fetchCategories,
   fetchCities,
   fetchListingsPage,
+  fetchVehicleBrands,
   resolveListingCityDisplay,
   type CategoryRow,
   type CityRow,
   type ListingRow,
+  type VehicleBrandRow,
 } from "@/lib/listings-data";
 import { homeListingsFeedHasFilters } from "@/lib/home-listings-feed-filters";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
@@ -74,6 +77,7 @@ async function fetchOwnerMiniMap(
 function buildCardItems(
   rows: ListingRow[],
   catMap: Map<string, CategoryRow>,
+  brandMap: Map<string, VehicleBrandRow>,
   cityMap: Map<string, CityRow>,
   statsMap: Map<string, ListingPublicStats>,
   favoriteIds: Set<string>,
@@ -83,6 +87,12 @@ function buildCardItems(
   return rows.map((listing) => {
     const cid = listing.category_id ?? undefined;
     const categoryName = cid ? (catMap.get(cid)?.name ?? null) : null;
+    const bid = listing.vehicle_brand_id
+      ? String(listing.vehicle_brand_id)
+      : "";
+    const brandName = bid
+      ? brandMap.get(bid)?.name?.trim() || brandMap.get(bid)?.code?.trim() || null
+      : null;
     const sid = listing.id ? statsMap.get(listing.id) : undefined;
     const ownerId = listing.user_id ? String(listing.user_id) : null;
     const owner = ownerId ? owners.get(ownerId) : undefined;
@@ -90,6 +100,7 @@ function buildCardItems(
     return {
       listing,
       categoryName,
+      brandName,
       cityDisplayName: resolveListingCityDisplay(listing, cityMap),
       stats: sid ?? null,
       favorited: listing.id ? favoriteIds.has(listing.id) : false,
@@ -120,9 +131,10 @@ export async function fetchHomeListingsFeed(
 
   const excludeActiveAcil = !homeListingsFeedHasFilters(filters);
 
-  const [categories, cities, { rows, total }] = await Promise.all([
+  const [categories, cities, brands, { rows, total }] = await Promise.all([
     fetchCategories(supabase),
     fetchCities(supabase),
+    fetchVehicleBrands(supabase),
     fetchListingsPage(supabase, {
       page,
       pageSize,
@@ -164,6 +176,7 @@ export async function fetchHomeListingsFeed(
   );
 
   const catMap = buildCategoryMap(categories);
+  const brandMap = buildBrandMap(brands);
   const cityMap = buildCityMap(cities);
   const ids = rows.map((r) => r.id).filter(Boolean) as string[];
 
@@ -176,6 +189,7 @@ export async function fetchHomeListingsFeed(
       items: buildCardItems(
         rows,
         catMap,
+        brandMap,
         cityMap,
         emptyStats,
         sessionFav.favoriteIds,
@@ -207,6 +221,7 @@ export async function fetchHomeListingsFeed(
     items: buildCardItems(
       rows,
       catMap,
+      brandMap,
       cityMap,
       statsMap,
       sessionFav.favoriteIds,

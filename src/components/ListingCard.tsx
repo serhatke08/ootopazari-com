@@ -9,6 +9,7 @@ import {
 import type { ListingPublicStats } from "@/lib/listing-stats";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { buildListingSeoPath } from "@/lib/listing-seo";
+import { listingSeoLabelFromFields } from "@/lib/listing-seo-label";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingBoostChrome } from "@/components/ListingBoostChrome";
 import { ListingAcilBadge } from "@/components/ListingAcilBadge";
@@ -40,6 +41,8 @@ type Props = {
   cityDisplayName?: string | null;
   /** Örn. «İlanlarım»: kart altında düzenle / sil */
   ownerActions?: ReactNode;
+  /** SEO slug için marka adı (yoksa vehicle_model + title kullanılır) */
+  brandName?: string | null;
   /** Ana sayfa: ilk sıra öncelikli kapak */
   coverPriority?: boolean;
   coverFastPath?: boolean;
@@ -130,6 +133,7 @@ export function ListingCard({
   showAcilBadge = false,
   cityDisplayName,
   ownerActions,
+  brandName = null,
   suspended: suspendedProp,
   expired: expiredProp,
   qualityReviewPending = false,
@@ -162,7 +166,14 @@ export function ListingCard({
   const num = listing.listing_number;
   const href = buildListingSeoPath(
     num != null ? String(num) : null,
-    typeof listing.title === "string" ? listing.title : null
+    listingSeoLabelFromFields({
+      brandName,
+      vehicleModel:
+        typeof listing.vehicle_model === "string"
+          ? listing.vehicle_model
+          : null,
+      title: typeof listing.title === "string" ? listing.title : null,
+    })
   );
   const listingId = listing.id;
   const price =

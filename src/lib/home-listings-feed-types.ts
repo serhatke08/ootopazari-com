@@ -20,6 +20,7 @@ export type HomeListingsSort =
 export type HomeListingCardItem = {
   listing: ListingRow;
   categoryName: string | null;
+  brandName: string | null;
   cityDisplayName: string | null;
   stats: ListingPublicStats | null;
   favorited: boolean;

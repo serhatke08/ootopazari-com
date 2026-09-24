@@ -1,41 +1,46 @@
 /** Google SERP site adı, og:site_name ve WebSite şemasında kullanılır. */
 export const SITE_DISPLAY_NAME = "Oto Pazarı";
 
+/** Google ana sonuç title — kısa marka adı. */
+export const SITE_HOME_TITLE = SITE_DISPLAY_NAME;
+
+/** Description / intro için anahtar kelime özeti (title değil). */
 export const SITE_HOME_TITLE_SUFFIX =
-  "İkinci El Araba ve Sıfır Araba İlanları";
+  "İkinci El Araba, Sıfır Araba, Kiralık Araç ve Yedek Parça";
 
-export const SITE_HOME_TITLE = `${SITE_DISPLAY_NAME} — ${SITE_HOME_TITLE_SUFFIX}`;
-
-/** Ana sayfa meta description — oto pazarı + ikinci el araba + sıfır araba. */
+/** Ana sayfa meta description — oto pazarı + dikeyler. */
 export const SITE_HOME_DESCRIPTION =
-  "Oto Pazarı — Türkiye'nin oto pazarı. İkinci el araba ve sıfır araba ilanlarını keşfedin; ikinci el otomobil ve sıfır otomobil ilanlarına ücretsiz araba ilanı verin, filtreleyin ve satıcıyla mesajlaşın.";
+  "Oto Pazarı — Türkiye'nin oto pazarı. İkinci el araç, sıfır araç, kiralık araç ve oto yedek parça ilanlarını keşfedin; ücretsiz ilan verin, filtreleyin, satıcıyla mesajlaşın.";
 
 export const SITE_HOME_OG_DESCRIPTION =
-  "Oto Pazarı'da ikinci el araba ve sıfır araba ilanları. İkinci el otomobil, sıfır otomobil — ücretsiz araba ilanı ver, filtrele, mesajlaş.";
+  "Oto Pazarı'da ikinci el araç, sıfır araç, kiralık araç ve yedek parça. Ücretsiz ilan ver, filtrele, mesajlaş.";
 
 export const SITE_HOME_TWITTER_DESCRIPTION =
-  "Türkiye'nin oto pazarı — ikinci el araba, sıfır araba ve otomobil ilanları.";
+  "Türkiye'nin oto pazarı — ikinci el, sıfır, kiralık araç ve parça ilanları.";
 
 /** Ana sayfada görünen kısa tanıtım (H1 altı). */
 export const SITE_HOME_INTRO =
-  "Türkiye'nin oto pazarında ikinci el araba ve sıfır araba ilanlarını filtreleyin. İkinci el otomobil ve sıfır otomobil ilanlarına ücretsiz araba ilanı verin.";
+  "İkinci el araç, sıfır araç, kiralık araç ve oto yedek parça ilanlarını tek yerde bulun. Ücretsiz ilan verin, filtreleyin, satıcıyla mesajlaşın.";
 
 export const SITE_KEYWORDS = [
   "oto pazarı",
   "oto pazarı ilanları",
-  "oto pazarı ikinci el araba",
+  "otopazarı",
+  "ikinci el araç",
   "ikinci el araba",
   "ikinci el araba ilanları",
+  "sıfır araç",
   "sıfır araba",
   "sıfır araba ilanları",
+  "kiralık araç",
+  "araç kiralama",
+  "oto yedek parça",
+  "yedek parça",
   "ikinci el otomobil",
   "sıfır otomobil",
   "araba ilanları",
   "otomobil ilanları",
-  "araba sat",
-  "araba al",
   "ücretsiz araba ilanı",
-  "ücretsiz ilan ver",
   "galeri",
   "ekspertiz",
 ] as const;

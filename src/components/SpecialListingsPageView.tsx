@@ -27,14 +27,65 @@ export function SpecialListingsPageView({
   items,
   env,
   loggedIn,
+  embed = false,
 }: {
   kind: SpecialListingKind;
   items: HomeListingCardItem[];
   env: SupabasePublicEnv;
   loggedIn: boolean;
+  /** SeoHub içinde: dış çerçeve / H1 yok */
+  embed?: boolean;
 }) {
   const copy = COPY[kind];
   const isAcil = kind === "acil";
+
+  const grid =
+    items.length === 0 ? (
+      <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-12 text-center">
+        <p className="text-sm text-zinc-600">{copy.empty}</p>
+        <Link
+          href="/"
+          className="mt-4 inline-block text-sm font-semibold text-zinc-800 hover:underline"
+        >
+          Ana sayfaya dön
+        </Link>
+      </div>
+    ) : (
+      <div className="home-listings-grid">
+        {items.map((item) => (
+          <ListingCard
+            key={item.listing.id ?? String(item.listing.listing_number)}
+            listing={item.listing}
+            env={env}
+            categoryName={item.categoryName}
+            brandName={item.brandName}
+            hideCategoryAndYear
+            cityOnStatsRow
+            showFavorite={false}
+            showAcilBadge={isAcil}
+            cityDisplayName={item.cityDisplayName}
+            stats={item.stats}
+            loggedIn={loggedIn}
+            favorited={item.favorited}
+            ownerName={item.ownerName}
+            ownerAvatarSrc={item.ownerAvatarSrc}
+            ownerHref={item.ownerHref}
+            priceRating={item.priceRating}
+          />
+        ))}
+      </div>
+    );
+
+  if (embed) {
+    return (
+      <div>
+        <h2 className="mb-3 text-lg font-bold text-zinc-900">
+          {isAcil ? "Acil ilanlar" : "Vitrindeki sıfır araçlar"}
+        </h2>
+        {grid}
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">
@@ -65,40 +116,7 @@ export function SpecialListingsPageView({
         </div>
       )}
 
-      {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-red-200 bg-red-50/50 px-6 py-12 text-center">
-          <p className="text-sm text-zinc-600">{copy.empty}</p>
-          <Link
-            href="/"
-            className="mt-4 inline-block text-sm font-semibold text-[#8b0000] hover:underline"
-          >
-            Ana sayfaya dön
-          </Link>
-        </div>
-      ) : (
-        <div className="home-listings-grid">
-          {items.map((item) => (
-            <ListingCard
-              key={item.listing.id ?? String(item.listing.listing_number)}
-              listing={item.listing}
-              env={env}
-              categoryName={item.categoryName}
-              hideCategoryAndYear
-              cityOnStatsRow
-              showFavorite={false}
-              showAcilBadge={isAcil}
-              cityDisplayName={item.cityDisplayName}
-              stats={item.stats}
-              loggedIn={loggedIn}
-              favorited={item.favorited}
-              ownerName={item.ownerName}
-              ownerAvatarSrc={item.ownerAvatarSrc}
-              ownerHref={item.ownerHref}
-              priceRating={item.priceRating}
-            />
-          ))}
-        </div>
-      )}
+      {grid}
     </div>
   );
 }

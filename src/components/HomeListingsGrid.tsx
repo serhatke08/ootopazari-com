@@ -11,7 +11,6 @@ import { HOME_GRID_FIRST_ROW_SIZE } from "@/lib/home-grid-image-load";
 import { homeFeedFiltersToQueryString } from "@/lib/home-listings-feed-filters";
 import { filterHomeListingItems } from "@/lib/home-filter-client";
 import { ListingCard } from "@/components/ListingCard";
-import { buildListingSeoPath } from "@/lib/listing-seo";
 
 type Props = {
   initialItems: HomeListingCardItem[];
@@ -118,6 +117,7 @@ export function HomeListingsGrid({
                 listing={item.listing}
                 env={env}
                 categoryName={item.categoryName}
+                brandName={item.brandName}
                 hideCategoryAndYear
                 cityOnStatsRow
                 showFavorite={false}
@@ -127,14 +127,7 @@ export function HomeListingsGrid({
                 favorited={item.favorited}
                 ownerName={item.ownerName}
                 ownerAvatarSrc={item.ownerAvatarSrc}
-                ownerHref={buildListingSeoPath(
-                  item.listing.listing_number != null
-                    ? String(item.listing.listing_number)
-                    : null,
-                  typeof item.listing.title === "string"
-                    ? item.listing.title
-                    : null
-                )}
+                ownerHref={item.ownerHref}
                 priceRating={item.priceRating}
                 coverPriority={inFirstRow}
                 coverFastPath={inFirstRow}

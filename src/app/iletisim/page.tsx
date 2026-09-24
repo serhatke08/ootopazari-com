@@ -6,6 +6,7 @@ import { getMerchantLegalInfo } from "@/lib/merchant-legal";
 export const metadata: Metadata = {
   title: "İletişim",
   description: "Oto Pazarı iletişim, satıcı ve destek bilgileri.",
+  robots: { index: false, follow: true },
   alternates: { canonical: "/iletisim" },
 };
 

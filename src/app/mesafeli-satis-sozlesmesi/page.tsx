@@ -6,6 +6,7 @@ import { getMerchantLegalInfo } from "@/lib/merchant-legal";
 export const metadata: Metadata = {
   title: "Mesafeli Satış Sözleşmesi",
   description: "Oto Pazarı dijital hizmetler için mesafeli satış sözleşmesi.",
+  robots: { index: false, follow: true },
   alternates: { canonical: "/mesafeli-satis-sozlesmesi" },
 };
 

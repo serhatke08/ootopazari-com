@@ -5,6 +5,7 @@ import { getMerchantLegalInfo } from "@/lib/merchant-legal";
 export const metadata: Metadata = {
   title: "İade ve İptal Politikası",
   description: "Oto Pazarı ücretli dijital hizmetler için iade ve iptal koşulları.",
+  robots: { index: false, follow: true },
   alternates: { canonical: "/iade-iptal-politikasi" },
 };
 

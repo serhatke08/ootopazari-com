@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Gizlilik Politikası",
   description: "Oto Pazarı gizlilik ve kişisel veri işleme politikası.",
+  robots: { index: false, follow: true },
   alternates: {
     canonical: "/gizlilik-politikasi",
   },

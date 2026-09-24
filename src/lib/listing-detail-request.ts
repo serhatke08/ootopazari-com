@@ -11,6 +11,7 @@ import {
 } from "@/lib/listings-data";
 import { expireDueListings } from "@/lib/listing-quota";
 import { extractListingNumberFromSeoParam } from "@/lib/listing-seo";
+import { resolveListingSeoVehicleLabel } from "@/lib/listing-seo-label";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { User } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -23,6 +24,8 @@ export type ListingDetailRequest = {
   viewer: User | null;
   viewerAdmin: AdminProfileRow | null;
   detail: { listing: ListingRow; access: ListingDetailAccessMode } | null;
+  /** Google title / kanonik slug: marka model motor paket */
+  seoLabel: string | null;
 };
 
 /**
@@ -43,6 +46,7 @@ export const loadListingDetailRequest = cache(
         viewer: null,
         viewerAdmin: null,
         detail: null,
+        seoLabel: null,
       };
     }
 
@@ -64,6 +68,10 @@ export const loadListingDetailRequest = cache(
       { viewerIsAdmin: !!viewerAdmin }
     );
 
+    const seoLabel = detail?.listing
+      ? await resolveListingSeoVehicleLabel(supabase, detail.listing)
+      : null;
+
     return {
       listingParam,
       listingNumber,
@@ -72,6 +80,7 @@ export const loadListingDetailRequest = cache(
       viewer,
       viewerAdmin,
       detail,
+      seoLabel,
     };
   }
 );
