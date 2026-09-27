@@ -80,29 +80,24 @@ export async function fetchPublicParcaciListings(
   supabase: SupabaseClient,
   limit = 24
 ): Promise<ParcaciListingCardItem[]> {
-  const baseQuery = () =>
-    supabase
-      .from("parcaci_listings")
-      .select(
-        "id,title,description,price,image_url,cover_image_url,image,photo_url,thumbnail_url,condition,part_condition,condition_status,product_condition,city_name,dealer_id,dealer_name,created_at,is_active"
-      )
-      .order("created_at", { ascending: false })
-      .limit(limit);
+  // Gerçek kolonlar: image_url / city_name / moderation_status (cover_image_url vb. yok → 42703)
+  const { data, error } = await supabase
+    .from("parcaci_listings")
+    .select(
+      "id,title,description,price,image_url,city_name,created_at,moderation_status,user_id"
+    )
+    .eq("moderation_status", "approved")
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
-  let data: Record<string, unknown>[] | null = null;
-  const withActive = await baseQuery().eq("is_active", true);
-  if (withActive.error) {
-    const fallback = await baseQuery();
-    if (fallback.error) {
-      console.error("fetchPublicParcaciListings error:", fallback.error);
-      return [];
-    }
-    data = (fallback.data ?? []) as Record<string, unknown>[];
-  } else {
-    data = (withActive.data ?? []) as Record<string, unknown>[];
+  if (error) {
+    console.error("fetchPublicParcaciListings error:", error);
+    return [];
   }
 
-  return data.map(toCardItem).filter((item) => item.id);
+  return ((data ?? []) as Record<string, unknown>[])
+    .map(toCardItem)
+    .filter((item) => item.id);
 }
 
 export async function fetchPublicParcaciListingById(
@@ -112,7 +107,7 @@ export async function fetchPublicParcaciListingById(
   const { data, error } = await supabase
     .from("parcaci_listings")
     .select(
-      "id,title,description,price,image_url,cover_image_url,image,photo_url,thumbnail_url,condition,part_condition,condition_status,product_condition,city_name,dealer_id,dealer_name,created_at"
+      "id,title,description,price,image_url,city_name,created_at,moderation_status,user_id"
     )
     .eq("id", id)
     .maybeSingle();
