@@ -42,7 +42,6 @@ import {
   evaluateListingQualityAfterSave,
   listingNeedsQualityResubmitOnEdit,
 } from "@/lib/listing-quality";
-import { ListingHomeCoverPreview } from "@/components/ilan-ver/ListingHomeCoverPreview";
 import {
   STEP3_BODY_USE_STEP1,
   computeListingBodyTypeFinal,
@@ -870,16 +869,6 @@ export function CreateListingWizard({
   const openPhotoPicker = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
-
-  const coverPreviewUrl = useMemo(() => {
-    if (totalPhotoCount <= 0) return null;
-    const idx = Math.min(Math.max(coverIndex, 0), totalPhotoCount - 1);
-    if (idx < initialGalleryUrls.length) {
-      return initialGalleryUrls[idx] ?? null;
-    }
-    const fileIdx = idx - initialGalleryUrls.length;
-    return thumbUrls[fileIdx] ?? null;
-  }, [totalPhotoCount, coverIndex, initialGalleryUrls, thumbUrls]);
 
   const submit = async () => {
     if (busy || submitLockRef.current) {
@@ -2010,11 +1999,6 @@ export function CreateListingWizard({
               Pazarlık var
             </label>
           </div>
-          <ListingHomeCoverPreview
-            coverImageUrl={coverPreviewUrl}
-            titlePreview={title}
-            onOpenGallery={openPhotoPicker}
-          />
         </section>
       ) : null}
 

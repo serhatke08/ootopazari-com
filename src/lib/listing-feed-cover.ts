@@ -49,12 +49,3 @@ export function coverAspectRatioHintText(screenWidth: number): string {
   const ratioLabel = coverAspectRatioLabel(screenWidth);
   return `Kapak fotoğrafı ana sayfadaki ilan görseline tam uymalıdır: ${ratioLabel} (genişlik:yükseklik, dikey). Aracı ana sayfada göründüğü gibi çerçeveyi tam dolduracak şekilde çekin.`;
 }
-
-export function homeFeedPreviewCardWidth(screenWidth: number): number {
-  return (
-    (screenWidth -
-      LISTING_FEED_GRID.horizontalPadding -
-      LISTING_FEED_GRID.crossSpacing * (LISTING_FEED_GRID.crossAxisCount - 1)) /
-    LISTING_FEED_GRID.crossAxisCount
-  );
-}
