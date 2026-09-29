@@ -185,6 +185,9 @@ export function ListingCard({
 
   /** Ana sayfa / filtre sonuçları grid’i: daha yüksek görsel + fiyat görsel üzerinde */
   const isHomeGrid = hideCategoryAndYear && cityOnStatsRow;
+  /** Acil + öne çıkar: yazı yok, sadece altın border (acil satırında kalır). */
+  const showBoostLabel = isHomeGrid && boostActive && !showAcilBadge;
+  const showBoostGoldBorder = Boolean(showAcilBadge && boostActive);
   const maskedMileage = formatMaskedMileage(listing.vehicle_mileage);
 
   const imageFrame = (
@@ -214,7 +217,7 @@ export function ListingCard({
 
   const imageArea = (
     <div className="relative">
-      {isHomeGrid && boostActive ? <ListingBoostChrome /> : null}
+      {showBoostLabel ? <ListingBoostChrome /> : null}
       {showAcilBadge && !inactive ? <ListingAcilBadge /> : null}
       {href ? (
         <Link href={href} className="block">
@@ -237,9 +240,11 @@ export function ListingCard({
 
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md sm:rounded-xl lg:rounded-lg ${
-        inactive ? "opacity-[0.72] grayscale-[0.35]" : ""
-      }`}
+      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition sm:rounded-xl lg:rounded-lg ${
+        showBoostGoldBorder
+          ? "border-[#ffc400] shadow-[0_0_0_1px_rgba(255,196,0,0.55)] hover:border-[#ffc400]"
+          : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
+      } ${inactive ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
     >
       {expired ? (
         <div className="border-b border-amber-100 bg-amber-50 px-2 py-1.5 sm:px-4">
