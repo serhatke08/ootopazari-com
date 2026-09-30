@@ -415,7 +415,7 @@ export function SiteHeaderClient({
               </span>
             ) : (
               <span className="whitespace-nowrap text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl md:text-2xl">
-                lüx
+                otopazarı.com
               </span>
             )}
           </Link>
