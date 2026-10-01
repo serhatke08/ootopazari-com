@@ -6,7 +6,7 @@ import {
   isEidsSource,
   sanitizeEidsWebReturnPath,
 } from "@/lib/eids";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveRequestUser } from "@/lib/supabase/request-user";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
@@ -14,13 +14,10 @@ export const dynamic = "force-dynamic";
 /**
  * EİDS doğrulama oturumu başlatır (app + web).
  * Body: { listingId?: string, source: "app"|"web", webReturnPath?: string }
- * Dönüş: { state, returnUrl, expiresAt }
+ * Dönüş: { state, returnUrl, expiresAt, authUrl, firmaKodu }
  */
 export async function POST(req: Request) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveRequestUser(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

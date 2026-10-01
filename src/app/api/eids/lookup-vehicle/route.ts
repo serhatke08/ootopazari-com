@@ -1,0 +1,87 @@
+import { NextResponse } from "next/server";
+import {
+  callEidsAracYetki,
+  normalizePlakaNo,
+} from "@/lib/eids-ministry";
+import { resolveRequestUser } from "@/lib/supabase/request-user";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * İlan oluşmadan önce plaka + EİDS araç yetkisi / resmi kayıt eşleştirme.
+ * Body: { plakaNo: string }
+ * Önkoşul: profiles.eids_kullanici_kodu
+ */
+export async function POST(req: Request) {
+  const { user } = await resolveRequestUser(req);
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  let body: { plakaNo?: unknown };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  const plakaNo = normalizePlakaNo(
+    typeof body.plakaNo === "string" ? body.plakaNo : ""
+  );
+  if (!plakaNo) {
+    return NextResponse.json({ error: "plaka_missing" }, { status: 400 });
+  }
+
+  const admin = createSupabaseServiceClient();
+  if (!admin) {
+    return NextResponse.json({ error: "server_config" }, { status: 500 });
+  }
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("eids_kullanici_kodu")
+    .eq("id", user.id)
+    .maybeSingle();
+  const kullaniciKodu = (
+    profile as { eids_kullanici_kodu?: string | null } | null
+  )?.eids_kullanici_kodu;
+  if (!kullaniciKodu) {
+    return NextResponse.json(
+      {
+        error: "eids_user_not_verified",
+        message:
+          "Önce E-Devlet ile kimlik doğrulaması yapın (kullanıcı kodu yok).",
+      },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const arac = await callEidsAracYetki({
+      kullaniciKodu,
+      plakaNo,
+    });
+
+    if (arac.ok && arac.data) {
+      return NextResponse.json({
+        ok: true,
+        plakaNo,
+        data: arac.data,
+      });
+    }
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "arac_yetki_failed",
+        errors: arac.errors,
+        statusCode: arac.statusCode,
+      },
+      { status: 400 }
+    );
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "arac_yetki_failed";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+}

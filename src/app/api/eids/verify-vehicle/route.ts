@@ -3,7 +3,7 @@ import {
   callEidsAracYetki,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveRequestUser } from "@/lib/supabase/request-user";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
@@ -14,10 +14,7 @@ export const dynamic = "force-dynamic";
  * Önkoşul: profilde eids_kullanici_kodu (e-Devlet + GetKullaniciKodu).
  */
 export async function POST(req: Request) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await resolveRequestUser(req);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
