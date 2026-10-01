@@ -67,6 +67,14 @@ import {
   findLiveDuplicateListingId,
   isDuplicateLiveListingError,
 } from "@/lib/listing-duplicate";
+import {
+  deleteListingDraft,
+  draftHasProgress,
+  draftSummaryLine,
+  fetchListingDraft,
+  saveListingDraft,
+  type ListingDraftPayload,
+} from "@/lib/listing-draft";
 
 const OTHER = "__other__";
 
@@ -301,6 +309,179 @@ export function CreateListingWizard({
     quality_passive_source?: unknown;
     cover_quality_score?: unknown;
   } | null>(null);
+  const draftHydrated = useRef(false);
+  const draftSkipSave = useRef(false);
+  const [draftBanner, setDraftBanner] = useState<ListingDraftPayload | null>(
+    null
+  );
+  const [draftBannerPending, setDraftBannerPending] = useState(false);
+
+  const buildDraftPayload = useCallback((): ListingDraftPayload => {
+    const cat = categories.find((c) => c.id === categoryId);
+    return {
+      categoryId,
+      categoryCode: cat?.code ?? null,
+      categoryName: cat?.name ?? null,
+      vehicleYear: vehicleYear ? Number.parseInt(vehicleYear, 10) || null : null,
+      brandId,
+      brandName: brandOther
+        ? otherBrandText || null
+        : labelOf(brands, brandId),
+      modelId: childId || parentId,
+      modelName: modelOther
+        ? customModelText || null
+        : labelOf(children.length ? children : flatModels, childId || parentId),
+      bodyStyleId,
+      bodyStyleName: bodyOther
+        ? otherBodyText || null
+        : labelOf(bodyStyles, bodyStyleId),
+      engineId,
+      engineName: engineOther
+        ? otherEngineText || null
+        : labelOf(engines, engineId),
+      packageId,
+      packageName: packageOther
+        ? otherPackageText || null
+        : labelOf(packages, packageId),
+      transmission: transmissionType || null,
+      mileage: vehicleMileage || null,
+      fuelType: fuelType || null,
+      color: color || null,
+      driveType: driveType || null,
+      vehicleCondition: vehicleCondition || null,
+      hasExpertise,
+      isDamaged,
+      isTradeable,
+      plate: plateNumber || null,
+      title: title || null,
+      description: userDescription || null,
+      price: priceStr || null,
+      cityId,
+      district: district || null,
+      phone: phoneInput || null,
+      coverPhotoIndex: coverIndex,
+      webStep: step,
+      pageIndex: Math.max(0, step - 1),
+      source: "web",
+    };
+  }, [
+    categories,
+    categoryId,
+    vehicleYear,
+    brandId,
+    brandOther,
+    otherBrandText,
+    brands,
+    childId,
+    parentId,
+    modelOther,
+    customModelText,
+    children,
+    flatModels,
+    bodyStyleId,
+    bodyOther,
+    otherBodyText,
+    bodyStyles,
+    engineId,
+    engineOther,
+    otherEngineText,
+    engines,
+    packageId,
+    packageOther,
+    otherPackageText,
+    packages,
+    transmissionType,
+    vehicleMileage,
+    fuelType,
+    color,
+    driveType,
+    vehicleCondition,
+    hasExpertise,
+    isDamaged,
+    isTradeable,
+    plateNumber,
+    title,
+    userDescription,
+    priceStr,
+    cityId,
+    district,
+    phoneInput,
+    coverIndex,
+    step,
+  ]);
+
+  const applyDraftPayload = useCallback(
+    (d: ListingDraftPayload) => {
+      draftSkipSave.current = true;
+      if (d.categoryId) setCategoryId(d.categoryId);
+      if (d.brandId) setBrandId(d.brandId);
+      if (d.bodyStyleId) setBodyStyleId(d.bodyStyleId);
+      if (d.engineId) setEngineId(d.engineId);
+      if (d.packageId) setPackageId(d.packageId);
+      if (d.modelId) {
+        // hierarchy: try as child first
+        setChildId(d.modelId);
+        setParentId(d.modelId);
+      }
+      if (d.vehicleYear != null) setVehicleYear(String(d.vehicleYear));
+      if (d.mileage) setVehicleMileage(String(d.mileage));
+      if (d.fuelType) setFuelType(d.fuelType);
+      if (d.transmission) setTransmissionType(d.transmission);
+      if (d.color) setColor(d.color);
+      if (d.driveType) setDriveType(d.driveType);
+      if (d.vehicleCondition) setVehicleCondition(d.vehicleCondition);
+      if (d.hasExpertise != null) setHasExpertise(Boolean(d.hasExpertise));
+      if (d.isDamaged != null) setIsDamaged(Boolean(d.isDamaged));
+      if (d.isTradeable != null) setIsTradeable(Boolean(d.isTradeable));
+      if (d.plate) setPlateNumber(d.plate);
+      if (d.title) setTitle(d.title);
+      if (d.description) setUserDescription(d.description);
+      if (d.price) setPriceStr(String(d.price));
+      if (d.cityId) setCityId(d.cityId);
+      if (d.district) setDistrict(d.district);
+      if (d.phone) setPhoneInput(d.phone);
+      if (d.coverPhotoIndex != null) setCoverIndex(d.coverPhotoIndex);
+      const st = d.webStep ?? (d.pageIndex != null ? d.pageIndex + 1 : 1);
+      setStep(Math.min(3, Math.max(1, st)));
+      setDraftBanner(null);
+      setTimeout(() => {
+        draftSkipSave.current = false;
+      }, 800);
+    },
+    []
+  );
+
+  // Buluttan taslak yükle (yalnız yeni ilan)
+  useEffect(() => {
+    if (isEditMode || draftHydrated.current) return;
+    draftHydrated.current = true;
+    void (async () => {
+      const d = await fetchListingDraft();
+      if (!draftHasProgress(d)) return;
+      // Form boşsa banner göster; devam / sil
+      setDraftBanner(d);
+      setDraftBannerPending(true);
+    })();
+  }, [isEditMode]);
+
+  // Değişince buluta yaz (debounce)
+  useEffect(() => {
+    if (isEditMode || draftSkipSave.current || draftBannerPending) return;
+    if (!categoryId && step <= 1 && !title.trim()) return;
+    const t = window.setTimeout(() => {
+      const payload = buildDraftPayload();
+      if (!draftHasProgress(payload)) return;
+      void saveListingDraft(payload);
+    }, 900);
+    return () => window.clearTimeout(t);
+  }, [
+    isEditMode,
+    draftBannerPending,
+    buildDraftPayload,
+    categoryId,
+    step,
+    title,
+  ]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const categoryCode = selectedCategory?.code ?? null;
@@ -1283,6 +1464,7 @@ export function CreateListingWizard({
 
       await evaluateListingQualityAfterSave(supabase, listingId, "listings");
 
+      await deleteListingDraft();
       window.location.href = "/profil/ilanlarim";
       published = true;
     } finally {
@@ -1295,6 +1477,38 @@ export function CreateListingWizard({
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 pb-16">
+      {!isEditMode && draftBanner ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-semibold">Kayıtlı taslak var</p>
+          <p className="mt-1 text-amber-900/90">
+            {draftSummaryLine(draftBanner)}
+            {draftBanner.source ? ` · ${draftBanner.source}` : ""}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-lg bg-[#ffcc00] px-3 py-1.5 text-sm font-bold text-zinc-900"
+              onClick={() => {
+                applyDraftPayload(draftBanner);
+                setDraftBannerPending(false);
+              }}
+            >
+              Devam et
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-semibold text-amber-950"
+              onClick={() => {
+                void deleteListingDraft();
+                setDraftBanner(null);
+                setDraftBannerPending(false);
+              }}
+            >
+              Taslağı sil
+            </button>
+          </div>
+        </div>
+      ) : null}
       {/* Modern Header */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
