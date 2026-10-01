@@ -92,7 +92,7 @@ async function completeMinistryApis(
           gsmNo,
         });
         kullaniciOk = kk.ok;
-        kullaniciKodu = kk.kullaniciKodu;
+        kullaniciKodu = kk.kullaniciKodu ?? null;
         kullaniciAd = kk.ad ?? null;
         kullaniciSoyad = kk.soyad ?? null;
         kullaniciHata =
