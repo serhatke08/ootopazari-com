@@ -12,10 +12,11 @@ export function getEidsFirmaKodu(): string {
 }
 
 function proxyBase(): string {
-  return (process.env.EIDS_PROXY_URL?.trim() || DEFAULT_PROXY).replace(
-    /\/$/,
-    ""
-  );
+  return (
+    process.env.EIDS_PROXY_URL?.trim() ||
+    process.env.EIDS_PROXY_BASE_URL?.trim() ||
+    DEFAULT_PROXY
+  ).replace(/\/$/, "");
 }
 
 function proxySecret(): string {
