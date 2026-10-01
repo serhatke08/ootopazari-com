@@ -364,15 +364,26 @@ export async function GET(req: Request) {
   const expired =
     Number.isNaN(expiresAt) || expiresAt < now - 30_000; /* 30s skew */
 
-  // Aynı callback iki kez gelirse (refresh / geri): uygulamaya başarıyla dön.
+  // Aynı callback iki kez gelirse: yalnız gerçekten kullanıcı kodu varsa OK.
   if (session.status === "completed" && session.yetki_kodu) {
+    const { data: profileDone } = await admin
+      .from("profiles")
+      .select("eids_kullanici_kodu")
+      .eq("id", session.user_id)
+      .maybeSingle();
+    const kkDone = (
+      profileDone as { eids_kullanici_kodu?: string | null } | null
+    )?.eids_kullanici_kodu;
     if (session.source === "app") {
+      const okDone = Boolean(kkDone);
       const appUrl = buildEidsAppRedirectUrl({
         yetkiKodu: session.yetki_kodu || yetkiKodu,
-        durum: session.durum || durum || "ok",
+        durum: okDone
+          ? session.durum || durum || "ok"
+          : "eids_user_not_verified",
         state: session.state,
         listingId: session.listing_id,
-        ok: true,
+        ok: okDone,
       });
       return NextResponse.redirect(appUrl, 302);
     }

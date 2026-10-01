@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * App: Bakanlık state’siz döndüyse, telefonda saklanan state + yetkiKodu ile tamamla.
- * Body: { state, yetkiKodu, durum? }
+ * Body: { state, yetkiKodu, durum?, gsmNo? }
  */
 export async function POST(req: Request) {
   const { user } = await resolveRequestUser(req);
@@ -21,7 +21,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: { state?: unknown; yetkiKodu?: unknown; durum?: unknown };
+  let body: {
+    state?: unknown;
+    yetkiKodu?: unknown;
+    durum?: unknown;
+    gsmNo?: unknown;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -32,6 +37,8 @@ export async function POST(req: Request) {
   const yetkiKodu =
     typeof body.yetkiKodu === "string" ? body.yetkiKodu.trim() : "";
   const durum = typeof body.durum === "string" ? body.durum.trim() : "ok";
+  const gsmOverride =
+    typeof body.gsmNo === "string" ? body.gsmNo.trim() : "";
 
   if (!state || !yetkiKodu) {
     return NextResponse.json(
@@ -62,41 +69,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  // Zaten tamamlanmışsa idempotent OK
-  if (session.status === "completed" && session.yetki_kodu) {
-    return NextResponse.json({
-      ok: true,
-      listingId: session.listing_id,
-      kullaniciKodu: session.yetki_kodu,
-      alreadyCompleted: true,
-    });
-  }
-
-  const expiresAt = new Date(session.expires_at).getTime();
-  if (
-    session.status !== "pending" ||
-    Number.isNaN(expiresAt) ||
-    expiresAt < Date.now() - 60_000
-  ) {
-    return NextResponse.json({ error: "session_expired" }, { status: 410 });
-  }
-
-  const edevletOk = eidsDurumIsSuccess(durum) || Boolean(yetkiKodu);
-  const callbackAt = new Date().toISOString();
-
-  await admin
-    .from("eids_verification_sessions")
-    .update({
-      yetki_kodu: yetkiKodu,
-      durum: durum || null,
-      status: edevletOk ? "completed" : "failed",
-      consumed_at: callbackAt,
-      callback_at: callbackAt,
-      callback_query: { yetkiKodu, durum, via: "app_complete" },
-    })
-    .eq("id", session.id)
-    .eq("status", "pending");
-
   const { data: profile } = await admin
     .from("profiles")
     .select("id, phone, eids_kullanici_kodu")
@@ -106,12 +78,57 @@ export async function POST(req: Request) {
   let kullaniciKodu =
     (profile as { eids_kullanici_kodu?: string | null } | null)
       ?.eids_kullanici_kodu ?? null;
+
+  // Zaten kullanici kodu varsa idempotent OK
+  if (session.status === "completed" && session.yetki_kodu && kullaniciKodu) {
+    return NextResponse.json({
+      ok: true,
+      listingId: session.listing_id,
+      kullaniciKodu,
+      alreadyCompleted: true,
+    });
+  }
+
+  const expiresAt = new Date(session.expires_at).getTime();
+  const sessionFresh =
+    session.status === "pending" ||
+    // yetki alındı ama GetKullaniciKodu başarısızdıysa kısa süre yeniden dene
+    (session.status === "completed" && Boolean(session.yetki_kodu));
+
+  if (
+    !sessionFresh ||
+    Number.isNaN(expiresAt) ||
+    expiresAt < Date.now() - 60_000
+  ) {
+    return NextResponse.json({ error: "session_expired" }, { status: 410 });
+  }
+
+  const edevletOk = eidsDurumIsSuccess(durum) || Boolean(yetkiKodu);
+  const callbackAt = new Date().toISOString();
+
+  if (session.status === "pending") {
+    await admin
+      .from("eids_verification_sessions")
+      .update({
+        yetki_kodu: yetkiKodu,
+        durum: durum || null,
+        status: edevletOk ? "completed" : "failed",
+        consumed_at: callbackAt,
+        callback_at: callbackAt,
+        callback_query: { yetkiKodu, durum, via: "app_complete" },
+      })
+      .eq("id", session.id)
+      .eq("status", "pending");
+  }
+
   let kullaniciHata: string | null = null;
 
   if (!kullaniciKodu && edevletOk) {
-    const gsmNo = normalizeGsmNo(
-      (profile as { phone?: string | null } | null)?.phone
-    );
+    const gsmNo =
+      normalizeGsmNo(gsmOverride) ||
+      normalizeGsmNo(
+        (profile as { phone?: string | null } | null)?.phone
+      );
     if (!gsmNo) {
       kullaniciHata = "gsm_missing";
     } else {
@@ -182,5 +199,8 @@ export async function POST(req: Request) {
     listingId: session.listing_id,
     kullaniciKodu,
     error: ok ? null : kullaniciHata || "kullanici_failed",
+    gsmHint: ok
+      ? null
+      : "Profil cep telefonu, e-Devlet hesabındaki telefonla aynı olmalı (5xxxxxxxxx).",
   });
 }

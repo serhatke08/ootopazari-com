@@ -107,42 +107,62 @@ export async function callGetKullaniciKodu(params: {
   gsmNo: string;
   vergiNo?: string | null;
 }): Promise<GetKullaniciKoduResult> {
-  const body: Record<string, unknown> = {
-    yetkiKodu: params.yetkiKodu,
-    gsmNo: params.gsmNo,
-  };
-  if (params.vergiNo?.trim()) body.vergiNo = params.vergiNo.trim();
+  const baseGsm = normalizeGsmNo(params.gsmNo) || params.gsmNo.replace(/\D/g, "");
+  const gsmCandidates = Array.from(
+    new Set(
+      [baseGsm, baseGsm.startsWith("0") ? baseGsm.slice(1) : `0${baseGsm}`].filter(
+        (g) => g && g.length >= 10
+      )
+    )
+  );
 
-  const { status, json } = await proxyPost("/eids/kullanici-kodu", body);
-  const map =
-    json && typeof json === "object"
-      ? (json as Record<string, unknown>)
-      : {};
+  let last: GetKullaniciKoduResult | null = null;
+  for (const gsmNo of gsmCandidates) {
+    const body: Record<string, unknown> = {
+      yetkiKodu: params.yetkiKodu,
+      gsmNo,
+    };
+    if (params.vergiNo?.trim()) body.vergiNo = params.vergiNo.trim();
 
-  const kullaniciKodu =
-    (map.kullaniciKodu ?? map.kullanici_kodu)?.toString()?.trim() || null;
-  const hataMesaji =
-    (map.hataMesaji ?? map.Message ?? map.message)?.toString() || null;
-  const hataKodu = (map.hataKodu ?? map.hata_kodu)?.toString() || null;
-  const ad = map.ad?.toString() || null;
-  const soyad = map.soyad?.toString() || null;
+    const { status, json } = await proxyPost("/eids/kullanici-kodu", body);
+    const map =
+      json && typeof json === "object"
+        ? (json as Record<string, unknown>)
+        : {};
 
-  const ok =
-    status >= 200 &&
-    status < 300 &&
-    Boolean(kullaniciKodu) &&
-    !hataKodu;
+    const kullaniciKodu =
+      (map.kullaniciKodu ?? map.kullanici_kodu)?.toString()?.trim() || null;
+    const hataMesaji =
+      (map.hataMesaji ?? map.Message ?? map.message)?.toString() || null;
+    const hataKodu = (map.hataKodu ?? map.hata_kodu)?.toString() || null;
+    const ad = map.ad?.toString() || null;
+    const soyad = map.soyad?.toString() || null;
 
-  return {
-    ok,
-    httpStatus: status,
-    ad,
-    soyad,
-    kullaniciKodu,
-    hataMesaji,
-    hataKodu,
-    raw: json,
-  };
+    const ok =
+      status >= 200 &&
+      status < 300 &&
+      Boolean(kullaniciKodu) &&
+      !hataKodu;
+
+    last = {
+      ok,
+      httpStatus: status,
+      ad,
+      soyad,
+      kullaniciKodu,
+      hataMesaji,
+      hataKodu,
+      raw: json,
+    };
+    if (ok) return last;
+  }
+  return (
+    last ?? {
+      ok: false,
+      httpStatus: 502,
+      hataMesaji: "kullanici_kodu_failed",
+    }
+  );
 }
 
 /** Faz 2 — plaka yetkisi. */
@@ -154,9 +174,13 @@ export async function callEidsAracYetki(params: {
   yetkiBelgeNo?: string | null;
 }): Promise<AracYetkiResult> {
   const body: Record<string, unknown> = {
+    // Bakanlık alan adı dokümana göre değişebiliyor — ikisini de gönder.
     firmaKod: getEidsFirmaKodu(),
+    firmaKodu: getEidsFirmaKodu(),
     kullaniciKodu: params.kullaniciKodu,
     plakaNo: params.plakaNo,
+    // Proxy: resmi path (GetKullaniciKodu ile aynı EidsApi kökü)
+    _path: "/EidsApi/Arac/Yetki",
   };
   if (params.ilanNo?.trim()) body.ilanNo = params.ilanNo.trim();
   if (params.vergiNo?.trim()) body.vergiNo = params.vergiNo.trim();
