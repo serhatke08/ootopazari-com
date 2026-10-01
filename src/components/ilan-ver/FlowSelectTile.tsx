@@ -8,6 +8,7 @@ type Props = {
   onClick: () => void;
   leading?: ReactNode;
   subtitle?: string;
+  compact?: boolean;
 };
 
 /** Uygulama FlowSelectTile ile aynı kart seçim stili */
@@ -17,30 +18,47 @@ export function FlowSelectTile({
   onClick,
   leading,
   subtitle,
+  compact = false,
 }: Props) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`mb-2 flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left shadow-sm transition ${
+      className={`mb-1.5 flex w-full items-center text-left shadow-sm transition ${
+        compact
+          ? "gap-2 rounded-lg px-2.5 py-1.5"
+          : "gap-3 rounded-[10px] px-3 py-2.5"
+      } border ${
         selected
           ? "border-[#002776] bg-[#E8EEF8] shadow"
           : "border-transparent bg-white hover:bg-zinc-50"
       }`}
     >
       {leading ? (
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden">
+        <span
+          className={`flex shrink-0 items-center justify-center overflow-hidden ${
+            compact ? "h-7 w-7" : "h-9 w-9"
+          }`}
+        >
           {leading}
         </span>
       ) : null}
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-[#002776]">{title}</span>
+        <span
+          className={`block font-semibold text-[#002776] ${
+            compact ? "text-[13px] leading-snug" : "text-sm"
+          }`}
+        >
+          {title}
+        </span>
         {subtitle ? (
-          <span className="mt-0.5 block text-xs text-zinc-500">{subtitle}</span>
+          <span className="mt-0.5 block text-[11px] text-zinc-500">
+            {subtitle}
+          </span>
         ) : null}
       </span>
       <svg
-        className="h-4 w-4 shrink-0 text-zinc-400"
+        className={`shrink-0 text-zinc-400 ${compact ? "h-3.5 w-3.5" : "h-4 w-4"}`}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

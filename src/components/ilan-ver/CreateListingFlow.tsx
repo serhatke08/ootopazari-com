@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -51,6 +50,10 @@ import {
 } from "@/lib/listing-draft";
 import { sortByCreateListingCategoryOrder } from "@/lib/vehicle-category-sort";
 import { FlowSelectTile } from "@/components/ilan-ver/FlowSelectTile";
+import {
+  brandLogoSrc,
+  categoryIconSrc,
+} from "@/lib/brand-category-icons";
 
 type FlowPage =
   | "category"
@@ -108,12 +111,6 @@ const COLORS = [
 const TRANSMISSIONS = ["Manuel", "Otomatik", "Yarı Otomatik"];
 const FUELS = ["Benzin", "Dizel", "Elektrik", "Hibrit", "LPG", "LPG & Benzin"];
 const CONDITIONS = ["İkinci El", "Sıfır"];
-
-function brandLogoSrc(code: string | null | undefined): string | null {
-  const c = (code ?? "").trim().toLowerCase().replace(/\s+/g, "_");
-  if (!c) return null;
-  return `/car_brands/${c}.svg`;
-}
 
 function extForFile(f: File): string {
   const n = f.name.split(".").pop()?.toLowerCase();
@@ -843,17 +840,17 @@ export function CreateListingFlow({
   );
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 pb-24">
+    <div className="mx-auto max-w-md space-y-3 pb-24">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-[#002776]">İlan Ver</h1>
+        <h1 className="text-lg font-bold text-[#002776]">İlan Ver</h1>
         {listingQuota && !listingQuota.unlimited ? (
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
+          <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
             Hak: {listingQuota.remaining}/{listingQuota.limit}
           </span>
         ) : null}
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200">
+      <div className="h-1 overflow-hidden rounded-full bg-zinc-200">
         <div
           className="h-full rounded-full bg-[#002776] transition-all duration-300"
           style={{ width: `${Math.round(progress * 100)}%` }}
@@ -886,7 +883,7 @@ export function CreateListingFlow({
         </div>
       ) : null}
 
-      <h2 className="text-lg font-extrabold text-[#002776]">{heading}</h2>
+      <h2 className="text-base font-extrabold text-[#002776]">{heading}</h2>
 
       {err ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
@@ -899,8 +896,17 @@ export function CreateListingFlow({
           {categories.map((c) => (
             <FlowSelectTile
               key={c.id}
+              compact
               title={c.name ?? c.code ?? c.id}
               selected={categoryId === c.id}
+              leading={
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={categoryIconSrc(c.code)}
+                  alt=""
+                  className="h-7 w-7 object-contain"
+                />
+              }
               onClick={() => void selectCategory(c)}
             />
           ))}
@@ -912,6 +918,7 @@ export function CreateListingFlow({
           {years.map((y) => (
             <FlowSelectTile
               key={y}
+              compact
               title={String(y)}
               selected={vehicleYear === y}
               onClick={() => {
@@ -930,19 +937,28 @@ export function CreateListingFlow({
             return (
               <FlowSelectTile
                 key={b.id}
+                compact
                 title={b.name ?? b.code ?? b.id}
                 selected={brandId === b.id}
                 leading={
                   logo ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={logo}
                       alt=""
-                      width={34}
-                      height={34}
-                      className="h-8 w-8 object-contain"
-                      unoptimized
+                      className="h-7 w-7 object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
+                        const el = e.target as HTMLImageElement;
+                        if (el.dataset.fallback === "1") {
+                          el.style.display = "none";
+                          return;
+                        }
+                        el.dataset.fallback = "1";
+                        const code = (b.code ?? "")
+                          .trim()
+                          .toLowerCase()
+                          .replace(/\s+/g, "_");
+                        el.src = `/car_brands/${code}-seeklogo.png`;
                       }}
                     />
                   ) : null
@@ -970,6 +986,7 @@ export function CreateListingFlow({
           {hierarchical && parentId && children.length > 0 ? (
             children.map((m) => (
               <FlowSelectTile
+                compact
                 key={m.id}
                 title={m.name ?? m.id}
                 selected={childId === m.id}
@@ -988,6 +1005,7 @@ export function CreateListingFlow({
           ) : hierarchical ? (
             parents.map((m) => (
               <FlowSelectTile
+                compact
                 key={m.id}
                 title={m.name ?? m.id}
                 selected={parentId === m.id}
@@ -1010,6 +1028,7 @@ export function CreateListingFlow({
           ) : (
             modelOptions.map((m) => (
               <FlowSelectTile
+                compact
                 key={m.id}
                 title={m.name ?? m.id}
                 selected={modelId === m.id}
@@ -1033,6 +1052,7 @@ export function CreateListingFlow({
           {(bodyStyles.length ? bodyStyles : [{ id: "_skip", name: "Atla (seçenek yok)" }]).map(
             (b) => (
               <FlowSelectTile
+                compact
                 key={b.id}
                 title={b.name ?? b.id}
                 selected={bodyStyleId === b.id}
@@ -1056,6 +1076,7 @@ export function CreateListingFlow({
           {(engines.length ? engines : [{ id: "_skip", name: "Atla (seçenek yok)" }]).map(
             (e) => (
               <FlowSelectTile
+                compact
                 key={e.id}
                 title={e.name ?? e.id}
                 selected={engineId === e.id}
@@ -1080,6 +1101,7 @@ export function CreateListingFlow({
           {(packages.length ? packages : [{ id: "_skip", name: "Atla (seçenek yok)" }]).map(
             (p) => (
               <FlowSelectTile
+                compact
                 key={p.id}
                 title={p.name ?? p.id}
                 selected={packageId === p.id}
@@ -1102,6 +1124,7 @@ export function CreateListingFlow({
         <div>
           {TRANSMISSIONS.map((t) => (
             <FlowSelectTile
+                compact
               key={t}
               title={t}
               selected={transmission === t}
