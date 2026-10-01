@@ -160,8 +160,7 @@ export function HomeListingsGrid({
                 priceRating={item.priceRating}
                 coverPriority={inFirstRow}
                 coverFastPath={inFirstRow}
-                coverFetchPriority={inFirstRow ? "high" : "low"}
-                coverDefer={!inFirstRow}
+                coverFetchPriority={inFirstRow ? "high" : "auto"}
               />
             );
           })}
