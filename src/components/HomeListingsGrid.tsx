@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabasePublicEnv } from "@/lib/env";
 import type {
   HomeListingCardItem,
@@ -11,6 +11,9 @@ import { HOME_GRID_FIRST_ROW_SIZE } from "@/lib/home-grid-image-load";
 import { homeFeedFiltersToQueryString } from "@/lib/home-listings-feed-filters";
 import { filterHomeListingItems } from "@/lib/home-filter-client";
 import { ListingCard } from "@/components/ListingCard";
+
+/** Scroll ile en fazla bu kadar sayfa (30×8=240). Egress / bot koruması. */
+const MAX_AUTO_PAGES = 8;
 
 type Props = {
   initialItems: HomeListingCardItem[];
@@ -40,23 +43,30 @@ export function HomeListingsGrid({
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Acil ilanlar grid’de yok ama total’e dahil → sayfa doluluğuyla hasMore.
   const [feedExhausted, setFeedExhausted] = useState(
     initialItems.length < pageSize
   );
+  const [manualOnly, setManualOnly] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadingRef = useRef(false);
 
-  // URL değişince (şehir filtresi vb.) sunucu verisine dön
   useEffect(() => {
     setItems(initialItems);
     setPage(1);
     setFeedExhausted(initialItems.length < pageSize);
+    setManualOnly(false);
   }, [initialItems, pageSize]);
 
   const visible = filterHomeListingItems(items, filters ?? {});
-  const hasMore = !feedExhausted;
+  const hitPageCap = page >= MAX_AUTO_PAGES;
+  const hasMore = !feedExhausted && !(hitPageCap && !manualOnly);
 
   const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
+    if (loadingRef.current || loading) return;
+    if (feedExhausted) return;
+    if (page >= MAX_AUTO_PAGES && !manualOnly) return;
+
+    loadingRef.current = true;
     setLoading(true);
     setError(null);
     const nextPage = page + 1;
@@ -87,12 +97,31 @@ export function HomeListingsGrid({
       });
       if (data.loggedIn != null) setLoggedIn(data.loggedIn);
       setPage(nextPage);
+      if (nextPage >= MAX_AUTO_PAGES) setManualOnly(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Yükleme başarısız");
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
-  }, [filters, hasMore, loading, page, pageSize]);
+  }, [feedExhausted, filters, loading, manualOnly, page, pageSize]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || feedExhausted || manualOnly) return;
+    if (page >= MAX_AUTO_PAGES) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      { root: null, rootMargin: "480px 0px", threshold: 0 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [feedExhausted, loadMore, manualOnly, page, items.length]);
 
   if (items.length === 0) {
     return null;
@@ -102,8 +131,8 @@ export function HomeListingsGrid({
     <div className="space-y-6">
       {visible.length === 0 ? (
         <p className="text-sm text-zinc-600">
-          {hasMore
-            ? "Bu sayfada eşleşen ilan yok. Daha fazla yükleyin."
+          {!feedExhausted
+            ? "Bu sayfada eşleşen ilan yok. Aşağı kaydırın."
             : "Aradığınız kriterlere uygun ilan bulunamadı."}
         </p>
       ) : (
@@ -132,32 +161,59 @@ export function HomeListingsGrid({
                 coverPriority={inFirstRow}
                 coverFastPath={inFirstRow}
                 coverFetchPriority={inFirstRow ? "high" : "low"}
+                coverDefer={!inFirstRow}
               />
             );
           })}
         </div>
       )}
 
-      {hasMore ? (
+      {!feedExhausted && !manualOnly ? (
+        <div ref={sentinelRef} className="flex flex-col items-center gap-2 py-2">
+          <p className="text-xs text-zinc-500">
+            {loading
+              ? "Yükleniyor…"
+              : `${items.length} / ${total} · aşağı kaydır`}
+          </p>
+          {error ? (
+            <>
+              <p className="text-xs text-red-600" role="alert">
+                {error}
+              </p>
+              <button
+                type="button"
+                onClick={() => void loadMore()}
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-800"
+              >
+                Tekrar dene
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!feedExhausted && manualOnly ? (
         <div className="flex flex-col items-center gap-2">
+          <p className="text-center text-xs text-zinc-500">
+            {items.length} ilan · devam için dokun (otomatik yük sınırlandı)
+          </p>
           <button
             type="button"
             onClick={() => void loadMore()}
             disabled={loading}
-            className="rounded-lg border border-zinc-300 bg-white px-6 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
           >
             {loading ? "Yükleniyor…" : "Daha fazla yükle"}
           </button>
-          <p className="text-xs text-zinc-500">
-            {items.length} / {total} aktif ilan
-          </p>
           {error ? (
             <p className="text-xs text-red-600" role="alert">
               {error}
             </p>
           ) : null}
         </div>
-      ) : total > pageSize ? (
+      ) : null}
+
+      {feedExhausted && total > pageSize ? (
         <p className="text-center text-xs text-zinc-500">
           Tüm ilanlar · {total} aktif
         </p>
