@@ -25,7 +25,76 @@ function firstParam(sp: URLSearchParams, keys: string[]): string {
   return "";
 }
 
-function htmlErrorPage(title: string, message: string): NextResponse {
+function htmlBridgePage(opts: {
+  title: string;
+  message: string;
+  deepHref: string;
+  autoRedirect?: boolean;
+}): NextResponse {
+  const auto = opts.autoRedirect
+    ? `<script>setTimeout(function(){location.href=${JSON.stringify(opts.deepHref)};},400);</script>`
+    : "";
+  const body = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>${opts.title}</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:28rem;margin:3rem auto;padding:0 1rem;color:#18181b;line-height:1.45}
+    a.btn{display:inline-flex;margin-top:1.25rem;background:#ffcc00;color:#18181b;font-weight:700;text-decoration:none;padding:.75rem 1rem;border-radius:.6rem}
+    a.secondary{display:inline-block;margin-top:.75rem;color:#065f46;font-size:.9rem}
+  </style>
+  ${auto}
+</head>
+<body>
+  <h1>${opts.title}</h1>
+  <p>${opts.message}</p>
+  <p><a class="btn" href="${opts.deepHref}">Uygulamaya dön</a></p>
+  <p><a class="secondary" href="/">Web ana sayfa</a></p>
+</body>
+</html>`;
+  return new NextResponse(body, {
+    status: 200,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
+function appErrorDeepLink(params: {
+  state?: string;
+  yetkiKodu?: string;
+  durum?: string;
+  listingId?: string | null;
+  reason: string;
+}): string {
+  return buildEidsAppRedirectUrl({
+    yetkiKodu: params.yetkiKodu || "missing",
+    durum: params.durum || params.reason,
+    state: params.state || "none",
+    listingId: params.listingId,
+    ok: false,
+  });
+}
+
+function htmlErrorPage(
+  title: string,
+  message: string,
+  app?: {
+    state?: string;
+    yetkiKodu?: string;
+    durum?: string;
+    listingId?: string | null;
+    reason: string;
+  }
+): NextResponse {
+  if (app) {
+    return htmlBridgePage({
+      title,
+      message: `${message} Uygulamaya dönüp tekrar deneyin.`,
+      deepHref: appErrorDeepLink(app),
+      autoRedirect: true,
+    });
+  }
   const body = `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -40,7 +109,8 @@ function htmlErrorPage(title: string, message: string): NextResponse {
 <body>
   <h1>${title}</h1>
   <p>${message}</p>
-  <p><a href="/">Ana sayfaya dön</a></p>
+  <p><a href="otopazari://eids/result?ok=0&durum=error">Uygulamaya dön</a></p>
+  <p><a href="/">Web ana sayfa</a></p>
 </body>
 </html>`;
   return new NextResponse(body, {
@@ -234,7 +304,8 @@ export async function GET(req: Request) {
   if (!yetkiKodu) {
     return htmlErrorPage(
       "EİDS doğrulama",
-      "yetkiKodu parametresi eksik. Doğrulamayı uygulamadan veya siteden yeniden başlatın."
+      "yetkiKodu parametresi eksik. Doğrulamayı uygulamadan yeniden başlatın.",
+      { state, reason: "yetki_missing" }
     );
   }
 
@@ -242,7 +313,8 @@ export async function GET(req: Request) {
   if (!admin) {
     return htmlErrorPage(
       "Sunucu yapılandırması",
-      "EİDS oturumu kaydedilemedi. Lütfen daha sonra tekrar deneyin."
+      "EİDS oturumu kaydedilemedi. Lütfen daha sonra tekrar deneyin.",
+      { state, yetkiKodu, reason: "server_config" }
     );
   }
 
@@ -269,20 +341,41 @@ export async function GET(req: Request) {
     });
     return htmlErrorPage(
       "Oturum bulunamadı",
-      "Doğrulama oturumu geçersiz veya süresi dolmuş olabilir. Lütfen doğrulamayı yeniden başlatın."
+      "Doğrulama oturumu geçersiz veya eşleşmedi. Uygulamadan doğrulamayı yeniden başlatın.",
+      { state, yetkiKodu, reason: "session_not_found" }
     );
   }
 
   const now = Date.now();
   const expiresAt = new Date(session.expires_at).getTime();
-  if (
-    session.status !== "pending" ||
-    Number.isNaN(expiresAt) ||
-    expiresAt < now
-  ) {
+  const expired =
+    Number.isNaN(expiresAt) || expiresAt < now - 30_000; /* 30s skew */
+
+  // Aynı callback iki kez gelirse (refresh / geri): uygulamaya başarıyla dön.
+  if (session.status === "completed" && session.yetki_kodu) {
+    if (session.source === "app") {
+      const appUrl = buildEidsAppRedirectUrl({
+        yetkiKodu: session.yetki_kodu || yetkiKodu,
+        durum: session.durum || durum || "ok",
+        state: session.state,
+        listingId: session.listing_id,
+        ok: true,
+      });
+      return NextResponse.redirect(appUrl, 302);
+    }
+  }
+
+  if (session.status !== "pending" || expired) {
     return htmlErrorPage(
       "Oturum süresi doldu",
-      "Bu doğrulama linki artık geçerli değil. Yeni bir doğrulama başlatın."
+      "Bu doğrulama artık geçerli değil (süre doldu veya yeni doğrulama başlatıldı). Uygulamadan tekrar deneyin.",
+      {
+        state: session.state,
+        yetkiKodu,
+        durum,
+        listingId: session.listing_id,
+        reason: expired ? "expired" : `status_${session.status}`,
+      }
     );
   }
 
@@ -314,7 +407,14 @@ export async function GET(req: Request) {
     console.warn("eids callback update:", updateErr.message);
     return htmlErrorPage(
       "Kayıt hatası",
-      "Doğrulama sonucu kaydedilemedi. Destek ile iletişime geçin."
+      "Doğrulama sonucu kaydedilemedi. Uygulamadan tekrar deneyin.",
+      {
+        state: session.state,
+        yetkiKodu,
+        durum,
+        listingId: session.listing_id,
+        reason: "update_failed",
+      }
     );
   }
 

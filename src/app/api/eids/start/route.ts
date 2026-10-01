@@ -73,12 +73,15 @@ export async function POST(req: Request) {
   const state = createEidsState();
   const expiresAt = new Date(Date.now() + EIDS_SESSION_TTL_MS).toISOString();
 
-  // Aynı kullanıcı için eski pending oturumları geçersiz kıl (tek aktif akış).
+  // Aynı kullanıcı için çok eski pending oturumları kapat.
+  // Az önce açılan oturumu öldürme (çift tıklama / tekrar start → "süresi doldu").
+  const staleBefore = new Date(Date.now() - 2 * 60 * 1000).toISOString();
   await admin
     .from("eids_verification_sessions")
     .update({ status: "expired", consumed_at: new Date().toISOString() })
     .eq("user_id", user.id)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .lt("created_at", staleBefore);
 
   const { data: inserted, error: insertErr } = await admin
     .from("eids_verification_sessions")

@@ -59,11 +59,16 @@ export default async function AppEidsBridgePage({ searchParams }: Props) {
       >
         Uygulamayı aç
       </a>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `setTimeout(function(){location.href=${JSON.stringify(deepHref)};},500);`,
+        }}
+      />
       <Link
-        href={listingId ? `/ilan-duzenle/${listingId}` : "/profil/ilanlarim"}
-        className="mt-3 text-center text-sm text-emerald-800 underline"
+        href="/"
+        className="mt-3 text-center text-sm text-zinc-500 underline"
       >
-        Web’de devam et
+        Web ana sayfa
       </Link>
     </div>
   );
