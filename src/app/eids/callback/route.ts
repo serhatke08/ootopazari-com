@@ -299,7 +299,20 @@ export async function GET(req: Request) {
     "yetkikodu",
   ]);
   const durum = firstParam(sp, ["durum", "Durum", "status", "Status"]);
-  const state = firstParam(sp, ["state", "State", "sid"]);
+  let state = firstParam(sp, ["state", "State", "sid"]);
+
+  // Bakanlık ?state= düşürürse cookie’den al (/eids/go yazar).
+  if (!state) {
+    const cookieHeader = req.headers.get("cookie") ?? "";
+    const m = /(?:^|;\s*)eids_pending_state=([^;]+)/.exec(cookieHeader);
+    if (m?.[1]) {
+      try {
+        state = decodeURIComponent(m[1].trim());
+      } catch {
+        state = m[1].trim();
+      }
+    }
+  }
 
   if (!yetkiKodu) {
     return htmlErrorPage(
@@ -448,7 +461,6 @@ export async function GET(req: Request) {
       listingId: finalSession.listing_id,
       ok: overallOk,
     });
-    // Extra query for app diagnostics
     try {
       const u = new URL(appUrl);
       if (ministry.kullaniciKodu) {
@@ -458,9 +470,19 @@ export async function GET(req: Request) {
       if (ministry.kullaniciHata) {
         u.searchParams.set("apiHata", ministry.kullaniciHata.slice(0, 120));
       }
-      return NextResponse.redirect(u.toString(), 302);
+      const res = NextResponse.redirect(u.toString(), 302);
+      res.cookies.set("eids_pending_state", "", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 0,
+      });
+      return res;
     } catch {
-      return NextResponse.redirect(appUrl, 302);
+      const res = NextResponse.redirect(appUrl, 302);
+      res.cookies.set("eids_pending_state", "", { path: "/", maxAge: 0 });
+      return res;
     }
   }
 

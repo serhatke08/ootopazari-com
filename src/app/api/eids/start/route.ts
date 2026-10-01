@@ -109,16 +109,21 @@ export async function POST(req: Request) {
   const firmaKodu =
     process.env.EIDS_FIRMA_KODU?.trim() ||
     "728bd568-8fd8-4632-9207-83e0d6b0bb0f";
-  const returnUrlWithState = `${returnUrl}?state=${encodeURIComponent(String(inserted.state))}`;
-  const authUrl = `https://eids.ticaret.gov.tr/oturum?firmaKodu=${encodeURIComponent(firmaKodu)}&returnUrl=${encodeURIComponent(returnUrlWithState)}`;
+  // Bakanlık sabit Return URL kullanır (?state= düşer). State’i /eids/go cookie ile taşı.
+  const origin = new URL(returnUrl).origin;
+  const goUrl = `${origin}/eids/go?state=${encodeURIComponent(String(inserted.state))}`;
+  // Geriye dönük: doğrudan bakanlık (state kaybolabilir)
+  const authUrlDirect = `https://eids.ticaret.gov.tr/oturum?firmaKodu=${encodeURIComponent(firmaKodu)}&returnUrl=${encodeURIComponent(returnUrl)}`;
 
   return NextResponse.json({
     ok: true,
     state: inserted.state as string,
     returnUrl,
-    /** EİDS’e giderken Return URL’ye state eklemek mümkünse kullanın. */
-    returnUrlWithState,
-    authUrl,
+    returnUrlWithState: returnUrl,
+    /** App/web bunu açmalı — cookie + sabit returnUrl. */
+    authUrl: goUrl,
+    goUrl,
+    authUrlDirect,
     firmaKodu,
     expiresAt: inserted.expires_at as string,
     sessionId: inserted.id as string,
