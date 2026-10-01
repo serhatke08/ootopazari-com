@@ -21,6 +21,7 @@ import { formatListingPurgeCountdown } from "@/lib/listing-quota";
 import { initialFromName } from "@/lib/user-display-name";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import { EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
+import { listingDisplayTitle } from "@/lib/listing-display-title";
 
 type Props = {
   listing: ListingRow;
@@ -189,12 +190,18 @@ export function ListingCard({
   const showBoostLabel = isHomeGrid && boostActive && !showAcilBadge;
   const showBoostGoldBorder = Boolean(showAcilBadge && boostActive);
   const maskedMileage = formatMaskedMileage(listing.vehicle_mileage);
+  const displayTitle = listingDisplayTitle({
+    title: typeof listing.title === "string" ? listing.title : null,
+    brandName,
+    vehicleModel:
+      typeof listing.vehicle_model === "string" ? listing.vehicle_model : null,
+  });
 
   const imageFrame = (
     <div
       className={
         isHomeGrid
-          ? "relative aspect-[4/5] w-full overflow-hidden bg-zinc-100 md:aspect-[4/3]"
+          ? "relative aspect-[4/5] w-full overflow-hidden bg-zinc-100"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
@@ -202,10 +209,10 @@ export function ListingCard({
         env={env}
         imageUrl={listing.image_url}
         listingId={listingId}
-        alt={listing.title ?? "İlan görseli"}
-        objectFit="contain"
+        alt={displayTitle}
+        objectFit={isHomeGrid ? "cover" : "contain"}
         scale={!isHomeGrid}
-        sizes="(max-width: 767px) 33vw, (max-width: 1023px) 33vw, 16vw"
+        sizes="(max-width: 767px) 33vw, (max-width: 1023px) 25vw, 14vw"
         priority={coverPriority}
         fastPath={coverFastPath}
         deferLoad={coverDefer}
@@ -240,7 +247,7 @@ export function ListingCard({
 
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition sm:rounded-xl lg:rounded-lg ${
+      className={`group relative flex flex-col overflow-hidden rounded-[10px] border bg-white shadow-sm transition ${
         showBoostGoldBorder
           ? "border-[#ffc400] shadow-[0_0_0_1px_rgba(255,196,0,0.55)] hover:border-[#ffc400]"
           : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
@@ -282,7 +289,7 @@ export function ListingCard({
       <div
         className={
           isHomeGrid
-            ? "flex min-w-0 flex-1 flex-col gap-0.5 p-1 pt-1.5 sm:gap-1 sm:p-2 md:p-1.5 md:pt-1.5 lg:gap-0.5 lg:p-1 lg:pt-1"
+            ? "flex min-w-0 flex-1 flex-col px-1.5 pb-1.5 pt-1.5"
             : "flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3"
         }
       >
@@ -340,38 +347,40 @@ export function ListingCard({
             href={href}
             className={
               isHomeGrid
-                ? "line-clamp-2 min-h-[2.1em] break-words text-[10px] font-semibold leading-tight text-zinc-900 max-md:min-h-[2.2em] sm:text-[11px] md:min-h-[1.55rem] md:text-[12px] lg:min-h-[2em] lg:text-[10px]"
+                ? "line-clamp-2 min-h-[2.4em] break-words text-[10px] font-bold leading-[1.2] text-zinc-900"
                 : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold leading-snug text-zinc-900 sm:min-h-[2.2rem] sm:text-[13px]"
             }
           >
-            {listing.title ?? "Başlıksız ilan"}
+            {displayTitle}
           </Link>
         ) : (
           <p
             className={
               isHomeGrid
-                ? "line-clamp-2 min-h-[2.1em] break-words text-[10px] font-semibold leading-tight text-zinc-500 max-md:min-h-[2.2em] sm:text-[11px] md:min-h-[1.55rem] md:text-[12px] lg:min-h-[2em] lg:text-[10px]"
+                ? "line-clamp-2 min-h-[2.4em] break-words text-[10px] font-bold leading-[1.2] text-zinc-500"
                 : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold text-zinc-500 sm:min-h-[2.2rem] sm:text-[13px]"
             }
           >
-            {listing.title ?? "Başlıksız ilan"} (ilan no eksik)
+            {displayTitle} (ilan no eksik)
           </p>
         )}
-        {isHomeGrid && listingId ? (
-          <div className="flex min-w-0 items-center gap-x-0.5 overflow-hidden">
-            <ListingPriceDisplay
-              listingId={listingId}
-              priceLabel={price}
-              summary={ratingSummary}
-              loggedIn={loggedIn}
-              dotSize="sm"
-              priceClassName="min-w-0 truncate text-[10px] font-bold tabular-nums leading-tight sm:text-[12px] md:text-[13px] lg:text-[10px]"
-            />
+        {isHomeGrid ? (
+          <div className="mt-[10px] flex min-w-0 items-center gap-x-0.5 overflow-hidden">
+            {listingId ? (
+              <ListingPriceDisplay
+                listingId={listingId}
+                priceLabel={price}
+                summary={ratingSummary}
+                loggedIn={loggedIn}
+                dotSize="sm"
+                priceClassName="min-w-0 truncate text-[10px] font-bold tabular-nums leading-tight text-emerald-700"
+              />
+            ) : (
+              <p className="truncate text-[10px] font-bold tabular-nums leading-tight text-emerald-700">
+                {price}
+              </p>
+            )}
           </div>
-        ) : isHomeGrid ? (
-          <p className="truncate text-[10px] font-bold tabular-nums leading-tight text-emerald-700 sm:text-[12px] md:text-[13px] lg:text-[10px]">
-            {price}
-          </p>
         ) : null}
         {!isHomeGrid ? (
           listingId ? (
@@ -417,24 +426,24 @@ export function ListingCard({
           </div>
         ) : null}
         {isHomeGrid ? (
-          <div className="mt-1 min-w-0 border-t border-zinc-100 pt-1 sm:mt-2 sm:pt-2 lg:mt-0.5 lg:pt-1">
-            <div className="flex min-w-0 items-center justify-between gap-1 lg:gap-0.5">
+          <div className="mt-1 min-w-0 border-t border-zinc-200/80 pt-1">
+            <div className="flex min-w-0 items-center justify-between gap-1">
               {cityText ? (
                 <span
-                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-[8px] font-medium leading-tight text-zinc-600 sm:text-[10px] lg:text-[9px]"
+                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-[8px] font-medium leading-[1.1] text-zinc-600"
                   title={cityText}
                 >
-                  <LocationPinIcon className="h-2.5 w-2.5 shrink-0 text-zinc-600 sm:h-[11px] sm:w-[11px] lg:h-2.5 lg:w-2.5" />
+                  <LocationPinIcon className="h-[9px] w-[9px] shrink-0 text-zinc-600" />
                   <span className="truncate">{cityText}</span>
                 </span>
               ) : (
                 <span className="min-w-0 flex-1" aria-hidden />
               )}
               <span
-                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-[8px] font-semibold tabular-nums leading-tight text-zinc-700 sm:text-[11px] lg:text-[9px]"
+                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-[8px] font-semibold tabular-nums leading-[1.1] text-zinc-700"
                 title="Kilometre"
               >
-                <SpeedIcon className="h-2.5 w-2.5 shrink-0 text-zinc-700 sm:h-[11px] sm:w-[11px] lg:h-2.5 lg:w-2.5" />
+                <SpeedIcon className="h-[9px] w-[9px] shrink-0 text-zinc-700" />
                 <span className="truncate">{maskedMileage ?? "Km yok"}</span>
               </span>
             </div>
