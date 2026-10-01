@@ -1,5 +1,5 @@
-import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
+import { BrandPagePlaceholder } from "@/components/BrandPagePlaceholder";
 
 export default function IlanDetayLoading() {
-  return <ListingDetailSkeleton />;
+  return <BrandPagePlaceholder />;
 }

@@ -1,4 +1,6 @@
-/** Root loading: boş — NavSkeletonGate üst bar yeterli; tam skeleton layout kaydırıyordu */
+import { BrandPagePlaceholder } from "@/components/BrandPagePlaceholder";
+
+/** Navbar–footer arasını doldur — footer yukarı zıplamasın */
 export default function AppLoading() {
-  return null;
+  return <BrandPagePlaceholder />;
 }
