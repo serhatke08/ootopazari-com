@@ -4,7 +4,7 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { fetchCategories } from "@/lib/listings-data";
-import { CreateListingWizard } from "@/components/ilan-ver/CreateListingWizard";
+import { CreateListingFlow } from "@/components/ilan-ver/CreateListingFlow";
 import { expireDueListings, fetchListingQuota } from "@/lib/listing-quota";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -72,7 +72,7 @@ export default async function IlanVerPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
-      <CreateListingWizard
+      <CreateListingFlow
         categories={listingCategories}
         userCountryId={userCountryId}
         listingQuota={quota}

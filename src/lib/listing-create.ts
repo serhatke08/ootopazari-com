@@ -6,7 +6,10 @@ export const VEHICLE_CATEGORY_CODES = new Set([
   "otomobil",
   "suv_pickup",
   "motosiklet",
+  "elektrikli",
   "panelvan",
+  "is_ve_tarim_makinesi",
+  "scooter_bisiklet",
   "klasik",
   "deniz",
   "hasarli",
@@ -14,6 +17,7 @@ export const VEHICLE_CATEGORY_CODES = new Set([
   "hava",
   "atv",
   "utv",
+  "atv_utv",
 ]);
 
 export function isVehicleCategoryCode(code: string | null | undefined): boolean {
