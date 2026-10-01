@@ -23,7 +23,7 @@ import {
 } from "@/lib/home-listings-feed-filters";
 import { HomePageListings } from "@/components/HomePageListings";
 import { HomeFeedImagePreloads } from "@/components/HomeFeedImagePreloads";
-import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
+import { BrandPagePlaceholder } from "@/components/BrandPagePlaceholder";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildHomeSeoJsonLd } from "@/lib/seo-json-ld";
 import { getSiteOrigin } from "@/lib/site-url";
@@ -128,22 +128,7 @@ export default async function AnaSayfa({
 }
 
 function HomeListingsFallback() {
-  return (
-    <div
-      id="ilanlar"
-      className="mx-auto w-full max-w-[1400px] flex-1 px-4 pt-1.5 pb-6 sm:px-6"
-    >
-      <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-4 lg:gap-5">
-        <aside className="hidden shrink-0 md:block md:w-[min(220px,30vw)] md:min-w-[180px] lg:w-[min(280px,22vw)] lg:min-w-[240px]">
-          <div className="h-64 animate-pulse rounded-xl bg-zinc-100" />
-        </aside>
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 h-4 w-16 animate-pulse rounded bg-zinc-100" />
-          <HomeListingsGridSkeleton count={12} />
-        </div>
-      </div>
-    </div>
-  );
+  return <BrandPagePlaceholder />;
 }
 
 async function HomeListingsLoader({

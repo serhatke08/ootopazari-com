@@ -16,9 +16,26 @@ function internalHrefFromClick(target: EventTarget | null): string | null {
   return href.split("?")[0] ?? href;
 }
 
+/** Header altı + mobil alt nav üstü. Footer ASLA ölçülmez (içerik boşalınca yukarı zıplar). */
+function measureChromeInsets(): { top: number; bottom: number } {
+  const header = document.querySelector("header");
+  const bottomNav = document.querySelector('[data-mobile-bottom-nav="true"]');
+  const top = header
+    ? Math.ceil(header.getBoundingClientRect().bottom)
+    : 72;
+  let bottom = 0;
+  if (bottomNav) {
+    const br = bottomNav.getBoundingClientRect();
+    if (br.height > 0 && br.top < window.innerHeight) {
+      bottom = Math.max(0, Math.ceil(window.innerHeight - br.top));
+    }
+  }
+  return { top, bottom };
+}
+
 /**
- * Link tıklanınca içerik alanını markalı placeholder ile tutar —
- * footer navbar’a yapışmaz. Üstte ince progress.
+ * Link tıklanınca hemen marka animasyonu — footer navbar’a yapışmaz.
+ * Üstte ince progress.
  */
 export function NavSkeletonGate() {
   const pathname = usePathname();
@@ -39,30 +56,16 @@ export function NavSkeletonGate() {
 
   useEffect(() => {
     if (!show) return;
-    const measure = () => {
-      const header = document.querySelector("header");
-      const footer = document.querySelector("footer");
-      const bottomNav = document.querySelector('[data-mobile-bottom-nav="true"]');
-      const top = header
-        ? Math.ceil(header.getBoundingClientRect().bottom)
-        : 72;
-      let bottom = 0;
-      if (footer) {
-        const fr = footer.getBoundingClientRect();
-        bottom = Math.max(0, window.innerHeight - fr.top);
-      }
-      if (bottomNav) {
-        const br = bottomNav.getBoundingClientRect();
-        bottom = Math.max(bottom, window.innerHeight - br.top);
-      }
+    const onResize = () => {
+      const { top, bottom } = measureChromeInsets();
       setMainTop(top);
       setMainBottom(bottom);
     };
-    measure();
-    window.addEventListener("resize", measure);
-    const t = window.setTimeout(() => setPendingPath(null), 10000);
+    onResize();
+    window.addEventListener("resize", onResize);
+    const t = window.setTimeout(() => setPendingPath(null), 12000);
     return () => {
-      window.removeEventListener("resize", measure);
+      window.removeEventListener("resize", onResize);
       window.clearTimeout(t);
     };
   }, [show]);
@@ -83,6 +86,10 @@ export function NavSkeletonGate() {
       if (!href) return;
       const current = window.location.pathname;
       if (href === current) return;
+      // İçerik boşalmadan önce ölç — footer zıplamadan overlay sabit kalsın
+      const { top, bottom } = measureChromeInsets();
+      setMainTop(top);
+      setMainBottom(bottom);
       setPendingPath(href);
     }
     document.addEventListener("click", onClick, true);
@@ -101,12 +108,12 @@ export function NavSkeletonGate() {
         <div className="nav-top-progress h-full w-1/3 rounded-r-full bg-[#ffcc00] shadow-[0_0_10px_rgba(255,204,0,0.65)]" />
       </div>
       <div
-        className="fixed inset-x-0 z-[34] overflow-hidden bg-zinc-50"
+        className="fixed inset-x-0 z-[34] flex flex-col overflow-hidden bg-zinc-50"
         style={{ top: mainTop, bottom: mainBottom }}
         aria-busy="true"
         aria-live="polite"
       >
-        <BrandPagePlaceholder className="h-full" />
+        <BrandPagePlaceholder fill />
       </div>
     </>,
     document.body

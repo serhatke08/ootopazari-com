@@ -27,7 +27,7 @@ import {
   formatHomeFilterRangeChip,
 } from "@/lib/home-filter-client";
 import { HomeListingsGrid } from "@/components/HomeListingsGrid";
-import { HomeListingsGridSkeleton } from "@/components/HomeListingsGridSkeleton";
+import { BrandPagePlaceholder } from "@/components/BrandPagePlaceholder";
 import { HomeSidebar } from "@/components/HomeSidebar";
 import { HomeAcilRail } from "@/components/HomeAcilRail";
 import { TopCitySelect } from "@/components/TopCitySelect";
@@ -293,7 +293,7 @@ export function HomePageListings({
           ) : null}
 
           {showSkeleton ? (
-            <HomeListingsGridSkeleton count={10} />
+            <BrandPagePlaceholder compact />
           ) : error ? (
             <p className="text-sm text-red-600" role="alert">
               {error}

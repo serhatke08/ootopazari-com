@@ -129,7 +129,9 @@ export default function RootLayout({
             <SiteHeader />
           </Suspense>
           <SiteMainShell>
-            <main className="flex min-h-0 flex-1 flex-col bg-zinc-50">{children}</main>
+            <main className="flex min-h-[calc(100dvh-9.5rem)] flex-1 flex-col bg-zinc-50">
+              {children}
+            </main>
             <SiteFooter loggedIn={false} hasListings={false} />
           </SiteMainShell>
           <NavSkeletonGate />

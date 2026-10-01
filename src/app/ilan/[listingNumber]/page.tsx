@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { MissingEnv } from "@/components/MissingEnv";
-import { ListingDetailSkeleton } from "@/components/ListingDetailSkeleton";
+import { BrandPagePlaceholder } from "@/components/BrandPagePlaceholder";
 import { loadListingDetailRequest } from "@/lib/listing-detail-request";
 import { formatListingPurgeCountdown, formatListingPublishedAt } from "@/lib/listing-quota";
 import { isListingMessagingAllowed } from "@/lib/listing-messaging";
@@ -449,7 +449,7 @@ export default async function IlanDetayPage({ params }: Props) {
   }
 
   return (
-    <Suspense fallback={<ListingDetailSkeleton />}>
+    <Suspense fallback={<BrandPagePlaceholder />}>
       <IlanDetayBody listingParam={listingParam} />
     </Suspense>
   );
