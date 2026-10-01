@@ -123,7 +123,7 @@ export function buildEidsWebRedirectPath(session: {
     return `/ilan-duzenle/${session.listing_id}?${q.toString()}`;
   }
 
-  return `/profil/ilanlarim?${q.toString()}`;
+  return `/profil/eids?${q.toString()}`;
 }
 
 /** durum alanını başarı / başarısız olarak yorumla (Bakanlık değerleri değişebilir). */

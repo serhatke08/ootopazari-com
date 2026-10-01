@@ -52,6 +52,20 @@ export default async function ProfilIlanlarimPage() {
 
   return (
     <div className="mt-8">
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+        <Link
+          href="/profil/eids"
+          className="inline-flex rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-semibold text-zinc-900 hover:bg-zinc-50"
+        >
+          EİDS / e-Devlet doğrulama
+        </Link>
+        <Link
+          href="/ilan-ver"
+          className="inline-flex rounded-lg bg-[#ffcc00] px-3 py-1.5 font-bold text-zinc-900 hover:bg-[#f0c000]"
+        >
+          İlan ver
+        </Link>
+      </div>
       {rows.length === 0 ? (
         <p className="text-sm text-zinc-600">
           Henüz ilan vermediniz.{" "}
