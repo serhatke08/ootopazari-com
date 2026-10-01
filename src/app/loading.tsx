@@ -1,5 +1,4 @@
-import { GenericPageSkeleton } from "@/components/skeletons/PageSkeletons";
-
+/** Root loading: boş — NavSkeletonGate üst bar yeterli; tam skeleton layout kaydırıyordu */
 export default function AppLoading() {
-  return <GenericPageSkeleton />;
+  return null;
 }

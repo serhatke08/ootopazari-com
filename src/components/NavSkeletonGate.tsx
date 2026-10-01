@@ -1,9 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { skeletonForPath } from "@/components/skeletons/PageSkeletons";
 
 function internalHrefFromClick(target: EventTarget | null): string | null {
   if (!(target instanceof Element)) return null;
@@ -17,14 +16,13 @@ function internalHrefFromClick(target: EventTarget | null): string | null {
 }
 
 /**
- * Dahili link tıklanınca sunucu cevabı gelene kadar iskelet gösterir.
- * Mobil alt menü ve sayfa geçişlerinde boş/beyaz ekranı önler.
+ * Sayfa geçişlerinde üstte ince progress — tam ekran skeleton yok
+ * (layout kayması / göz yorma önlenir).
  */
 export function NavSkeletonGate() {
   const pathname = usePathname();
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [skeleton, setSkeleton] = useState<ReactNode>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -32,28 +30,26 @@ export function NavSkeletonGate() {
 
   useEffect(() => {
     setPendingPath(null);
-    setSkeleton(null);
   }, [pathname]);
 
   const show = Boolean(pendingPath && pendingPath !== pathname);
 
   useEffect(() => {
     if (!show) return;
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    return () => {
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-    };
+    const t = window.setTimeout(() => setPendingPath(null), 8000);
+    return () => window.clearTimeout(t);
   }, [show]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.shiftKey ||
+        e.altKey
+      ) {
         return;
       }
       const href = internalHrefFromClick(e.target);
@@ -61,21 +57,21 @@ export function NavSkeletonGate() {
       const current = window.location.pathname;
       if (href === current) return;
       setPendingPath(href);
-      setSkeleton(skeletonForPath(href));
     }
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, []);
 
-  if (!mounted || !show || !skeleton) return null;
+  if (!mounted || !show) return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[35] overflow-y-auto overscroll-contain bg-zinc-50"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[80] h-0.5 overflow-hidden bg-zinc-200/40"
       aria-busy="true"
       aria-live="polite"
+      role="progressbar"
     >
-      <div className="min-h-[100dvh] bg-zinc-50">{skeleton}</div>
+      <div className="nav-top-progress h-full w-1/3 rounded-r-full bg-[#ffcc00] shadow-[0_0_10px_rgba(255,204,0,0.65)]" />
     </div>,
     document.body
   );

@@ -42,7 +42,7 @@ export async function ProfilLayoutBody({
 }) {
   const supabase = await createSupabaseServerClient();
   const quotaClient = createSupabaseServiceClient() ?? supabase;
-  const [profile, adminProfile, followCounts, serviceSummaries, listingQuota] =
+  const [profile, adminProfile, followCounts, serviceSummaries, listingQuota, verifyRow] =
     await Promise.all([
       user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
       user.id ? fetchAdminProfileByUserId(supabase, user.id) : Promise.resolve(null),
@@ -53,6 +53,14 @@ export async function ProfilLayoutBody({
         ? fetchUserPaymentServiceSummaries(supabase, user.id)
         : Promise.resolve([]),
       user.id ? fetchListingQuota(quotaClient, user.id) : Promise.resolve(null),
+      user.id
+        ? supabase
+            .from("profiles")
+            .select("phone, eids_kullanici_kodu")
+            .eq("id", user.id)
+            .maybeSingle()
+            .then((r) => r.data as { phone?: string | null; eids_kullanici_kodu?: string | null } | null)
+        : Promise.resolve(null),
     ]);
 
   const meta = readNamesAndAvatar(user);
@@ -83,8 +91,19 @@ export async function ProfilLayoutBody({
   const initialsLabel = initialFromName(firstName || displayName);
   const publicProfileHref = `/kullanici/${encodeURIComponent(user.id)}`;
 
+  const phone =
+    verifyRow?.phone != null ? String(verifyRow.phone).trim() : "";
+  const eidsKodu =
+    verifyRow?.eids_kullanici_kodu != null
+      ? String(verifyRow.eids_kullanici_kodu).trim()
+      : "";
+  const emailVerified = Boolean(
+    (user as { email_confirmed_at?: string | null }).email_confirmed_at ||
+      user.confirmed_at
+  );
+
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
       <ProfilTitleRow email={user.email ?? ""} />
 
       <ProfilHeader
@@ -109,6 +128,10 @@ export async function ProfilLayoutBody({
               }
             : null
         }
+        emailVerified={emailVerified}
+        phoneOk={Boolean(phone)}
+        eidsOk={Boolean(eidsKodu)}
+        phone={phone || null}
       />
 
       <PaymentServiceCompactSummary summaries={serviceSummaries} />

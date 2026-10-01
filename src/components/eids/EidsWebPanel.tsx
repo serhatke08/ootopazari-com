@@ -281,8 +281,16 @@ export function EidsWebPanel({
           type="button"
           onClick={() => void startEids()}
           disabled={busy}
-          className="mt-4 inline-flex rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 hover:bg-[#f0c000] disabled:opacity-50"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 hover:bg-[#f0c000] disabled:opacity-50"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/branding/edevlet_icon.png"
+            alt=""
+            width={22}
+            height={22}
+            className="h-[22px] w-[22px] object-contain"
+          />
           e-Devlet ile doğrula
         </button>
       </section>

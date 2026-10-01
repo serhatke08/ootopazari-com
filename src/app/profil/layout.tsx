@@ -1,10 +1,8 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
-import { ProfilPageSkeleton } from "@/components/skeletons/PageSkeletons";
 import { ProfilLayoutBody } from "@/app/profil/ProfilLayoutBody";
 
 export const metadata: Metadata = {
@@ -36,10 +34,8 @@ export default async function ProfilLayout({
   }
 
   return (
-    <Suspense fallback={<ProfilPageSkeleton />}>
-      <ProfilLayoutBody env={env} user={user}>
-        {children}
-      </ProfilLayoutBody>
-    </Suspense>
+    <ProfilLayoutBody env={env} user={user}>
+      {children}
+    </ProfilLayoutBody>
   );
 }

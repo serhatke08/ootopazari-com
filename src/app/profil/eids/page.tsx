@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { tryGetSupabaseEnv } from "@/lib/env";
@@ -46,24 +45,18 @@ export default async function ProfilEidsPage() {
   const eidsVerified = Boolean(eidsKodu && String(eidsKodu).trim());
 
   return (
-    <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div className="mt-8 max-w-2xl">
+      <div className="mb-5 flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/branding/edevlet_logo.png"
+          alt="e-Devlet"
+          className="h-8 w-auto object-contain"
+        />
         <div>
-          <p className="text-sm text-zinc-500">
-            <Link href="/profil/ilanlarim" className="underline">
-              İlanlarım
-            </Link>
-            {" · "}
-            <Link href="/ilan-ver" className="underline">
-              İlan ver
-            </Link>
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">
-            EİDS / e-Devlet
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            Önce webden kimlik + telefon; plaka yetkisi sonra. Mobil aynı API’yi
-            kullanır.
+          <h2 className="text-lg font-bold text-zinc-900">EİDS doğrulama</h2>
+          <p className="text-sm text-zinc-600">
+            Kimlik + telefon; plaka yetkisi sonra.
           </p>
         </div>
       </div>

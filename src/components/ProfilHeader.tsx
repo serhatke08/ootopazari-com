@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
+import { ProfileVerificationBadges } from "@/components/ProfileVerificationBadges";
 import { setProfileAvatarUrl } from "@/lib/profile-avatar-db";
 import { AVATARS_BUCKET } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -93,6 +94,10 @@ export type ProfilHeaderProps = {
     limit: number;
     unlimited: boolean;
   } | null;
+  emailVerified?: boolean;
+  phoneOk?: boolean;
+  eidsOk?: boolean;
+  phone?: string | null;
 };
 
 export function ProfilHeader({
@@ -109,6 +114,10 @@ export function ProfilHeader({
   followerCount,
   followingCount,
   listingQuota = null,
+  emailVerified = false,
+  phoneOk = false,
+  eidsOk = false,
+  phone = null,
 }: ProfilHeaderProps) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -311,25 +320,25 @@ export function ProfilHeader({
     <div
       className={
         editing
-          ? "group relative mx-auto h-28 w-28 shrink-0 sm:mx-0"
-          : "relative mx-auto h-28 w-28 shrink-0 sm:mx-0"
+          ? "group relative mx-auto h-20 w-20 shrink-0 sm:mx-0 sm:h-24 sm:w-24"
+          : "relative mx-auto h-20 w-20 shrink-0 sm:mx-0 sm:h-24 sm:w-24"
       }
       ref={menuRef}
     >
-      <div className="relative h-full w-full overflow-hidden rounded-full bg-zinc-200 ring-2 ring-zinc-300 ring-offset-2 ring-offset-white">
+      <div className="relative h-full w-full overflow-hidden rounded-full bg-zinc-200 ring-2 ring-[#ffcc00]/60 ring-offset-2 ring-offset-white">
         {avatarSrc ? (
           <Image
             src={avatarSrc}
             alt=""
-            width={112}
-            height={112}
+            width={96}
+            height={96}
             unoptimized
             referrerPolicy="no-referrer"
             className="h-full w-full object-cover"
           />
         ) : (
           <div
-            className="flex h-full w-full items-center justify-center text-3xl font-bold text-zinc-600"
+            className="flex h-full w-full items-center justify-center bg-zinc-900 text-2xl font-bold text-[#ffcc00]"
             aria-hidden
           >
             {initialsLabel}
@@ -414,9 +423,10 @@ export function ProfilHeader({
   );
 
   return (
-    <div className="mt-6 border-b border-zinc-200 pb-8">
-      <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-6 px-4 py-8 sm:flex-row sm:items-start sm:gap-8 sm:px-8">
+    <div className="mt-4 border-b border-zinc-200 pb-6">
+      <section className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm">
+        <div className="h-1.5 w-full bg-[#ffcc00]" aria-hidden />
+        <div className="flex flex-col gap-5 px-4 py-5 sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-6">
           {avatarBlock}
 
           <div className="min-w-0 flex-1">
@@ -428,63 +438,62 @@ export function ProfilHeader({
 
             {!editing ? (
               <div className="flex flex-col items-center gap-3 text-center sm:items-start sm:text-left">
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                  <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+                <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:justify-start">
+                  <h2 className="text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
                     {displayName.trim() || "—"}
                   </h2>
-                  {verifiedBadge ? <AdminVerifiedBadge size={22} /> : null}
+                  {verifiedBadge ? <AdminVerifiedBadge size={20} /> : null}
+                  <ProfileVerificationBadges
+                    emailVerified={emailVerified}
+                    phoneOk={phoneOk}
+                    eidsOk={eidsOk}
+                    email={email}
+                    phone={phone}
+                  />
                 </div>
 
                 {initialUsername?.trim() ? (
-                  <div className="flex flex-col items-center gap-1 sm:items-start">
-                    <Link
-                      href={publicProfileHref}
-                      className="text-base font-semibold text-emerald-800 hover:underline"
-                    >
-                      @{initialUsername.trim()}
-                    </Link>
-                    <p className="text-xs text-zinc-500">Herkese açık profil bağlantın</p>
-                  </div>
+                  <Link
+                    href={publicProfileHref}
+                    className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 hover:underline"
+                  >
+                    @{initialUsername.trim()}
+                  </Link>
                 ) : (
-                  <p className="max-w-md text-sm text-zinc-600">
-                    <span className="font-medium text-zinc-800">Kullanıcı adı yok.</span>{" "}
-                    Düzenle ile ekleyerek profil adresini kişiselleştirebilirsin.
+                  <p className="max-w-md text-sm text-zinc-500">
+                    Kullanıcı adı yok — düzenle ile ekle.
                   </p>
                 )}
 
-                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-y border-zinc-100 py-3 text-sm text-zinc-700 sm:justify-start">
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-zinc-700 sm:justify-start">
                   <div>
-                    <span className="tabular-nums text-lg font-bold text-zinc-900">
+                    <span className="tabular-nums font-bold text-zinc-900">
                       {followerCount.toLocaleString("tr-TR")}
                     </span>{" "}
-                    <span className="text-zinc-600">Takipçi</span>
+                    <span className="text-zinc-500">takipçi</span>
                   </div>
-                  <div className="hidden h-4 w-px bg-zinc-200 sm:block" aria-hidden />
                   <div>
-                    <span className="tabular-nums text-lg font-bold text-zinc-900">
+                    <span className="tabular-nums font-bold text-zinc-900">
                       {followingCount.toLocaleString("tr-TR")}
                     </span>{" "}
-                    <span className="text-zinc-600">Takip</span>
+                    <span className="text-zinc-500">takip</span>
                   </div>
                   {listingQuota ? (
-                    <>
-                      <div className="hidden h-4 w-px bg-zinc-200 sm:block" aria-hidden />
-                      <div>
-                        {listingQuota.unlimited ? (
-                          <>
-                            <span className="text-lg font-bold text-zinc-900">∞</span>{" "}
-                            <span className="text-zinc-600">İlan hakkı</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="tabular-nums text-lg font-bold text-zinc-900">
-                              {listingQuota.remaining}/{listingQuota.limit}
-                            </span>{" "}
-                            <span className="text-zinc-600">İlan hakkı</span>
-                          </>
-                        )}
-                      </div>
-                    </>
+                    <div>
+                      {listingQuota.unlimited ? (
+                        <>
+                          <span className="font-bold text-zinc-900">∞</span>{" "}
+                          <span className="text-zinc-500">ilan hakkı</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="tabular-nums font-bold text-zinc-900">
+                            {listingQuota.remaining}/{listingQuota.limit}
+                          </span>{" "}
+                          <span className="text-zinc-500">ilan hakkı</span>
+                        </>
+                      )}
+                    </div>
                   ) : null}
                 </div>
 
@@ -498,9 +507,9 @@ export function ProfilHeader({
                     <button
                       type="button"
                       onClick={() => void shareProfile()}
-                      className="rounded-lg border-2 border-zinc-900 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50"
+                      className="rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
                     >
-                      Profili paylaş
+                      Paylaş
                     </button>
                     <button
                       type="button"
@@ -509,10 +518,24 @@ export function ProfilHeader({
                         setPhotoErr(null);
                         setSaveErr(null);
                       }}
-                      className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
+                      className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
                     >
-                      Profili düzenle
+                      Düzenle
                     </button>
+                    <Link
+                      href="/profil/eids"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/branding/edevlet_icon.png"
+                        alt=""
+                        width={18}
+                        height={18}
+                        className="h-[18px] w-[18px] object-contain"
+                      />
+                      e-Devlet
+                    </Link>
                   </div>
                 </div>
               </div>
