@@ -201,6 +201,6 @@ export async function POST(req: Request) {
     error: ok ? null : kullaniciHata || "kullanici_failed",
     gsmHint: ok
       ? null
-      : "Profil cep telefonu, e-Devlet hesabındaki telefonla aynı olmalı (5xxxxxxxxx).",
+      : "Telefon numarası uyuşmazlığı. Profildeki numara, e-Devlet’teki telefon numarasıyla aynı olmalı (5xxxxxxxxx).",
   });
 }

@@ -23,19 +23,30 @@ function proxySecret(): string {
   return process.env.EIDS_PROXY_SECRET?.trim() || "";
 }
 
-/** TR gsm → 10 hane (5xxxxxxxxx). */
+/** TR gsm → kanonik 10 hane (5xxxxxxxxx). */
 export function normalizeGsmNo(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const digits = String(raw).replace(/\D/g, "");
   if (digits.length === 10 && digits.startsWith("5")) return digits;
   if (digits.length === 11 && digits.startsWith("05")) return digits.slice(1);
   if (digits.length === 12 && digits.startsWith("905")) return digits.slice(2);
-  if (digits.length === 13 && digits.startsWith("905")) return digits.slice(2);
+  if (digits.length === 13 && digits.startsWith("905")) return digits.slice(3);
   if (digits.length >= 10) {
     const last10 = digits.slice(-10);
     if (last10.startsWith("5")) return last10;
   }
   return null;
+}
+
+/**
+ * Bakanlık / e-Devlet bazen 5…, 05… veya 90… ister.
+ * GetKullaniciKodu için tüm makul adayları dene.
+ */
+export function gsmNoCandidates(raw: string | null | undefined): string[] {
+  const base = normalizeGsmNo(raw);
+  if (!base) return [];
+  const out = [base, `0${base}`, `90${base}`];
+  return Array.from(new Set(out));
 }
 
 /** Plaka: boşluksuz büyük harf. */
@@ -107,14 +118,12 @@ export async function callGetKullaniciKodu(params: {
   gsmNo: string;
   vergiNo?: string | null;
 }): Promise<GetKullaniciKoduResult> {
-  const baseGsm = normalizeGsmNo(params.gsmNo) || params.gsmNo.replace(/\D/g, "");
-  const gsmCandidates = Array.from(
-    new Set(
-      [baseGsm, baseGsm.startsWith("0") ? baseGsm.slice(1) : `0${baseGsm}`].filter(
-        (g) => g && g.length >= 10
-      )
-    )
-  );
+  // e-Devlet 905… gösterebilir; app 5… tutar — üçünü de dene.
+  const gsmCandidates = gsmNoCandidates(params.gsmNo);
+  if (gsmCandidates.length === 0) {
+    const digits = params.gsmNo.replace(/\D/g, "");
+    if (digits.length >= 10) gsmCandidates.push(digits);
+  }
 
   let last: GetKullaniciKoduResult | null = null;
   for (const gsmNo of gsmCandidates) {
