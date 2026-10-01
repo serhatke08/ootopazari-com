@@ -201,7 +201,7 @@ export function ListingCard({
     <div
       className={
         isHomeGrid
-          ? "relative aspect-[4/5] w-full overflow-hidden bg-zinc-100"
+          ? "relative aspect-[3/4] w-full overflow-hidden bg-zinc-100"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
@@ -289,7 +289,7 @@ export function ListingCard({
       <div
         className={
           isHomeGrid
-            ? "flex min-w-0 flex-1 flex-col px-1.5 pb-1.5 pt-1.5"
+            ? "flex min-w-0 flex-1 flex-col px-1 pb-1 pt-1"
             : "flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3"
         }
       >
@@ -347,7 +347,7 @@ export function ListingCard({
             href={href}
             className={
               isHomeGrid
-                ? "line-clamp-2 min-h-[2.4em] break-words text-[10px] font-bold leading-[1.2] text-zinc-900"
+                ? "line-clamp-2 min-h-[2.2em] break-words text-[9px] font-bold leading-[1.2] text-zinc-900"
                 : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold leading-snug text-zinc-900 sm:min-h-[2.2rem] sm:text-[13px]"
             }
           >
@@ -357,7 +357,7 @@ export function ListingCard({
           <p
             className={
               isHomeGrid
-                ? "line-clamp-2 min-h-[2.4em] break-words text-[10px] font-bold leading-[1.2] text-zinc-500"
+                ? "line-clamp-2 min-h-[2.2em] break-words text-[9px] font-bold leading-[1.2] text-zinc-500"
                 : "line-clamp-2 min-h-[1.85rem] text-[11px] font-semibold text-zinc-500 sm:min-h-[2.2rem] sm:text-[13px]"
             }
           >
@@ -373,10 +373,10 @@ export function ListingCard({
                 summary={ratingSummary}
                 loggedIn={loggedIn}
                 dotSize="sm"
-                priceClassName="min-w-0 truncate text-[10px] font-bold tabular-nums leading-tight text-emerald-700"
+                priceClassName="min-w-0 truncate text-[9px] font-bold tabular-nums leading-tight text-emerald-700"
               />
             ) : (
-              <p className="truncate text-[10px] font-bold tabular-nums leading-tight text-emerald-700">
+              <p className="truncate text-[9px] font-bold tabular-nums leading-tight text-emerald-700">
                 {price}
               </p>
             )}
@@ -426,24 +426,24 @@ export function ListingCard({
           </div>
         ) : null}
         {isHomeGrid ? (
-          <div className="mt-1 min-w-0 border-t border-zinc-200/80 pt-1">
-            <div className="flex min-w-0 items-center justify-between gap-1">
+          <div className="mt-0.5 min-w-0 border-t border-zinc-200/80 pt-0.5">
+            <div className="flex min-w-0 items-center justify-between gap-0.5">
               {cityText ? (
                 <span
-                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-[8px] font-medium leading-[1.1] text-zinc-600"
+                  className="inline-flex min-w-0 flex-1 items-center gap-0.5 text-[7px] font-medium leading-[1.1] text-zinc-600"
                   title={cityText}
                 >
-                  <LocationPinIcon className="h-[9px] w-[9px] shrink-0 text-zinc-600" />
+                  <LocationPinIcon className="h-2 w-2 shrink-0 text-zinc-600" />
                   <span className="truncate">{cityText}</span>
                 </span>
               ) : (
                 <span className="min-w-0 flex-1" aria-hidden />
               )}
               <span
-                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-[8px] font-semibold tabular-nums leading-[1.1] text-zinc-700"
+                className="inline-flex shrink-0 items-center justify-end gap-0.5 text-[7px] font-semibold tabular-nums leading-[1.1] text-zinc-700"
                 title="Kilometre"
               >
-                <SpeedIcon className="h-[9px] w-[9px] shrink-0 text-zinc-700" />
+                <SpeedIcon className="h-2 w-2 shrink-0 text-zinc-700" />
                 <span className="truncate">{maskedMileage ?? "Km yok"}</span>
               </span>
             </div>

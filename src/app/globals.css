@@ -101,24 +101,31 @@ html {
   }
 }
 
-/* Ana sayfa ilan ızgarası — uygulama gibi sıkı 3’lü; PC’de 6 */
+/* Ana sayfa ilan ızgarası — biraz daha kompakt kartlar */
 .home-listings-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem; /* 8px — app crossAxisSpacing */
+  gap: 0.35rem;
 }
 
-@media (min-width: 40rem) {
+@media (min-width: 36rem) {
   .home-listings-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: 0.4rem;
+  }
+}
+
+@media (min-width: 48rem) {
+  .home-listings-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.4rem;
   }
 }
 
 @media (min-width: 64rem) {
   .home-listings-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.4rem;
   }
 }
 
