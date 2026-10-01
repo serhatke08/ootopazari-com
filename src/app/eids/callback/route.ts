@@ -6,15 +6,18 @@ import {
   getEidsReturnUrl,
   type EidsSessionRow,
 } from "@/lib/eids";
+import {
+  callEidsAracYetki,
+  callGetKullaniciKodu,
+  normalizeGsmNo,
+  normalizePlakaNo,
+} from "@/lib/eids-ministry";
 import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
 
-function firstParam(
-  sp: URLSearchParams,
-  keys: string[]
-): string {
+function firstParam(sp: URLSearchParams, keys: string[]): string {
   for (const k of keys) {
     const v = sp.get(k)?.trim();
     if (v) return v;
@@ -46,13 +49,174 @@ function htmlErrorPage(title: string, message: string): NextResponse {
   });
 }
 
+type AdminClient = NonNullable<ReturnType<typeof createSupabaseServiceClient>>;
+
+/**
+ * yetkiKodu 2 dk geçerli — callback içinde hemen GetKullaniciKodu + mümkünse Araç API.
+ */
+async function completeMinistryApis(
+  admin: AdminClient,
+  session: EidsSessionRow,
+  yetkiKodu: string
+): Promise<{
+  kullaniciOk: boolean;
+  aracOk: boolean;
+  kullaniciKodu: string | null;
+  kullaniciHata: string | null;
+}> {
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, phone, eids_kullanici_kodu")
+    .eq("id", session.user_id)
+    .maybeSingle();
+
+  const gsmNo = normalizeGsmNo(
+    (profile as { phone?: string | null } | null)?.phone
+  );
+
+  let kullaniciKodu =
+    (profile as { eids_kullanici_kodu?: string | null } | null)
+      ?.eids_kullanici_kodu ?? null;
+  let kullaniciOk = Boolean(kullaniciKodu);
+  let kullaniciHata: string | null = null;
+  let kullaniciAd: string | null = null;
+  let kullaniciSoyad: string | null = null;
+
+  if (!kullaniciKodu) {
+    if (!gsmNo) {
+      kullaniciHata = "gsm_missing";
+    } else {
+      try {
+        const kk = await callGetKullaniciKodu({
+          yetkiKodu,
+          gsmNo,
+        });
+        kullaniciOk = kk.ok;
+        kullaniciKodu = kk.kullaniciKodu;
+        kullaniciAd = kk.ad ?? null;
+        kullaniciSoyad = kk.soyad ?? null;
+        kullaniciHata =
+          kk.hataMesaji ||
+          kk.hataKodu ||
+          (kk.ok ? null : `http_${kk.httpStatus}`);
+
+        if (kk.ok && kk.kullaniciKodu) {
+          await admin
+            .from("profiles")
+            .update({
+              eids_kullanici_kodu: kk.kullaniciKodu,
+              eids_ad: kk.ad ?? null,
+              eids_soyad: kk.soyad ?? null,
+              eids_verified_at: new Date().toISOString(),
+            })
+            .eq("id", session.user_id);
+        }
+      } catch (e) {
+        kullaniciHata =
+          e instanceof Error ? e.message : "kullanici_kodu_failed";
+      }
+    }
+  }
+
+  let aracOk = false;
+  let aracStatus: number | null = null;
+  let aracErrors: string[] | null = null;
+  let aracData: Record<string, unknown> | null = null;
+
+  if (kullaniciKodu && session.listing_id) {
+    const { data: listing } = await admin
+      .from("listings")
+      .select("id, vehicle_plate, listing_number")
+      .eq("id", session.listing_id)
+      .maybeSingle();
+
+    const plakaNo = normalizePlakaNo(
+      (listing as { vehicle_plate?: string | null } | null)?.vehicle_plate
+    );
+    const ilanNo =
+      (listing as { listing_number?: number | string | null } | null)
+        ?.listing_number != null
+        ? String(
+            (listing as { listing_number?: number | string | null })
+              .listing_number
+          )
+        : session.listing_id;
+
+    if (plakaNo) {
+      try {
+        const arac = await callEidsAracYetki({
+          kullaniciKodu,
+          plakaNo,
+          ilanNo,
+        });
+        aracOk = arac.ok;
+        aracStatus = arac.statusCode ?? arac.httpStatus;
+        aracErrors = arac.errors ?? null;
+        aracData = (arac.data as Record<string, unknown> | null) ?? null;
+
+        if (arac.ok && arac.data) {
+          await admin
+            .from("listings")
+            .update({
+              eids_verified_at: new Date().toISOString(),
+              eids_marka_adi: arac.data.markaAdi ?? null,
+              eids_ticari_adi: arac.data.ticariAdi ?? null,
+              eids_model_yili: arac.data.modelYili ?? null,
+              eids_ilan_suresi: arac.data.ilanSuresi ?? null,
+              eids_status: "verified",
+              eids_errors: null,
+            })
+            .eq("id", session.listing_id);
+        } else {
+          await admin
+            .from("listings")
+            .update({
+              eids_status: "failed",
+              eids_errors: arac.errors ?? ["arac_yetki_failed"],
+            })
+            .eq("id", session.listing_id);
+        }
+      } catch (e) {
+        aracErrors = [
+          e instanceof Error ? e.message : "arac_yetki_failed",
+        ];
+        await admin
+          .from("listings")
+          .update({
+            eids_status: "failed",
+            eids_errors: aracErrors,
+          })
+          .eq("id", session.listing_id);
+      }
+    } else {
+      aracErrors = ["plaka_missing"];
+    }
+  }
+
+  await admin
+    .from("eids_verification_sessions")
+    .update({
+      kullanici_kodu: kullaniciKodu,
+      kullanici_ad: kullaniciAd,
+      kullanici_soyad: kullaniciSoyad,
+      kullanici_hata: kullaniciHata,
+      arac_status_code: aracStatus,
+      arac_errors: aracErrors,
+      arac_data: aracData,
+    })
+    .eq("id", session.id);
+
+  return {
+    kullaniciOk,
+    aracOk,
+    kullaniciKodu,
+    kullaniciHata,
+  };
+}
+
 /**
  * EİDS Return URL (Bakanlık callback).
  * GET ?yetkiKodu=&durum=&state=
- *
- * state yoksa son pending oturum yetkiKodu ile eşleştirilemez; state zorunluya yakın.
- * EİDS sabit URL’ye yalnızca yetkiKodu+durum gönderiyorsa, başlatırken
- * returnUrlWithState kullanın veya mobil/web state’i cookie’de tutun (web).
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -98,8 +262,6 @@ export async function GET(req: Request) {
     session = (data as EidsSessionRow | null) ?? null;
   }
 
-  // State yok / bulunamadı: henüz kullanılmamış, süresi dolmamış, yetki_kodu boş son oturum yok —
-  // güvenli eşleşme yapılamaz. Yine de yetkiKodu’yu loglayıp hata sayfası göster.
   if (!session) {
     console.warn("eids callback: session not found", {
       hasState: Boolean(state),
@@ -113,14 +275,18 @@ export async function GET(req: Request) {
 
   const now = Date.now();
   const expiresAt = new Date(session.expires_at).getTime();
-  if (session.status !== "pending" || Number.isNaN(expiresAt) || expiresAt < now) {
+  if (
+    session.status !== "pending" ||
+    Number.isNaN(expiresAt) ||
+    expiresAt < now
+  ) {
     return htmlErrorPage(
       "Oturum süresi doldu",
       "Bu doğrulama linki artık geçerli değil. Yeni bir doğrulama başlatın."
     );
   }
 
-  const ok = eidsDurumIsSuccess(durum);
+  const edevletOk = eidsDurumIsSuccess(durum);
   const callbackAt = new Date().toISOString();
   const queryPayload: Record<string, string> = {};
   for (const [k, v] of sp.entries()) {
@@ -132,7 +298,7 @@ export async function GET(req: Request) {
     .update({
       yetki_kodu: yetkiKodu,
       durum: durum || null,
-      status: ok ? "completed" : "failed",
+      status: edevletOk ? "completed" : "failed",
       consumed_at: callbackAt,
       callback_at: callbackAt,
       callback_query: queryPayload,
@@ -152,36 +318,64 @@ export async function GET(req: Request) {
     );
   }
 
-  // Eşzamanlı çift callback: ikinci istek pending bulamaz.
   const finalSession = (updated as EidsSessionRow | null) ?? session;
-  if (!updated) {
-    // Zaten işlenmiş — yine doğru yere yönlendir (idempotent UX).
+
+  let ministry = {
+    kullaniciOk: false,
+    aracOk: false,
+    kullaniciKodu: null as string | null,
+    kullaniciHata: null as string | null,
+  };
+  if (edevletOk) {
+    try {
+      ministry = await completeMinistryApis(admin, finalSession, yetkiKodu);
+    } catch (e) {
+      console.warn("eids ministry complete failed", e);
+      ministry.kullaniciHata =
+        e instanceof Error ? e.message : "ministry_failed";
+    }
   }
+
+  const overallOk = edevletOk && ministry.kullaniciOk;
 
   if (finalSession.source === "app") {
     const appUrl = buildEidsAppRedirectUrl({
       yetkiKodu,
-      durum,
+      durum: overallOk
+        ? durum || "ok"
+        : ministry.kullaniciHata || durum || "fail",
       state: finalSession.state,
       listingId: finalSession.listing_id,
-      ok,
+      ok: overallOk,
     });
-    return NextResponse.redirect(appUrl, 302);
+    // Extra query for app diagnostics
+    try {
+      const u = new URL(appUrl);
+      if (ministry.kullaniciKodu) {
+        u.searchParams.set("kullaniciKodu", ministry.kullaniciKodu);
+      }
+      if (ministry.aracOk) u.searchParams.set("arac", "1");
+      if (ministry.kullaniciHata) {
+        u.searchParams.set("apiHata", ministry.kullaniciHata.slice(0, 120));
+      }
+      return NextResponse.redirect(u.toString(), 302);
+    } catch {
+      return NextResponse.redirect(appUrl, 302);
+    }
   }
 
   const path = buildEidsWebRedirectPath({
     web_return_path: finalSession.web_return_path,
     listing_id: finalSession.listing_id,
     yetki_kodu: yetkiKodu,
-    durum,
+    durum: overallOk ? durum : ministry.kullaniciHata || durum,
     state: finalSession.state,
-    ok,
+    ok: overallOk,
   });
   const origin = getSiteOrigin();
   return NextResponse.redirect(new URL(path, origin), 302);
 }
 
-/** Sağlık / dokümantasyon — Bakanlık kayıt kontrolü. */
 export async function HEAD() {
   return new NextResponse(null, {
     status: 200,

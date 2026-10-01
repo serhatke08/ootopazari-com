@@ -106,13 +106,20 @@ export async function POST(req: Request) {
   }
 
   const returnUrl = getEidsReturnUrl();
+  const firmaKodu =
+    process.env.EIDS_FIRMA_KODU?.trim() ||
+    "728bd568-8fd8-4632-9207-83e0d6b0bb0f";
+  const returnUrlWithState = `${returnUrl}?state=${encodeURIComponent(String(inserted.state))}`;
+  const authUrl = `https://eids.ticaret.gov.tr/oturum?firmaKodu=${encodeURIComponent(firmaKodu)}&returnUrl=${encodeURIComponent(returnUrlWithState)}`;
 
   return NextResponse.json({
     ok: true,
     state: inserted.state as string,
     returnUrl,
     /** EİDS’e giderken Return URL’ye state eklemek mümkünse kullanın. */
-    returnUrlWithState: `${returnUrl}?state=${encodeURIComponent(String(inserted.state))}`,
+    returnUrlWithState,
+    authUrl,
+    firmaKodu,
     expiresAt: inserted.expires_at as string,
     sessionId: inserted.id as string,
   });
