@@ -459,12 +459,7 @@ export function ProfilHeader({
                   >
                     @{initialUsername.trim()}
                   </Link>
-                ) : (
-                  <p className="max-w-md text-sm text-zinc-500">
-                    Kullanıcı adı yok — düzenle ile ekle.
-                  </p>
-                )}
-
+                ) : null}
                 <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-zinc-700 sm:justify-start">
                   <div>
                     <span className="tabular-nums font-bold text-zinc-900">

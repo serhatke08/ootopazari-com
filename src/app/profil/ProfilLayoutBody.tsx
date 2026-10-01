@@ -14,6 +14,10 @@ import { initialFromName } from "@/lib/user-display-name";
 import { fetchListingQuota } from "@/lib/listing-quota";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  resolveUsernameCandidate,
+  sanitizeUsernameCandidate,
+} from "@/lib/profile-username";
 
 function readNamesAndAvatar(user: User): {
   firstName: string | null;
@@ -31,6 +35,14 @@ function readNamesAndAvatar(user: User): {
   };
 }
 
+type ProfileExtras = {
+  phone?: string | null;
+  eids_kullanici_kodu?: string | null;
+  username?: string | null;
+  full_name?: string | null;
+  avatar_url?: string | null;
+};
+
 export async function ProfilLayoutBody({
   env,
   user,
@@ -41,8 +53,10 @@ export async function ProfilLayoutBody({
   children: React.ReactNode;
 }) {
   const supabase = await createSupabaseServerClient();
-  const quotaClient = createSupabaseServiceClient() ?? supabase;
-  const [profile, adminProfile, followCounts, serviceSummaries, listingQuota, verifyRow] =
+  const service = createSupabaseServiceClient();
+  const quotaClient = service ?? supabase;
+
+  const [profile, adminProfile, followCounts, serviceSummaries, listingQuota, extrasRes] =
     await Promise.all([
       user.id ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
       user.id ? fetchAdminProfileByUserId(supabase, user.id) : Promise.resolve(null),
@@ -56,19 +70,31 @@ export async function ProfilLayoutBody({
       user.id
         ? supabase
             .from("profiles")
-            .select("phone, eids_kullanici_kodu")
+            .select("phone, eids_kullanici_kodu, username, full_name, avatar_url")
             .eq("id", user.id)
             .maybeSingle()
-            .then((r) => r.data as { phone?: string | null; eids_kullanici_kodu?: string | null } | null)
-        : Promise.resolve(null),
+        : Promise.resolve({ data: null, error: null }),
     ]);
+
+  let extras = (extrasRes as { data?: ProfileExtras | null })?.data ?? null;
+
+  // Oturum ile okunamadıysa service ile dene
+  if ((!extras || !sanitizeUsernameCandidate(extras.username)) && service) {
+    const { data } = await service
+      .from("profiles")
+      .select("phone, eids_kullanici_kodu, username, full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (data) extras = data as ProfileExtras;
+  }
 
   const meta = readNamesAndAvatar(user);
   let firstName = meta.firstName;
   let lastName = meta.lastName;
 
   const profileFull =
-    profile?.full_name != null ? String(profile.full_name).trim() : "";
+    (extras?.full_name != null ? String(extras.full_name).trim() : "") ||
+    (profile?.full_name != null ? String(profile.full_name).trim() : "");
   if (profileFull) {
     const parts = profileFull.split(/\s+/).filter(Boolean);
     firstName = parts[0] ?? null;
@@ -76,7 +102,8 @@ export async function ProfilLayoutBody({
   }
 
   const avatarFromProfile = sanitizeUserAvatarUrl(
-    profile?.avatar_url != null ? String(profile.avatar_url).trim() : null
+    (extras?.avatar_url != null ? String(extras.avatar_url).trim() : null) ||
+      (profile?.avatar_url != null ? String(profile.avatar_url).trim() : null)
   );
   const avatarRaw = avatarFromProfile || meta.avatarRaw || null;
   const avatarSrc = avatarRaw ? resolveListingImageUrl(env, avatarRaw) : null;
@@ -91,11 +118,42 @@ export async function ProfilLayoutBody({
   const initialsLabel = initialFromName(firstName || displayName);
   const publicProfileHref = `/kullanici/${encodeURIComponent(user.id)}`;
 
-  const phone =
-    verifyRow?.phone != null ? String(verifyRow.phone).trim() : "";
+  let username =
+    sanitizeUsernameCandidate(extras?.username) ||
+    sanitizeUsernameCandidate(
+      profile?.username != null ? String(profile.username) : null
+    ) ||
+    resolveUsernameCandidate(user, null);
+
+  // Profil satırında username boşsa metadata/e-posta adayını yaz
+  if (
+    service &&
+    extras &&
+    !sanitizeUsernameCandidate(extras.username) &&
+    username
+  ) {
+    const { data: taken } = await service
+      .from("profiles")
+      .select("id")
+      .eq("username", username)
+      .neq("id", user.id)
+      .maybeSingle();
+    let toSave = username;
+    if (taken) {
+      const suffix = user.id.replace(/-/g, "").slice(0, 6);
+      toSave = sanitizeUsernameCandidate(`${username}_${suffix}`) ?? username;
+    }
+    const { error } = await service
+      .from("profiles")
+      .update({ username: toSave })
+      .eq("id", user.id);
+    if (!error) username = toSave;
+  }
+
+  const phone = extras?.phone != null ? String(extras.phone).trim() : "";
   const eidsKodu =
-    verifyRow?.eids_kullanici_kodu != null
-      ? String(verifyRow.eids_kullanici_kodu).trim()
+    extras?.eids_kullanici_kodu != null
+      ? String(extras.eids_kullanici_kodu).trim()
       : "";
   const emailVerified = Boolean(
     (user as { email_confirmed_at?: string | null }).email_confirmed_at ||
@@ -115,7 +173,7 @@ export async function ProfilLayoutBody({
         initialsLabel={initialsLabel}
         verifiedBadge={!!adminProfile}
         hasAvatar={hasAvatar}
-        username={profile?.username != null ? String(profile.username) : null}
+        username={username}
         publicProfileHref={publicProfileHref}
         followerCount={followCounts.followers}
         followingCount={followCounts.following}
