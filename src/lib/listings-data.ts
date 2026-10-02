@@ -160,7 +160,6 @@ const LISTING_EDIT_EXTRA = [
   "is_tradeable",
   "expertiz_panels",
   "vehicle_brand_model_id",
-  "images",
 ] as const;
 
 const LISTING_OWNER_EDIT_SELECT = [
@@ -1206,20 +1205,40 @@ export async function fetchListingForOwnerByNumber(
   listingNumber: string,
   userId: string
 ): Promise<ListingRow | null> {
-  const n = Number(listingNumber);
-  if (!Number.isFinite(n)) return null;
+  const raw = String(listingNumber ?? "").trim();
+  if (!raw) return null;
 
-  const { data, error } = await supabase
-    .from("listings")
-    .select(LISTING_OWNER_EDIT_SELECT)
-    .eq("listing_number", n)
-    .eq("user_id", userId)
-    .maybeSingle();
+  const byUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      raw
+    );
 
+  const run = async (select: string) => {
+    let q = supabase.from("listings").select(select).eq("user_id", userId);
+    if (byUuid) {
+      q = q.eq("id", raw);
+    } else {
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return { data: null, error: { message: "bad number" } };
+      q = q.eq("listing_number", n);
+    }
+    return q.maybeSingle();
+  };
+
+  let { data, error } = await run(LISTING_OWNER_EDIT_SELECT);
+
+  // Eksik kolon (ör. images) select’i patlatırsa dar sete düş.
   if (error) {
     console.warn("fetchListingForOwnerByNumber:", error.message);
-    return null;
+    const fallback = await run(LISTING_SELECT);
+    data = fallback.data;
+    error = fallback.error;
+    if (error) {
+      console.warn("fetchListingForOwnerByNumber fallback:", error.message);
+      return null;
+    }
   }
+
   if (!data || typeof data !== "object") return null;
   return data as unknown as ListingRow;
 }
