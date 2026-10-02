@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import {
   getSafeBackHref,
+  isAuthPath,
+  isSameListingPath,
   isUnsafeHistoryReferrer,
   oauthTrapArmed,
 } from "@/lib/app-nav-memory";
@@ -15,14 +17,45 @@ export function ListingBackButton({ className }: { className?: string }) {
       type="button"
       aria-label="Geri"
       onClick={() => {
-        const target = getSafeBackHref("/");
+        const here = `${window.location.pathname}${window.location.search}`;
+
+        // OAuth tuzağı / dış referrer → güvenli hedefe hard replace
         if (
           oauthTrapArmed() ||
           isUnsafeHistoryReferrer(
             typeof document !== "undefined" ? document.referrer : ""
           )
         ) {
-          window.location.replace(target);
+          window.location.replace(getSafeBackHref("/"));
+          return;
+        }
+
+        // document.referrer aynı origin ve farklı sayfa ise tarayıcı geri
+        const ref = typeof document !== "undefined" ? document.referrer : "";
+        if (ref) {
+          try {
+            const u = new URL(ref);
+            if (
+              u.origin === window.location.origin &&
+              !isAuthPath(u.pathname) &&
+              !isSameListingPath(u.pathname, here)
+            ) {
+              router.back();
+              return;
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+
+        const target = getSafeBackHref("/");
+        // Aynı ilanın başka slug’ına gitme (SEO loop)
+        if (
+          !target ||
+          target === here ||
+          isSameListingPath(target, here)
+        ) {
+          router.push("/");
           return;
         }
         router.push(target);
