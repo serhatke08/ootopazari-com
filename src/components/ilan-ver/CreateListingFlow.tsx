@@ -14,6 +14,8 @@ import {
 import {
   ContentFilterService,
   composeListingDescription,
+  categoryAllowsBodyExpertiz,
+  expertizPanelsToJson,
   formatContactPhone,
   isValidTrMobile10,
   isVehicleCategoryCode,
@@ -25,6 +27,14 @@ import {
   formatMileageThousandsTr,
   sanitizeListingClientWrite,
 } from "@/lib/listing-create";
+import type { ExpertizDurum } from "@/lib/expertiz";
+import {
+  PANEL_LABELS,
+  expandExpertizPartial,
+  parseExpertizPanels,
+  type PanelKey,
+} from "@/lib/expertiz";
+import { ExpertizCarPreview } from "@/components/ExpertizDiagram";
 import { listingCreatedClientField } from "@/lib/client-analytics";
 import {
   humanizeEidsFailMessage,
@@ -157,6 +167,13 @@ const TRANSMISSIONS = ["Manuel", "Otomatik", "Yarı Otomatik"];
 const FUELS = ["Benzin", "Dizel", "Elektrik", "Hibrit", "LPG", "LPG & Benzin"];
 const CONDITIONS = ["İkinci El", "Sıfır"];
 
+const EXPERTIZ_OPTIONS: { value: ExpertizDurum; label: string }[] = [
+  { value: "orijinal", label: "Orijinal" },
+  { value: "boyalı", label: "Boyalı" },
+  { value: "lokal_boyalı", label: "Lokal boyalı" },
+  { value: "değişen", label: "Değişen" },
+];
+
 function extForFile(f: File): string {
   const n = f.name.split(".").pop()?.toLowerCase();
   if (n && /^[a-z0-9]+$/i.test(n)) return n;
@@ -235,7 +252,12 @@ export function CreateListingFlow({
   const [fuelType, setFuelType] = useState<string | null>(null);
   const [condition, setCondition] = useState<string | null>(null);
   const [hasExpertise, setHasExpertise] = useState(false);
+  const [expertiz, setExpertiz] = useState<
+    Partial<Record<PanelKey, ExpertizDurum | "">>
+  >({});
+  const [expertizConfirmed, setExpertizConfirmed] = useState(false);
   const [plate, setPlate] = useState("");
+  const showExpertiz = categoryAllowsBodyExpertiz(categoryCode, categoryName);
 
   const [eidsAccountOk, setEidsAccountOk] = useState(false);
   const [eidsVehicleOk, setEidsVehicleOk] = useState(false);
@@ -345,6 +367,7 @@ export function CreateListingFlow({
       color,
       vehicleCondition: condition,
       hasExpertise,
+      expertizPanels: expertiz as Record<string, string>,
       plate,
       eidsAccountOk,
       eidsVehicleOk,
@@ -386,6 +409,7 @@ export function CreateListingFlow({
     color,
     condition,
     hasExpertise,
+    expertiz,
     plate,
     eidsAccountOk,
     eidsVehicleOk,
@@ -550,6 +574,12 @@ export function CreateListingFlow({
       const plaka = plate.trim().replace(/\s+/g, "");
       if (plaka.length < 5) {
         return { message: "Plaka zorunlu.", fieldId: "ilan-ver-plate" };
+      }
+      if (showExpertiz && !expertizConfirmed) {
+        return {
+          message: "Expertiz bilgilerini doğru girdiğinizi onaylayın.",
+          fieldId: "ilan-ver-expertiz-confirm",
+        };
       }
     }
     if (WEB_EIDS_STEP_ENABLED && page === "eids" && isVehicle) {
@@ -761,6 +791,14 @@ export function CreateListingFlow({
     if (d.fuelType) setFuelType(d.fuelType);
     if (d.vehicleCondition) setCondition(d.vehicleCondition);
     if (d.hasExpertise != null) setHasExpertise(Boolean(d.hasExpertise));
+    if (d.expertizPanels && typeof d.expertizPanels === "object") {
+      const parsed = parseExpertizPanels(d.expertizPanels);
+      if (parsed) setExpertiz(parsed);
+      else {
+        // Taslakta UI durum anahtarları (orijinal/boyalı…) olabilir
+        setExpertiz(d.expertizPanels as Partial<Record<PanelKey, ExpertizDurum | "">>);
+      }
+    }
     if (d.plate) setPlate(d.plate);
     if (d.eidsAccountOk) setEidsAccountOk(true);
     if (d.eidsVehicleOk) setEidsVehicleOk(true);
@@ -1316,7 +1354,10 @@ export function CreateListingFlow({
         base.transmission_type = transmission;
         base.color = color;
         base.body_type = bodyStyleName;
-        base.has_expertise = hasExpertise;
+        base.has_expertise = showExpertiz ? hasExpertise : false;
+        if (showExpertiz) {
+          base.expertiz_panels = expertizPanelsToJson(expertiz);
+        }
         if (resolvedModel) base.vehicle_brand_model_id = resolvedModel;
         if (packageId) base.vehicle_engine_package_id = packageId;
       }
@@ -1938,14 +1979,6 @@ export function CreateListingFlow({
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={hasExpertise}
-              onChange={(e) => setHasExpertise(e.target.checked)}
-            />
-            Ekspertiz var
-          </label>
           <label className="block text-sm font-medium">
             Plaka <span className="text-red-600">*</span>
             <input
@@ -1960,6 +1993,94 @@ export function CreateListingFlow({
               required
             />
           </label>
+
+          {showExpertiz ? (
+            <div className="space-y-3 border-t border-zinc-100 pt-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={hasExpertise}
+                  onChange={(e) => setHasExpertise(e.target.checked)}
+                />
+                Expertiz raporu var
+              </label>
+
+              <div>
+                <p className="mb-1 text-sm font-bold text-zinc-900">
+                  Kaporta ekspertiz şeması
+                </p>
+                <p className="mb-2 text-xs text-zinc-500">
+                  Parça durumunu seç; şema renklenir (uygulamadaki gibi).
+                </p>
+                <div className="mb-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                  <div className="mx-auto max-h-72 w-full max-w-sm">
+                    <ExpertizCarPreview
+                      panels={expandExpertizPartial(expertiz)}
+                      className="max-h-72"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
+                  {(Object.keys(PANEL_LABELS) as PanelKey[]).map((key) => (
+                    <div
+                      key={key}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-zinc-50 px-3 py-2 text-sm"
+                    >
+                      <span className="font-medium text-zinc-700">
+                        {PANEL_LABELS[key]}
+                      </span>
+                      <select
+                        className="min-w-[10rem] rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium"
+                        value={expertiz[key] ?? "orijinal"}
+                        onChange={(e) => {
+                          const v = e.target.value as ExpertizDurum;
+                          setExpertiz((prev) => ({ ...prev, [key]: v }));
+                        }}
+                      >
+                        {EXPERTIZ_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                id="ilan-ver-expertiz-confirm"
+                className={`rounded-lg border-2 p-4 ${
+                  fieldErrorId === "ilan-ver-expertiz-confirm"
+                    ? "border-red-400 bg-red-50"
+                    : "border-blue-200 bg-blue-50"
+                }`}
+              >
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={expertizConfirmed}
+                    onChange={(e) => {
+                      setFieldErrorId(null);
+                      setExpertizConfirmed(e.target.checked);
+                    }}
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-blue-300 text-blue-600"
+                  />
+                  <div className="text-sm">
+                    <p className="font-semibold text-blue-900">
+                      Expertiz bilgilerini doğru girdiğimi onaylıyorum{" "}
+                      <span className="text-red-600">*</span>
+                    </p>
+                    <p className="mt-1 text-xs text-blue-800">
+                      Yanlış girilen expertiz bilgisi ilanın kaldırılmasına yol
+                      açabilir. Kaput, çamurluk, kapı vb. tüm bölgeleri doğru
+                      işaretlediğinden emin ol.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
