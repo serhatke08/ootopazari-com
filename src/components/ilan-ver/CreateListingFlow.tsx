@@ -371,7 +371,7 @@ export function CreateListingFlow({
       : parents
     : flatModels;
 
-  const persistDraft = useCallback(async () => {
+  const persistDraft = useCallback(async (overrides?: Partial<ListingDraftPayload>) => {
     if (draftSkip.current) return;
     const payload: ListingDraftPayload = {
       categoryId,
@@ -417,6 +417,7 @@ export function CreateListingFlow({
       pageIndex,
       webStep: pageIndex + 1,
       source: "web",
+      ...overrides,
     };
     if (!draftHasProgress(payload)) return;
     await saveListingDraft(payload);
@@ -604,7 +605,9 @@ export function CreateListingFlow({
       setFieldErrorId(null);
       setPageIndex(Math.min(i, pages.length - 1));
       scrollFlowToTop();
-      await persistDraft();
+      // persistDraft burada ÇAĞRILMAZ: setState henüz commit değilken eski
+      // engineId:null taslağa yazılıyordu → e-Devlet/plaka sonrası motor kayboluyordu.
+      // Kayıt: debounced effect + seçimde flush + startEids/saveDraftAndExit.
     },
     [
       pages,
@@ -613,7 +616,6 @@ export function CreateListingFlow({
       packages.length,
       categoryCode,
       categoryName,
-      persistDraft,
     ]
   );
 
@@ -1136,16 +1138,13 @@ export function CreateListingFlow({
         setVehicleYear(yil);
       }
 
-      // Model değişince alt seçimler geçersiz — sıfırla
-      setBodyStyleId(null);
-      setBodyStyleName(null);
-      setBodyStyles([]);
-      setEngineId(null);
-      setEngineName(null);
-      setEngines([]);
-      setPackageId(null);
-      setPackageName(null);
-      setPackages([]);
+      const prevModelId = childId || parentId || modelId;
+      const prevEngineId = engineId;
+      const prevEngineName = engineName;
+      const prevPackageId = packageId;
+      const prevPackageName = packageName;
+      const prevBodyId = bodyStyleId;
+      const prevBodyName = bodyStyleName;
 
       let modelPool: IdNameRow[] = hierarchical
         ? [...parents, ...children]
@@ -1188,14 +1187,64 @@ export function CreateListingFlow({
           }
         }
         if (best) {
+          const modelChanged = best.id !== prevModelId;
           setModelId(best.id);
           setParentId(best.id);
           setChildId(best.id);
           setModelName(best.name ?? null);
+
+          if (modelChanged) {
+            setBodyStyleId(null);
+            setBodyStyleName(null);
+            setEngineId(null);
+            setEngineName(null);
+            setPackageId(null);
+            setPackageName(null);
+            setPackages([]);
+          }
+
           const bodies = await loadBody(best.id);
           const engs = await loadEngines(best.id);
-          // Motor/paket boş kaldıysa hemen sor — İleri’de “eksik kalan” tuzağı olmasın
-          if (engs.length > 0) {
+
+          let keepEngineId: string | null = null;
+          let keepPackId: string | null = null;
+          let packLen = 0;
+
+          if (!modelChanged && prevEngineId) {
+            const engOk = engs.some((e) => e.id === prevEngineId);
+            if (engOk) {
+              keepEngineId = prevEngineId;
+              setEngineId(prevEngineId);
+              setEngineName(prevEngineName);
+              const packs = await loadPackages(prevEngineId);
+              packLen = packs.length;
+              if (prevPackageId && packs.some((p) => p.id === prevPackageId)) {
+                keepPackId = prevPackageId;
+                setPackageId(prevPackageId);
+                setPackageName(prevPackageName);
+              } else {
+                setPackageId(null);
+                setPackageName(null);
+              }
+            } else {
+              setEngineId(null);
+              setEngineName(null);
+              setPackageId(null);
+              setPackageName(null);
+              setPackages([]);
+            }
+          }
+
+          if (!modelChanged && prevBodyId && bodies.some((b) => b.id === prevBodyId)) {
+            setBodyStyleId(prevBodyId);
+            setBodyStyleName(prevBodyName);
+          } else if (modelChanged || (prevBodyId && !bodies.some((b) => b.id === prevBodyId))) {
+            setBodyStyleId(null);
+            setBodyStyleName(null);
+          }
+
+          // Sadece gerçekten eksikse motor/paket/kasa sayfasına at
+          if (engs.length > 0 && !keepEngineId) {
             const idx = pages.indexOf("engine");
             if (idx >= 0) {
               await goTo(idx, {
@@ -1209,13 +1258,31 @@ export function CreateListingFlow({
               return;
             }
           }
-          if (bodies.length > 0) {
+          if (packLen > 0 && keepEngineId && !keepPackId) {
+            const idx = pages.indexOf("package");
+            if (idx >= 0) {
+              await goTo(idx, {
+                body: bodies.length,
+                engine: engs.length,
+                pack: packLen,
+              });
+              setEidsMsg(
+                "Seçimin e-Devlet kaydına göre düzeltildi. Paketi seç."
+              );
+              return;
+            }
+          }
+          const bodyKept =
+            !modelChanged &&
+            prevBodyId &&
+            bodies.some((b) => b.id === prevBodyId);
+          if (bodies.length > 0 && !bodyKept) {
             const idx = pages.indexOf("bodyStyle");
             if (idx >= 0) {
               await goTo(idx, {
                 body: bodies.length,
                 engine: engs.length,
-                pack: 0,
+                pack: packLen,
               });
               setEidsMsg(
                 "Seçimin e-Devlet kaydına göre düzeltildi. Kasa tipini seç."
@@ -1226,9 +1293,7 @@ export function CreateListingFlow({
         }
       }
 
-      setEidsMsg(
-        "Seçimin e-Devlet kaydına göre düzeltildi."
-      );
+      setEidsMsg("Seçimin e-Devlet kaydına göre düzeltildi.");
     } catch (e) {
       console.warn("[eids autoFix]", e);
       setErr("Otomatik düzeltme başarısız. Manuel seç.");
@@ -1272,22 +1337,71 @@ export function CreateListingFlow({
       return;
     }
 
-    // e-Devlet düzeltmesi sonrası atlanan kasa/motor/paket vb. — geri al
-    if (
-      isVehicle &&
-      (page === "eids" ||
-        page === "details" ||
-        page === "content" ||
-        page === "boosts")
-    ) {
-      const gaps = hierarchyGaps();
+    // eids çıkışında eksik hiyerarşi — önce taslaktan geri yükle (state kaybı),
+    // sonra hâlâ eksikse ilgili sayfaya gönder. details/content'te fırlatma yok.
+    if (isVehicle && page === "eids") {
+      let engId = engineId;
+      let engName = engineName;
+      let packId = packageId;
+      let packName = packageName;
+      let bodyId = bodyStyleId;
+      let bodyName = bodyStyleName;
+      let trans = transmission;
+      let packCount = packages.length;
+
+      if (!engId || !packId || !bodyId || !trans) {
+        const d = await fetchListingDraft().catch(() => null);
+        if (d) {
+          if (!engId && d.engineId) {
+            engId = d.engineId;
+            engName = d.engineName ?? null;
+            setEngineId(engId);
+            setEngineName(engName);
+            const rows = await loadPackages(engId);
+            packCount = rows.length;
+          }
+          if (!packId && d.packageId) {
+            packId = d.packageId;
+            packName = d.packageName ?? null;
+            setPackageId(packId);
+            setPackageName(packName);
+          }
+          if (!bodyId && d.bodyStyleId) {
+            bodyId = d.bodyStyleId;
+            bodyName = d.bodyStyleName ?? null;
+            setBodyStyleId(bodyId);
+            setBodyStyleName(bodyName);
+          }
+          if (!trans && d.transmission) {
+            trans = d.transmission;
+            setTransmission(trans);
+          }
+        }
+      }
+
+      // Motor seçili ama paket listesi henüz yüklenmediyse yükle
+      if (engId && packCount === 0) {
+        const rows = await loadPackages(engId);
+        packCount = rows.length;
+      }
+
+      const gaps: { page: FlowPage; label: string }[] = [];
+      if (engines.length > 0 && !engId) {
+        gaps.push({ page: "engine", label: "Motor / donanım" });
+      }
+      if (packCount > 0 && !packId) {
+        gaps.push({ page: "package", label: "Paket" });
+      }
+      if (!trans) {
+        gaps.push({ page: "transmission", label: "Vites" });
+      }
+      if (bodyStyles.length > 0 && !bodyId) {
+        gaps.push({ page: "bodyStyle", label: "Kasa tipi" });
+      }
       if (gaps.length > 0) {
         const labels = gaps.map((g) => g.label).join(", ");
         const idx = pages.indexOf(gaps[0].page);
-        if (idx >= 0) {
-          await goTo(idx);
-        }
-        // goTo err'i temizler — mesajı sonra koy
+        if (idx >= 0) await goTo(idx);
         setErr(
           `Eksik kalan: ${labels}. Bu sayfada eklenmesi gereken şeyler.`
         );
@@ -2054,6 +2168,13 @@ export function CreateListingFlow({
                         setEngineCapacityStr(String(cc));
                       }
                       const rows = await loadPackages(e.id);
+                      // setState yarışında taslak motoru silmesin — hemen yaz
+                      void persistDraft({
+                        engineId: e.id,
+                        engineName: e.name ?? null,
+                        packageId: null,
+                        packageName: null,
+                      });
                       const engIdx = pages.indexOf("engine");
                       await goTo(engIdx >= 0 ? engIdx + 1 : pageIndex + 1, {
                         pack: rows.length,
@@ -2083,6 +2204,10 @@ export function CreateListingFlow({
                     if (p.id !== "_skip") {
                       setPackageId(p.id);
                       setPackageName(p.name ?? null);
+                      void persistDraft({
+                        packageId: p.id,
+                        packageName: p.name ?? null,
+                      });
                     }
                     await goNext();
                   })();
@@ -2103,6 +2228,7 @@ export function CreateListingFlow({
               selected={transmission === t}
               onClick={() => {
                 setTransmission(t);
+                void persistDraft({ transmission: t });
                 void goNext();
               }}
             />
