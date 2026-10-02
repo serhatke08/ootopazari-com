@@ -65,13 +65,12 @@ async function loadCount() {
 
 function scheduleExtraLoads() {
   clearDebounce();
-  for (const ms of [100, 350, 800]) {
-    debounceTimers.push(
-      setTimeout(() => {
-        if (!loadCancelled) void loadCount();
-      }, ms)
-    );
-  }
+  // Tek ek yükleme yeterli — 3 ardışık full count siteyi kilitliyordu
+  debounceTimers.push(
+    setTimeout(() => {
+      if (!loadCancelled) void loadCount();
+    }, 400)
+  );
 }
 
 function onVisible() {

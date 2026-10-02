@@ -67,17 +67,24 @@ export default async function MesajConversationPage({ params }: Props) {
     );
   }
 
-  const conv = await fetchConversationById(supabase, conversationId, user.id);
+  const [conv, hidden] = await Promise.all([
+    fetchConversationById(supabase, conversationId, user.id),
+    isConversationHiddenForUser(supabase, conversationId, user.id),
+  ]);
   if (!conv) notFound();
+  if (hidden) redirect("/mesajlar");
 
-  if (await isConversationHiddenForUser(supabase, conversationId, user.id)) {
-    redirect("/mesajlar");
-  }
-
-  let rows = await fetchConversationsForUser(supabase, user.id);
   const otherId = otherParticipantId(conv, user.id);
-  const blockedSet = await fetchBlockedPeerIds(supabase, user.id);
-  rows = rows.filter((c) => !blockedSet.has(otherParticipantId(c, user.id)));
+
+  const [rowsRaw, blockedSet, messages] = await Promise.all([
+    fetchConversationsForUser(supabase, user.id),
+    fetchBlockedPeerIds(supabase, user.id),
+    fetchMessagesForConversation(supabase, conversationId),
+  ]);
+
+  let rows = rowsRaw.filter(
+    (c) => !blockedSet.has(otherParticipantId(c, user.id))
+  );
   const blocked = blockedSet.has(otherId);
 
   // Açık sohbet henüz mesajsız olabilir (listeden elenir) — ilan/profil yine çekilmeli.
@@ -97,14 +104,14 @@ export default async function MesajConversationPage({ params }: Props) {
     ),
   ];
 
-  const [messages, listingMap, profileMap, lastMap, unreadMap, adminMap] = await Promise.all([
-    fetchMessagesForConversation(supabase, conversationId),
-    fetchListingSummariesByIds(supabase, listingIds),
-    fetchProfilesByIds(supabase, otherIds),
-    fetchLastMessagesByConversationIds(supabase, convIds),
-    fetchUnreadCountsByConversation(supabase, user.id, convIds),
-    fetchAdminProfilesByUserIds(supabase, otherIds),
-  ]);
+  const [listingMap, profileMap, lastMap, unreadMap, adminMap] =
+    await Promise.all([
+      fetchListingSummariesByIds(supabase, listingIds),
+      fetchProfilesByIds(supabase, otherIds),
+      fetchLastMessagesByConversationIds(supabase, convIds),
+      fetchUnreadCountsByConversation(supabase, user.id, convIds),
+      fetchAdminProfilesByUserIds(supabase, otherIds),
+    ]);
 
   const supportChat = isSupportConversation(conv);
   const listing = listingSummaryForConversation(listingMap, conv.listing_id);

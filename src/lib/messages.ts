@@ -135,24 +135,35 @@ async function fetchConversationIdsHavingMessages(
   const withMessages = new Set<string>();
   if (conversationIds.length === 0) return withMessages;
 
-  const chunkSize = 80;
-  for (let i = 0; i < conversationIds.length; i += chunkSize) {
-    const chunk = conversationIds.slice(i, i + chunkSize);
-    const { data, error } = await supabase
-      .from("messages")
-      .select("conversation_id")
-      .in("conversation_id", chunk);
-    if (error) {
-      console.warn("conversations with messages:", error.message);
-      continue;
-    }
-    for (const row of data ?? []) {
-      const id = (row as { conversation_id?: string }).conversation_id;
-      if (id) withMessages.add(String(id));
+  // Tüm mesaj satırlarını çekmek yerine konuşma başına 1 satır (index’li, ucuz).
+  const concurrency = 16;
+  for (let i = 0; i < conversationIds.length; i += concurrency) {
+    const chunk = conversationIds.slice(i, i + concurrency);
+    const results = await Promise.all(
+      chunk.map(async (id) => {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("conversation_id")
+          .eq("conversation_id", id)
+          .limit(1)
+          .maybeSingle();
+        if (error) return null;
+        const cid = (data as { conversation_id?: string } | null)?.conversation_id;
+        return cid ? String(cid) : null;
+      })
+    );
+    for (const id of results) {
+      if (id) withMessages.add(id);
     }
   }
   return withMessages;
 }
+
+/** Liste / sidebar için makul üst sınır — eski sohbetler sonsuz büyütmesin. */
+export const MAX_CONVERSATIONS_LIST = 40;
+
+/** Sohbet açılışında ilk yüklenen mesaj (yeniden eskiye; sonra ters çevrilir). */
+export const MAX_THREAD_MESSAGES_INITIAL = 100;
 
 export async function fetchConversationsForUser(
   supabase: SupabaseClient,
@@ -163,7 +174,8 @@ export async function fetchConversationsForUser(
       .from("conversations")
       .select("id,listing_id,sender_id,receiver_id,updated_at,created_at")
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-      .order("updated_at", { ascending: false, nullsFirst: false }),
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .limit(MAX_CONVERSATIONS_LIST),
     fetchHiddenConversationIdsForUser(supabase, userId),
   ]);
 
@@ -213,13 +225,15 @@ export async function fetchMessagesForConversation(
     .from("messages")
     .select("id,conversation_id,sender_id,content,is_read,created_at")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(MAX_THREAD_MESSAGES_INITIAL);
 
   if (error) {
     console.warn("messages:", error.message);
     return [];
   }
-  return (data ?? []) as MessageRow[];
+  // UI eskiden yeniye bekliyor
+  return ((data ?? []) as MessageRow[]).reverse();
 }
 
 /** Konuşma başına son mesaj (önizleme). */
@@ -233,48 +247,59 @@ export async function fetchLastMessagesByConversationIds(
   >();
   if (conversationIds.length === 0) return map;
 
-  const { data, error } = await supabase
-    .from("messages")
-    .select("conversation_id,content,created_at,sender_id")
-    .in("conversation_id", conversationIds);
-
-  if (error || !data) {
-    if (error) console.warn("last messages batch:", error.message);
-    return map;
-  }
-
-  const byConv = new Map<string, MessageRow[]>();
-  for (const row of data as MessageRow[]) {
-    const cid = row.conversation_id;
-    const arr = byConv.get(cid) ?? [];
-    arr.push(row);
-    byConv.set(cid, arr);
-  }
-  for (const [cid, rows] of byConv) {
-    rows.sort((a, b) => {
-      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return tb - ta;
-    });
-    const last = rows[0];
-    if (last) {
-      map.set(cid, {
-        content: last.content,
-        created_at: last.created_at,
-        sender_id: last.sender_id,
+  // Eski hali tüm mesajları indiriyordu — konuşma başına 1 satır.
+  const concurrency = 16;
+  for (let i = 0; i < conversationIds.length; i += concurrency) {
+    const chunk = conversationIds.slice(i, i + concurrency);
+    const rows = await Promise.all(
+      chunk.map(async (id) => {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("conversation_id,content,created_at,sender_id")
+          .eq("conversation_id", id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error || !data) return null;
+        return data as {
+          conversation_id: string;
+          content: string;
+          created_at: string | null;
+          sender_id: string;
+        };
+      })
+    );
+    for (const row of rows) {
+      if (!row?.conversation_id) continue;
+      map.set(row.conversation_id, {
+        content: row.content,
+        created_at: row.created_at,
+        sender_id: row.sender_id,
       });
     }
   }
   return map;
 }
 
-/** Okunmamış gelen mesaj sayısı (rozet). */
+/** Okunmamış gelen mesaj sayısı (rozet). Hafif yol — gizlilik/boş filtre yok. */
 export async function countUnreadMessages(
   supabase: SupabaseClient,
   userId: string
 ): Promise<number> {
-  const convs = await fetchConversationsForUser(supabase, userId);
-  const ids = convs.map((c) => c.id);
+  const { data: convs, error: convErr } = await supabase
+    .from("conversations")
+    .select("id")
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(MAX_CONVERSATIONS_LIST);
+
+  if (convErr) {
+    console.warn("unread conversations:", convErr.message);
+    return 0;
+  }
+  const ids = (convs ?? [])
+    .map((c) => (c as { id?: string }).id)
+    .filter((id): id is string => Boolean(id));
   if (ids.length === 0) return 0;
 
   const { count, error } = await supabase

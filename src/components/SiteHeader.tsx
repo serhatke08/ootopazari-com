@@ -28,22 +28,35 @@ export async function SiteHeader() {
       const user = authResult.user;
       email = user?.email ?? null;
 
-      const [cats, profile, applications] = await Promise.all([
-        fetchCategories(supabase),
-        user ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
-        user
-          ? fetchBayiApplicationsForMenu(supabase, user.id)
-          : Promise.resolve([]),
-      ]);
+      const [cats, profile, applications, listingsCountRes, parcaciApplication] =
+        await Promise.all([
+          fetchCategories(supabase),
+          user ? fetchProfilePublic(supabase, user.id) : Promise.resolve(null),
+          user
+            ? fetchBayiApplicationsForMenu(supabase, user.id)
+            : Promise.resolve([]),
+          user
+            ? supabase
+                .from("listings")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", user.id)
+            : Promise.resolve({ count: 0 }),
+          user
+            ? supabase
+                .from("bayi_applications")
+                .select("status,payment_status,membership_expires_at")
+                .eq("user_id", user.id)
+                .eq("dealer_type", "parcaci")
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle()
+            : Promise.resolve({ data: null }),
+        ]);
       categories = cats;
       dealerApplications = applications;
 
       if (user) {
-        const { count } = await supabase
-          .from("listings")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id);
-        hasListings = (count ?? 0) > 0;
+        hasListings = (listingsCountRes.count ?? 0) > 0;
 
         const displayName = displayNameFromAuthUser(user, profile);
         let avatarUrl: string | null = null;
@@ -60,20 +73,11 @@ export async function SiteHeader() {
         }
         drawerProfile = { displayName, avatarUrl };
 
-        const { data: parcaciApplication } = await supabase
-          .from("bayi_applications")
-          .select("status,payment_status,membership_expires_at")
-          .eq("user_id", user.id)
-          .eq("dealer_type", "parcaci")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (parcaciApplication) {
+        if (parcaciApplication.data) {
           const state = normalizeDealerState(
-            parcaciApplication.status,
-            parcaciApplication.payment_status,
-            parcaciApplication.membership_expires_at
+            parcaciApplication.data.status,
+            parcaciApplication.data.payment_status,
+            parcaciApplication.data.membership_expires_at
           );
           isParcaciDealerActive = state === "active";
         }
