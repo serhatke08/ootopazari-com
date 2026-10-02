@@ -190,11 +190,11 @@ export default async function MesajConversationPage({ params }: Props) {
             env={env}
             rows={rows}
             userId={user.id}
-            listingMap={listingMap}
-            profileMap={profileMap}
-            lastMap={lastMap}
-            unreadMap={unreadMap}
-            adminUserIds={new Set(adminMap.keys())}
+            listingMap={Object.fromEntries(listingMap)}
+            profileMap={Object.fromEntries(profileMap)}
+            lastMap={Object.fromEntries(lastMap)}
+            unreadMap={Object.fromEntries(unreadMap)}
+            adminUserIds={[...adminMap.keys()]}
             activeConversationId={conversationId}
             className="h-full overflow-y-auto"
           />

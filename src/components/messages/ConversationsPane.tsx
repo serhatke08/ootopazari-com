@@ -1,8 +1,19 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import {
+  deleteOwnConversationForMe,
   listingConversationStatus,
   listingSummaryForConversation,
   otherParticipantId,
@@ -15,7 +26,12 @@ import {
   isSupportAgentUserId,
   SUPPORT_AGENT_DISPLAY_NAME,
 } from "@/lib/support-agent";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { dispatchUnreadMessagesRefresh } from "@/lib/unread-messages-events";
 import { resolveListingImageUrl } from "@/lib/storage";
+
+const DELETE_REVEAL_PX = 88;
+const DELETE_COMMIT_PX = 72;
 
 function previewText(
   last: { content: string; sender_id: string } | undefined,
@@ -33,12 +49,149 @@ function formatTime(dateStr: string | null): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  
+
   if (diffMins < 1) return "Şimdi";
   if (diffMins < 60) return `${diffMins}dk`;
   if (diffMins < 1440) return `${Math.floor(diffMins / 60)}s`;
   if (diffMins < 10080) return `${Math.floor(diffMins / 1440)}g`;
   return date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
+
+function ConversationSwipeRow({
+  href,
+  active,
+  dimmed,
+  onDeleted,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  dimmed: boolean;
+  onDeleted: () => Promise<void>;
+  children: React.ReactNode;
+}) {
+  const [offset, setOffset] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const startOffset = useRef(0);
+  const axis = useRef<"none" | "x" | "y">("none");
+  const dragging = useRef(false);
+
+  const reset = useCallback(() => setOffset(0), []);
+
+  const askAndDelete = useCallback(async () => {
+    if (busy) return;
+    const ok = window.confirm(
+      "Bu sohbeti listenizden silmek istiyor musunuz?\n\nSadece sizden kalkar; karşı taraf görmeye devam eder."
+    );
+    if (!ok) {
+      reset();
+      return;
+    }
+    setBusy(true);
+    try {
+      await onDeleted();
+    } finally {
+      setBusy(false);
+      reset();
+    }
+  }, [busy, onDeleted, reset]);
+
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (busy) return;
+    dragging.current = true;
+    axis.current = "none";
+    startX.current = e.clientX;
+    startY.current = e.clientY;
+    startOffset.current = offset;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    const dx = e.clientX - startX.current;
+    const dy = e.clientY - startY.current;
+    if (axis.current === "none") {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      axis.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    }
+    if (axis.current !== "x") return;
+    const next = Math.min(0, Math.max(-DELETE_REVEAL_PX, startOffset.current + dx));
+    setOffset(next);
+  };
+
+  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    if (axis.current === "x" && offset <= -DELETE_COMMIT_PX) {
+      void askAndDelete();
+      return;
+    }
+    if (axis.current === "x" && offset < -24) {
+      setOffset(-DELETE_REVEAL_PX);
+      return;
+    }
+    reset();
+  };
+
+  return (
+    <div className="relative overflow-hidden border-b border-zinc-100 last:border-0">
+      <div
+        className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500"
+        aria-hidden
+      >
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void askAndDelete()}
+          className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-xs font-semibold text-white"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          Sil
+        </button>
+      </div>
+      <div
+        className={`relative bg-white touch-pan-y ${
+          active ? "bg-[#fffbf0]" : ""
+        } ${dimmed ? "opacity-55" : ""}`}
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: dragging.current ? "none" : "transform 160ms ease-out",
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <Link
+          href={href}
+          className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-50 active:bg-zinc-100"
+          onClick={(e) => {
+            if (offset < -8) {
+              e.preventDefault();
+              reset();
+            }
+          }}
+          draggable={false}
+        >
+          {children}
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 export function ConversationsPane({
@@ -49,31 +202,73 @@ export function ConversationsPane({
   profileMap,
   lastMap,
   unreadMap,
-  adminUserIds = new Set<string>(),
+  adminUserIds = [],
   activeConversationId = null,
   className = "",
 }: {
   env: SupabasePublicEnv;
   rows: ConversationRow[];
   userId: string;
-  listingMap: Map<string, ListingMessageSummary>;
-  profileMap: Map<string, ProfileMessageSummary>;
-  lastMap: Map<
+  listingMap: Record<string, ListingMessageSummary>;
+  profileMap: Record<string, ProfileMessageSummary>;
+  lastMap: Record<
     string,
     { content: string; created_at: string | null; sender_id: string }
   >;
-  unreadMap: Map<string, number>;
-  adminUserIds?: Set<string>;
+  unreadMap: Record<string, number>;
+  adminUserIds?: string[];
   activeConversationId?: string | null;
   className?: string;
 }) {
-  if (rows.length === 0) {
+  const router = useRouter();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
+  const adminSet = useMemo(() => new Set(adminUserIds), [adminUserIds]);
+
+  const listingLookup = useMemo(() => {
+    const m = new Map<string, ListingMessageSummary>();
+    for (const [k, v] of Object.entries(listingMap)) m.set(k, v);
+    return m;
+  }, [listingMap]);
+
+  const visibleRows = useMemo(
+    () => rows.filter((c) => !hiddenIds.has(c.id)),
+    [rows, hiddenIds]
+  );
+
+  const handleDelete = useCallback(
+    async (conversationId: string) => {
+      const ok = await deleteOwnConversationForMe(
+        supabase,
+        conversationId,
+        userId
+      );
+      if (!ok) {
+        window.alert("Sohbet silinemedi. Tekrar deneyin.");
+        return;
+      }
+      setHiddenIds((prev) => new Set(prev).add(conversationId));
+      dispatchUnreadMessagesRefresh();
+      if (activeConversationId === conversationId) {
+        router.push("/mesajlar");
+      }
+      router.refresh();
+    },
+    [activeConversationId, router, supabase, userId]
+  );
+
+  if (visibleRows.length === 0) {
     return (
       <div
         className={`flex flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white p-8 text-center ${className}`}
       >
         <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100">
-          <svg className="h-8 w-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="h-8 w-8 text-zinc-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -95,11 +290,14 @@ export function ConversationsPane({
       className={`overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm ${className}`}
     >
       <div className="overflow-y-auto">
-        {rows.map((c) => {
-          const listing = listingSummaryForConversation(listingMap, c.listing_id);
-          const otherProfile = profileMap.get(otherParticipantId(c, userId));
-          const last = lastMap.get(c.id);
-          const unread = unreadMap.get(c.id) ?? 0;
+        {visibleRows.map((c) => {
+          const listing = listingSummaryForConversation(
+            listingLookup,
+            c.listing_id
+          );
+          const otherProfile = profileMap[otherParticipantId(c, userId)];
+          const last = lastMap[c.id];
+          const unread = unreadMap[c.id] ?? 0;
           const otherId = otherParticipantId(c, userId);
           const isSupportChat =
             isSupportAgentUserId(otherId) || isSupportAgentUserId(userId);
@@ -114,19 +312,18 @@ export function ConversationsPane({
             ? SUPPORT_AGENT_DISPLAY_NAME
             : profileDisplayName(otherProfile ?? null);
           const isAdminUser =
-            adminUserIds.has(otherId) || isSupportAgentUserId(otherId);
+            adminSet.has(otherId) || isSupportAgentUserId(otherId);
           const active = activeConversationId === c.id;
           const timeStr = formatTime(last?.created_at ?? null);
-          
+
           return (
-            <Link
+            <ConversationSwipeRow
               key={c.id}
               href={`/mesajlar/${c.id}`}
-              className={`flex items-center gap-3 border-b border-zinc-100 px-4 py-3 transition-colors last:border-0 hover:bg-zinc-50 active:bg-zinc-100 ${
-                active ? "bg-[#fffbf0]" : ""
-              } ${!listingStatus.active ? "opacity-55" : ""}`}
+              active={active}
+              dimmed={!listingStatus.active}
+              onDeleted={() => handleDelete(c.id)}
             >
-              {/* Avatar & Listing Image */}
               <div className="relative shrink-0">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full bg-zinc-100 ring-2 ring-white">
                   {imgSrc ? (
@@ -150,7 +347,6 @@ export function ConversationsPane({
                 ) : null}
               </div>
 
-              {/* Content */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-1.5">
@@ -183,7 +379,7 @@ export function ConversationsPane({
                   {previewText(last, userId)}
                 </p>
               </div>
-            </Link>
+            </ConversationSwipeRow>
           );
         })}
       </div>

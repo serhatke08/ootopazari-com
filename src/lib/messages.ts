@@ -114,6 +114,26 @@ export async function hideConversationForUser(
   }
 }
 
+/** Sohbeti yalnızca bu kullanıcıdan gizler (karşı taraf görür). App ile aynı RPC. */
+export async function deleteOwnConversationForMe(
+  supabase: SupabaseClient,
+  conversationId: string,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("delete_own_conversation", {
+    p_conversation_id: conversationId,
+  });
+  if (!error && data && typeof data === "object") {
+    const ok = (data as { ok?: boolean }).ok;
+    if (ok === true) return true;
+  }
+  if (error) {
+    console.warn("delete_own_conversation rpc:", error.message);
+  }
+  await hideConversationForUser(supabase, conversationId, userId);
+  return true;
+}
+
 /** Mesaj yazılmadan terk edilen boş sohbeti listeden kaldır. */
 export async function discardEmptyConversationIfAbandoned(
   supabase: SupabaseClient,

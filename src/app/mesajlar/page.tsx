@@ -70,11 +70,11 @@ export default async function MesajlarPage() {
           env={env}
           rows={rows}
           userId={userId}
-          listingMap={listingMap}
-          profileMap={profileMap}
-          lastMap={lastMap}
-          unreadMap={unreadMap}
-          adminUserIds={new Set(adminMap.keys())}
+          listingMap={Object.fromEntries(listingMap)}
+          profileMap={Object.fromEntries(profileMap)}
+          lastMap={Object.fromEntries(lastMap)}
+          unreadMap={Object.fromEntries(unreadMap)}
+          adminUserIds={[...adminMap.keys()]}
           className="max-h-[82vh] overflow-y-auto"
         />
         <section className="hidden min-h-[82vh] items-center justify-center rounded-xl border border-zinc-200 bg-white p-8 md:flex">
