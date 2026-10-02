@@ -22,6 +22,8 @@ import {
   normalizePhoneDigits,
   parseMileageTry,
   parsePriceTry,
+  formatPriceThousandsTr,
+  formatMileageThousandsTr,
   sanitizeListingClientWrite,
 } from "@/lib/listing-create";
 import { listingCreatedClientField } from "@/lib/client-analytics";
@@ -218,6 +220,39 @@ export function CreateListingFlow({
   const lock = useRef(false);
 
   const progress = pages.length ? (pageIndex + 1) / pages.length : 0;
+
+  const seriesName =
+    hierarchical && parentId
+      ? parents.find((p) => p.id === parentId)?.name?.trim() || null
+      : null;
+
+  const selectionTrail = useMemo(() => {
+    const parts: string[] = [];
+    const push = (v: string | null | undefined) => {
+      const t = (v ?? "").trim();
+      if (t) parts.push(t);
+    };
+    push(categoryName);
+    if (vehicleYear != null) push(String(vehicleYear));
+    push(brandName);
+    if (seriesName && seriesName !== (modelName ?? "").trim()) {
+      push(seriesName);
+    }
+    push(modelName);
+    push(bodyStyleName);
+    push(engineName);
+    push(packageName);
+    return parts;
+  }, [
+    categoryName,
+    vehicleYear,
+    brandName,
+    seriesName,
+    modelName,
+    bodyStyleName,
+    engineName,
+    packageName,
+  ]);
 
   const years = useMemo(() => {
     const now = new Date().getFullYear();
@@ -477,7 +512,7 @@ export function CreateListingFlow({
       setPackageName(d.packageName ?? null);
     }
     if (d.transmission) setTransmission(d.transmission);
-    if (d.mileage) setMileage(String(d.mileage));
+    if (d.mileage) setMileage(formatMileageThousandsTr(String(d.mileage)));
     if (d.color) setColor(d.color);
     if (d.fuelType) setFuelType(d.fuelType);
     if (d.vehicleCondition) setCondition(d.vehicleCondition);
@@ -487,7 +522,7 @@ export function CreateListingFlow({
     if (d.eidsVehicleOk) setEidsVehicleOk(true);
     if (d.title) setTitle(d.title);
     if (d.description) setDescription(d.description);
-    if (d.price) setPriceStr(String(d.price));
+    if (d.price) setPriceStr(formatPriceThousandsTr(String(d.price)));
     if (d.cityId) setCityId(d.cityId);
     if (d.district) setDistrict(d.district);
     if (d.phone) setPhone(d.phone);
@@ -857,6 +892,15 @@ export function CreateListingFlow({
         />
       </div>
 
+      {selectionTrail.length > 0 ? (
+        <p
+          className="rounded-lg border border-[#002776]/12 bg-white px-3 py-2 text-[12.5px] font-bold leading-snug text-[#002776]/90"
+          title={selectionTrail.join(" › ")}
+        >
+          {selectionTrail.join(" › ")}
+        </p>
+      ) : null}
+
       {draftBanner ? (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-sm">
           <p className="font-bold text-blue-900">Kayıtlı taslak</p>
@@ -1144,9 +1188,11 @@ export function CreateListingFlow({
             <input
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={mileage}
-              onChange={(e) => setMileage(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) =>
+                setMileage(formatMileageThousandsTr(e.target.value))
+              }
               inputMode="numeric"
-              placeholder="85000"
+              placeholder="85.000"
             />
           </label>
           <label className="block text-sm font-medium">
@@ -1340,9 +1386,11 @@ export function CreateListingFlow({
           />
           <input
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            placeholder="Fiyat (TL)"
+            placeholder="Fiyat (TL) — örn. 1.250.000"
             value={priceStr}
-            onChange={(e) => setPriceStr(e.target.value)}
+            onChange={(e) =>
+              setPriceStr(formatPriceThousandsTr(e.target.value))
+            }
             inputMode="numeric"
           />
         </div>
