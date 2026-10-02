@@ -266,6 +266,7 @@ export function CreateListingFlow({
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [fieldErrorId, setFieldErrorId] = useState<string | null>(null);
   const [draftBanner, setDraftBanner] = useState<ListingDraftPayload | null>(
     null
   );
@@ -521,7 +522,9 @@ export function CreateListingFlow({
         break;
       }
       setErr(null);
+      setFieldErrorId(null);
       setPageIndex(Math.min(i, pages.length - 1));
+      scrollFlowToTop();
       await persistDraft();
     },
     [pages, bodyStyles.length, engines.length, packages.length, persistDraft]
@@ -530,36 +533,66 @@ export function CreateListingFlow({
   /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık.
    *  Liste seçimleri (marka/model…) tile tıklanınca setState + goNext yarışır;
    *  onları burada kontrol etme — sticky İleri zaten selectionHasValue ile kilitli. */
-  function validateCurrentPage(): string | null {
+  function validateCurrentPage(): { message: string; fieldId: string } | null {
     if (page === "details" && isVehicle) {
       if (parseMileageTry(mileage) == null) {
-        return "Kilometre zorunlu.";
+        return { message: "Kilometre zorunlu.", fieldId: "ilan-ver-mileage" };
+      }
+      if (!color) {
+        return { message: "Renk seçin.", fieldId: "ilan-ver-color" };
+      }
+      if (!fuelType) {
+        return { message: "Yakıt tipi seçin.", fieldId: "ilan-ver-fuel" };
+      }
+      if (!condition) {
+        return { message: "Araç durumu seçin.", fieldId: "ilan-ver-condition" };
       }
       const plaka = plate.trim().replace(/\s+/g, "");
       if (plaka.length < 5) {
-        return "Plaka zorunlu.";
+        return { message: "Plaka zorunlu.", fieldId: "ilan-ver-plate" };
       }
-      if (!color) return "Renk seçin.";
-      if (!fuelType) return "Yakıt tipi seçin.";
-      if (!condition) return "Araç durumu seçin.";
     }
     if (WEB_EIDS_STEP_ENABLED && page === "eids" && isVehicle) {
       if (!eidsAccountOk) {
-        return "Önce e-Devlet ile hesabı doğrulayın.";
+        return {
+          message: "Önce e-Devlet ile hesabı doğrulayın.",
+          fieldId: "ilan-ver-eids",
+        };
       }
       if (!eidsVehicleOk) {
-        return "Plaka yetkisini tamamlayın (sorgula).";
+        return {
+          message: "Plaka yetkisini tamamlayın (sorgula).",
+          fieldId: "ilan-ver-eids",
+        };
       }
     }
     if (page === "content") {
-      if (files.length === 0) return "En az bir fotoğraf ekleyin.";
-      if (!title.trim()) return "Başlık zorunlu.";
-      if (!description.trim()) return "Açıklama zorunlu.";
-      if (parsePriceTry(priceStr) == null) return "Geçerli fiyat girin.";
-      if (!cityId) return "Şehir seçin.";
-      if (!district.trim()) return "İlçe / semt yazın.";
+      if (files.length === 0) {
+        return {
+          message: "En az bir fotoğraf ekleyin.",
+          fieldId: "ilan-ver-photos-box",
+        };
+      }
+      if (!title.trim()) {
+        return { message: "Başlık zorunlu.", fieldId: "ilan-ver-title" };
+      }
+      if (!description.trim()) {
+        return { message: "Açıklama zorunlu.", fieldId: "ilan-ver-description" };
+      }
+      if (parsePriceTry(priceStr) == null) {
+        return { message: "Geçerli fiyat girin.", fieldId: "ilan-ver-price" };
+      }
+      if (!cityId) {
+        return { message: "Şehir seçin.", fieldId: "ilan-ver-city" };
+      }
+      if (!district.trim()) {
+        return { message: "İlçe / semt yazın.", fieldId: "ilan-ver-district" };
+      }
       if (!isValidTrMobile10(normalizePhoneDigits(phone).slice(-10))) {
-        return "Geçerli cep telefonu girin.";
+        return {
+          message: "Geçerli cep telefonu girin.",
+          fieldId: "ilan-ver-phone",
+        };
       }
     }
     if (page === "boosts") {
@@ -568,10 +601,51 @@ export function CreateListingFlow({
     return null;
   }
 
+  function scrollToField(fieldId: string) {
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(fieldId);
+      const target = el ?? document.getElementById("ilan-ver-err");
+      if (!target) return;
+      // center kullanma — alt alanlarda site footer’ı ekrana çekiyor
+      const top =
+        target.getBoundingClientRect().top + window.scrollY - 96;
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: "smooth",
+      });
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement
+      ) {
+        try {
+          el.focus({ preventScroll: true });
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+  }
+
+  function scrollFlowToTop() {
+    window.requestAnimationFrame(() => {
+      const topEl = document.getElementById("ilan-ver-top");
+      if (topEl) {
+        const top =
+          topEl.getBoundingClientRect().top + window.scrollY - 16;
+        window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+        return;
+      }
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+  }
+
   const goBack = async () => {
     setErr(null);
+    setFieldErrorId(null);
     if (pageIndex <= 0) return;
     setPageIndex((i) => i - 1);
+    scrollFlowToTop();
     await persistDraft();
   };
 
@@ -984,10 +1058,18 @@ export function CreateListingFlow({
   }
 
   const goNext = async () => {
+    // Sticky İleri focus’u sayfayı footer’a kaydırmasın
+    if (typeof document !== "undefined") {
+      const ae = document.activeElement;
+      if (ae instanceof HTMLElement) ae.blur();
+    }
     setErr(null);
+    setFieldErrorId(null);
     const block = validateCurrentPage();
     if (block) {
-      setErr(block);
+      setErr(block.message);
+      setFieldErrorId(block.fieldId);
+      scrollToField(block.fieldId);
       return;
     }
 
@@ -1010,6 +1092,7 @@ export function CreateListingFlow({
         setErr(
           `Eksik kalan: ${labels}. Bu sayfada eklenmesi gereken şeyler.`
         );
+        setFieldErrorId(null);
         return;
       }
     }
@@ -1397,32 +1480,8 @@ export function CreateListingFlow({
     [thumbUrls]
   );
 
-  // Geri/ileri ile liste sayfasına gelince seçili satırı ortala
-  useEffect(() => {
-    if (!bootReady) return;
-    const id = window.setTimeout(() => {
-      const el = document.querySelector(
-        '[data-flow-selected="true"]'
-      ) as HTMLElement | null;
-      if (!el) return;
-      el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
-    }, 60);
-    return () => window.clearTimeout(id);
-  }, [
-    bootReady,
-    page,
-    pageIndex,
-    categoryId,
-    vehicleYear,
-    brandId,
-    modelId,
-    parentId,
-    childId,
-    bodyStyleId,
-    engineId,
-    packageId,
-    transmission,
-  ]);
+  // Eski: seçili satırı ortalıyordu → İleri’de site footer ekrana geliyordu. Kaldırıldı.
+  // Sayfa değişince scrollFlowToTop / hata olunca scrollToField kullanılıyor.
 
   const selectionHasValue = (() => {
     switch (page) {
@@ -1442,19 +1501,18 @@ export function CreateListingFlow({
         return packages.length === 0 || Boolean(packageId);
       case "transmission":
         return Boolean(transmission);
-      case "content":
-        return (
-          title.trim().length > 0 &&
-          description.trim().length > 0 &&
-          parsePriceTry(priceStr) != null
-        );
       default:
         return true;
     }
   })();
 
+  const fieldRing = (id: string) =>
+    fieldErrorId === id
+      ? "border-red-500 ring-2 ring-red-300"
+      : "border-zinc-300";
+
   return (
-    <div className="mx-auto max-w-md space-y-3 pb-24">
+    <div id="ilan-ver-top" className="mx-auto max-w-md space-y-3 pb-24">
       {!bootReady ? (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-600">
           e-Devlet dönüşü yükleniyor…
@@ -1539,7 +1597,10 @@ export function CreateListingFlow({
       </div>
 
       {err ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p
+          id="ilan-ver-err"
+          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+        >
           {err}
         </p>
       ) : null}
@@ -1805,11 +1866,13 @@ export function CreateListingFlow({
           <label className="block text-sm font-medium">
             Kilometre <span className="text-red-600">*</span>
             <input
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              id="ilan-ver-mileage"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-mileage")}`}
               value={mileage}
-              onChange={(e) =>
-                setMileage(formatMileageThousandsTr(e.target.value))
-              }
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setMileage(formatMileageThousandsTr(e.target.value));
+              }}
               inputMode="numeric"
               placeholder="85.000"
               required
@@ -1818,9 +1881,13 @@ export function CreateListingFlow({
           <label className="block text-sm font-medium">
             Renk <span className="text-red-600">*</span>
             <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              id="ilan-ver-color"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-color")}`}
               value={color ?? ""}
-              onChange={(e) => setColor(e.target.value || null)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setColor(e.target.value || null);
+              }}
               required
             >
               <option value="">Seçin</option>
@@ -1834,9 +1901,13 @@ export function CreateListingFlow({
           <label className="block text-sm font-medium">
             Yakıt <span className="text-red-600">*</span>
             <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              id="ilan-ver-fuel"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-fuel")}`}
               value={fuelType ?? ""}
-              onChange={(e) => setFuelType(e.target.value || null)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setFuelType(e.target.value || null);
+              }}
               required
             >
               <option value="">Seçin</option>
@@ -1850,9 +1921,13 @@ export function CreateListingFlow({
           <label className="block text-sm font-medium">
             Durum <span className="text-red-600">*</span>
             <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              id="ilan-ver-condition"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-condition")}`}
               value={condition ?? ""}
-              onChange={(e) => setCondition(e.target.value || null)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setCondition(e.target.value || null);
+              }}
               required
             >
               <option value="">Seçin</option>
@@ -1874,9 +1949,13 @@ export function CreateListingFlow({
           <label className="block text-sm font-medium">
             Plaka <span className="text-red-600">*</span>
             <input
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 uppercase"
+              id="ilan-ver-plate"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 uppercase ${fieldRing("ilan-ver-plate")}`}
               value={plate}
-              onChange={(e) => setPlate(e.target.value.toLocaleUpperCase("tr"))}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setPlate(e.target.value.toLocaleUpperCase("tr"));
+              }}
               placeholder="34ABC123"
               required
             />
@@ -1885,7 +1964,7 @@ export function CreateListingFlow({
       ) : null}
 
       {page === "eids" ? (
-        <div className="space-y-4">
+        <div id="ilan-ver-eids" className="space-y-4">
           {!eidsAccountOk ? (
             <div className="flex justify-center">
               <button
@@ -2106,8 +2185,13 @@ export function CreateListingFlow({
             }}
           />
           <label
+            id="ilan-ver-photos-box"
             htmlFor="ilan-ver-photos"
-            className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 py-6 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+            className={`flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed bg-zinc-50 py-6 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 ${
+              fieldErrorId === "ilan-ver-photos-box"
+                ? "border-red-500 ring-2 ring-red-300"
+                : "border-zinc-300"
+            }`}
           >
             Fotoğraf ekle ({files.length}/{MAX_LISTING_PHOTOS})
             <span className="mt-1 text-[11px] font-normal text-zinc-500">
@@ -2165,7 +2249,10 @@ export function CreateListingFlow({
           )}
           <div>
             <div className="mb-1 flex items-baseline justify-between gap-2">
-              <label className="text-sm font-medium text-zinc-700">
+              <label
+                htmlFor="ilan-ver-title"
+                className="text-sm font-medium text-zinc-700"
+              >
                 Başlık <span className="text-red-600">*</span>
               </label>
               <span className="text-[11px] tabular-nums text-zinc-500">
@@ -2173,17 +2260,24 @@ export function CreateListingFlow({
               </span>
             </div>
             <input
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              id="ilan-ver-title"
+              className={`w-full rounded-lg border px-3 py-2 text-sm ${fieldRing("ilan-ver-title")}`}
               placeholder="Başlık"
               value={title}
               maxLength={LISTING_TITLE_MAX_LENGTH}
               required
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setTitle(e.target.value);
+              }}
             />
           </div>
           <div>
             <div className="mb-1 flex items-baseline justify-between gap-2">
-              <label className="text-sm font-medium text-zinc-700">
+              <label
+                htmlFor="ilan-ver-description"
+                className="text-sm font-medium text-zinc-700"
+              >
                 Açıklama <span className="text-red-600">*</span>
               </label>
               <span className="text-[11px] tabular-nums text-zinc-500">
@@ -2191,35 +2285,48 @@ export function CreateListingFlow({
               </span>
             </div>
             <textarea
-              className="min-h-[100px] w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              id="ilan-ver-description"
+              className={`min-h-[100px] w-full rounded-lg border px-3 py-2 text-sm ${fieldRing("ilan-ver-description")}`}
               placeholder="Açıklama"
               value={description}
               maxLength={LISTING_DESCRIPTION_MAX_LENGTH}
               required
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setDescription(e.target.value);
+              }}
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="ilan-ver-price"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Fiyat (TL) <span className="text-red-600">*</span>
             </label>
             <input
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              id="ilan-ver-price"
+              className={`w-full rounded-lg border px-3 py-2 text-sm ${fieldRing("ilan-ver-price")}`}
               placeholder="örn. 1.250.000"
               value={priceStr}
               required
-              onChange={(e) =>
-                setPriceStr(formatPriceThousandsTr(e.target.value))
-              }
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setPriceStr(formatPriceThousandsTr(e.target.value));
+              }}
               inputMode="numeric"
             />
           </div>
           <label className="block text-sm font-medium">
             Şehir <span className="text-red-600">*</span>
             <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              id="ilan-ver-city"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-city")}`}
               value={cityId ?? ""}
-              onChange={(e) => setCityId(e.target.value || null)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setCityId(e.target.value || null);
+              }}
             >
               <option value="">Seçin</option>
               {cities.map((c) => (
@@ -2232,17 +2339,25 @@ export function CreateListingFlow({
           <label className="block text-sm font-medium">
             İlçe <span className="text-red-600">*</span>
             <input
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              id="ilan-ver-district"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-district")}`}
               value={district}
-              onChange={(e) => setDistrict(e.target.value)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setDistrict(e.target.value);
+              }}
             />
           </label>
           <label className="block text-sm font-medium">
             Telefon <span className="text-red-600">*</span>
             <input
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+              id="ilan-ver-phone"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-phone")}`}
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setPhone(e.target.value);
+              }}
               inputMode="tel"
             />
           </label>
