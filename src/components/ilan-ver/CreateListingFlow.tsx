@@ -9,6 +9,8 @@ import {
   fetchChildBrandModels,
   fetchEnginesForModel,
   fetchPackagesForEngine,
+  engineCapacityCcFromRow,
+  type EngineOptionRow,
   type IdNameRow,
 } from "@/lib/vehicle-hierarchy";
 import {
@@ -176,6 +178,14 @@ const COLORS = [
 const TRANSMISSIONS = ["Manuel", "Otomatik", "Yarı Otomatik"];
 const FUELS = ["Benzin", "Dizel", "Elektrik", "Hibrit", "LPG", "LPG & Benzin"];
 const CONDITIONS = ["İkinci El", "Sıfır"];
+const DRIVE_TYPES = [
+  "Önden Çekiş",
+  "Arkadan İtiş",
+  "4WD (Sürekli)",
+  "4WD (Bağlanabilir)",
+] as const;
+const PLATE_TR = "Türkiye (TR) Plakalı";
+const PLATE_FOREIGN = "Yabancı Plakalı";
 
 const EXPERTIZ_OPTIONS: { value: ExpertizDurum; label: string }[] = [
   { value: "orijinal", label: "Orijinal" },
@@ -249,7 +259,7 @@ export function CreateListingFlow({
   const [bodyStyles, setBodyStyles] = useState<IdNameRow[]>([]);
   const [bodyStyleId, setBodyStyleId] = useState<string | null>(null);
   const [bodyStyleName, setBodyStyleName] = useState<string | null>(null);
-  const [engines, setEngines] = useState<IdNameRow[]>([]);
+  const [engines, setEngines] = useState<EngineOptionRow[]>([]);
   const [engineId, setEngineId] = useState<string | null>(null);
   const [engineName, setEngineName] = useState<string | null>(null);
   const [packages, setPackages] = useState<IdNameRow[]>([]);
@@ -261,6 +271,13 @@ export function CreateListingFlow({
   const [color, setColor] = useState<string | null>(null);
   const [fuelType, setFuelType] = useState<string | null>(null);
   const [condition, setCondition] = useState<string | null>(null);
+  const [driveType, setDriveType] = useState<string | null>(null);
+  const [horsepowerStr, setHorsepowerStr] = useState("");
+  const [engineCapacityStr, setEngineCapacityStr] = useState("");
+  const [warranty, setWarranty] = useState(false);
+  const [heavyDamageRecord, setHeavyDamageRecord] = useState(false);
+  const [isTradeable, setIsTradeable] = useState(false);
+  const [plateNationality, setPlateNationality] = useState(PLATE_TR);
   const [hasExpertise, setHasExpertise] = useState(false);
   const [expertiz, setExpertiz] = useState<
     Partial<Record<PanelKey, ExpertizDurum | "">>
@@ -376,6 +393,13 @@ export function CreateListingFlow({
       fuelType,
       color,
       vehicleCondition: condition,
+      driveType,
+      horsepower: horsepowerStr || null,
+      engineCapacity: engineCapacityStr || null,
+      warranty,
+      heavyDamageRecord,
+      isTradeable,
+      plateNationality,
       hasExpertise,
       expertizPanels: expertiz as Record<string, string>,
       plate,
@@ -418,6 +442,13 @@ export function CreateListingFlow({
     fuelType,
     color,
     condition,
+    driveType,
+    horsepowerStr,
+    engineCapacityStr,
+    warranty,
+    heavyDamageRecord,
+    isTradeable,
+    plateNationality,
     hasExpertise,
     expertiz,
     plate,
@@ -553,13 +584,6 @@ export function CreateListingFlow({
           i++;
           continue;
         }
-        if (
-          p === "expertiz" &&
-          !categoryAllowsBodyExpertiz(categoryCode, categoryName)
-        ) {
-          i++;
-          continue;
-        }
         break;
       }
       setErr(null);
@@ -568,15 +592,7 @@ export function CreateListingFlow({
       scrollFlowToTop();
       await persistDraft();
     },
-    [
-      pages,
-      bodyStyles.length,
-      engines.length,
-      packages.length,
-      categoryCode,
-      categoryName,
-      persistDraft,
-    ]
+    [pages, bodyStyles.length, engines.length, packages.length, persistDraft]
   );
 
   /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık.
@@ -601,8 +617,11 @@ export function CreateListingFlow({
         return { message: "Plaka zorunlu.", fieldId: "ilan-ver-plate" };
       }
     }
-    if (page === "expertiz" && showExpertiz) {
-      if (!expertizConfirmed) {
+    if (page === "expertiz" && isVehicle) {
+      if (!driveType) {
+        return { message: "Çekiş seçin.", fieldId: "ilan-ver-drive" };
+      }
+      if (showExpertiz && !expertizConfirmed) {
         return {
           message: "Expertiz bilgilerini doğru girdiğinizi onaylayın.",
           fieldId: "ilan-ver-expertiz-confirm",
@@ -720,13 +739,6 @@ export function CreateListingFlow({
         continue;
       }
       if (p === "package" && packages.length === 0) {
-        i--;
-        continue;
-      }
-      if (
-        p === "expertiz" &&
-        !categoryAllowsBodyExpertiz(categoryCode, categoryName)
-      ) {
         i--;
         continue;
       }
@@ -848,6 +860,14 @@ export function CreateListingFlow({
     if (d.color) setColor(d.color);
     if (d.fuelType) setFuelType(d.fuelType);
     if (d.vehicleCondition) setCondition(d.vehicleCondition);
+    if (d.driveType) setDriveType(d.driveType);
+    if (d.horsepower) setHorsepowerStr(String(d.horsepower));
+    if (d.engineCapacity) setEngineCapacityStr(String(d.engineCapacity));
+    if (d.warranty != null) setWarranty(Boolean(d.warranty));
+    if (d.heavyDamageRecord != null)
+      setHeavyDamageRecord(Boolean(d.heavyDamageRecord));
+    if (d.isTradeable != null) setIsTradeable(Boolean(d.isTradeable));
+    if (d.plateNationality) setPlateNationality(d.plateNationality);
     if (d.hasExpertise != null) setHasExpertise(Boolean(d.hasExpertise));
     if (d.expertizPanels && typeof d.expertizPanels === "object") {
       const parsed = parseExpertizPanels(d.expertizPanels);
@@ -990,6 +1010,9 @@ export function CreateListingFlow({
       const yil = body.data?.modelYili?.trim() || null;
       setEidsOfficial({ markaAdi: marka, ticariAdi: ticari, modelYili: yil });
       setEidsVehicleOk(true);
+      setPlateNationality(PLATE_TR);
+      // e-Devlet TR plaka yetkisi → uyruk kilitli TR
+      setPlateNationality(PLATE_TR);
 
       const mismatches: EidsMismatch[] = [];
       const officialYear = yil ? Number.parseInt(yil, 10) : NaN;
@@ -1361,11 +1384,11 @@ export function CreateListingFlow({
         paketNote: packageName,
         fuelType,
         transmissionType: transmission,
-        driveType: null,
+        driveType,
         vehicleCondition: condition,
-        warranty: null,
-        heavyDamageRecorded: false,
-        plakaUyruk: plate.trim() || null,
+        warranty,
+        heavyDamageRecorded: heavyDamageRecord,
+        plakaUyruk: plateNationality,
       });
 
       const filter = ContentFilterService.validateListingContent(
@@ -1435,6 +1458,15 @@ export function CreateListingFlow({
         base.transmission_type = transmission;
         base.color = color;
         base.body_type = bodyStyleName;
+        base.drive_type = driveType;
+        base.is_tradeable = isTradeable;
+        base.is_damaged = heavyDamageRecord;
+        const hp = Number.parseInt(horsepowerStr.replace(/\D/g, ""), 10);
+        if (Number.isFinite(hp) && hp > 0) base.engine_power = hp;
+        const cc = Number.parseFloat(
+          engineCapacityStr.replace(",", ".").replace(/[^\d.]/g, "")
+        );
+        if (Number.isFinite(cc) && cc > 0) base.engine_capacity = cc;
         base.has_expertise = showExpertiz ? hasExpertise : false;
         if (showExpertiz) {
           base.expertiz_panels = expertizPanelsToJson(expertiz);
@@ -1938,6 +1970,19 @@ export function CreateListingFlow({
                     if (e.id !== "_skip") {
                       setEngineId(e.id);
                       setEngineName(e.name ?? null);
+                      const eng = engines.find((x) => x.id === e.id);
+                      if (eng?.horsepower != null && Number(eng.horsepower) > 0) {
+                        setHorsepowerStr(String(Math.round(Number(eng.horsepower))));
+                      }
+                      const cc = eng
+                        ? engineCapacityCcFromRow(
+                            eng.engine_capacity_cc,
+                            eng.name
+                          )
+                        : null;
+                      if (cc != null) {
+                        setEngineCapacityStr(String(cc));
+                      }
                       const rows = await loadPackages(e.id);
                       // goTo closure packages.length henüz 0 olabilir — paket varsa doğrudan git
                       if (rows.length > 0) {
@@ -2094,91 +2139,231 @@ export function CreateListingFlow({
         </div>
       ) : null}
 
-      {page === "expertiz" && showExpertiz ? (
+      {page === "expertiz" ? (
         <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={hasExpertise}
-              onChange={(e) => setHasExpertise(e.target.checked)}
-            />
-            Expertiz raporu var
-          </label>
+          <p className="text-sm font-bold text-zinc-900">Araç özellikleri</p>
+          <p className="text-[11px] text-zinc-500">
+            e-Devlet çekiş / motor gücü / hacim vermiyor; katalogdan gelen
+            değerler otomatik dolar. Çekiş zorunlu.
+          </p>
 
-          <div>
-            <p className="mb-1 text-sm font-bold text-zinc-900">
-              Kaporta ekspertiz şeması
-            </p>
-            <p className="mb-2 text-xs text-zinc-500">
-              Parça durumunu seç; şema renklenir (uygulamadaki gibi).
-            </p>
-            <div className="mb-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-              <div className="mx-auto max-h-72 w-full max-w-sm">
-                <ExpertizCarPreview
-                  panels={expandExpertizPartial(expertiz)}
-                  className="max-h-72"
-                />
-              </div>
-            </div>
-            <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
-              {(Object.keys(PANEL_LABELS) as PanelKey[]).map((key) => (
-                <div
-                  key={key}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-zinc-50 px-3 py-2 text-sm"
-                >
-                  <span className="font-medium text-zinc-700">
-                    {PANEL_LABELS[key]}
-                  </span>
-                  <select
-                    className="min-w-[10rem] rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium"
-                    value={expertiz[key] ?? "orijinal"}
-                    onChange={(e) => {
-                      const v = e.target.value as ExpertizDurum;
-                      setExpertiz((prev) => ({ ...prev, [key]: v }));
-                    }}
-                  >
-                    {EXPERTIZ_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div
-            id="ilan-ver-expertiz-confirm"
-            className={`rounded-lg border-2 p-4 ${
-              fieldErrorId === "ilan-ver-expertiz-confirm"
-                ? "border-red-400 bg-red-50"
-                : "border-blue-200 bg-blue-50"
-            }`}
-          >
-            <label className="flex cursor-pointer items-start gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm font-medium">
+              Motor gücü (hp)
               <input
-                type="checkbox"
-                checked={expertizConfirmed}
-                onChange={(e) => {
-                  setFieldErrorId(null);
-                  setExpertizConfirmed(e.target.checked);
-                }}
-                className="mt-0.5 h-5 w-5 shrink-0 rounded border-blue-300 text-blue-600"
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+                value={horsepowerStr}
+                onChange={(e) =>
+                  setHorsepowerStr(e.target.value.replace(/\D/g, ""))
+                }
+                inputMode="numeric"
+                placeholder="örn. 90"
               />
-              <div className="text-sm">
-                <p className="font-semibold text-blue-900">
-                  Expertiz bilgilerini doğru girdiğimi onaylıyorum{" "}
-                  <span className="text-red-600">*</span>
-                </p>
-                <p className="mt-1 text-xs text-blue-800">
-                  Yanlış girilen expertiz bilgisi ilanın kaldırılmasına yol
-                  açabilir. Kaput, çamurluk, kapı vb. tüm bölgeleri doğru
-                  işaretlediğinden emin ol.
-                </p>
-              </div>
+            </label>
+            <label className="block text-sm font-medium">
+              Motor hacmi (cc)
+              <input
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+                value={engineCapacityStr}
+                onChange={(e) =>
+                  setEngineCapacityStr(e.target.value.replace(/[^\d.,]/g, ""))
+                }
+                inputMode="decimal"
+                placeholder="örn. 1360"
+              />
             </label>
           </div>
+
+          <label className="block text-sm font-medium">
+            Çekiş <span className="text-red-600">*</span>
+            <select
+              id="ilan-ver-drive"
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-drive")}`}
+              value={driveType ?? ""}
+              onChange={(e) => {
+                setFieldErrorId(null);
+                setDriveType(e.target.value || null);
+              }}
+              required
+            >
+              <option value="">Seçin</option>
+              {DRIVE_TYPES.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="space-y-2">
+            {(
+              [
+                {
+                  key: "warranty",
+                  label: "Servis garantisi",
+                  value: warranty,
+                  set: setWarranty,
+                },
+                {
+                  key: "heavy",
+                  label: "Ağır hasar kayıtlı",
+                  value: heavyDamageRecord,
+                  set: setHeavyDamageRecord,
+                },
+                {
+                  key: "trade",
+                  label: "Takas",
+                  value: isTradeable,
+                  set: setIsTradeable,
+                },
+              ] as const
+            ).map((row) => (
+              <div
+                key={row.key}
+                className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5"
+              >
+                <span className="text-sm font-medium text-zinc-800">
+                  {row.label}
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={row.value}
+                  onClick={() => row.set(!row.value)}
+                  className={`relative h-8 w-[4.5rem] shrink-0 rounded-full text-[11px] font-bold transition ${
+                    row.value
+                      ? "bg-emerald-600 text-white"
+                      : "bg-zinc-300 text-zinc-700"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow transition ${
+                      row.value ? "left-[2.2rem]" : "left-0.5"
+                    }`}
+                  />
+                  <span
+                    className={`relative z-10 px-1 ${
+                      row.value ? "pr-7" : "pl-7"
+                    }`}
+                  >
+                    {row.value ? "Evet" : "Hayır"}
+                  </span>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <label className="block text-sm font-medium">
+            Plaka / Uyruk
+            <select
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 disabled:bg-zinc-100 disabled:text-zinc-600"
+              value={plateNationality}
+              disabled={eidsVehicleOk}
+              onChange={(e) => setPlateNationality(e.target.value)}
+            >
+              <option value={PLATE_TR}>{PLATE_TR}</option>
+              <option value={PLATE_FOREIGN}>{PLATE_FOREIGN}</option>
+            </select>
+            {eidsVehicleOk ? (
+              <span className="mt-1 block text-[11px] text-emerald-700">
+                e-Devlet TR plaka doğrulandı — değiştirilemez.
+              </span>
+            ) : (
+              <span className="mt-1 block text-[11px] text-zinc-500">
+                Yabancı plakalıysa “Yabancı Plakalı” seç.
+              </span>
+            )}
+          </label>
+
+          {showExpertiz ? (
+            <>
+              <div className="border-t border-zinc-100 pt-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={hasExpertise}
+                    onChange={(e) => setHasExpertise(e.target.checked)}
+                  />
+                  Expertiz raporu var
+                </label>
+              </div>
+
+              <div>
+                <p className="mb-1 text-sm font-bold text-zinc-900">
+                  Kaporta ekspertiz şeması
+                </p>
+                <p className="mb-2 text-xs text-zinc-500">
+                  Parça durumunu seç; şema renklenir (uygulamadaki gibi).
+                </p>
+                <div className="mb-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                  <div className="mx-auto max-h-72 w-full max-w-sm">
+                    <ExpertizCarPreview
+                      panels={expandExpertizPartial(expertiz)}
+                      className="max-h-72"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
+                  {(Object.keys(PANEL_LABELS) as PanelKey[]).map((key) => (
+                    <div
+                      key={key}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-zinc-50 px-3 py-2 text-sm"
+                    >
+                      <span className="font-medium text-zinc-700">
+                        {PANEL_LABELS[key]}
+                      </span>
+                      <select
+                        className="min-w-[10rem] rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium"
+                        value={expertiz[key] ?? "orijinal"}
+                        onChange={(e) => {
+                          const v = e.target.value as ExpertizDurum;
+                          setExpertiz((prev) => ({ ...prev, [key]: v }));
+                        }}
+                      >
+                        {EXPERTIZ_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                id="ilan-ver-expertiz-confirm"
+                className={`rounded-lg border-2 p-4 ${
+                  fieldErrorId === "ilan-ver-expertiz-confirm"
+                    ? "border-red-400 bg-red-50"
+                    : "border-blue-200 bg-blue-50"
+                }`}
+              >
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={expertizConfirmed}
+                    onChange={(e) => {
+                      setFieldErrorId(null);
+                      setExpertizConfirmed(e.target.checked);
+                    }}
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-blue-300 text-blue-600"
+                  />
+                  <div className="text-sm">
+                    <p className="font-semibold text-blue-900">
+                      Expertiz bilgilerini doğru girdiğimi onaylıyorum{" "}
+                      <span className="text-red-600">*</span>
+                    </p>
+                    <p className="mt-1 text-xs text-blue-800">
+                      Yanlış girilen expertiz bilgisi ilanın kaldırılmasına yol
+                      açabilir. Kaput, çamurluk, kapı vb. tüm bölgeleri doğru
+                      işaretlediğinden emin ol.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
 

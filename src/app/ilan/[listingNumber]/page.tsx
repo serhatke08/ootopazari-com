@@ -724,8 +724,12 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     "Araç durumu",
     "Araç Durumu",
   ]);
-  const warrantyFromDesc = firstSpecLine(rawDesc, ["Garanti"]);
+  const warrantyFromDesc = firstSpecLine(rawDesc, [
+    "Servis Garantisi",
+    "Garanti",
+  ]);
   const heavyDamageFromDesc = firstSpecLine(rawDesc, [
+    "Ağır Hasar Kayıtlı",
     "Ağır hasar kayıtlı",
     "Ağır hasar kaydı",
     "Ağır hasar",
@@ -780,9 +784,9 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     specRow("Kasa tipi", kasaDisplay),
     specRow("Çekiş", listing.drive_type as string),
     specRow("Araç durumu", vehicleConditionFromDesc),
-    specRow("Garanti", warrantyFromDesc),
-    specRow("Ağır hasar kayıtlı", heavyDamageFromDesc),
-    specRow("Plaka/Uyruk", plateNationalityFromDesc),
+    specRow("Servis Garantisi", warrantyFromDesc),
+    specRow("Ağır Hasar Kayıtlı", heavyDamageFromDesc),
+    specRow("Plaka / Uyruk", plateNationalityFromDesc),
     specRow("Plaka", vehiclePlate),
     showExpertiz
       ? specRow(

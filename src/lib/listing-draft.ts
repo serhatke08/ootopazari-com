@@ -26,6 +26,11 @@ export type ListingDraftPayload = {
   hasExpertise?: boolean;
   isDamaged?: boolean;
   isTradeable?: boolean;
+  warranty?: boolean;
+  heavyDamageRecord?: boolean;
+  plateNationality?: string | null;
+  horsepower?: string | null;
+  engineCapacity?: string | null;
   expertizPanels?: Record<string, string>;
   plate?: string | null;
   eidsAccountOk?: boolean;

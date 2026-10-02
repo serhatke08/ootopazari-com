@@ -384,7 +384,7 @@ async function queryBodyStyleEngines(
 ): Promise<EngineOptionRow[]> {
   let q = supabase
     .from("vehicle_body_style_engines")
-    .select("id,name,fuel_type,horsepower,sort_order");
+    .select("id,name,fuel_type,horsepower,engine_capacity_cc,sort_order");
   if (filter.bodyStyleId) q = q.eq("body_style_id", filter.bodyStyleId);
   if (filter.bodyStyleIds?.length) {
     q = q.in("body_style_id", filter.bodyStyleIds);

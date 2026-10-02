@@ -193,21 +193,27 @@ export function composeListingDescription(
     if (yvt.length) parts.push(yvt.join(" · "));
     line("Araç durumu", input.vehicleCondition);
     if (input.warranty !== null && input.warranty !== undefined) {
-      parts.push(`Garanti: ${fmtBool(input.warranty)}`);
+      parts.push(`Servis Garantisi: ${fmtBool(input.warranty)}`);
     }
     if (
       input.heavyDamageRecorded !== null &&
       input.heavyDamageRecorded !== undefined
     ) {
       parts.push(
-        `Ağır hasar kayıtlı: ${fmtBool(input.heavyDamageRecorded)}`
+        `Ağır Hasar Kayıtlı: ${fmtBool(input.heavyDamageRecorded)}`
       );
     }
-    line("Plaka", input.plakaUyruk);
+    line("Plaka / Uyruk", input.plakaUyruk);
+    if (input.driveType?.trim()) {
+      /* çekiş zaten yvt satırında */
+    }
     parts.push("");
     parts.push(`Araç Durumu: ${input.vehicleCondition?.trim() || "—"}`);
-    parts.push(`Garanti: ${fmtBool(input.warranty ?? null)}`);
-    parts.push(`Plaka: ${input.plakaUyruk?.trim() || "—"}`);
+    parts.push(`Servis Garantisi: ${fmtBool(input.warranty ?? null)}`);
+    parts.push(
+      `Ağır Hasar Kayıtlı: ${fmtBool(input.heavyDamageRecorded ?? null)}`
+    );
+    parts.push(`Plaka / Uyruk: ${input.plakaUyruk?.trim() || "—"}`);
   }
 
   return parts.join("\n").trim();
