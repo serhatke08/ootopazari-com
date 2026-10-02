@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -70,15 +69,24 @@ function ConversationSwipeRow({
   onDeleted: () => Promise<void>;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [offset, setOffset] = useState(0);
   const [busy, setBusy] = useState(false);
+  const offsetRef = useRef(0);
   const startX = useRef(0);
   const startY = useRef(0);
   const startOffset = useRef(0);
   const axis = useRef<"none" | "x" | "y">("none");
   const dragging = useRef(false);
+  const didSwipe = useRef(false);
+  const pointerIdRef = useRef<number | null>(null);
 
-  const reset = useCallback(() => setOffset(0), []);
+  const setOffsetBoth = useCallback((v: number) => {
+    offsetRef.current = v;
+    setOffset(v);
+  }, []);
+
+  const reset = useCallback(() => setOffsetBoth(0), [setOffsetBoth]);
 
   const askAndDelete = useCallback(async () => {
     if (busy) return;
@@ -99,13 +107,14 @@ function ConversationSwipeRow({
   }, [busy, onDeleted, reset]);
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (busy) return;
+    if (busy || e.button !== 0) return;
     dragging.current = true;
+    didSwipe.current = false;
     axis.current = "none";
+    pointerIdRef.current = e.pointerId;
     startX.current = e.clientX;
     startY.current = e.clientY;
-    startOffset.current = offset;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    startOffset.current = offsetRef.current;
   };
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -113,45 +122,69 @@ function ConversationSwipeRow({
     const dx = e.clientX - startX.current;
     const dy = e.clientY - startY.current;
     if (axis.current === "none") {
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-      axis.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      axis.current = Math.abs(dx) > Math.abs(dy) * 1.15 ? "x" : "y";
+      if (axis.current === "x" && pointerIdRef.current != null) {
+        try {
+          e.currentTarget.setPointerCapture(pointerIdRef.current);
+        } catch {
+          /* ignore */
+        }
+      }
     }
     if (axis.current !== "x") return;
-    const next = Math.min(0, Math.max(-DELETE_REVEAL_PX, startOffset.current + dx));
-    setOffset(next);
+    e.preventDefault();
+    didSwipe.current = true;
+    const next = Math.min(
+      0,
+      Math.max(-DELETE_REVEAL_PX, startOffset.current + dx)
+    );
+    setOffsetBoth(next);
   };
 
-  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const finishPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!dragging.current) return;
     dragging.current = false;
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      /* ignore */
+    if (pointerIdRef.current != null) {
+      try {
+        e.currentTarget.releasePointerCapture(pointerIdRef.current);
+      } catch {
+        /* ignore */
+      }
+      pointerIdRef.current = null;
     }
-    if (axis.current === "x" && offset <= -DELETE_COMMIT_PX) {
+    const cur = offsetRef.current;
+    if (axis.current === "x" && cur <= -DELETE_COMMIT_PX) {
       void askAndDelete();
       return;
     }
-    if (axis.current === "x" && offset < -24) {
-      setOffset(-DELETE_REVEAL_PX);
+    if (axis.current === "x" && cur < -28) {
+      setOffsetBoth(-DELETE_REVEAL_PX);
       return;
     }
     reset();
   };
 
+  const openChat = () => {
+    if (didSwipe.current || offsetRef.current < -8 || busy) {
+      if (offsetRef.current < -8) reset();
+      return;
+    }
+    router.push(href);
+  };
+
+  const revealed = offset < -2;
+
   return (
     <div className="relative overflow-hidden border-b border-zinc-100 last:border-0">
+      {/* Sadece sola çekilince görünsün */}
       <div
-        className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500"
+        className={`pointer-events-none absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500 transition-opacity ${
+          revealed ? "opacity-100" : "opacity-0"
+        }`}
         aria-hidden
       >
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void askAndDelete()}
-          className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-xs font-semibold text-white"
-        >
+        <div className="flex flex-col items-center justify-center gap-0.5 text-xs font-semibold text-white">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
@@ -161,34 +194,46 @@ function ConversationSwipeRow({
             />
           </svg>
           Sil
-        </button>
+        </div>
       </div>
+      {revealed ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void askAndDelete()}
+          className="absolute inset-y-0 right-0 z-[1] w-[88px] bg-transparent"
+          aria-label="Sohbeti sil"
+        />
+      ) : null}
       <div
-        className={`relative bg-white touch-pan-y ${
-          active ? "bg-[#fffbf0]" : ""
-        } ${dimmed ? "opacity-55" : ""}`}
+        role="link"
+        tabIndex={0}
+        className={`relative z-[2] select-none touch-pan-y ${
+          active ? "bg-[#fffbf0]" : "bg-white"
+        }`}
         style={{
           transform: `translateX(${offset}px)`,
           transition: dragging.current ? "none" : "transform 160ms ease-out",
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerUp={finishPointer}
+        onPointerCancel={finishPointer}
+        onClick={openChat}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openChat();
+          }
+        }}
       >
-        <Link
-          href={href}
-          className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-50 active:bg-zinc-100"
-          onClick={(e) => {
-            if (offset < -8) {
-              e.preventDefault();
-              reset();
-            }
-          }}
-          draggable={false}
+        <div
+          className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-50/80 active:bg-zinc-100 ${
+            dimmed ? "opacity-60" : ""
+          }`}
         >
           {children}
-        </Link>
+        </div>
       </div>
     </div>
   );
