@@ -275,7 +275,13 @@ export function ChatThreadClient({
 
       <div
         ref={listRef}
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 bg-zinc-50/80 p-2.5 sm:p-3"
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 p-2.5 sm:p-3"
+        style={{
+          backgroundColor: "#0a0a0a",
+          backgroundImage: "url(/promo/chat-bg.jpg)",
+          backgroundRepeat: "repeat",
+          backgroundSize: "420px 420px",
+        }}
       >
         {messages.length === 0 ? (
           <p className="my-auto text-center text-xs text-zinc-500">

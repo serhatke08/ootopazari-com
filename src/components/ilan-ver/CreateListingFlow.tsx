@@ -50,7 +50,10 @@ import {
   WEB_EIDS_UI_ENABLED,
 } from "@/lib/eids-ui";
 import { compressListingImageFiles } from "@/lib/compress-listing-image";
-import { MAX_LISTING_PHOTOS } from "@/lib/listing-feed-cover";
+import {
+  MAX_LISTING_PHOTOS,
+  MIN_LISTING_PHOTOS,
+} from "@/lib/listing-feed-cover";
 import {
   LISTING_DESCRIPTION_MAX_LENGTH,
   LISTING_TITLE_MAX_LENGTH,
@@ -730,9 +733,9 @@ export function CreateListingFlow({
     if (page === "content") {
       const photoCount =
         files.length + (isEditMode ? existingGalleryUrls.length : 0);
-      if (photoCount === 0) {
+      if (photoCount < MIN_LISTING_PHOTOS) {
         return {
-          message: "En az bir fotoğraf ekleyin.",
+          message: `En az ${MIN_LISTING_PHOTOS} fotoğraf ekleyin.`,
           fieldId: "ilan-ver-photos-box",
         };
       }
@@ -1772,9 +1775,13 @@ export function CreateListingFlow({
         setErr("Geçerli cep telefonu girin.");
         return;
       }
-      if (files.length === 0 && !(isEditMode && existingGalleryUrls.length > 0)) {
-        setErr("En az bir fotoğraf ekleyin.");
-        return;
+      {
+        const photoCount =
+          files.length + (isEditMode ? existingGalleryUrls.length : 0);
+        if (photoCount < MIN_LISTING_PHOTOS) {
+          setErr(`En az ${MIN_LISTING_PHOTOS} fotoğraf ekleyin.`);
+          return;
+        }
       }
       if (isVehicle) {
         if (!brandId || (!modelId && !parentId && !childId && !modelName)) {
@@ -3231,7 +3238,7 @@ export function CreateListingFlow({
             {files.length + (isEditMode ? existingGalleryUrls.length : 0)}/
             {MAX_LISTING_PHOTOS})
             <span className="mt-1 text-[11px] font-normal text-zinc-500">
-              Birden fazla seçebilirsin
+              En az {MIN_LISTING_PHOTOS}, en fazla {MAX_LISTING_PHOTOS} fotoğraf
             </span>
           </label>
           {isEditMode && existingGalleryUrls.length > 0 && files.length === 0 ? (

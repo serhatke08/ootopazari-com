@@ -3,7 +3,7 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { CreateListingFlow } from "@/components/ilan-ver/CreateListingFlow";
-import { collectListingGalleryUrls } from "@/lib/listing-images";
+import { collectListingGalleryUrlsWithStorageFallback } from "@/lib/listing-images";
 import {
   fetchCategories,
   fetchListingForOwnerByNumber,
@@ -40,13 +40,19 @@ export default async function IlanDuzenlePage({ params }: Props) {
   );
   if (!row) notFound();
 
-  const [categories, profileRes] = await Promise.all([
+  const [categories, profileRes, initialGalleryUrls] = await Promise.all([
     fetchCategories(supabase),
     supabase
       .from("profiles")
       .select("country_id")
       .eq("id", user.id)
       .maybeSingle(),
+    collectListingGalleryUrlsWithStorageFallback(
+      supabase,
+      env,
+      row as Record<string, unknown>,
+      row.image_url as string | null
+    ),
   ]);
 
   const profile = profileRes.data as { country_id?: string | null } | null;
@@ -55,12 +61,6 @@ export default async function IlanDuzenlePage({ params }: Props) {
 
   const listingCategories = categories.filter(
     (c) => String(c.code ?? "").toLowerCase() !== "all"
-  );
-
-  const initialGalleryUrls = collectListingGalleryUrls(
-    env,
-    row as Record<string, unknown>,
-    row.image_url as string | null
   );
 
   return (

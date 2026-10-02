@@ -160,6 +160,7 @@ const LISTING_EDIT_EXTRA = [
   "is_tradeable",
   "expertiz_panels",
   "vehicle_brand_model_id",
+  "images",
 ] as const;
 
 const LISTING_OWNER_EDIT_SELECT = [

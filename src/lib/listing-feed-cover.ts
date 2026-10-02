@@ -9,6 +9,8 @@ export const LISTING_FEED_GRID = {
 } as const;
 
 export const MAX_LISTING_PHOTOS = 10;
+/** Uygulama ile aynı — en az 2 fotoğraf. */
+export const MIN_LISTING_PHOTOS = 2;
 
 export function coverAspectRatioForViewportWidth(screenWidth: number): number {
   const cellWidth =
