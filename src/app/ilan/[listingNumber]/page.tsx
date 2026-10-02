@@ -607,13 +607,10 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     !!viewer?.id && !!sellerUserId && viewer.id === sellerUserId;
 
   const num = listing.listing_number;
-  const expertizRaw = row.expertiz_panels;
-  const expertizPanelsParsed = parseExpertizPanels(expertizRaw);
-  const expertizPanels =
-    showExpertiz &&
-    (listing.has_expertise === true || expertizPanelsParsed != null)
-      ? mergeExpertizWithDefaults(expertizPanelsParsed)
-      : null;
+  // Araç kategorilerinde Flutter gibi şemayı her zaman göster (eksik = orijinal).
+  const expertizPanels = showExpertiz
+    ? mergeExpertizWithDefaults(parseExpertizPanels(row.expertiz_panels))
+    : null;
 
   let seriDisplay: string | undefined;
   let modelDisplay: string | undefined;
@@ -868,19 +865,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
           Ekspertiz bilgileri
         </h2>
         <ExpertizDiagram panels={expertizPanels} />
-      </section>
-    ) : showExpertiz && expertizRaw != null && expertizPanelsParsed == null ? (
-      <section className="mt-4 rounded-lg border border-black/15 bg-white p-4 text-sm text-black">
-        Ekspertiz verisi tanınmadı; ham veri aşağıda. Şema ile eşleşmesi için
-        panelleri JSON veya beklenen anahtarlarla kaydedin.
-        <details className="mt-2">
-          <summary className="cursor-pointer font-medium">Ham veri</summary>
-          <pre className="mt-2 max-h-64 overflow-auto rounded border border-black/10 bg-white p-2 text-xs text-black">
-            {typeof expertizRaw === "string"
-              ? expertizRaw
-              : JSON.stringify(expertizRaw, null, 2)}
-          </pre>
-        </details>
       </section>
     ) : null;
 

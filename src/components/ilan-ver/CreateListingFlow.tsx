@@ -1931,9 +1931,10 @@ export function CreateListingFlow({
           engineCapacityStr.replace(",", ".").replace(/[^\d.]/g, "")
         );
         if (Number.isFinite(cc) && cc > 0) base.engine_capacity = cc;
-        base.has_expertise = showExpertiz ? hasExpertise : false;
+        base.has_expertise = showExpertiz;
         if (showExpertiz) {
-          base.expertiz_panels = expertizPanelsToJson(expertiz);
+          const full = expandExpertizPartial(expertiz);
+          base.expertiz_panels = expertizPanelsToJson(full);
         } else if (isEditMode) {
           base.expertiz_panels = null;
         }

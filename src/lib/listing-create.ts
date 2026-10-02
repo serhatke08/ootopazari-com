@@ -1,5 +1,5 @@
 import type { ExpertizDurum } from "@/lib/expertiz";
-import type { PanelKey } from "@/lib/expertiz";
+import { PANEL_KEYS, type PanelKey } from "@/lib/expertiz";
 
 /** Araç kolonları yalnızca bu `categories.code` değerlerinde doldurulur. */
 export const VEHICLE_CATEGORY_CODES = new Set([
@@ -248,10 +248,16 @@ export function expertizPanelsToJson(
 ): Record<string, string> | null {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(panels)) {
-    if (v == null || v === "" || v === "orijinal") continue;
+    if (v == null || v === "") continue;
     out[k] = DURUM_TO_DB[v as ExpertizDurum] ?? String(v);
   }
-  return Object.keys(out).length ? out : null;
+  // Hiç seçim yoksa tüm panelleri orijinal yaz — detayda şema görünsün
+  if (Object.keys(out).length === 0) {
+    for (const k of PANEL_KEYS) {
+      out[k] = DURUM_TO_DB.orijinal;
+    }
+  }
+  return out;
 }
 
 export const REQUIRES_APPROVAL_REVIEW = false;
