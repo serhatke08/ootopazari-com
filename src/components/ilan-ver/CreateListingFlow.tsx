@@ -405,12 +405,55 @@ export function CreateListingFlow({
 
   const goNext = async () => {
     setErr(null);
+    const block = validateCurrentPage();
+    if (block) {
+      setErr(block);
+      return;
+    }
     if (pageIndex >= pages.length - 1) {
       await publish();
       return;
     }
     await goTo(pageIndex + 1);
   };
+
+  /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık. */
+  function validateCurrentPage(): string | null {
+    if (page === "details" && isVehicle) {
+      if (parseMileageTry(mileage) == null) {
+        return "Kilometre zorunlu.";
+      }
+      const plaka = plate.trim().replace(/\s+/g, "");
+      if (plaka.length < 5) {
+        return "Plaka zorunlu.";
+      }
+      if (!color) return "Renk seçin.";
+      if (!fuelType) return "Yakıt tipi seçin.";
+      if (!condition) return "Araç durumu seçin.";
+    }
+    if (page === "eids" && isVehicle) {
+      if (!eidsAccountOk) {
+        return "Önce e-Devlet ile hesabı doğrulayın.";
+      }
+      if (!eidsVehicleOk) {
+        return "Plaka yetkisini tamamlayın (sorgula).";
+      }
+    }
+    if (page === "content") {
+      if (files.length === 0) return "En az bir fotoğraf ekleyin.";
+      if (!title.trim()) return "Başlık zorunlu.";
+      if (!description.trim()) return "Açıklama zorunlu.";
+      if (parsePriceTry(priceStr) == null) return "Geçerli fiyat girin.";
+    }
+    if (page === "boosts") {
+      if (!cityId) return "Şehir seçin.";
+      if (!district.trim()) return "İlçe / semt yazın.";
+      if (!isValidTrMobile10(normalizePhoneDigits(phone).slice(-10))) {
+        return "Geçerli cep telefonu girin.";
+      }
+    }
+    return null;
+  }
 
   const goBack = async () => {
     setErr(null);
@@ -670,14 +713,38 @@ export function CreateListingFlow({
           setErr("Yıl seçin.");
           return;
         }
+        if (!transmission) {
+          setErr("Vites seçin.");
+          return;
+        }
         if (parseMileageTry(mileage) == null) {
-          setErr("Kilometre girin.");
+          setErr("Kilometre zorunlu.");
           return;
         }
-        if (!eidsVehicleOk) {
-          setErr("Plaka e-Devlet yetkisini tamamlayın.");
+        if (plate.trim().replace(/\s+/g, "").length < 5) {
+          setErr("Plaka zorunlu.");
           return;
         }
+        if (!color) {
+          setErr("Renk seçin.");
+          return;
+        }
+        if (!fuelType) {
+          setErr("Yakıt tipi seçin.");
+          return;
+        }
+        if (!condition) {
+          setErr("Araç durumu seçin.");
+          return;
+        }
+        if (!eidsAccountOk || !eidsVehicleOk) {
+          setErr("e-Devlet hesap ve plaka doğrulamasını tamamlayın.");
+          return;
+        }
+      }
+      if (!district.trim()) {
+        setErr("İlçe / semt yazın.");
+        return;
       }
 
       const digits = normalizePhoneDigits(phone);
@@ -825,8 +892,10 @@ export function CreateListingFlow({
       await evaluateListingQualityAfterSave(supabase, listingId, "listings");
       await deleteListingDraft();
       window.location.href = "/profil/ilanlarim";
+      return;
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Yayınlanamadı.");
+    } finally {
       lock.current = false;
       setBusy(false);
     }
@@ -1184,7 +1253,7 @@ export function CreateListingFlow({
       {page === "details" ? (
         <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
           <label className="block text-sm font-medium">
-            Kilometre
+            Kilometre <span className="text-red-600">*</span>
             <input
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={mileage}
@@ -1193,14 +1262,16 @@ export function CreateListingFlow({
               }
               inputMode="numeric"
               placeholder="85.000"
+              required
             />
           </label>
           <label className="block text-sm font-medium">
-            Renk
+            Renk <span className="text-red-600">*</span>
             <select
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={color ?? ""}
               onChange={(e) => setColor(e.target.value || null)}
+              required
             >
               <option value="">Seçin</option>
               {COLORS.map((c) => (
@@ -1211,11 +1282,12 @@ export function CreateListingFlow({
             </select>
           </label>
           <label className="block text-sm font-medium">
-            Yakıt
+            Yakıt <span className="text-red-600">*</span>
             <select
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={fuelType ?? ""}
               onChange={(e) => setFuelType(e.target.value || null)}
+              required
             >
               <option value="">Seçin</option>
               {FUELS.map((c) => (
@@ -1226,11 +1298,12 @@ export function CreateListingFlow({
             </select>
           </label>
           <label className="block text-sm font-medium">
-            Durum
+            Durum <span className="text-red-600">*</span>
             <select
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={condition ?? ""}
               onChange={(e) => setCondition(e.target.value || null)}
+              required
             >
               <option value="">Seçin</option>
               {CONDITIONS.map((c) => (
@@ -1249,12 +1322,13 @@ export function CreateListingFlow({
             Ekspertiz var
           </label>
           <label className="block text-sm font-medium">
-            Plaka
+            Plaka <span className="text-red-600">*</span>
             <input
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 uppercase"
               value={plate}
               onChange={(e) => setPlate(e.target.value.toLocaleUpperCase("tr"))}
               placeholder="34ABC123"
+              required
             />
           </label>
         </div>
