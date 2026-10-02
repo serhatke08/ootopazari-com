@@ -16,6 +16,8 @@ type Props = {
 
 const inputClass =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder:text-zinc-400 shadow-sm transition-colors hover:border-zinc-400 focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80";
+const inputLockedClass =
+  "mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-zinc-700";
 
 function digitsOnly(v: string) {
   return v.replace(/\D/g, "");
@@ -51,6 +53,7 @@ export function EidsWebPanel({
   const [plaka, setPlaka] = useState("");
   const [plateResult, setPlateResult] = useState<string | null>(null);
   const [diag, setDiag] = useState<string | null>(null);
+  const locked = eidsVerified;
 
   const banner = useMemo(() => {
     const eids = sp.get("eids");
@@ -77,7 +80,12 @@ export function EidsWebPanel({
     }
   }, [banner]);
 
+  useEffect(() => {
+    setPhone(initialPhone);
+  }, [initialPhone]);
+
   const savePhone = useCallback(async () => {
+    if (locked) return;
     setBusy(true);
     setErr(null);
     setMsg(null);
@@ -98,12 +106,15 @@ export function EidsWebPanel({
       return;
     }
     setPhone(norm);
-    setMsg(`Telefon kaydedildi: ${norm} (e-Devlet’te 90${norm} görünebilir — aynı numara).`);
+    setMsg(
+      `Telefon kaydedildi: ${norm} (e-Devlet’te 90${norm} görünebilir — aynı numara).`
+    );
     setBusy(false);
     router.refresh();
-  }, [phone, router, userId]);
+  }, [locked, phone, router, userId]);
 
   const startEids = useCallback(async () => {
+    if (locked) return;
     setBusy(true);
     setErr(null);
     setMsg(null);
@@ -113,7 +124,6 @@ export function EidsWebPanel({
       setBusy(false);
       return;
     }
-    // Güncel telefonu yaz
     const supabase = createSupabaseBrowserClient();
     await supabase.from("profiles").update({ phone: norm }).eq("id", userId);
 
@@ -152,7 +162,7 @@ export function EidsWebPanel({
       setErr(e instanceof Error ? e.message : "start_failed");
       setBusy(false);
     }
-  }, [phone, userId]);
+  }, [locked, phone, userId]);
 
   const lookupPlate = useCallback(async () => {
     setBusy(true);
@@ -213,6 +223,8 @@ export function EidsWebPanel({
     setBusy(false);
   }, []);
 
+  const displayName = [eidsAd, eidsSoyad].filter(Boolean).join(" ");
+
   return (
     <div className="space-y-6">
       {msg ? (
@@ -228,30 +240,39 @@ export function EidsWebPanel({
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold text-zinc-900">1) Cep telefonu</h2>
-        <p className="mt-1 text-sm text-zinc-600">
-          e-Devlet’te <strong>905334…</strong> yazsa da uygulamada{" "}
-          <strong>5334…</strong> yeterli — aynı hat. Profildeki numara e-Devlet
-          hesabındakiyle birebir aynı olmalı.
-        </p>
+        {locked ? (
+          <p className="mt-1 text-sm text-zinc-600">
+            Doğrulanmış hesap — telefon değiştirilemez.
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-zinc-600">
+            e-Devlet’te <strong>905334…</strong> yazsa da uygulamada{" "}
+            <strong>5334…</strong> yeterli — aynı hat. Profildeki numara
+            e-Devlet hesabındakiyle birebir aynı olmalı.
+          </p>
+        )}
         <label className="mt-4 block text-sm font-medium text-zinc-800">
           Cep (5xxxxxxxxx)
           <input
-            className={inputClass}
+            className={locked ? inputLockedClass : inputClass}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
             placeholder="5xxxxxxxxx"
-            disabled={busy}
+            disabled={busy || locked}
+            readOnly={locked}
           />
         </label>
-        <button
-          type="button"
-          onClick={() => void savePhone()}
-          disabled={busy}
-          className="mt-3 inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
-        >
-          Telefonu kaydet
-        </button>
+        {!locked ? (
+          <button
+            type="button"
+            onClick={() => void savePhone()}
+            disabled={busy}
+            className="mt-3 inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+          >
+            Telefonu kaydet
+          </button>
+        ) : null}
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -265,38 +286,47 @@ export function EidsWebPanel({
           ) : (
             <span className="font-semibold text-amber-700">Bekliyor</span>
           )}
-          {eidsAd || eidsSoyad
-            ? ` · ${[eidsAd, eidsSoyad].filter(Boolean).join(" ")}`
-            : ""}
-          {eidsVerifiedAt
-            ? ` · ${new Date(eidsVerifiedAt).toLocaleString("tr-TR")}`
-            : ""}
         </p>
-        <button
-          type="button"
-          onClick={() => void startEids()}
-          disabled={busy}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 hover:bg-[#f0c000] disabled:opacity-50"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/branding/edevlet_icon.png"
-            alt=""
-            width={22}
-            height={22}
-            className="h-[22px] w-[22px] object-contain"
-          />
-          e-Devlet ile doğrula
-        </button>
+        {locked ? (
+          <div className="mt-4 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+            <p className="font-semibold">Doğrulanmış hesap bilgileri</p>
+            {displayName ? <p>Ad soyad: {displayName}</p> : null}
+            <p>Telefon: {phone || "—"}</p>
+            {eidsVerifiedAt ? (
+              <p>
+                Doğrulama:{" "}
+                {new Date(eidsVerifiedAt).toLocaleString("tr-TR")}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void startEids()}
+            disabled={busy}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 hover:bg-[#f0c000] disabled:opacity-50"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/branding/edevlet_icon.png"
+              alt=""
+              width={22}
+              height={22}
+              className="h-[22px] w-[22px] object-contain"
+            />
+            e-Devlet ile doğrula
+          </button>
+        )}
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold text-zinc-900">
-          3) Plaka yetkisi (kimlik sonrası)
+          3) Plaka yetkisi
         </h2>
         <p className="mt-1 text-sm text-zinc-600">
-          Baba / eş / çocuk araçları da yetkiliysen geçer. Önce adım 2 yeşil
-          olmalı.
+          {eidsVerified
+            ? "Hesap hazır. Plakayı yazıp sorgula."
+            : "Önce adım 2 yeşil olmalı."}
         </p>
         <label className="mt-4 block text-sm font-medium text-zinc-800">
           Plaka
@@ -317,7 +347,9 @@ export function EidsWebPanel({
           Plakayı sorgula
         </button>
         {plateResult ? (
-          <p className="mt-3 text-sm font-medium text-emerald-800">{plateResult}</p>
+          <p className="mt-3 text-sm font-medium text-emerald-800">
+            {plateResult}
+          </p>
         ) : null}
       </section>
 

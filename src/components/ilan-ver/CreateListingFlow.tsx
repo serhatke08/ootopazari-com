@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
@@ -233,6 +232,20 @@ export function CreateListingFlow({
   );
   const draftSkip = useRef(false);
   const lock = useRef(false);
+  /** e-Devlet dönüşünde kategori flaşı olmasın */
+  const [bootReady, setBootReady] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const fromEids =
+        sp.get("step") === "eids" ||
+        sp.get("eids") === "ok" ||
+        sp.get("eids") === "fail";
+      return !fromEids;
+    } catch {
+      return true;
+    }
+  });
 
   const progress = pages.length ? (pageIndex + 1) / pages.length : 0;
 
@@ -279,10 +292,6 @@ export function CreateListingFlow({
       ? children
       : parents
     : flatModels;
-
-  const rebuildPages = useCallback((vehicle: boolean) => {
-    setPages(vehicle ? VEHICLE_PAGES : OTHER_PAGES);
-  }, []);
 
   const persistDraft = useCallback(async () => {
     if (draftSkip.current) return;
@@ -394,16 +403,11 @@ export function CreateListingFlow({
         }
       }
 
-      // e-Devlet dönüşü / taslak: plaka sonrası içerik (eids kapalıysa content)
+      // e-Devlet dönüşü: taslağı aç ve doğrudan eids (veya content) adımına in
       if (fromEids && d && draftHasProgress(d)) {
-        await applyDraft(d);
-        const vehicle = isVehicleCategoryCode(d.categoryCode);
-        const list = vehicle ? VEHICLE_PAGES : OTHER_PAGES;
-        setPages(list);
-        const eidsIdx = list.indexOf("eids");
-        const contentIdx = list.indexOf("content");
-        if (WEB_EIDS_STEP_ENABLED && eidsIdx >= 0) setPageIndex(eidsIdx);
-        else if (contentIdx >= 0) setPageIndex(contentIdx);
+        await applyDraft(d, {
+          landOn: WEB_EIDS_STEP_ENABLED ? "eids" : "content",
+        });
       } else if (d && draftHasProgress(d)) {
         setDraftBanner(d);
       }
@@ -412,7 +416,7 @@ export function CreateListingFlow({
         if (kodOk) {
           setEidsAccountOk(true);
           setEidsMsg(
-            "Hesap e-Devlet ile doğrulandı. Plakayı yazıp «Plaka yetkisi al»a bas."
+            "Hesap e-Devlet ile doğrulandı. Plakayı yazıp «Plakayı sorgula»ya bas."
           );
         } else if (isEidsMinistryGateError(eidsDurum)) {
           setEidsMsg(humanizeEidsFailMessage(eidsDurum));
@@ -420,7 +424,7 @@ export function CreateListingFlow({
           setEidsMsg(
             `e-Devlet tamamlandı ama kullanıcı kodu kaydedilemedi${
               eidsDurum ? ` (${eidsDurum})` : ""
-            }. Telefonunun e-Devlet’teki numara ile aynı olduğundan emin ol; sonra tekrar «Hesabı doğrula» dene.`
+            }. Telefonunun e-Devlet’teki numara ile aynı olduğundan emin ol; sonra tekrar dene.`
           );
         }
       } else if (eidsStatus === "fail") {
@@ -453,6 +457,7 @@ export function CreateListingFlow({
         u.searchParams.set("step", land);
         window.history.replaceState({}, "", `${u.pathname}?step=${land}`);
       }
+      setBootReady(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -603,14 +608,27 @@ export function CreateListingFlow({
     await persistDraft();
   };
 
-  async function applyDraft(d: ListingDraftPayload) {
+  async function applyDraft(
+    d: ListingDraftPayload,
+    opts?: { landOn?: FlowPage }
+  ) {
     draftSkip.current = true;
+    const vehicle = isVehicleCategoryCode(d.categoryCode);
+    const list = vehicle ? VEHICLE_PAGES : OTHER_PAGES;
+    // Sayfa + index'i await ÖNCESİ set et — kategori flaşını önler
+    setPages(list);
+    let idx = Math.min(Math.max(d.pageIndex ?? 0, 0), list.length - 1);
+    if (opts?.landOn) {
+      const forced = list.indexOf(opts.landOn);
+      if (forced >= 0) idx = forced;
+    }
+    setPageIndex(idx);
+
     if (d.categoryId) {
       setCategoryId(d.categoryId);
       setCategoryCode(d.categoryCode ?? null);
       setCategoryName(d.categoryName ?? null);
-      rebuildPages(isVehicleCategoryCode(d.categoryCode));
-      if (d.categoryId) await loadBrands(d.categoryId);
+      await loadBrands(d.categoryId);
     }
     if (d.vehicleYear) setVehicleYear(d.vehicleYear);
     if (d.brandId) {
@@ -655,12 +673,13 @@ export function CreateListingFlow({
     if (d.cityId) setCityId(d.cityId);
     if (d.district) setDistrict(d.district);
     if (d.phone) setPhone(d.phone);
-    const idx = Math.min(
-      Math.max(d.pageIndex ?? 0, 0),
-      (isVehicleCategoryCode(d.categoryCode) ? VEHICLE_PAGES : OTHER_PAGES)
-        .length - 1
-    );
-    setPageIndex(idx);
+    // landOn varsa tekrar taslak index'ine basma
+    if (!opts?.landOn) {
+      setPageIndex(Math.min(Math.max(d.pageIndex ?? 0, 0), list.length - 1));
+    } else {
+      const forced = list.indexOf(opts.landOn);
+      if (forced >= 0) setPageIndex(forced);
+    }
     setDraftBanner(null);
     setTimeout(() => {
       draftSkip.current = false;
@@ -1034,6 +1053,13 @@ export function CreateListingFlow({
 
   return (
     <div className="mx-auto max-w-md space-y-3 pb-24">
+      {!bootReady ? (
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-600">
+          e-Devlet dönüşü yükleniyor…
+        </div>
+      ) : null}
+      {bootReady ? (
+        <>
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-bold text-[#002776]">İlan Ver</h1>
         {listingQuota && !listingQuota.unlimited ? (
@@ -1433,7 +1459,9 @@ export function CreateListingFlow({
               className="h-8 w-8 object-contain"
             />
             <p className="text-sm text-zinc-700">
-              Uygulamadaki gibi: önce kimlik, sonra plaka yetkisi.
+              {eidsAccountOk
+                ? "Hesap doğrulandı. Plaka yetkisini sorgula."
+                : "Önce e-Devlet ile hesabı doğrula, sonra plaka."}
             </p>
           </div>
           <p className="text-sm">
@@ -1448,24 +1476,31 @@ export function CreateListingFlow({
               {eidsAccountOk ? "Doğrulandı" : "Bekliyor"}
             </span>
           </p>
-          <button
-            type="button"
-            disabled={eidsBusy}
-            onClick={() => void startEids()}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/branding/edevlet_icon.png"
-              alt=""
-              className="h-5 w-5 object-contain"
-            />
-            e-Devlet ile doğrula
-          </button>
+          {!eidsAccountOk ? (
+            <button
+              type="button"
+              disabled={eidsBusy}
+              onClick={() => void startEids()}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/branding/edevlet_icon.png"
+                alt=""
+                className="h-5 w-5 object-contain"
+              />
+              e-Devlet ile doğrula
+            </button>
+          ) : (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+              Kimlik doğrulandı. Telefon ve hesap kilitli — sadece plaka
+              sorgusu kaldı.
+            </div>
+          )}
           <label className="block text-sm font-medium">
             Plaka
             <input
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 uppercase"
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 uppercase disabled:bg-zinc-100"
               value={plate}
               onChange={(e) => setPlate(e.target.value.toLocaleUpperCase("tr"))}
               disabled={!eidsAccountOk}
@@ -1488,9 +1523,6 @@ export function CreateListingFlow({
               {eidsMsg}
             </p>
           ) : null}
-          <Link href="/profil/eids" className="text-sm text-zinc-600 underline">
-            Doğrulama paneli
-          </Link>
         </div>
       ) : null}
 
@@ -1637,6 +1669,8 @@ export function CreateListingFlow({
           </button>
         ) : null}
       </div>
+        </>
+      ) : null}
     </div>
   );
 }
