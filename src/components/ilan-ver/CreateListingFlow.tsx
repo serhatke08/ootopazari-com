@@ -532,6 +532,23 @@ export function CreateListingFlow({
 
   /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık. */
   function validateCurrentPage(): string | null {
+    if (page === "category" && !categoryId) return "Kategori seçin.";
+    if (page === "year" && vehicleYear == null) return "Yıl seçin.";
+    if (page === "brand" && !brandId) return "Marka seçin.";
+    if (page === "model") {
+      const hasModel = Boolean(modelId || childId || parentId);
+      if (!hasModel) return "Model seçin.";
+    }
+    if (page === "bodyStyle" && bodyStyles.length > 0 && !bodyStyleId) {
+      return "Kasa tipi seçin.";
+    }
+    if (page === "engine" && engines.length > 0 && !engineId) {
+      return "Motor / donanım seçin.";
+    }
+    if (page === "package" && packages.length > 0 && !packageId) {
+      return "Paket seçin.";
+    }
+    if (page === "transmission" && !transmission) return "Vites seçin.";
     if (page === "details" && isVehicle) {
       if (parseMileageTry(mileage) == null) {
         return "Kilometre zorunlu.";
@@ -1214,6 +1231,56 @@ export function CreateListingFlow({
     [thumbUrls]
   );
 
+  // Geri/ileri ile liste sayfasına gelince seçili satırı ortala
+  useEffect(() => {
+    if (!bootReady) return;
+    const id = window.setTimeout(() => {
+      const el = document.querySelector(
+        '[data-flow-selected="true"]'
+      ) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [
+    bootReady,
+    page,
+    pageIndex,
+    categoryId,
+    vehicleYear,
+    brandId,
+    modelId,
+    parentId,
+    childId,
+    bodyStyleId,
+    engineId,
+    packageId,
+    transmission,
+  ]);
+
+  const selectionHasValue = (() => {
+    switch (page) {
+      case "category":
+        return Boolean(categoryId);
+      case "year":
+        return vehicleYear != null;
+      case "brand":
+        return Boolean(brandId);
+      case "model":
+        return Boolean(modelId || childId || parentId);
+      case "bodyStyle":
+        return bodyStyles.length === 0 || Boolean(bodyStyleId);
+      case "engine":
+        return engines.length === 0 || Boolean(engineId);
+      case "package":
+        return packages.length === 0 || Boolean(packageId);
+      case "transmission":
+        return Boolean(transmission);
+      default:
+        return true;
+    }
+  })();
+
   return (
     <div className="mx-auto max-w-md space-y-3 pb-24">
       {!bootReady ? (
@@ -1836,33 +1903,25 @@ export function CreateListingFlow({
         >
           Geri
         </button>
-        {page !== "category" &&
-        page !== "year" &&
-        page !== "brand" &&
-        page !== "model" &&
-        page !== "bodyStyle" &&
-        page !== "engine" &&
-        page !== "package" &&
-        page !== "transmission" ? (
-          <button
-            type="button"
-            disabled={
-              busy ||
-              (WEB_EIDS_STEP_ENABLED &&
-                page === "eids" &&
-                !eidsVehicleOk &&
-                isVehicle)
-            }
-            onClick={() => void goNext()}
-            className="flex-1 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
-          >
-            {pageIndex >= pages.length - 1
-              ? busy
-                ? "Yayınlanıyor…"
-                : "İlanı yayınla"
-              : "İleri"}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          disabled={
+            busy ||
+            !selectionHasValue ||
+            (WEB_EIDS_STEP_ENABLED &&
+              page === "eids" &&
+              !eidsVehicleOk &&
+              isVehicle)
+          }
+          onClick={() => void goNext()}
+          className="flex-1 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+        >
+          {pageIndex >= pages.length - 1
+            ? busy
+              ? "Yayınlanıyor…"
+              : "İlanı yayınla"
+            : "İleri"}
+        </button>
       </div>
         </>
       ) : null}
