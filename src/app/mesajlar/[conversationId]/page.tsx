@@ -21,6 +21,7 @@ import {
   otherParticipantId,
   profileDisplayName,
 } from "@/lib/messages";
+import { resolveListingChatBreadcrumb } from "@/lib/listing-seo-label";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 import { publicAvatarUrl, resolveListingImageUrl } from "@/lib/storage";
@@ -104,16 +105,34 @@ export default async function MesajConversationPage({ params }: Props) {
     ),
   ];
 
-  const [listingMap, profileMap, lastMap, unreadMap, adminMap] =
+  const supportChat = isSupportConversation(conv);
+
+  const [listingMap, profileMap, lastMap, unreadMap, adminMap, listingTrail] =
     await Promise.all([
       fetchListingSummariesByIds(supabase, listingIds),
       fetchProfilesByIds(supabase, otherIds),
       fetchLastMessagesByConversationIds(supabase, convIds),
       fetchUnreadCountsByConversation(supabase, user.id, convIds),
       fetchAdminProfilesByUserIds(supabase, otherIds),
+      !supportChat && conv.listing_id
+        ? supabase
+            .from("listings")
+            .select(
+              "category_id,vehicle_brand_id,vehicle_model,vehicle_engine_package_id,vehicle_brand_model_id,description,title"
+            )
+            .eq("id", conv.listing_id)
+            .maybeSingle()
+            .then(async ({ data }) =>
+              data
+                ? resolveListingChatBreadcrumb(
+                    supabase,
+                    data as Record<string, unknown>
+                  )
+                : null
+            )
+        : Promise.resolve(null),
     ]);
 
-  const supportChat = isSupportConversation(conv);
   const listing = listingSummaryForConversation(listingMap, conv.listing_id);
   const listingTitle = supportChat
     ? SUPPORT_AGENT_DISPLAY_NAME
@@ -189,6 +208,7 @@ export default async function MesajConversationPage({ params }: Props) {
             listingTitle={listingTitle}
             listingHref={listingHref}
             listingImageUrl={listingImageUrl}
+            listingTrail={listingTrail}
             listingActive={listingStatus.active}
             listingInactiveMessage={
               listingStatus.active ? "" : listingStatus.message

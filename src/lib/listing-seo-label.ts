@@ -187,3 +187,114 @@ export async function resolveListingSeoVehicleLabel(
     fallback: fallbackTitle,
   });
 }
+
+/**
+ * Mesaj başlığı için: Kategori > Marka > Model > Motor > Paket
+ */
+export async function resolveListingChatBreadcrumb(
+  supabase: SupabaseClient,
+  listing: ListingRow | Record<string, unknown> | null | undefined
+): Promise<string | null> {
+  if (!listing || typeof listing !== "object") return null;
+  const row = listing as Record<string, unknown>;
+  const brandId = field(row, ["vehicle_brand_id"]);
+  const packageId = field(row, ["vehicle_engine_package_id"]);
+  const brandModelFk = field(row, ["vehicle_brand_model_id", "brand_model_id"]);
+  const rawVehicleModel = field(row, ["vehicle_model"]);
+  const categoryId = field(row, ["category_id"]);
+  const rawDesc =
+    typeof row.description === "string" ? row.description : "";
+
+  const [categoryName, brandName, hierarchyLabels, catalogParts, seriCode] =
+    await Promise.all([
+      categoryId
+        ? supabase
+            .from("categories")
+            .select("name")
+            .eq("id", categoryId)
+            .maybeSingle()
+            .then((r) =>
+              r.data?.name != null ? String(r.data.name).trim() : null
+            )
+        : Promise.resolve(null),
+      brandId
+        ? fetchVehicleBrandName(supabase, brandId)
+        : Promise.resolve(null),
+      packageId
+        ? fetchListingEnginePackageLabels(supabase, packageId)
+        : Promise.resolve({
+            motor: null as string | null,
+            paket: null as string | null,
+            horsepower: null as number | null,
+            engineCapacityCc: null as number | null,
+          }),
+      !packageId
+        ? resolveListingVehicleCatalogParts(supabase, {
+            brandId,
+            rawModel: rawVehicleModel,
+          })
+        : Promise.resolve({
+            model: null as string | null,
+            motor: null as string | null,
+            paket: null as string | null,
+            horsepower: null as number | null,
+            engineCapacityCc: null as number | null,
+            variantRemainder: null as string | null,
+          }),
+      brandModelFk
+        ? fetchVehicleBrandModelSeriCode(supabase, brandModelFk)
+        : Promise.resolve(null),
+    ]);
+
+  const descSpecs = rawDesc.trim()
+    ? parseDescriptionVehicleSpecs(rawDesc)
+    : {};
+
+  let model =
+    cleanPart(catalogParts.model) ||
+    cleanPart(seriCode) ||
+    cleanPart(descSpecs.seriModel) ||
+    null;
+
+  const motor =
+    cleanPart(hierarchyLabels.motor) ||
+    cleanPart(catalogParts.motor) ||
+    cleanPart(descSpecs.motor) ||
+    null;
+  const paket =
+    cleanPart(hierarchyLabels.paket) ||
+    cleanPart(catalogParts.paket) ||
+    cleanPart(descSpecs.paket) ||
+    null;
+
+  if (!model && rawVehicleModel) {
+    if (motor || paket) {
+      const tokens = rawVehicleModel.split(/\s+/).filter(Boolean);
+      const drop = new Set(
+        [motor, paket]
+          .filter(Boolean)
+          .flatMap((p) => String(p).toLocaleLowerCase("tr").split(/\s+/))
+      );
+      const kept = tokens.filter(
+        (t) => !drop.has(t.toLocaleLowerCase("tr"))
+      );
+      model = kept.length > 0 ? kept.join(" ") : rawVehicleModel;
+    } else {
+      model = rawVehicleModel;
+    }
+  }
+
+  const parts: string[] = [];
+  for (const p of [categoryName, brandName, model, motor, paket]) {
+    const c = cleanPart(p);
+    if (!c) continue;
+    const lower = c.toLocaleLowerCase("tr");
+    const already = parts.some((prev) => {
+      const pl = prev.toLocaleLowerCase("tr");
+      return pl === lower || pl.includes(lower) || lower.includes(pl);
+    });
+    if (!already) parts.push(c);
+  }
+
+  return parts.length > 0 ? parts.join(" > ") : null;
+}
