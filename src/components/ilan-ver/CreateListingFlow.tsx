@@ -343,9 +343,10 @@ export function CreateListingFlow({
       push(seriesName);
     }
     push(modelName);
-    push(bodyStyleName);
     push(engineName);
     push(packageName);
+    push(transmission);
+    push(bodyStyleName);
     return parts;
   }, [
     categoryName,
@@ -353,9 +354,10 @@ export function CreateListingFlow({
     brandName,
     seriesName,
     modelName,
-    bodyStyleName,
     engineName,
     packageName,
+    transmission,
+    bodyStyleName,
   ]);
 
   const years = useMemo(() => {
@@ -567,19 +569,25 @@ export function CreateListingFlow({
   }, [persistDraft]);
 
   const goTo = useCallback(
-    async (nextIndex: number) => {
+    async (
+      nextIndex: number,
+      lens?: { body?: number; engine?: number; pack?: number }
+    ) => {
+      const bodyLen = lens?.body ?? bodyStyles.length;
+      const engLen = lens?.engine ?? engines.length;
+      const packLen = lens?.pack ?? packages.length;
       let i = nextIndex;
       while (i < pages.length) {
         const p = pages[i];
-        if (p === "bodyStyle" && bodyStyles.length === 0) {
+        if (p === "bodyStyle" && bodyLen === 0) {
           i++;
           continue;
         }
-        if (p === "engine" && engines.length === 0) {
+        if (p === "engine" && engLen === 0) {
           i++;
           continue;
         }
-        if (p === "package" && packages.length === 0) {
+        if (p === "package" && packLen === 0) {
           i++;
           continue;
         }
@@ -790,11 +798,35 @@ export function CreateListingFlow({
   const loadBody = async (mId: string) => {
     const rows = await fetchBodyStylesForModel(supabase, mId);
     setBodyStyles(rows);
+    return rows;
   };
 
   const loadEngines = async (mId: string) => {
     const rows = await fetchEnginesForModel(supabase, mId);
     setEngines(rows);
+    return rows;
+  };
+
+  /** Model seçildikten sonra motor/kasa atlanmasın (setState yarışı). */
+  const afterModelChosen = async (mId: string, mName: string | null) => {
+    setModelId(mId);
+    setModelName(mName);
+    setBodyStyleId(null);
+    setBodyStyleName(null);
+    setEngineId(null);
+    setEngineName(null);
+    setPackageId(null);
+    setPackageName(null);
+    setPackages([]);
+    const bodies = await loadBody(mId);
+    const engs = await loadEngines(mId);
+    const modelIdx = pages.indexOf("model");
+    const next = modelIdx >= 0 ? modelIdx + 1 : pageIndex + 1;
+    await goTo(next, {
+      body: bodies.length,
+      engine: engs.length,
+      pack: 0,
+    });
   };
 
   const loadPackages = async (eId: string) => {
@@ -1160,13 +1192,42 @@ export function CreateListingFlow({
           setParentId(best.id);
           setChildId(best.id);
           setModelName(best.name ?? null);
-          await loadBody(best.id);
-          await loadEngines(best.id);
+          const bodies = await loadBody(best.id);
+          const engs = await loadEngines(best.id);
+          // Motor/paket boş kaldıysa hemen sor — İleri’de “eksik kalan” tuzağı olmasın
+          if (engs.length > 0) {
+            const idx = pages.indexOf("engine");
+            if (idx >= 0) {
+              await goTo(idx, {
+                body: bodies.length,
+                engine: engs.length,
+                pack: 0,
+              });
+              setEidsMsg(
+                "Seçimin e-Devlet kaydına göre düzeltildi. Motor / donanımı seç."
+              );
+              return;
+            }
+          }
+          if (bodies.length > 0) {
+            const idx = pages.indexOf("bodyStyle");
+            if (idx >= 0) {
+              await goTo(idx, {
+                body: bodies.length,
+                engine: engs.length,
+                pack: 0,
+              });
+              setEidsMsg(
+                "Seçimin e-Devlet kaydına göre düzeltildi. Kasa tipini seç."
+              );
+              return;
+            }
+          }
         }
       }
 
       setEidsMsg(
-        "Seçimin e-Devlet kaydına göre düzeltildi. İleri’ye basınca eksik kalan motor / paket vb. adımlara gideceksin."
+        "Seçimin e-Devlet kaydına göre düzeltildi."
       );
     } catch (e) {
       console.warn("[eids autoFix]", e);
@@ -1176,13 +1237,10 @@ export function CreateListingFlow({
     }
   };
 
-  /** Marka/model sonrası doldurulması gereken ama boş kalan adımlar */
+  /** Marka/model sonrası doldurulması gereken ama boş kalan adımlar (sayfa sırasıyla) */
   function hierarchyGaps(): { page: FlowPage; label: string }[] {
     if (!isVehicle) return [];
     const gaps: { page: FlowPage; label: string }[] = [];
-    if (bodyStyles.length > 0 && !bodyStyleId) {
-      gaps.push({ page: "bodyStyle", label: "Kasa tipi" });
-    }
     if (engines.length > 0 && !engineId) {
       gaps.push({ page: "engine", label: "Motor / donanım" });
     }
@@ -1191,6 +1249,9 @@ export function CreateListingFlow({
     }
     if (!transmission) {
       gaps.push({ page: "transmission", label: "Vites" });
+    }
+    if (bodyStyles.length > 0 && !bodyStyleId) {
+      gaps.push({ page: "bodyStyle", label: "Kasa tipi" });
     }
     return gaps;
   }
@@ -1897,11 +1958,7 @@ export function CreateListingFlow({
                 onClick={() => {
                   void (async () => {
                     setChildId(m.id);
-                    setModelId(m.id);
-                    setModelName(m.name ?? null);
-                    await loadBody(m.id);
-                    await loadEngines(m.id);
-                    await goNext();
+                    await afterModelChosen(m.id, m.name ?? null);
                   })();
                 }}
               />
@@ -1919,11 +1976,7 @@ export function CreateListingFlow({
                     const kids = await fetchChildBrandModels(supabase, m.id);
                     setChildren(kids);
                     if (kids.length === 0) {
-                      setModelId(m.id);
-                      setModelName(m.name ?? null);
-                      await loadBody(m.id);
-                      await loadEngines(m.id);
-                      await goNext();
+                      await afterModelChosen(m.id, m.name ?? null);
                     }
                   })();
                 }}
@@ -1938,11 +1991,7 @@ export function CreateListingFlow({
                 selected={modelId === m.id}
                 onClick={() => {
                   void (async () => {
-                    setModelId(m.id);
-                    setModelName(m.name ?? null);
-                    await loadBody(m.id);
-                    await loadEngines(m.id);
-                    await goNext();
+                    await afterModelChosen(m.id, m.name ?? null);
                   })();
                 }}
               />
@@ -1989,6 +2038,8 @@ export function CreateListingFlow({
                     if (e.id !== "_skip") {
                       setEngineId(e.id);
                       setEngineName(e.name ?? null);
+                      setPackageId(null);
+                      setPackageName(null);
                       const eng = engines.find((x) => x.id === e.id);
                       if (eng?.horsepower != null && Number(eng.horsepower) > 0) {
                         setHorsepowerStr(String(Math.round(Number(eng.horsepower))));
@@ -2003,16 +2054,11 @@ export function CreateListingFlow({
                         setEngineCapacityStr(String(cc));
                       }
                       const rows = await loadPackages(e.id);
-                      // goTo closure packages.length henüz 0 olabilir — paket varsa doğrudan git
-                      if (rows.length > 0) {
-                        const idx = pages.indexOf("package");
-                        if (idx >= 0) {
-                          setErr(null);
-                          setPageIndex(idx);
-                          await persistDraft();
-                          return;
-                        }
-                      }
+                      const engIdx = pages.indexOf("engine");
+                      await goTo(engIdx >= 0 ? engIdx + 1 : pageIndex + 1, {
+                        pack: rows.length,
+                      });
+                      return;
                     }
                     await goNext();
                   })();
