@@ -39,6 +39,10 @@ import {
   MAX_LISTING_PHOTOS,
 } from "@/lib/listing-feed-cover";
 import {
+  LISTING_DESCRIPTION_MAX_LENGTH,
+  LISTING_TITLE_MAX_LENGTH,
+} from "@/lib/listing-text-limits";
+import {
   evaluateListingQualityAfterSave,
   listingNeedsQualityResubmitOnEdit,
 } from "@/lib/listing-quality";
@@ -2129,23 +2133,35 @@ export function CreateListingWizard({
             ) : null}
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
-              İlan başlığı *
-            </label>
+            <div className="mb-1 flex items-baseline justify-between gap-2">
+              <label className="text-sm font-medium text-zinc-700">
+                İlan başlığı *
+              </label>
+              <span className="text-[11px] tabular-nums text-zinc-500">
+                {title.length}/{LISTING_TITLE_MAX_LENGTH}
+              </span>
+            </div>
             <input
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               value={title}
+              maxLength={LISTING_TITLE_MAX_LENGTH}
               onChange={(e) => setTitle(e.target.value)}
               required
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
-              Açıklama *
-            </label>
+            <div className="mb-1 flex items-baseline justify-between gap-2">
+              <label className="text-sm font-medium text-zinc-700">
+                Açıklama *
+              </label>
+              <span className="text-[11px] tabular-nums text-zinc-500">
+                {userDescription.length}/{LISTING_DESCRIPTION_MAX_LENGTH}
+              </span>
+            </div>
             <textarea
               className="min-h-[120px] w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               value={userDescription}
+              maxLength={LISTING_DESCRIPTION_MAX_LENGTH}
               onChange={(e) => setUserDescription(e.target.value)}
               required
             />

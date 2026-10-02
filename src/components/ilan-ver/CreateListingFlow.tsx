@@ -34,6 +34,10 @@ import {
 } from "@/lib/eids-ui";
 import { compressListingImageFiles } from "@/lib/compress-listing-image";
 import { MAX_LISTING_PHOTOS } from "@/lib/listing-feed-cover";
+import {
+  LISTING_DESCRIPTION_MAX_LENGTH,
+  LISTING_TITLE_MAX_LENGTH,
+} from "@/lib/listing-text-limits";
 import { evaluateListingQualityAfterSave } from "@/lib/listing-quality";
 import { getSupabaseEnv } from "@/lib/env";
 import { fetchCities, type CategoryRow } from "@/lib/listings-data";
@@ -2153,18 +2157,40 @@ export function CreateListingFlow({
               Henüz fotoğraf yok. Yukarıdan ekle.
             </p>
           )}
-          <input
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            placeholder="Başlık"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <textarea
-            className="min-h-[100px] w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            placeholder="Açıklama"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <div>
+            <div className="mb-1 flex items-baseline justify-between gap-2">
+              <label className="text-sm font-medium text-zinc-700">
+                Başlık
+              </label>
+              <span className="text-[11px] tabular-nums text-zinc-500">
+                {title.length}/{LISTING_TITLE_MAX_LENGTH}
+              </span>
+            </div>
+            <input
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              placeholder="Başlık"
+              value={title}
+              maxLength={LISTING_TITLE_MAX_LENGTH}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div>
+            <div className="mb-1 flex items-baseline justify-between gap-2">
+              <label className="text-sm font-medium text-zinc-700">
+                Açıklama
+              </label>
+              <span className="text-[11px] tabular-nums text-zinc-500">
+                {description.length}/{LISTING_DESCRIPTION_MAX_LENGTH}
+              </span>
+            </div>
+            <textarea
+              className="min-h-[100px] w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              placeholder="Açıklama"
+              value={description}
+              maxLength={LISTING_DESCRIPTION_MAX_LENGTH}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
           <input
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             placeholder="Fiyat (TL) — örn. 1.250.000"
