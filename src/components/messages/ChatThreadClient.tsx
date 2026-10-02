@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import {
   discardEmptyConversationIfAbandoned,
@@ -28,13 +28,6 @@ type Props = {
   otherIsAdmin?: boolean;
   blocked: boolean;
   isSupportConversation?: boolean;
-};
-
-const CHAT_BG_STYLE: CSSProperties = {
-  backgroundColor: "#0a0a0a",
-  backgroundImage: "url(/promo/chat-bg-v2.jpg)",
-  backgroundRepeat: "repeat",
-  backgroundSize: "380px 380px",
 };
 
 export function ChatThreadClient({
@@ -243,18 +236,15 @@ export function ChatThreadClient({
   }
 
   return (
-    <div
-      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-700/80"
-      style={CHAT_BG_STYLE}
-    >
-      {/* Kullanıcı + ilan — sarı bar, yan yana */}
-      <div className="shrink-0 border-b border-amber-300/80 bg-[#ffcc00] px-2.5 py-2 sm:px-3">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+      {/* Kullanıcı + ilan — beyaz bar, yan yana */}
+      <div className="shrink-0 border-b border-zinc-200 bg-white px-2.5 py-2 sm:px-3">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Link
             href={`/kullanici/${otherUserId}`}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-0.5 py-0.5 transition-colors hover:bg-black/5"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-0.5 py-0.5 transition-colors hover:bg-zinc-50"
           >
-            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-black/10 ring-1 ring-black/10">
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-200">
               {otherUserAvatarUrl ? (
                 <Image
                   src={otherUserAvatarUrl}
@@ -264,7 +254,7 @@ export function ChatThreadClient({
                   className="h-8 w-8 object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-800">
+                <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-600">
                   {otherUserName.trim().slice(0, 1).toUpperCase() || "?"}
                 </div>
               )}
@@ -278,7 +268,7 @@ export function ChatThreadClient({
                   <AdminVerifiedBadge className="shrink-0" size={16} />
                 ) : null}
               </div>
-              <p className="text-[11px] text-zinc-800/70">
+              <p className="text-[11px] text-zinc-500">
                 {isSupportConversation
                   ? "Destek sohbeti"
                   : "İlan üzerinden sohbet"}
@@ -288,7 +278,7 @@ export function ChatThreadClient({
 
           {listingTitle ? (
             <div
-              className={`flex min-w-0 flex-[1.35] items-center gap-2 rounded-lg border border-black/10 bg-white/55 px-2 py-1.5 ${
+              className={`flex min-w-0 flex-[1.35] items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 ${
                 listingActive ? "" : "opacity-50"
               }`}
             >
@@ -312,23 +302,23 @@ export function ChatThreadClient({
                   {listingHref && listingActive ? (
                     <Link
                       href={listingHref}
-                      className="line-clamp-1 text-xs font-semibold text-zinc-900 underline-offset-2 hover:underline"
+                      className="line-clamp-1 text-xs font-semibold text-emerald-800 underline-offset-2 hover:underline"
                     >
                       {listingTitle}
                     </Link>
                   ) : (
-                    <p className="line-clamp-1 text-xs font-semibold text-zinc-900">
+                    <p className="line-clamp-1 text-xs font-semibold text-zinc-800">
                       {listingTitle}
                     </p>
                   )}
                   {listingTrail ? (
-                    <p className="line-clamp-1 text-[10px] font-medium text-zinc-700/75">
+                    <p className="line-clamp-1 text-[10px] font-medium text-zinc-500">
                       {listingTrail}
                     </p>
                   ) : null}
                 </div>
                 {!listingActive ? (
-                  <p className="text-[10px] font-medium text-zinc-600">
+                  <p className="text-[10px] font-medium text-zinc-500">
                     Artık aktif değil
                   </p>
                 ) : null}
@@ -343,7 +333,7 @@ export function ChatThreadClient({
         className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-2.5 sm:p-3"
       >
         {messages.length === 0 ? (
-          <p className="my-auto text-center text-xs text-zinc-400">
+          <p className="my-auto text-center text-xs text-zinc-500">
             Henüz mesaj yok. İlk mesajı siz gönderin.
           </p>
         ) : (
@@ -353,11 +343,11 @@ export function ChatThreadClient({
               return (
                 <div
                   key={m.id}
-                  className="w-fit max-w-[92%] self-end rounded-2xl rounded-br-md bg-[#7c3aed] px-2.5 py-1.5 text-xs text-white shadow-sm md:max-w-[88%]"
+                  className="w-fit max-w-[92%] self-end rounded-2xl rounded-br-md bg-[#ffcc00] px-2.5 py-1.5 text-xs text-zinc-900 shadow-sm md:max-w-[88%]"
                 >
                   <p className="whitespace-pre-wrap break-words">{m.content}</p>
                   {m.created_at ? (
-                    <p className="mt-1 text-[9px] text-white/70">
+                    <p className="mt-1 text-[9px] text-zinc-700/80">
                       {new Date(m.created_at).toLocaleString("tr-TR", {
                         day: "numeric",
                         month: "short",
@@ -449,7 +439,7 @@ export function ChatThreadClient({
             <button
               type="submit"
               disabled={sending || !text.trim()}
-              className="shrink-0 self-end rounded-lg bg-[#7c3aed] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-600 focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50"
+              className="shrink-0 self-end rounded-lg bg-[#ffcc00] px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50"
             >
               {sending ? "…" : "Gönder"}
             </button>
