@@ -6,7 +6,9 @@ import type { ApplicationStatus, PaymentStatus } from "@/lib/bayi-types";
 export const YEARLY_FREE_LISTING_QUOTA = 5;
 export const FREE_LISTING_WINDOW_DAYS = 365;
 export const LISTING_ACTIVE_DAYS = 30;
-export const LISTING_EXPIRED_GRACE_DAYS = 5;
+/** Pasif ilan hesapta bu kadar gün kalır; sonra listings_archived'a taşınır. */
+export const LISTING_EXPIRED_GRACE_DAYS = 15;
+export const LISTINGS_ARCHIVED_TABLE = "listings_archived";
 
 export const LISTING_ACTIVATION_USES_TABLE = "listing_activation_uses";
 export const LISTING_TABLE_CARS = "listings";
@@ -117,20 +119,20 @@ export function formatListingPurgeCountdown(listing: {
 }): string {
   const at = listingPurgeAt(listing);
   if (!at) {
-    return `${LISTING_EXPIRED_GRACE_DAYS} gün içinde kalıcı silinecek.`;
+    return `${LISTING_EXPIRED_GRACE_DAYS} gün içinde hesabınızdan kaldırılacak.`;
   }
   const ms = at.getTime() - Date.now();
-  if (ms <= 0) return "Bu ilan yakında kalıcı silinecek.";
+  if (ms <= 0) return "Bu ilan yakında hesabınızdan kaldırılacak.";
   const hours = Math.floor(ms / 3_600_000);
   const days = Math.floor(hours / 24);
   const remHours = hours % 24;
   if (days >= 1 && remHours > 0) {
-    return `${days} gün ${remHours} saat sonra kalıcı silinecek.`;
+    return `${days} gün ${remHours} saat sonra hesabınızdan kaldırılacak.`;
   }
-  if (days >= 1) return `${days} gün sonra kalıcı silinecek.`;
-  if (hours >= 1) return `${hours} saat sonra kalıcı silinecek.`;
+  if (days >= 1) return `${days} gün sonra hesabınızdan kaldırılacak.`;
+  if (hours >= 1) return `${hours} saat sonra hesabınızdan kaldırılacak.`;
   const mins = Math.max(1, Math.floor(ms / 60_000));
-  return `${mins} dakika sonra kalıcı silinecek.`;
+  return `${mins} dakika sonra hesabınızdan kaldırılacak.`;
 }
 
 export function isListingExpired(listing: { moderation_status?: unknown }): boolean {
@@ -384,8 +386,8 @@ export async function expireDueListings(
         title: "İlanınız pasife alındı",
         body:
           num !== ""
-            ? `İlan no #${num} 30 günlük yayını doldurduğu için pasife alındı. ${grace} içinde tekrar aktif etmezseniz kalıcı silinir.`
-            : `İlanınız 30 günlük yayını doldurduğu için pasife alındı. ${grace} içinde tekrar aktif etmezseniz kalıcı silinir.`,
+            ? `İlan no #${num} 30 günlük yayını doldurduğu için pasife alındı. ${grace} içinde tekrar aktif etmezseniz hesabınızdan kaldırılır.`
+            : `İlanınız 30 günlük yayını doldurduğu için pasife alındı. ${grace} içinde tekrar aktif etmezseniz hesabınızdan kaldırılır.`,
         listing_id: r.id,
       };
     })
@@ -431,6 +433,38 @@ async function stampMissingExpiredAt(supabase: SupabaseClient): Promise<void> {
   }
 }
 
+function archiveRowFromListing(
+  row: Record<string, unknown>,
+  reason = "expired_grace_15d"
+): Record<string, unknown> {
+  const id = String(row.id ?? "");
+  return {
+    id,
+    archived_at: new Date().toISOString(),
+    archive_reason: reason,
+    listing_number: row.listing_number ?? null,
+    user_id: row.user_id ?? null,
+    title: row.title ?? null,
+    price: row.price ?? null,
+    category_id: row.category_id ?? null,
+    city_id: row.city_id ?? null,
+    vehicle_brand_id: row.vehicle_brand_id ?? null,
+    vehicle_model: row.vehicle_model ?? null,
+    vehicle_year: row.vehicle_year ?? null,
+    image_url: row.image_url ?? null,
+    created_at: row.created_at ?? null,
+    activated_at: row.activated_at ?? null,
+    expired_at: row.expired_at ?? null,
+    moderation_status: row.moderation_status ?? null,
+    activation_status: row.activation_status ?? null,
+    payload: row,
+  };
+}
+
+/**
+ * 15 gün pasif kalan expired ilanları listings'ten çıkarır,
+ * listings_archived tablosuna yazar (silinmez — analiz için saklanır).
+ */
 export async function purgeExpiredListings(
   supabase: SupabaseClient
 ): Promise<number> {
@@ -439,46 +473,55 @@ export async function purgeExpiredListings(
   ).toISOString();
 
   const quoted = `"${cutoff}"`;
-  let rows: ExpireRow[] = [];
+  let rows: Record<string, unknown>[] = [];
   const withCol = await supabase
     .from("listings")
-    .select("id,expired_at,updated_at,activated_at,created_at")
+    .select("*")
     .eq("moderation_status", "expired")
     .or(`expired_at.lt.${quoted},and(expired_at.is.null,updated_at.lt.${quoted})`)
-    .limit(200);
+    .limit(100);
 
   if (withCol.error) {
     const fallback = await supabase
       .from("listings")
-      .select("id,updated_at,created_at")
+      .select("*")
       .eq("moderation_status", "expired")
       .lt("updated_at", cutoff)
-      .limit(200);
+      .limit(100);
     if (fallback.error) {
       console.warn("purgeExpiredListings select:", fallback.error.message);
       return 0;
     }
-    rows = (fallback.data ?? []) as ExpireRow[];
+    rows = (fallback.data ?? []) as Record<string, unknown>[];
   } else {
-    rows = (withCol.data ?? []) as ExpireRow[];
+    rows = (withCol.data ?? []) as Record<string, unknown>[];
   }
 
   const due = rows.filter((row) => {
-    const at = listingPurgeAt(row);
-    return at != null && at.getTime() <= Date.now();
+    const at = listingPurgeAt(row as ExpireRow);
+    return at != null && at.getTime() <= Date.now() && row.id;
   });
-  const ids = due
-    .map((r) => r.id)
-    .filter((id): id is string => Boolean(id));
-  if (ids.length === 0) return 0;
+  if (due.length === 0) return 0;
 
+  const archives = due.map((row) => archiveRowFromListing(row));
+  const { error: archErr } = await supabase
+    .from(LISTINGS_ARCHIVED_TABLE)
+    .upsert(archives, { onConflict: "id" });
+  if (archErr) {
+    console.warn("purgeExpiredListings archive:", archErr.message);
+    return 0;
+  }
+
+  const ids = due
+    .map((r) => String(r.id))
+    .filter((id) => id.length > 0);
   const { error: delErr } = await supabase
     .from("listings")
     .delete()
     .in("id", ids)
     .eq("moderation_status", "expired");
   if (delErr) {
-    console.warn("purgeExpiredListings delete:", delErr.message);
+    console.warn("purgeExpiredListings delete after archive:", delErr.message);
     return 0;
   }
   return ids.length;
@@ -486,9 +529,9 @@ export async function purgeExpiredListings(
 
 export async function maintainListingLifecycle(
   supabase: SupabaseClient
-): Promise<{ expired: number; purged: number }> {
+): Promise<{ expired: number; purged: number; archived: number }> {
   const expired = await expireDueListings(supabase);
   await stampMissingExpiredAt(supabase);
-  const purged = await purgeExpiredListings(supabase);
-  return { expired, purged };
+  const archived = await purgeExpiredListings(supabase);
+  return { expired, purged: archived, archived };
 }
