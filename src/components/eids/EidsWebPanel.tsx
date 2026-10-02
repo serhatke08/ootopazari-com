@@ -331,6 +331,11 @@ export function EidsWebPanel({
             ? "Hesap hazır. Plakayı yazıp sorgula."
             : "Önce adım 2 yeşil olmalı."}
         </p>
+        <p className="mt-2 text-xs leading-snug text-zinc-500">
+          Not: Sadece kendi adına kayıtlı veya e-Devlet’te yetkili göründüğün
+          araçları sorgulayabilirsin (ör. malik, eş, anne/baba, çocuk — yetki
+          tanımlıysa). Başkasının plakasını sorgulayamazsın.
+        </p>
         <label className="mt-4 block text-sm font-medium text-zinc-800">
           Plaka
           <input

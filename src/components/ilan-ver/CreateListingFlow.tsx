@@ -1783,6 +1783,11 @@ export function CreateListingFlow({
               >
                 {eidsBusy ? "Sorgulanıyor…" : "Plakayı sorgula"}
               </button>
+              <p className="text-left text-[11px] leading-snug text-zinc-500">
+                Not: Sadece kendi adına kayıtlı veya e-Devlet’te yetkili
+                göründüğün araçları sorgulayabilirsin (ör. malik, eş, anne/baba,
+                çocuk — yetki tanımlıysa). Başkasının plakasını sorgulayamazsın.
+              </p>
             </div>
           )}
 
