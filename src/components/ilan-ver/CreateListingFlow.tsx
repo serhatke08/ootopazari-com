@@ -35,6 +35,11 @@ import {
   type PanelKey,
 } from "@/lib/expertiz";
 import { ExpertizCarPreview } from "@/components/ExpertizDiagram";
+import { ACIL_PACKS } from "@/lib/listing-acil";
+import {
+  FEATURE_BOOST_PACKS,
+  formatTryPrice,
+} from "@/lib/listing-feature-boost";
 import { listingCreatedClientField } from "@/lib/client-analytics";
 import {
   humanizeEidsFailMessage,
@@ -88,11 +93,13 @@ type FlowPage =
   | "details"
   | "eids"
   | "content"
+  | "expertiz"
   | "boosts";
 
 /**
  * Bakanlık EİDS API (GetKullaniciKodu) açılana kadar web'de e-Devlet adımını atla.
  * Plaka → doğrudan fotoğraf / açıklama. WEB_EIDS_UI_ENABLED true yapınca eski zorunlu akış döner.
+ * Expertiz şeması paket seçiminden hemen önce.
  */
 const WEB_EIDS_STEP_ENABLED = WEB_EIDS_UI_ENABLED;
 
@@ -108,6 +115,7 @@ const VEHICLE_PAGES_ALL: FlowPage[] = [
   "details",
   "eids",
   "content",
+  "expertiz",
   "boosts",
 ];
 
@@ -116,6 +124,8 @@ const VEHICLE_PAGES: FlowPage[] = WEB_EIDS_STEP_ENABLED
   : VEHICLE_PAGES_ALL.filter((p) => p !== "eids");
 
 const OTHER_PAGES: FlowPage[] = ["category", "content", "boosts"];
+
+const MIN_LISTING_PRICE_TRY = 1000;
 
 type EidsMismatch = {
   field: "year" | "brand" | "model";
@@ -543,6 +553,13 @@ export function CreateListingFlow({
           i++;
           continue;
         }
+        if (
+          p === "expertiz" &&
+          !categoryAllowsBodyExpertiz(categoryCode, categoryName)
+        ) {
+          i++;
+          continue;
+        }
         break;
       }
       setErr(null);
@@ -551,7 +568,15 @@ export function CreateListingFlow({
       scrollFlowToTop();
       await persistDraft();
     },
-    [pages, bodyStyles.length, engines.length, packages.length, persistDraft]
+    [
+      pages,
+      bodyStyles.length,
+      engines.length,
+      packages.length,
+      categoryCode,
+      categoryName,
+      persistDraft,
+    ]
   );
 
   /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık.
@@ -575,7 +600,9 @@ export function CreateListingFlow({
       if (plaka.length < 5) {
         return { message: "Plaka zorunlu.", fieldId: "ilan-ver-plate" };
       }
-      if (showExpertiz && !expertizConfirmed) {
+    }
+    if (page === "expertiz" && showExpertiz) {
+      if (!expertizConfirmed) {
         return {
           message: "Expertiz bilgilerini doğru girdiğinizi onaylayın.",
           fieldId: "ilan-ver-expertiz-confirm",
@@ -611,6 +638,13 @@ export function CreateListingFlow({
       }
       if (parsePriceTry(priceStr) == null) {
         return { message: "Geçerli fiyat girin.", fieldId: "ilan-ver-price" };
+      }
+      const priceNum = parsePriceTry(priceStr);
+      if (priceNum != null && priceNum < MIN_LISTING_PRICE_TRY) {
+        return {
+          message: `İlan fiyatı en az ${MIN_LISTING_PRICE_TRY} ₺ olmalı.`,
+          fieldId: "ilan-ver-price",
+        };
       }
       if (!cityId) {
         return { message: "Şehir seçin.", fieldId: "ilan-ver-city" };
@@ -674,7 +708,31 @@ export function CreateListingFlow({
     setErr(null);
     setFieldErrorId(null);
     if (pageIndex <= 0) return;
-    setPageIndex((i) => i - 1);
+    let i = pageIndex - 1;
+    while (i > 0) {
+      const p = pages[i];
+      if (p === "bodyStyle" && bodyStyles.length === 0) {
+        i--;
+        continue;
+      }
+      if (p === "engine" && engines.length === 0) {
+        i--;
+        continue;
+      }
+      if (p === "package" && packages.length === 0) {
+        i--;
+        continue;
+      }
+      if (
+        p === "expertiz" &&
+        !categoryAllowsBodyExpertiz(categoryCode, categoryName)
+      ) {
+        i--;
+        continue;
+      }
+      break;
+    }
+    setPageIndex(Math.max(0, i));
     scrollFlowToTop();
     await persistDraft();
   };
@@ -1216,6 +1274,10 @@ export function CreateListingFlow({
         setErr("Geçerli fiyat girin.");
         return;
       }
+      if (priceNum < MIN_LISTING_PRICE_TRY) {
+        setErr(`İlan fiyatı en az ${MIN_LISTING_PRICE_TRY} ₺ olmalı.`);
+        return;
+      }
       if (!title.trim()) {
         setErr("Başlık gerekli.");
         return;
@@ -1329,9 +1391,28 @@ export function CreateListingFlow({
       }
 
       const resolvedModel = childId || parentId || modelId;
+
+      // Yakıt Elektrik → elektrikli kategorisinde yayınla (otomobil/SUV seçilmiş olsa bile)
+      let publishCategoryId = categoryId;
+      const fuelNorm = (fuelType ?? "").toLocaleLowerCase("tr");
+      const isElectricFuel =
+        fuelNorm.includes("elektrik") && !fuelNorm.includes("hibrit");
+      if (
+        isVehicle &&
+        isElectricFuel &&
+        (categoryCode === "otomobil" ||
+          categoryCode === "suv_pickup" ||
+          categoryCode === "panelvan")
+      ) {
+        const evCat = categories.find(
+          (c) => String(c.code ?? "").toLowerCase() === "elektrikli"
+        );
+        if (evCat?.id) publishCategoryId = evCat.id;
+      }
+
       const base: Record<string, unknown> = {
         user_id: user.id,
-        category_id: categoryId,
+        category_id: publishCategoryId,
         title: title.trim(),
         description: desc,
         price: priceNum,
@@ -1373,7 +1454,7 @@ export function CreateListingFlow({
               ? base.vehicle_mileage
               : null)
           : null,
-        categoryId,
+        categoryId: publishCategoryId,
       });
       if (duplicateId) {
         setErr(DUPLICATE_LIVE_LISTING_MESSAGE);
@@ -1383,11 +1464,15 @@ export function CreateListingFlow({
       const { data: inserted, error: insErr } = await supabase
         .from("listings")
         .insert(sanitizeListingClientWrite(base, "insert"))
-        .select("id")
+        .select("id, listing_number")
         .single();
 
       if (insErr || !inserted?.id) {
         const msg = insErr?.message ?? "Kayıt başarısız.";
+        if (/price_below_minimum/i.test(msg)) {
+          setErr(`İlan fiyatı en az ${MIN_LISTING_PRICE_TRY} ₺ olmalı.`);
+          return;
+        }
         setErr(
           isDuplicateLiveListingError(msg)
             ? DUPLICATE_LIVE_LISTING_MESSAGE
@@ -1429,18 +1514,29 @@ export function CreateListingFlow({
 
       await evaluateListingQualityAfterSave(supabase, listingId, "listings");
       await deleteListingDraft();
+      const listingRef = String(
+        (inserted as { listing_number?: number | string }).listing_number ??
+          listingId
+      );
       if (packageIntent === "boost" || packageIntent === "both") {
-        window.location.href = `/ilan-one-cikar?listing=${encodeURIComponent(listingId)}`;
+        const q = new URLSearchParams({ listing: listingRef });
+        if (packageIntent === "both") q.set("next", "acil");
+        window.location.href = `/ilan-one-cikar?${q.toString()}`;
         return;
       }
       if (packageIntent === "acil") {
-        window.location.href = `/acil?listing=${encodeURIComponent(listingId)}`;
+        window.location.href = `/ilan-acil?listing=${encodeURIComponent(listingRef)}`;
         return;
       }
       window.location.href = "/profil/ilanlarim";
       return;
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Yayınlanamadı.");
+      const raw = e instanceof Error ? e.message : "Yayınlanamadı.";
+      setErr(
+        /price_below_minimum/i.test(raw)
+          ? `İlan fiyatı en az ${MIN_LISTING_PRICE_TRY} ₺ olmalı.`
+          : raw
+      );
     } finally {
       lock.current = false;
       setBusy(false);
@@ -1471,6 +1567,8 @@ export function CreateListingFlow({
         return "e-Devlet doğrulama";
       case "content":
         return "Fotoğraf, içerik, konum";
+      case "expertiz":
+        return "Kaporta ekspertiz";
       case "boosts":
         return "Daha hızlı sat";
       default:
@@ -1993,94 +2091,94 @@ export function CreateListingFlow({
               required
             />
           </label>
+        </div>
+      ) : null}
 
-          {showExpertiz ? (
-            <div className="space-y-3 border-t border-zinc-100 pt-3">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <input
-                  type="checkbox"
-                  checked={hasExpertise}
-                  onChange={(e) => setHasExpertise(e.target.checked)}
+      {page === "expertiz" && showExpertiz ? (
+        <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={hasExpertise}
+              onChange={(e) => setHasExpertise(e.target.checked)}
+            />
+            Expertiz raporu var
+          </label>
+
+          <div>
+            <p className="mb-1 text-sm font-bold text-zinc-900">
+              Kaporta ekspertiz şeması
+            </p>
+            <p className="mb-2 text-xs text-zinc-500">
+              Parça durumunu seç; şema renklenir (uygulamadaki gibi).
+            </p>
+            <div className="mb-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+              <div className="mx-auto max-h-72 w-full max-w-sm">
+                <ExpertizCarPreview
+                  panels={expandExpertizPartial(expertiz)}
+                  className="max-h-72"
                 />
-                Expertiz raporu var
-              </label>
-
-              <div>
-                <p className="mb-1 text-sm font-bold text-zinc-900">
-                  Kaporta ekspertiz şeması
-                </p>
-                <p className="mb-2 text-xs text-zinc-500">
-                  Parça durumunu seç; şema renklenir (uygulamadaki gibi).
-                </p>
-                <div className="mb-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                  <div className="mx-auto max-h-72 w-full max-w-sm">
-                    <ExpertizCarPreview
-                      panels={expandExpertizPartial(expertiz)}
-                      className="max-h-72"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
-                  {(Object.keys(PANEL_LABELS) as PanelKey[]).map((key) => (
-                    <div
-                      key={key}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-zinc-50 px-3 py-2 text-sm"
-                    >
-                      <span className="font-medium text-zinc-700">
-                        {PANEL_LABELS[key]}
-                      </span>
-                      <select
-                        className="min-w-[10rem] rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium"
-                        value={expertiz[key] ?? "orijinal"}
-                        onChange={(e) => {
-                          const v = e.target.value as ExpertizDurum;
-                          setExpertiz((prev) => ({ ...prev, [key]: v }));
-                        }}
-                      >
-                        {EXPERTIZ_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div
-                id="ilan-ver-expertiz-confirm"
-                className={`rounded-lg border-2 p-4 ${
-                  fieldErrorId === "ilan-ver-expertiz-confirm"
-                    ? "border-red-400 bg-red-50"
-                    : "border-blue-200 bg-blue-50"
-                }`}
-              >
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={expertizConfirmed}
-                    onChange={(e) => {
-                      setFieldErrorId(null);
-                      setExpertizConfirmed(e.target.checked);
-                    }}
-                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-blue-300 text-blue-600"
-                  />
-                  <div className="text-sm">
-                    <p className="font-semibold text-blue-900">
-                      Expertiz bilgilerini doğru girdiğimi onaylıyorum{" "}
-                      <span className="text-red-600">*</span>
-                    </p>
-                    <p className="mt-1 text-xs text-blue-800">
-                      Yanlış girilen expertiz bilgisi ilanın kaldırılmasına yol
-                      açabilir. Kaput, çamurluk, kapı vb. tüm bölgeleri doğru
-                      işaretlediğinden emin ol.
-                    </p>
-                  </div>
-                </label>
               </div>
             </div>
-          ) : null}
+            <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
+              {(Object.keys(PANEL_LABELS) as PanelKey[]).map((key) => (
+                <div
+                  key={key}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-zinc-50 px-3 py-2 text-sm"
+                >
+                  <span className="font-medium text-zinc-700">
+                    {PANEL_LABELS[key]}
+                  </span>
+                  <select
+                    className="min-w-[10rem] rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium"
+                    value={expertiz[key] ?? "orijinal"}
+                    onChange={(e) => {
+                      const v = e.target.value as ExpertizDurum;
+                      setExpertiz((prev) => ({ ...prev, [key]: v }));
+                    }}
+                  >
+                    {EXPERTIZ_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            id="ilan-ver-expertiz-confirm"
+            className={`rounded-lg border-2 p-4 ${
+              fieldErrorId === "ilan-ver-expertiz-confirm"
+                ? "border-red-400 bg-red-50"
+                : "border-blue-200 bg-blue-50"
+            }`}
+          >
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={expertizConfirmed}
+                onChange={(e) => {
+                  setFieldErrorId(null);
+                  setExpertizConfirmed(e.target.checked);
+                }}
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-blue-300 text-blue-600"
+              />
+              <div className="text-sm">
+                <p className="font-semibold text-blue-900">
+                  Expertiz bilgilerini doğru girdiğimi onaylıyorum{" "}
+                  <span className="text-red-600">*</span>
+                </p>
+                <p className="mt-1 text-xs text-blue-800">
+                  Yanlış girilen expertiz bilgisi ilanın kaldırılmasına yol
+                  açabilir. Kaput, çamurluk, kapı vb. tüm bölgeleri doğru
+                  işaretlediğinden emin ol.
+                </p>
+              </div>
+            </label>
+          </div>
         </div>
       ) : null}
 
@@ -2488,7 +2586,8 @@ export function CreateListingFlow({
       {page === "boosts" ? (
         <div className="space-y-3">
           <p className="text-sm text-zinc-600">
-            İsteğe bağlı paketler. Seçmeden de yayınlayabilirsin.
+            İsteğe bağlı. Paket seçersen yayın sonrası ödeme sayfasına
+            gidersin; seçmezsen paketsiz yayınlanır.
           </p>
           <button
             type="button"
@@ -2511,8 +2610,15 @@ export function CreateListingFlow({
                   ? "●"
                   : "○"}
               </span>
-              <div>
-                <p className="text-sm font-bold text-zinc-900">Acil ilan</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-sm font-bold text-zinc-900">Acil ilan</p>
+                  <p className="text-sm font-extrabold text-orange-700">
+                    {ACIL_PACKS.map((p) => `${p.label} ${p.priceTry}₺`).join(
+                      " · "
+                    )}
+                  </p>
+                </div>
                 <p className="mt-0.5 text-xs text-zinc-600">
                   Acil vitrinde öne çıksın, alıcılar daha çabuk görsün.
                 </p>
@@ -2540,16 +2646,27 @@ export function CreateListingFlow({
                   ? "●"
                   : "○"}
               </span>
-              <div>
-                <p className="text-sm font-bold text-zinc-900">Öne çıkarma</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-sm font-bold text-zinc-900">Öne çıkarma</p>
+                  <p className="text-sm font-extrabold text-indigo-700">
+                    {formatTryPrice(FEATURE_BOOST_PACKS[0].fallbackPriceTry)} –{" "}
+                    {formatTryPrice(
+                      FEATURE_BOOST_PACKS[FEATURE_BOOST_PACKS.length - 1]
+                        .fallbackPriceTry
+                    )}
+                  </p>
+                </div>
                 <p className="mt-0.5 text-xs text-zinc-600">
-                  Ana akışta daha görünür olsun.
+                  Ana akışta daha görünür olsun. (
+                  {FEATURE_BOOST_PACKS.map((p) => p.label).join(" / ")})
                 </p>
               </div>
             </div>
           </button>
           <p className="text-xs text-zinc-500">
-            Seçtiğin paketleri ilan oluştuktan sonra satın alabilirsin.
+            Paketsiz devam edersen doğrudan yayınlanır. Paket seçtiysen ödeme
+            tamamlanınca vitrin / öne çıkarma aktif olur.
           </p>
         </div>
       ) : null}

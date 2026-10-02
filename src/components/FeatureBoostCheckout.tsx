@@ -22,8 +22,11 @@ function pickInitialListingIds(
   initialListingNumber?: string | null
 ): string[] {
   if (initialListingNumber) {
+    const key = initialListingNumber.trim();
     const fromUrl = listings.find(
-      (l) => l.listingNumber === initialListingNumber && l.canBoost
+      (l) =>
+        l.canBoost &&
+        (l.listingNumber === key || l.id === key)
     );
     if (fromUrl) return [fromUrl.id];
   }
