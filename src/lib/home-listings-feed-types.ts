@@ -2,7 +2,9 @@ import type { ListingPublicStats } from "@/lib/listing-stats";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import type { ListingRow } from "@/lib/listings-data";
 
-export const HOME_LISTINGS_PAGE_SIZE = 30;
+export const HOME_LISTINGS_PAGE_SIZE =
+  /* 4 satır × 7 sütun (masaüstü) — ilk yüklemede satırlar dolu gelsin */
+  28;
 
 export const HOME_LISTINGS_SORT_OPTIONS = [
   { value: "newest", label: "En yeni" },

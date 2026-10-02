@@ -7,13 +7,14 @@ import type {
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
 import { HOME_LISTINGS_PAGE_SIZE } from "@/lib/home-listings-feed-types";
-import { HOME_GRID_FIRST_ROW_SIZE } from "@/lib/home-grid-image-load";
+import {
+  HOME_GRID_DESKTOP_COLS,
+  HOME_GRID_FIRST_ROW_SIZE,
+  HOME_GRID_INITIAL_ROWS,
+} from "@/lib/home-grid-image-load";
 import { homeFeedFiltersToQueryString } from "@/lib/home-listings-feed-filters";
 import { filterHomeListingItems } from "@/lib/home-filter-client";
 import { ListingCard } from "@/components/ListingCard";
-
-/** Scroll ile en fazla bu kadar sayfa (30×8=240). Egress / bot koruması. */
-const MAX_AUTO_PAGES = 8;
 
 type Props = {
   initialItems: HomeListingCardItem[];
@@ -28,6 +29,13 @@ function filtersToQuery(filters: HomeListingsFeedFilters | undefined): string {
   if (!filters) return "";
   const qs = homeFeedFiltersToQueryString(filters);
   return qs ? `&${qs}` : "";
+}
+
+function measureGridCols(el: HTMLElement | null): number {
+  if (!el) return HOME_GRID_FIRST_ROW_SIZE;
+  const raw = getComputedStyle(el).gridTemplateColumns;
+  const n = raw.split(/\s+/).filter(Boolean).length;
+  return n > 0 ? n : HOME_GRID_FIRST_ROW_SIZE;
 }
 
 export function HomeListingsGrid({
@@ -46,25 +54,47 @@ export function HomeListingsGrid({
   const [feedExhausted, setFeedExhausted] = useState(
     initialItems.length < pageSize
   );
-  const [manualOnly, setManualOnly] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [cols, setCols] = useState(HOME_GRID_FIRST_ROW_SIZE);
+  const [visibleCount, setVisibleCount] = useState(
+    HOME_GRID_INITIAL_ROWS * HOME_GRID_FIRST_ROW_SIZE
+  );
+  const gridRef = useRef<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
+  const expandedRef = useRef(false);
 
   useEffect(() => {
+    expandedRef.current = false;
     setItems(initialItems);
     setPage(1);
     setFeedExhausted(initialItems.length < pageSize);
-    setManualOnly(false);
+    setVisibleCount(HOME_GRID_INITIAL_ROWS * Math.max(cols, 1));
   }, [initialItems, pageSize]);
 
-  const visible = filterHomeListingItems(items, filters ?? {});
-  const hitPageCap = page >= MAX_AUTO_PAGES;
-  const hasMore = !feedExhausted && !(hitPageCap && !manualOnly);
+  useEffect(() => {
+    const el = gridRef.current;
+    const apply = () => {
+      const n = measureGridCols(el);
+      setCols((prev) => (prev === n ? prev : n));
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, [items.length]);
 
-  const loadMore = useCallback(async () => {
-    if (loadingRef.current || loading) return;
-    if (feedExhausted) return;
-    if (page >= MAX_AUTO_PAGES && !manualOnly) return;
+  useEffect(() => {
+    if (!expandedRef.current) {
+      setVisibleCount(HOME_GRID_INITIAL_ROWS * Math.max(cols, 1));
+    }
+  }, [cols]);
+
+  const filtered = filterHomeListingItems(items, filters ?? {});
+  const shown = filtered.slice(0, visibleCount);
+  const hasHiddenLocal = filtered.length > visibleCount;
+  const hasMore = hasHiddenLocal || !feedExhausted;
+
+  const fetchNextPage = useCallback(async () => {
+    if (loadingRef.current || loading) return false;
+    if (feedExhausted) return false;
 
     loadingRef.current = true;
     setLoading(true);
@@ -97,48 +127,42 @@ export function HomeListingsGrid({
       });
       if (data.loggedIn != null) setLoggedIn(data.loggedIn);
       setPage(nextPage);
-      if (nextPage >= MAX_AUTO_PAGES) setManualOnly(true);
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Yükleme başarısız");
+      return false;
     } finally {
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [feedExhausted, filters, loading, manualOnly, page, pageSize]);
+  }, [feedExhausted, filters, loading, page, pageSize]);
 
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || feedExhausted || manualOnly) return;
-    if (page >= MAX_AUTO_PAGES) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          void loadMore();
-        }
-      },
-      { root: null, rootMargin: "480px 0px", threshold: 0 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [feedExhausted, loadMore, manualOnly, page, items.length]);
+  const loadMore = useCallback(async () => {
+    expandedRef.current = true;
+    const step = HOME_GRID_INITIAL_ROWS * Math.max(cols, 1);
+    if (hasHiddenLocal) {
+      setVisibleCount((v) => v + step);
+      return;
+    }
+    if (feedExhausted) return;
+    const ok = await fetchNextPage();
+    if (ok) setVisibleCount((v) => v + step);
+  }, [cols, feedExhausted, fetchNextPage, hasHiddenLocal]);
 
   if (items.length === 0) {
     return null;
   }
 
   return (
-    <div className="space-y-6">
-      {visible.length === 0 ? (
+    <div className="space-y-4">
+      {filtered.length === 0 ? (
         <p className="text-sm text-zinc-600">
-          {!feedExhausted
-            ? "Bu sayfada eşleşen ilan yok. Aşağı kaydırın."
-            : "Aradığınız kriterlere uygun ilan bulunamadı."}
+          Aradığınız kriterlere uygun ilan bulunamadı.
         </p>
       ) : (
-        <div className="home-listings-grid">
-          {visible.map((item, index) => {
-            const inFirstRow = index < HOME_GRID_FIRST_ROW_SIZE;
+        <div ref={gridRef} className="home-listings-grid">
+          {shown.map((item, index) => {
+            const inFirstRow = index < Math.max(cols, HOME_GRID_FIRST_ROW_SIZE);
 
             return (
               <ListingCard
@@ -167,40 +191,13 @@ export function HomeListingsGrid({
         </div>
       )}
 
-      {!feedExhausted && !manualOnly ? (
-        <div ref={sentinelRef} className="flex flex-col items-center gap-2 py-2">
-          <p className="text-xs text-zinc-500">
-            {loading
-              ? "Yükleniyor…"
-              : `${items.length} / ${total} · aşağı kaydır`}
-          </p>
-          {error ? (
-            <>
-              <p className="text-xs text-red-600" role="alert">
-                {error}
-              </p>
-              <button
-                type="button"
-                onClick={() => void loadMore()}
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-800"
-              >
-                Tekrar dene
-              </button>
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {!feedExhausted && manualOnly ? (
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-center text-xs text-zinc-500">
-            {items.length} ilan · devam için dokun (otomatik yük sınırlandı)
-          </p>
+      {hasMore ? (
+        <div className="flex flex-col items-center gap-2 pt-1">
           <button
             type="button"
             onClick={() => void loadMore()}
             disabled={loading}
-            className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
+            className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
           >
             {loading ? "Yükleniyor…" : "Daha fazla yükle"}
           </button>
@@ -212,11 +209,12 @@ export function HomeListingsGrid({
         </div>
       ) : null}
 
-      {feedExhausted && total > pageSize ? (
-        <p className="text-center text-xs text-zinc-500">
-          Tüm ilanlar · {total} aktif
-        </p>
-      ) : null}
+      <p className="text-center text-xs text-zinc-500 sm:text-sm">
+        Toplam <span className="font-semibold text-zinc-700">{total}</span> ilan
+        {shown.length > 0 && shown.length < total
+          ? ` · ${shown.length} gösteriliyor`
+          : null}
+      </p>
     </div>
   );
 }
