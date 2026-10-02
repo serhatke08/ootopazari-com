@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { humanizeEidsFailMessage } from "@/lib/eids";
 
 type Props = {
   userId: string;
@@ -61,15 +62,9 @@ export function EidsWebPanel({
       };
     }
     if (eids === "fail") {
-      const phoneFail =
-        durum &&
-        (durum.includes("03_") ||
-          durum.toLowerCase().includes("kullanici bilgilerini"));
       return {
         ok: false,
-        text: phoneFail
-          ? "Telefon numarası uyuşmazlığı. Profildeki numara, e-Devlet’teki telefon numarasıyla aynı olmalı (905… veya 5… — aynı hat)."
-          : `Doğrulama başarısız${durum ? ` (${durum})` : ""}.`,
+        text: humanizeEidsFailMessage(durum),
       };
     }
     return null;

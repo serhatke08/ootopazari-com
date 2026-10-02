@@ -27,6 +27,10 @@ import {
   sanitizeListingClientWrite,
 } from "@/lib/listing-create";
 import { listingCreatedClientField } from "@/lib/client-analytics";
+import {
+  humanizeEidsFailMessage,
+  isEidsMinistryGateError,
+} from "@/lib/eids";
 import { compressListingImageFiles } from "@/lib/compress-listing-image";
 import { MAX_LISTING_PHOTOS } from "@/lib/listing-feed-cover";
 import { evaluateListingQualityAfterSave } from "@/lib/listing-quality";
@@ -71,7 +75,13 @@ type FlowPage =
   | "content"
   | "boosts";
 
-const VEHICLE_PAGES: FlowPage[] = [
+/**
+ * Bakanlık EİDS API (GetKullaniciKodu) açılana kadar web'de e-Devlet adımını atla.
+ * Plaka → doğrudan fotoğraf / açıklama. true yapınca eski zorunlu akış döner.
+ */
+const WEB_EIDS_STEP_ENABLED = false;
+
+const VEHICLE_PAGES_ALL: FlowPage[] = [
   "category",
   "year",
   "brand",
@@ -85,6 +95,10 @@ const VEHICLE_PAGES: FlowPage[] = [
   "content",
   "boosts",
 ];
+
+const VEHICLE_PAGES: FlowPage[] = WEB_EIDS_STEP_ENABLED
+  ? VEHICLE_PAGES_ALL
+  : VEHICLE_PAGES_ALL.filter((p) => p !== "eids");
 
 const OTHER_PAGES: FlowPage[] = ["category", "content", "boosts"];
 
@@ -379,14 +393,16 @@ export function CreateListingFlow({
         }
       }
 
-      // e-Devlet dönüşü: taslağı otomatik aç + plaka adımına dön
+      // e-Devlet dönüşü / taslak: plaka sonrası içerik (eids kapalıysa content)
       if (fromEids && d && draftHasProgress(d)) {
         await applyDraft(d);
         const vehicle = isVehicleCategoryCode(d.categoryCode);
         const list = vehicle ? VEHICLE_PAGES : OTHER_PAGES;
         setPages(list);
         const eidsIdx = list.indexOf("eids");
-        if (eidsIdx >= 0) setPageIndex(eidsIdx);
+        const contentIdx = list.indexOf("content");
+        if (WEB_EIDS_STEP_ENABLED && eidsIdx >= 0) setPageIndex(eidsIdx);
+        else if (contentIdx >= 0) setPageIndex(contentIdx);
       } else if (d && draftHasProgress(d)) {
         setDraftBanner(d);
       }
@@ -397,6 +413,8 @@ export function CreateListingFlow({
           setEidsMsg(
             "Hesap e-Devlet ile doğrulandı. Plakayı yazıp «Plaka yetkisi al»a bas."
           );
+        } else if (isEidsMinistryGateError(eidsDurum)) {
+          setEidsMsg(humanizeEidsFailMessage(eidsDurum));
         } else {
           setEidsMsg(
             `e-Devlet tamamlandı ama kullanıcı kodu kaydedilemedi${
@@ -405,11 +423,7 @@ export function CreateListingFlow({
           );
         }
       } else if (eidsStatus === "fail") {
-        setEidsMsg(
-          `e-Devlet doğrulaması başarısız${
-            eidsDurum ? `: ${eidsDurum}` : ""
-          }. Tekrar dene.`
-        );
+        setEidsMsg(humanizeEidsFailMessage(eidsDurum));
       }
 
       try {
@@ -434,8 +448,9 @@ export function CreateListingFlow({
         u.searchParams.delete("yetkiKodu");
         u.searchParams.delete("durum");
         u.searchParams.delete("state");
-        u.searchParams.set("step", "eids");
-        window.history.replaceState({}, "", `${u.pathname}?step=eids`);
+        const land = WEB_EIDS_STEP_ENABLED ? "eids" : "content";
+        u.searchParams.set("step", land);
+        window.history.replaceState({}, "", `${u.pathname}?step=${land}`);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -501,7 +516,7 @@ export function CreateListingFlow({
       if (!fuelType) return "Yakıt tipi seçin.";
       if (!condition) return "Araç durumu seçin.";
     }
-    if (page === "eids" && isVehicle) {
+    if (WEB_EIDS_STEP_ENABLED && page === "eids" && isVehicle) {
       if (!eidsAccountOk) {
         return "Önce e-Devlet ile hesabı doğrulayın.";
       }
@@ -807,7 +822,10 @@ export function CreateListingFlow({
           setErr("Araç durumu seçin.");
           return;
         }
-        if (!eidsAccountOk || !eidsVehicleOk) {
+        if (
+          WEB_EIDS_STEP_ENABLED &&
+          (!eidsAccountOk || !eidsVehicleOk)
+        ) {
           setErr("e-Devlet hesap ve plaka doğrulamasını tamamlayın.");
           return;
         }
@@ -1600,7 +1618,13 @@ export function CreateListingFlow({
         page !== "transmission" ? (
           <button
             type="button"
-            disabled={busy || (page === "eids" && !eidsVehicleOk && isVehicle)}
+            disabled={
+              busy ||
+              (WEB_EIDS_STEP_ENABLED &&
+                page === "eids" &&
+                !eidsVehicleOk &&
+                isVehicle)
+            }
             onClick={() => void goNext()}
             className="flex-1 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
           >
