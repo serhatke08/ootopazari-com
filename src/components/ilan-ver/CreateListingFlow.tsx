@@ -530,25 +530,10 @@ export function CreateListingFlow({
     await goTo(pageIndex + 1);
   };
 
-  /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık. */
+  /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık.
+   *  Liste seçimleri (marka/model…) tile tıklanınca setState + goNext yarışır;
+   *  onları burada kontrol etme — sticky İleri zaten selectionHasValue ile kilitli. */
   function validateCurrentPage(): string | null {
-    if (page === "category" && !categoryId) return "Kategori seçin.";
-    if (page === "year" && vehicleYear == null) return "Yıl seçin.";
-    if (page === "brand" && !brandId) return "Marka seçin.";
-    if (page === "model") {
-      const hasModel = Boolean(modelId || childId || parentId);
-      if (!hasModel) return "Model seçin.";
-    }
-    if (page === "bodyStyle" && bodyStyles.length > 0 && !bodyStyleId) {
-      return "Kasa tipi seçin.";
-    }
-    if (page === "engine" && engines.length > 0 && !engineId) {
-      return "Motor / donanım seçin.";
-    }
-    if (page === "package" && packages.length > 0 && !packageId) {
-      return "Paket seçin.";
-    }
-    if (page === "transmission" && !transmission) return "Vites seçin.";
     if (page === "details" && isVehicle) {
       if (parseMileageTry(mileage) == null) {
         return "Kilometre zorunlu.";
