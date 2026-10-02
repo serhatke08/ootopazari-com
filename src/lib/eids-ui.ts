@@ -7,7 +7,7 @@
  * Bakanlık EİDS API açılana kadar web’de e-Devlet UI kapalı.
  * false → ilan-ver adımı yok, /profil/eids → /profil, menü/butonlar gizlenir.
  */
-export const WEB_EIDS_UI_ENABLED = false;
+export const WEB_EIDS_UI_ENABLED = true;
 
 /** Bakanlık 03_ = API kapısı / aktivasyon; kullanıcı telefon hatası değil. */
 export function isEidsMinistryGateError(
