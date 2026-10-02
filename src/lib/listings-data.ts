@@ -159,6 +159,7 @@ const LISTING_EDIT_EXTRA = [
   "is_damaged",
   "is_tradeable",
   "expertiz_panels",
+  "vehicle_brand_model_id",
 ] as const;
 
 const LISTING_OWNER_EDIT_SELECT = [

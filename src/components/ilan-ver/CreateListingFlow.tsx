@@ -55,7 +55,7 @@ import {
   LISTING_DESCRIPTION_MAX_LENGTH,
   LISTING_TITLE_MAX_LENGTH,
 } from "@/lib/listing-text-limits";
-import { evaluateListingQualityAfterSave } from "@/lib/listing-quality";
+import { evaluateListingQualityAfterSave, listingNeedsQualityResubmitOnEdit } from "@/lib/listing-quality";
 import { getSupabaseEnv } from "@/lib/env";
 import { fetchCities, type CategoryRow } from "@/lib/listings-data";
 import { publicListingImageUrl } from "@/lib/storage";
@@ -124,7 +124,13 @@ const VEHICLE_PAGES: FlowPage[] = WEB_EIDS_STEP_ENABLED
   ? VEHICLE_PAGES_ALL
   : VEHICLE_PAGES_ALL.filter((p) => p !== "eids");
 
+/** Düzenlemede e-Devlet / paket satışı yok — aynı motor→kasa sırası */
+const EDIT_VEHICLE_PAGES: FlowPage[] = VEHICLE_PAGES_ALL.filter(
+  (p) => p !== "eids" && p !== "boosts"
+);
+
 const OTHER_PAGES: FlowPage[] = ["category", "content", "boosts"];
+const EDIT_OTHER_PAGES: FlowPage[] = ["category", "content"];
 
 const MIN_LISTING_PRICE_TRY = 1000;
 
@@ -213,15 +219,32 @@ type Props = {
   categories: CategoryRow[];
   userCountryId: string | null;
   listingQuota: ListingQuotaSnapshot | null;
+  editListingId?: string | null;
+  editListingNumber?: string | null;
+  initialGalleryUrls?: string[];
+  initialListingPayload?: Record<string, unknown> | null;
 };
 
 export function CreateListingFlow({
   categories: rawCategories,
   userCountryId,
   listingQuota,
+  editListingId = null,
+  editListingNumber = null,
+  initialGalleryUrls = [],
+  initialListingPayload = null,
 }: Props) {
+  const isEditMode = Boolean(editListingId);
+  const vehiclePages = isEditMode ? EDIT_VEHICLE_PAGES : VEHICLE_PAGES;
+  const otherPages = isEditMode ? EDIT_OTHER_PAGES : OTHER_PAGES;
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editPrefilled = useRef(false);
+  const editOpenedSnapshot = useRef<{
+    moderation_status?: unknown;
+    quality_passive_source?: unknown;
+    cover_quality_score?: unknown;
+  } | null>(null);
 
   const categories = useMemo(
     () =>
@@ -297,6 +320,9 @@ export function CreateListingFlow({
   const [eidsMismatches, setEidsMismatches] = useState<EidsMismatch[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
+  const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>(
+    () => (initialGalleryUrls?.length ? [...initialGalleryUrls] : [])
+  );
   const [coverIndex, setCoverIndex] = useState(0);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -372,6 +398,7 @@ export function CreateListingFlow({
     : flatModels;
 
   const persistDraft = useCallback(async (overrides?: Partial<ListingDraftPayload>) => {
+    if (isEditMode) return;
     if (draftSkip.current) return;
     const payload: ListingDraftPayload = {
       categoryId,
@@ -465,10 +492,44 @@ export function CreateListingFlow({
     coverIndex,
     packageIntent,
     pageIndex,
+    isEditMode,
   ]);
 
   useEffect(() => {
     void (async () => {
+      const cityRows = await fetchCities(supabase);
+      setCities(cityRows.map((c) => ({ id: c.id, name: c.name })));
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: row } = await supabase
+          .from("profiles")
+          .select("phone, eids_kullanici_kodu")
+          .eq("id", user.id)
+          .maybeSingle();
+        const p = (row as { phone?: string | null } | null)?.phone;
+        if (p && !phone) setPhone(String(p).replace(/^0/, ""));
+        const kod = (row as { eids_kullanici_kodu?: string | null } | null)
+          ?.eids_kullanici_kodu;
+        if (kod && String(kod).trim()) {
+          setEidsAccountOk(true);
+        }
+      }
+
+      // Düzenleme: ilanı doldur, taslak/eids boot yok
+      if (isEditMode && initialListingPayload && !editPrefilled.current) {
+        editPrefilled.current = true;
+        await hydrateFromListing(initialListingPayload);
+        setBootReady(true);
+        return;
+      }
+      if (isEditMode) {
+        setBootReady(true);
+        return;
+      }
+
       const sp = new URLSearchParams(window.location.search);
       const eidsStatus = sp.get("eids"); // ok | fail
       const eidsDurum = sp.get("durum")?.trim() || "";
@@ -480,21 +541,14 @@ export function CreateListingFlow({
       }
 
       const d = await fetchListingDraft();
-      const cityRows = await fetchCities(supabase);
-      setCities(cityRows.map((c) => ({ id: c.id, name: c.name })));
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       let kodOk = false;
       if (user) {
         const { data: row } = await supabase
           .from("profiles")
-          .select("phone, eids_kullanici_kodu")
+          .select("eids_kullanici_kodu")
           .eq("id", user.id)
           .maybeSingle();
-        const p = (row as { phone?: string | null } | null)?.phone;
-        if (p && !phone) setPhone(String(p).replace(/^0/, ""));
         const kod = (row as { eids_kullanici_kodu?: string | null } | null)
           ?.eids_kullanici_kodu;
         if (kod && String(kod).trim()) {
@@ -633,14 +687,14 @@ export function CreateListingFlow({
       if (!fuelType) {
         return { message: "Yakıt tipi seçin.", fieldId: "ilan-ver-fuel" };
       }
-      if (!condition) {
+      if (!isEditMode && !condition) {
         return { message: "Araç durumu seçin.", fieldId: "ilan-ver-condition" };
       }
       if (!driveType) {
         return { message: "Çekiş seçin.", fieldId: "ilan-ver-drive" };
       }
       const plaka = plate.trim().replace(/\s+/g, "");
-      if (plaka.length < 5) {
+      if (!isEditMode && plaka.length < 5) {
         return { message: "Plaka zorunlu.", fieldId: "ilan-ver-plate" };
       }
     }
@@ -665,7 +719,9 @@ export function CreateListingFlow({
       }
     }
     if (page === "content") {
-      if (files.length === 0) {
+      const photoCount =
+        files.length + (isEditMode ? existingGalleryUrls.length : 0);
+      if (photoCount === 0) {
         return {
           message: "En az bir fotoğraf ekleyin.",
           fieldId: "ilan-ver-photos-box",
@@ -837,10 +893,207 @@ export function CreateListingFlow({
     return rows;
   };
 
+  /** Mevcut ilanı düzenleme akışına doldur (motor→paket→vites→kasa sırası). */
+  const hydrateFromListing = async (row: Record<string, unknown>) => {
+    draftSkip.current = true;
+    editOpenedSnapshot.current = {
+      moderation_status: row.moderation_status,
+      quality_passive_source: row.quality_passive_source,
+      cover_quality_score: row.cover_quality_score,
+    };
+
+    const cat = categories.find((c) => c.id === String(row.category_id ?? ""));
+    const code = String(cat?.code ?? "");
+    const vehicle = isVehicleCategoryCode(code);
+    const list = vehicle ? vehiclePages : otherPages;
+    setPages(list);
+
+    if (cat) {
+      setCategoryId(cat.id);
+      setCategoryCode(code);
+      setCategoryName(cat.name ?? code);
+    } else if (row.category_id) {
+      setCategoryId(String(row.category_id));
+    }
+
+    setTitle(String(row.title ?? ""));
+    setDescription(String(row.description ?? ""));
+    if (row.price != null && row.price !== "") {
+      const p = Number(row.price);
+      if (Number.isFinite(p)) {
+        setPriceStr(formatPriceThousandsTr(String(Math.round(p))));
+      }
+    }
+    if (row.city_id) setCityId(String(row.city_id));
+    if (row.district != null) setDistrict(String(row.district));
+    const phoneRaw = String(row.contact_phone ?? "").replace(/\D/g, "");
+    if (phoneRaw.length >= 10) {
+      const digits =
+        phoneRaw.length === 11 && phoneRaw.startsWith("0")
+          ? phoneRaw.slice(1)
+          : phoneRaw.slice(-10);
+      setPhone(digits);
+    }
+
+    if (vehicle) {
+      if (row.vehicle_year != null) {
+        const y = Number(row.vehicle_year);
+        if (Number.isFinite(y)) setVehicleYear(y);
+      }
+      if (row.vehicle_mileage != null && row.vehicle_mileage !== "") {
+        setMileage(formatMileageThousandsTr(String(row.vehicle_mileage)));
+      }
+      if (row.fuel_type) setFuelType(String(row.fuel_type));
+      if (row.transmission_type) setTransmission(String(row.transmission_type));
+      if (row.color) setColor(String(row.color));
+      if (row.drive_type) setDriveType(String(row.drive_type));
+      if (row.engine_power != null && row.engine_power !== "") {
+        setHorsepowerStr(String(row.engine_power));
+      }
+      if (row.engine_capacity != null && row.engine_capacity !== "") {
+        setEngineCapacityStr(String(row.engine_capacity).replace(".", ","));
+      }
+      setHeavyDamageRecord(row.is_damaged === true);
+      setIsTradeable(row.is_tradeable === true);
+      setHasExpertise(row.has_expertise === true);
+      const parsed = parseExpertizPanels(row.expertiz_panels);
+      if (parsed) {
+        setExpertiz(parsed);
+        setExpertizConfirmed(true);
+      }
+
+      if (cat?.id) await loadBrands(cat.id);
+
+      const bid =
+        row.vehicle_brand_id != null && String(row.vehicle_brand_id) !== ""
+          ? String(row.vehicle_brand_id)
+          : null;
+      if (bid) {
+        setBrandId(bid);
+        const brandRow = (await fetchBrandsByCategory(supabase, cat!.id)).find(
+          (b) => b.id === bid
+        );
+        setBrandName(brandRow?.name ?? null);
+        setBrandCode(brandRow?.code ?? null);
+        await loadModels(bid);
+
+        const mid =
+          row.vehicle_brand_model_id != null &&
+          String(row.vehicle_brand_model_id) !== ""
+            ? String(row.vehicle_brand_model_id)
+            : null;
+        const modelLabel =
+          row.vehicle_model != null ? String(row.vehicle_model).trim() : "";
+
+        let resolvedMid = mid;
+        if (!resolvedMid && modelLabel) {
+          const hier = await fetchBrandModelsHierarchy(supabase, bid);
+          const pool = hier.hierarchical
+            ? [...hier.parents]
+            : [...hier.parents];
+          // children may need fetch — try flat parents first, then all parents as models
+          const hit =
+            pool.find(
+              (m) =>
+                (m.name ?? "").trim().toLocaleLowerCase("tr-TR") ===
+                modelLabel.toLocaleLowerCase("tr-TR")
+            ) ??
+            pool.find((m) =>
+              modelLabel
+                .toLocaleLowerCase("tr-TR")
+                .includes((m.name ?? "").trim().toLocaleLowerCase("tr-TR"))
+            );
+          if (hit) resolvedMid = hit.id;
+          if (!hit && hier.hierarchical) {
+            for (const p of hier.parents) {
+              const kids = await fetchChildBrandModels(supabase, p.id);
+              const k = kids.find(
+                (m) =>
+                  (m.name ?? "").trim().toLocaleLowerCase("tr-TR") ===
+                    modelLabel.toLocaleLowerCase("tr-TR") ||
+                  modelLabel
+                    .toLocaleLowerCase("tr-TR")
+                    .includes((m.name ?? "").trim().toLocaleLowerCase("tr-TR"))
+              );
+              if (k) {
+                setParentId(p.id);
+                setChildren(kids);
+                resolvedMid = k.id;
+                break;
+              }
+            }
+          }
+        }
+
+        if (resolvedMid) {
+          setModelId(resolvedMid);
+          setParentId((prev) => prev || resolvedMid);
+          setChildId(resolvedMid);
+          setModelName(modelLabel || null);
+          const bodies = await loadBody(resolvedMid);
+          const engs = await loadEngines(resolvedMid);
+
+          const bodyLabel =
+            row.body_type != null ? String(row.body_type).trim() : "";
+          if (bodyLabel && bodies.length) {
+            const bHit = bodies.find(
+              (b) =>
+                (b.name ?? "").trim().toLocaleLowerCase("tr-TR") ===
+                bodyLabel.toLocaleLowerCase("tr-TR")
+            );
+            if (bHit) {
+              setBodyStyleId(bHit.id);
+              setBodyStyleName(bHit.name ?? null);
+            }
+          }
+
+          const pkgId =
+            row.vehicle_engine_package_id != null &&
+            String(row.vehicle_engine_package_id) !== ""
+              ? String(row.vehicle_engine_package_id)
+              : null;
+          if (pkgId) {
+            const { data: pkg } = await supabase
+              .from("vehicle_engine_packages")
+              .select("id,name,engine_id")
+              .eq("id", pkgId)
+              .maybeSingle();
+            const engId =
+              pkg && typeof pkg === "object"
+                ? String(
+                    (pkg as { engine_id?: string | null }).engine_id ?? ""
+                  ) || null
+                : null;
+            if (engId) {
+              setEngineId(engId);
+              const eng = engs.find((e) => e.id === engId);
+              setEngineName(eng?.name ?? null);
+              const packs = await loadPackages(engId);
+              setPackageId(pkgId);
+              setPackageName(
+                (pkg as { name?: string | null } | null)?.name ??
+                  packs.find((p) => p.id === pkgId)?.name ??
+                  null
+              );
+            }
+          }
+        } else if (modelLabel) {
+          setModelName(modelLabel);
+        }
+      }
+    }
+
+    const contentIdx = list.indexOf("content");
+    setPageIndex(contentIdx >= 0 ? contentIdx : Math.max(0, list.length - 1));
+    setTimeout(() => {
+      draftSkip.current = false;
+    }, 500);
+  };
+
   const selectCategory = async (c: CategoryRow) => {
     const code = String(c.code ?? "");
     const vehicle = isVehicleCategoryCode(code);
-    const nextPages = vehicle ? VEHICLE_PAGES : OTHER_PAGES;
+    const nextPages = vehicle ? vehiclePages : otherPages;
     setCategoryId(c.id);
     setCategoryCode(code);
     setCategoryName(c.name ?? code);
@@ -1337,9 +1590,8 @@ export function CreateListingFlow({
       return;
     }
 
-    // eids çıkışında eksik hiyerarşi — önce taslaktan geri yükle (state kaybı),
-    // sonra hâlâ eksikse ilgili sayfaya gönder. details/content'te fırlatma yok.
-    if (isVehicle && page === "eids") {
+    // eids çıkışında eksik hiyerarşi — sadece yeni ilan
+    if (isVehicle && page === "eids" && !isEditMode) {
       let engId = engineId;
       let engName = engineName;
       let packId = packageId;
@@ -1511,12 +1763,12 @@ export function CreateListingFlow({
         setErr("Geçerli cep telefonu girin.");
         return;
       }
-      if (files.length === 0) {
+      if (files.length === 0 && !(isEditMode && existingGalleryUrls.length > 0)) {
         setErr("En az bir fotoğraf ekleyin.");
         return;
       }
       if (isVehicle) {
-        if (!brandId || (!modelId && !parentId && !childId)) {
+        if (!brandId || (!modelId && !parentId && !childId && !modelName)) {
           setErr("Marka ve model seçin.");
           return;
         }
@@ -1532,7 +1784,7 @@ export function CreateListingFlow({
           setErr("Kilometre zorunlu.");
           return;
         }
-        if (plate.trim().replace(/\s+/g, "").length < 5) {
+        if (!isEditMode && plate.trim().replace(/\s+/g, "").length < 5) {
           setErr("Plaka zorunlu.");
           return;
         }
@@ -1544,11 +1796,12 @@ export function CreateListingFlow({
           setErr("Yakıt tipi seçin.");
           return;
         }
-        if (!condition) {
+        if (!isEditMode && !condition) {
           setErr("Araç durumu seçin.");
           return;
         }
         if (
+          !isEditMode &&
           WEB_EIDS_STEP_ENABLED &&
           (!eidsAccountOk || !eidsVehicleOk)
         ) {
@@ -1602,7 +1855,12 @@ export function CreateListingFlow({
         return;
       }
 
-      if (listingQuota && !listingQuota.unlimited && listingQuota.remaining <= 0) {
+      if (
+        !isEditMode &&
+        listingQuota &&
+        !listingQuota.unlimited &&
+        listingQuota.remaining <= 0
+      ) {
         setErr(`Son 12 ayda ${listingQuota.limit} ücretsiz hakkınız doldu.`);
         return;
       }
@@ -1628,7 +1886,6 @@ export function CreateListingFlow({
       }
 
       const base: Record<string, unknown> = {
-        user_id: user.id,
         category_id: publishCategoryId,
         title: title.trim(),
         description: desc,
@@ -1638,10 +1895,14 @@ export function CreateListingFlow({
         city_id: cityId,
         district: district.trim() || null,
         contact_phone: formatContactPhone(ten),
-        activated_at: new Date().toISOString(),
-        ...moderationPayload(),
-        ...listingCreatedClientField(),
       };
+      if (!isEditMode) {
+        base.user_id = user.id;
+        base.activated_at = new Date().toISOString();
+        Object.assign(base, moderationPayload(), listingCreatedClientField());
+      } else {
+        Object.assign(base, moderationPayload());
+      }
       if (userCountryId) base.country_id = userCountryId;
       if (isVehicle) {
         base.vehicle_brand_id = brandId;
@@ -1664,6 +1925,8 @@ export function CreateListingFlow({
         base.has_expertise = showExpertiz ? hasExpertise : false;
         if (showExpertiz) {
           base.expertiz_panels = expertizPanelsToJson(expertiz);
+        } else if (isEditMode) {
+          base.expertiz_panels = null;
         }
         if (resolvedModel) base.vehicle_brand_model_id = resolvedModel;
         if (packageId) base.vehicle_engine_package_id = packageId;
@@ -1681,9 +1944,119 @@ export function CreateListingFlow({
               : null)
           : null,
         categoryId: publishCategoryId,
+        excludeListingId: isEditMode ? editListingId : null,
       });
       if (duplicateId) {
         setErr(DUPLICATE_LIVE_LISTING_MESSAGE);
+        return;
+      }
+
+      if (isEditMode && editListingId) {
+        const qualityResubmitPending = editOpenedSnapshot.current
+          ? listingNeedsQualityResubmitOnEdit(editOpenedSnapshot.current)
+          : false;
+
+        const { error: upErr } = await supabase
+          .from("listings")
+          .update(
+            sanitizeListingClientWrite(base, "update", {
+              qualityResubmitPending,
+            })
+          )
+          .eq("id", editListingId)
+          .eq("user_id", user.id);
+
+        if (upErr) {
+          setErr(upErr.message ?? "Güncelleme başarısız.");
+          return;
+        }
+
+        const env = getSupabaseEnv();
+        let coverUrl: string | undefined;
+        let galleryUrlsForDb: string[];
+
+        if (files.length > 0) {
+          const preparedFiles = await compressListingImageFiles(files);
+          const { data: listed, error: listErr } = await supabase.storage
+            .from("listings-images")
+            .list(editListingId);
+          if (listErr) {
+            setErr(`Depo okunamadı: ${listErr.message}`);
+            return;
+          }
+          let maxI = -1;
+          for (const o of listed ?? []) {
+            const m = /^(\d+)\./i.exec(o.name);
+            if (m) maxI = Math.max(maxI, parseInt(m[1], 10));
+          }
+          const startIdx = maxI + 1;
+          for (let i = 0; i < preparedFiles.length; i++) {
+            const f = preparedFiles[i];
+            const ext = extForFile(f);
+            const path = `${editListingId}/${startIdx + i}.${ext}`;
+            const { error: upFi } = await supabase.storage
+              .from("listings-images")
+              .upload(path, f, {
+                upsert: true,
+                contentType: mimeForUpload(f),
+              });
+            if (upFi) {
+              setErr(`Görsel yüklenemedi: ${upFi.message}`);
+              return;
+            }
+          }
+          const { data: listed2 } = await supabase.storage
+            .from("listings-images")
+            .list(editListingId);
+          const names = (listed2 ?? [])
+            .map((o) => o.name)
+            .filter((n) => /^\d+\.[a-z0-9]+$/i.test(n))
+            .sort((a, b) => {
+              const na = parseInt(a.split(".")[0], 10);
+              const nb = parseInt(b.split(".")[0], 10);
+              return na - nb;
+            });
+          galleryUrlsForDb = names.map((n) =>
+            publicListingImageUrl(env, `${editListingId}/${n}`)
+          );
+          coverUrl = galleryUrlsForDb[coverIndex] ?? galleryUrlsForDb[0];
+        } else {
+          galleryUrlsForDb = [...existingGalleryUrls];
+          coverUrl =
+            existingGalleryUrls[coverIndex] ?? existingGalleryUrls[0];
+        }
+
+        if (!coverUrl) {
+          setErr("Kapak görseli belirlenemedi.");
+          return;
+        }
+
+        const { error: imgErr } = await supabase
+          .from("listings")
+          .update({ image_url: coverUrl, images: galleryUrlsForDb })
+          .eq("id", editListingId)
+          .eq("user_id", user.id);
+        if (imgErr) {
+          const retry = await supabase
+            .from("listings")
+            .update({ image_url: coverUrl })
+            .eq("id", editListingId)
+            .eq("user_id", user.id);
+          if (retry.error) {
+            setErr(`Kapak güncellenemedi: ${retry.error.message}`);
+            return;
+          }
+        }
+
+        if (!qualityResubmitPending) {
+          await evaluateListingQualityAfterSave(
+            supabase,
+            editListingId,
+            "listings"
+          );
+        }
+
+        window.location.href = "/profil/ilanlarim";
         return;
       }
 
@@ -1880,23 +2253,45 @@ export function CreateListingFlow({
     <div id="ilan-ver-top" className="mx-auto max-w-md space-y-3 pb-24">
       {!bootReady ? (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-600">
-          e-Devlet dönüşü yükleniyor…
+          {isEditMode ? "İlan yükleniyor…" : "e-Devlet dönüşü yükleniyor…"}
         </div>
       ) : null}
       {bootReady ? (
         <>
       <div className="flex items-center justify-between gap-2">
-        <h1 className="shrink-0 text-lg font-bold text-[#002776]">İlan Ver</h1>
+        <div className="min-w-0">
+          <h1 className="shrink-0 text-lg font-bold text-[#002776]">
+            {isEditMode ? "İlanı Düzenle" : "İlan Ver"}
+          </h1>
+          {isEditMode && editListingNumber ? (
+            <p className="text-xs font-medium text-zinc-500">
+              #{editListingNumber}
+            </p>
+          ) : null}
+        </div>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => void saveDraftAndExit()}
-            disabled={busy}
-            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 sm:text-xs"
-          >
-            Taslak kaydet ve çık
-          </button>
-          {listingQuota && !listingQuota.unlimited ? (
+          {isEditMode ? (
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/profil/ilanlarim";
+              }}
+              disabled={busy}
+              className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 sm:text-xs"
+            >
+              Çık
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void saveDraftAndExit()}
+              disabled={busy}
+              className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 sm:text-xs"
+            >
+              Taslak kaydet ve çık
+            </button>
+          )}
+          {!isEditMode && listingQuota && !listingQuota.unlimited ? (
             <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
               Hak: {listingQuota.remaining}/{listingQuota.limit}
             </span>
@@ -2778,11 +3173,45 @@ export function CreateListingFlow({
                 : "border-zinc-300"
             }`}
           >
-            Fotoğraf ekle ({files.length}/{MAX_LISTING_PHOTOS})
+            Fotoğraf ekle (
+            {files.length + (isEditMode ? existingGalleryUrls.length : 0)}/
+            {MAX_LISTING_PHOTOS})
             <span className="mt-1 text-[11px] font-normal text-zinc-500">
               Birden fazla seçebilirsin
             </span>
           </label>
+          {isEditMode && existingGalleryUrls.length > 0 && files.length === 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              {existingGalleryUrls.map((u, i) => (
+                <div
+                  key={`ex-${u}-${i}`}
+                  className={`relative overflow-hidden rounded-lg border-2 ${
+                    coverIndex === i ? "border-[#ffcc00]" : "border-transparent"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={u}
+                    alt=""
+                    className="aspect-square w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCoverIndex(i)}
+                    className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                  >
+                    {coverIndex === i ? "Kapak" : "Kapak yap"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {isEditMode && existingGalleryUrls.length > 0 ? (
+            <p className="text-xs text-zinc-500">
+              {existingGalleryUrls.length} mevcut görsel korunur
+              {files.length > 0 ? "; yeni fotoğraflar eklenecek." : "."}
+            </p>
+          ) : null}
           {thumbUrls.length ? (
             <div className="grid grid-cols-3 gap-2">
               {thumbUrls.map((u, i) => (
@@ -3061,10 +3490,14 @@ export function CreateListingFlow({
         >
           {pageIndex >= pages.length - 1
             ? busy
-              ? "Yayınlanıyor…"
-              : packageIntent === "none"
-                ? "Paketsiz devam et / yayınla"
-                : "Devam et / yayınla"
+              ? isEditMode
+                ? "Kaydediliyor…"
+                : "Yayınlanıyor…"
+              : isEditMode
+                ? "Değişiklikleri kaydet"
+                : packageIntent === "none"
+                  ? "Paketsiz devam et / yayınla"
+                  : "Devam et / yayınla"
             : "İleri"}
         </button>
       </div>

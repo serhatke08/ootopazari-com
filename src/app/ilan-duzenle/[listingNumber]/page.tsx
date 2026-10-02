@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
-import { CreateListingWizard } from "@/components/ilan-ver/CreateListingWizard";
+import { CreateListingFlow } from "@/components/ilan-ver/CreateListingFlow";
 import { collectListingGalleryUrls } from "@/lib/listing-images";
 import {
   fetchCategories,
@@ -65,9 +65,10 @@ export default async function IlanDuzenlePage({ params }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
-      <CreateListingWizard
+      <CreateListingFlow
         categories={listingCategories}
         userCountryId={userCountryId}
+        listingQuota={null}
         editListingId={row.id as string}
         editListingNumber={String(row.listing_number ?? listingNumber)}
         initialGalleryUrls={initialGalleryUrls}
