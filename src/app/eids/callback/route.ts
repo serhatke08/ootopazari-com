@@ -374,8 +374,8 @@ export async function GET(req: Request) {
     const kkDone = (
       profileDone as { eids_kullanici_kodu?: string | null } | null
     )?.eids_kullanici_kodu;
+    const okDone = Boolean(kkDone);
     if (session.source === "app") {
-      const okDone = Boolean(kkDone);
       const appUrl = buildEidsAppRedirectUrl({
         yetkiKodu: session.yetki_kodu || yetkiKodu,
         durum: okDone
@@ -387,6 +387,18 @@ export async function GET(req: Request) {
       });
       return NextResponse.redirect(appUrl, 302);
     }
+    // Web: tekrar callback — ilan-ver eids adımına dön
+    const path = buildEidsWebRedirectPath({
+      web_return_path: session.web_return_path,
+      listing_id: session.listing_id,
+      yetki_kodu: session.yetki_kodu || yetkiKodu,
+      durum: okDone
+        ? session.durum || durum || "ok"
+        : "eids_user_not_verified",
+      state: session.state,
+      ok: okDone,
+    });
+    return NextResponse.redirect(new URL(path, getSiteOrigin()), 302);
   }
 
   if (session.status !== "pending" || expired) {
@@ -403,7 +415,8 @@ export async function GET(req: Request) {
     );
   }
 
-  const edevletOk = eidsDurumIsSuccess(durum);
+  // Bakanlık bazen yalnız yetkiKodu döner (durum boş). App complete ile aynı kural.
+  const edevletOk = eidsDurumIsSuccess(durum) || Boolean(yetkiKodu);
   const callbackAt = new Date().toISOString();
   const queryPayload: Record<string, string> = {};
   for (const [k, v] of sp.entries()) {

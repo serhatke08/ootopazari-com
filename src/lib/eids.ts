@@ -129,6 +129,7 @@ export function buildEidsWebRedirectPath(session: {
 /** durum alanını başarı / başarısız olarak yorumla (Bakanlık değerleri değişebilir). */
 export function eidsDurumIsSuccess(durum: string): boolean {
   const d = durum.trim().toLocaleLowerCase("tr");
+  // Boş durum: yetkiKodu varsa callback tarafı ayrıca true yapar.
   if (!d) return false;
   if (
     d === "1" ||

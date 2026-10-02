@@ -348,13 +348,21 @@ export function CreateListingFlow({
 
   useEffect(() => {
     void (async () => {
+      const sp = new URLSearchParams(window.location.search);
+      const eidsStatus = sp.get("eids"); // ok | fail
+      const eidsDurum = sp.get("durum")?.trim() || "";
+      const step = sp.get("step");
+      const fromEids =
+        step === "eids" || eidsStatus === "ok" || eidsStatus === "fail";
+
       const d = await fetchListingDraft();
-      if (draftHasProgress(d)) setDraftBanner(d);
       const cityRows = await fetchCities(supabase);
       setCities(cityRows.map((c) => ({ id: c.id, name: c.name })));
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      let kodOk = false;
       if (user) {
         const { data: row } = await supabase
           .from("profiles")
@@ -365,7 +373,69 @@ export function CreateListingFlow({
         if (p && !phone) setPhone(String(p).replace(/^0/, ""));
         const kod = (row as { eids_kullanici_kodu?: string | null } | null)
           ?.eids_kullanici_kodu;
-        if (kod && String(kod).trim()) setEidsAccountOk(true);
+        if (kod && String(kod).trim()) {
+          kodOk = true;
+          setEidsAccountOk(true);
+        }
+      }
+
+      // e-Devlet dönüşü: taslağı otomatik aç + plaka adımına dön
+      if (fromEids && d && draftHasProgress(d)) {
+        await applyDraft(d);
+        const vehicle = isVehicleCategoryCode(d.categoryCode);
+        const list = vehicle ? VEHICLE_PAGES : OTHER_PAGES;
+        setPages(list);
+        const eidsIdx = list.indexOf("eids");
+        if (eidsIdx >= 0) setPageIndex(eidsIdx);
+      } else if (d && draftHasProgress(d)) {
+        setDraftBanner(d);
+      }
+
+      if (eidsStatus === "ok") {
+        if (kodOk) {
+          setEidsAccountOk(true);
+          setEidsMsg(
+            "Hesap e-Devlet ile doğrulandı. Plakayı yazıp «Plaka yetkisi al»a bas."
+          );
+        } else {
+          setEidsMsg(
+            `e-Devlet tamamlandı ama kullanıcı kodu kaydedilemedi${
+              eidsDurum ? ` (${eidsDurum})` : ""
+            }. Telefonunun e-Devlet’teki numara ile aynı olduğundan emin ol; sonra tekrar «Hesabı doğrula» dene.`
+          );
+        }
+      } else if (eidsStatus === "fail") {
+        setEidsMsg(
+          `e-Devlet doğrulaması başarısız${
+            eidsDurum ? `: ${eidsDurum}` : ""
+          }. Tekrar dene.`
+        );
+      }
+
+      try {
+        if (eidsStatus || eidsDurum) {
+          sessionStorage.setItem(
+            "eids_last_web_result",
+            JSON.stringify({
+              at: Date.now(),
+              eids: eidsStatus,
+              durum: eidsDurum,
+              kodOk,
+            })
+          );
+        }
+      } catch {
+        /* ignore */
+      }
+
+      if (fromEids || eidsStatus) {
+        const u = new URL(window.location.href);
+        u.searchParams.delete("eids");
+        u.searchParams.delete("yetkiKodu");
+        u.searchParams.delete("durum");
+        u.searchParams.delete("state");
+        u.searchParams.set("step", "eids");
+        window.history.replaceState({}, "", `${u.pathname}?step=eids`);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -517,7 +587,7 @@ export function CreateListingFlow({
     await persistDraft();
   };
 
-  const applyDraft = async (d: ListingDraftPayload) => {
+  async function applyDraft(d: ListingDraftPayload) {
     draftSkip.current = true;
     if (d.categoryId) {
       setCategoryId(d.categoryId);
@@ -579,7 +649,7 @@ export function CreateListingFlow({
     setTimeout(() => {
       draftSkip.current = false;
     }, 500);
-  };
+  }
 
   const startEids = async () => {
     setEidsBusy(true);
@@ -603,7 +673,7 @@ export function CreateListingFlow({
         },
         body: JSON.stringify({
           source: "web",
-          webReturnPath: "/ilan-ver",
+          webReturnPath: "/ilan-ver?step=eids",
         }),
       });
       const body = (await res.json()) as {
