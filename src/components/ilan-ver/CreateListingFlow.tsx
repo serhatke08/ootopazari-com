@@ -79,6 +79,10 @@ import {
 import { sortByCreateListingCategoryOrder } from "@/lib/vehicle-category-sort";
 import { FlowSelectTile } from "@/components/ilan-ver/FlowSelectTile";
 import {
+  PublishSuccessOverlay,
+  type PublishedListingPreview,
+} from "@/components/ilan-ver/PublishSuccessOverlay";
+import {
   brandLogoSrc,
   categoryIconSrc,
 } from "@/lib/brand-category-icons";
@@ -341,6 +345,11 @@ export function CreateListingFlow({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [fieldErrorId, setFieldErrorId] = useState<string | null>(null);
+  const [publishOverlay, setPublishOverlay] = useState<
+    | { kind: "toast"; preview: PublishedListingPreview; nextHref: string }
+    | { kind: "upsell"; preview: PublishedListingPreview }
+    | null
+  >(null);
   const [draftBanner, setDraftBanner] = useState<ListingDraftPayload | null>(
     null
   );
@@ -2117,17 +2126,39 @@ export function CreateListingFlow({
         (inserted as { listing_number?: number | string }).listing_number ??
           listingId
       );
+
+      const cityName =
+        cities.find((c) => c.id === cityId)?.name?.trim() || null;
+      const metaParts = [
+        vehicleYear != null ? String(vehicleYear) : null,
+        brandName,
+        modelName,
+        cityName,
+      ].filter(Boolean);
+      const preview: PublishedListingPreview = {
+        listingRef,
+        coverUrl,
+        title: title.trim(),
+        priceLabel: priceStr.trim()
+          ? `${priceStr.trim()} ₺`
+          : `${priceNum.toLocaleString("tr-TR")} ₺`,
+        metaLine: metaParts.join(" · "),
+      };
+
+      let nextHref: string | null = null;
       if (packageIntent === "boost" || packageIntent === "both") {
         const q = new URLSearchParams({ listing: listingRef });
         if (packageIntent === "both") q.set("next", "acil");
-        window.location.href = `/ilan-one-cikar?${q.toString()}`;
-        return;
+        nextHref = `/ilan-one-cikar?${q.toString()}`;
+      } else if (packageIntent === "acil") {
+        nextHref = `/ilan-acil?listing=${encodeURIComponent(listingRef)}`;
       }
-      if (packageIntent === "acil") {
-        window.location.href = `/ilan-acil?listing=${encodeURIComponent(listingRef)}`;
-        return;
+
+      if (nextHref) {
+        setPublishOverlay({ kind: "toast", preview, nextHref });
+      } else {
+        setPublishOverlay({ kind: "upsell", preview });
       }
-      window.location.href = "/profil/ilanlarim";
       return;
     } catch (e) {
       const raw = e instanceof Error ? e.message : "Yayınlanamadı.";
@@ -2251,6 +2282,28 @@ export function CreateListingFlow({
 
   return (
     <div id="ilan-ver-top" className="mx-auto max-w-md space-y-3 pb-24">
+      {publishOverlay?.kind === "toast" ? (
+        <PublishSuccessOverlay
+          kind="toast"
+          preview={publishOverlay.preview}
+          nextHref={publishOverlay.nextHref}
+        />
+      ) : null}
+      {publishOverlay?.kind === "upsell" ? (
+        <PublishSuccessOverlay
+          kind="upsell"
+          preview={publishOverlay.preview}
+          onClose={() => {
+            window.location.href = "/profil/ilanlarim";
+          }}
+          onPickAcil={() => {
+            window.location.href = `/ilan-acil?listing=${encodeURIComponent(publishOverlay.preview.listingRef)}`;
+          }}
+          onPickBoost={() => {
+            window.location.href = `/ilan-one-cikar?listing=${encodeURIComponent(publishOverlay.preview.listingRef)}`;
+          }}
+        />
+      ) : null}
       {!bootReady ? (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-600">
           {isEditMode ? "İlan yükleniyor…" : "e-Devlet dönüşü yükleniyor…"}
