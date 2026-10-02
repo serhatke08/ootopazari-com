@@ -30,7 +30,8 @@ import { listingCreatedClientField } from "@/lib/client-analytics";
 import {
   humanizeEidsFailMessage,
   isEidsMinistryGateError,
-} from "@/lib/eids";
+  WEB_EIDS_UI_ENABLED,
+} from "@/lib/eids-ui";
 import { compressListingImageFiles } from "@/lib/compress-listing-image";
 import { MAX_LISTING_PHOTOS } from "@/lib/listing-feed-cover";
 import { evaluateListingQualityAfterSave } from "@/lib/listing-quality";
@@ -77,9 +78,9 @@ type FlowPage =
 
 /**
  * Bakanlık EİDS API (GetKullaniciKodu) açılana kadar web'de e-Devlet adımını atla.
- * Plaka → doğrudan fotoğraf / açıklama. true yapınca eski zorunlu akış döner.
+ * Plaka → doğrudan fotoğraf / açıklama. WEB_EIDS_UI_ENABLED true yapınca eski zorunlu akış döner.
  */
-const WEB_EIDS_STEP_ENABLED = false;
+const WEB_EIDS_STEP_ENABLED = WEB_EIDS_UI_ENABLED;
 
 const VEHICLE_PAGES_ALL: FlowPage[] = [
   "category",

@@ -1,10 +1,11 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { EidsWebPanel } from "@/components/eids/EidsWebPanel";
+import { WEB_EIDS_UI_ENABLED } from "@/lib/eids-ui";
 
 export const metadata: Metadata = {
   title: "EİDS / e-Devlet doğrulama",
@@ -12,6 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilEidsPage() {
+  if (!WEB_EIDS_UI_ENABLED) {
+    redirect("/profil");
+  }
+
   const env = tryGetSupabaseEnv();
   if (!env) {
     return (

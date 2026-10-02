@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { humanizeEidsFailMessage } from "@/lib/eids";
+import { humanizeEidsFailMessage } from "@/lib/eids-ui";
 
 type Props = {
   userId: string;

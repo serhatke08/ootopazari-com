@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import { ProfileVerificationBadges } from "@/components/ProfileVerificationBadges";
+import { WEB_EIDS_UI_ENABLED } from "@/lib/eids-ui";
 import { setProfileAvatarUrl } from "@/lib/profile-avatar-db";
 import { AVATARS_BUCKET } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -517,20 +518,22 @@ export function ProfilHeader({
                     >
                       Düzenle
                     </button>
-                    <Link
-                      href="/profil/eids"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/branding/edevlet_icon.png"
-                        alt=""
-                        width={18}
-                        height={18}
-                        className="h-[18px] w-[18px] object-contain"
-                      />
-                      e-Devlet
-                    </Link>
+                    {WEB_EIDS_UI_ENABLED ? (
+                      <Link
+                        href="/profil/eids"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/branding/edevlet_icon.png"
+                          alt=""
+                          width={18}
+                          height={18}
+                          className="h-[18px] w-[18px] object-contain"
+                        />
+                        e-Devlet
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
               </div>

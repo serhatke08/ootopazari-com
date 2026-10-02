@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CenteredDialog } from "@/components/CenteredDialog";
+import { WEB_EIDS_UI_ENABLED } from "@/lib/eids-ui";
 
 type Props = {
   emailVerified?: boolean;
@@ -122,17 +123,19 @@ export function ProfileVerificationBadges({
           </svg>
           <StatusDot ok={phoneOk} />
         </span>
-        <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-          <Image
-            src="/branding/edevlet_icon.png"
-            alt=""
-            width={22}
-            height={22}
-            className="h-[18px] w-[18px] object-contain"
-            unoptimized
-          />
-          <StatusDot ok={eidsOk} />
-        </span>
+        {WEB_EIDS_UI_ENABLED ? (
+          <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
+            <Image
+              src="/branding/edevlet_icon.png"
+              alt=""
+              width={22}
+              height={22}
+              className="h-[18px] w-[18px] object-contain"
+              unoptimized
+            />
+            <StatusDot ok={eidsOk} />
+          </span>
+        ) : null}
       </button>
 
       {open ? (
@@ -179,48 +182,50 @@ export function ProfileVerificationBadges({
                 </p>
               </div>
             </li>
-            <li className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
-              <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-                <Image
-                  src="/branding/edevlet_icon.png"
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 object-contain"
-                  unoptimized
-                />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-zinc-900">e-Devlet</p>
-                <p className="text-sm text-zinc-600">
-                  {eidsOk ? "Kimlik doğrulandı" : "Henüz doğrulanmadı"}
-                </p>
-                <p
-                  className={`mt-1 text-xs font-semibold ${
-                    eidsOk ? "text-emerald-700" : "text-amber-700"
-                  }`}
-                >
-                  {eidsOk ? "Doğrulandı" : "Bekliyor"}
-                </p>
-                {!eidsOk ? (
-                  <Link
-                    href="/profil/eids"
-                    onClick={close}
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#ffcc00] px-3 py-1.5 text-xs font-bold text-zinc-900 hover:bg-[#f0c000]"
+            {WEB_EIDS_UI_ENABLED ? (
+              <li className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
+                <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
+                  <Image
+                    src="/branding/edevlet_icon.png"
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 object-contain"
+                    unoptimized
+                  />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-zinc-900">e-Devlet</p>
+                  <p className="text-sm text-zinc-600">
+                    {eidsOk ? "Kimlik doğrulandı" : "Henüz doğrulanmadı"}
+                  </p>
+                  <p
+                    className={`mt-1 text-xs font-semibold ${
+                      eidsOk ? "text-emerald-700" : "text-amber-700"
+                    }`}
                   >
-                    <Image
-                      src="/branding/edevlet_icon.png"
-                      alt=""
-                      width={16}
-                      height={16}
-                      className="h-4 w-4 object-contain"
-                      unoptimized
-                    />
-                    e-Devlet ile doğrula
-                  </Link>
-                ) : null}
-              </div>
-            </li>
+                    {eidsOk ? "Doğrulandı" : "Bekliyor"}
+                  </p>
+                  {!eidsOk ? (
+                    <Link
+                      href="/profil/eids"
+                      onClick={close}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#ffcc00] px-3 py-1.5 text-xs font-bold text-zinc-900 hover:bg-[#f0c000]"
+                    >
+                      <Image
+                        src="/branding/edevlet_icon.png"
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="h-4 w-4 object-contain"
+                        unoptimized
+                      />
+                      e-Devlet ile doğrula
+                    </Link>
+                  ) : null}
+                </div>
+              </li>
+            ) : null}
           </ul>
         </CenteredDialog>
       ) : null}
