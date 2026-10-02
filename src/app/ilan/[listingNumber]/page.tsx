@@ -770,13 +770,13 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   const vehicleSpecRows = compactRows([
     specRow("İlan No", num != null ? `#${String(num)}` : null),
     specRow("Konum", cityDisplayResolved),
+    specRow("Üretim yılı", listing.vehicle_year as number | null),
     specRow("Marka", brandName),
     specRow("Model", modelForDisplay),
     isMotorcycle
       ? specRow("CC", engineCapacityDisplay)
       : specRow("Motor", motorDisplay),
     specRow("Donanım / Paket", paketDisplay),
-    specRow("Üretim yılı", listing.vehicle_year as number | null),
     specRow(
       "Kilometre",
       fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))
