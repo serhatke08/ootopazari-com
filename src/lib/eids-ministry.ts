@@ -188,8 +188,8 @@ export async function callEidsAracYetki(params: {
     firmaKodu: getEidsFirmaKodu(),
     kullaniciKodu: params.kullaniciKodu,
     plakaNo: params.plakaNo,
-    // Proxy: resmi path (GetKullaniciKodu ile aynı EidsApi kökü)
-    _path: "/EidsApi/Arac/Yetki",
+    // Canlı teyit (2 Eki 2026): doğru uç /EidsAracApi — /EidsApi/Arac/Yetki timeout/05_
+    _path: "/EidsAracApi",
   };
   if (params.ilanNo?.trim()) body.ilanNo = params.ilanNo.trim();
   if (params.vergiNo?.trim()) body.vergiNo = params.vergiNo.trim();
@@ -203,21 +203,44 @@ export async function callEidsAracYetki(params: {
       ? (json as Record<string, unknown>)
       : {};
 
+  // Proxy bazen bozuk gövdeyi { raw: "l{...}" } diye sarar
+  let parsedFromRaw: Record<string, unknown> | null = null;
+  if (typeof map.raw === "string") {
+    const s = map.raw.trim().replace(/^[^{[]+/, "");
+    try {
+      const p = JSON.parse(s);
+      if (p && typeof p === "object") parsedFromRaw = p as Record<string, unknown>;
+    } catch {
+      /* ignore */
+    }
+  }
+  const src = parsedFromRaw ?? map;
+
   const statusCode =
-    typeof map.statusCode === "number"
-      ? map.statusCode
-      : status >= 200 && status < 300
-        ? 200
-        : status;
-  const errors = Array.isArray(map.errors)
-    ? (map.errors as unknown[]).map((e) => String(e))
-    : map.Message
-      ? [String(map.Message)]
-      : null;
+    typeof src.statusCode === "number"
+      ? src.statusCode
+      : typeof map.statusCode === "number"
+        ? map.statusCode
+        : status >= 200 && status < 300
+          ? 200
+          : status;
+  const errors = Array.isArray(src.errors)
+    ? (src.errors as unknown[]).map((e) => String(e))
+    : Array.isArray(map.errors)
+      ? (map.errors as unknown[]).map((e) => String(e))
+      : src.Message
+        ? [String(src.Message)]
+        : map.Message
+          ? [String(map.Message)]
+          : typeof map.raw === "string" && map.raw.trim()
+            ? [map.raw.trim().slice(0, 200)]
+            : null;
   const dataRaw =
-    map.data && typeof map.data === "object"
-      ? (map.data as Record<string, unknown>)
-      : null;
+    src.data && typeof src.data === "object"
+      ? (src.data as Record<string, unknown>)
+      : map.data && typeof map.data === "object"
+        ? (map.data as Record<string, unknown>)
+        : null;
   const data = dataRaw
     ? {
         markaAdi: dataRaw.markaAdi?.toString() ?? null,

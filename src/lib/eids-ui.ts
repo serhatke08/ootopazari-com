@@ -56,6 +56,12 @@ export function humanizeEidsLookupError(input: {
     return "Önce e-Devlet ile hesabını doğrula.";
   }
   if (code === "arac_yetki_failed" || raw) {
+    if (/05_Servisten timeout|timeout alindi/i.test(raw)) {
+      return "Bakanlık araç servisi yanıt vermedi. Biraz sonra tekrar dene; sürerse entegrasyondestek@ticaret.gov.tr.";
+    }
+    if (/Servis Bulunamadi|404/i.test(raw)) {
+      return "Araç yetki servisi bulunamadı. Destek ekibine bildir.";
+    }
     if (/yetki|izin|yetkili değil|bulunamadı/i.test(raw)) {
       return "Bu plaka için yetkin görünmüyor. Plakayı kontrol et; araç sende / yetkilinde değilse bakanlık reddeder.";
     }
