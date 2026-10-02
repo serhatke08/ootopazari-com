@@ -284,7 +284,7 @@ export function ChatThreadClient({
         }}
       >
         {messages.length === 0 ? (
-          <p className="my-auto text-center text-xs text-zinc-500">
+          <p className="my-auto text-center text-xs text-zinc-400">
             Henüz mesaj yok. İlk mesajı siz gönderin.
           </p>
         ) : (
