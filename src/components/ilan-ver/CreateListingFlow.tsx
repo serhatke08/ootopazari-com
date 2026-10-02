@@ -510,6 +510,7 @@ export function CreateListingFlow({
         }
         break;
       }
+      setErr(null);
       setPageIndex(Math.min(i, pages.length - 1));
       await persistDraft();
     },
@@ -872,11 +873,75 @@ export function CreateListingFlow({
     }
   };
 
-  const goToMismatchPage = (goPage: FlowPage) => {
-    const idx = pages.indexOf(goPage);
-    if (idx >= 0) {
-      setErr(null);
-      setPageIndex(idx);
+  /** e-Devlet kaydına göre yıl / marka / modeli otomatik hizala */
+  const autoFixFromEids = async () => {
+    if (!eidsOfficial) return;
+    setEidsBusy(true);
+    setErr(null);
+    try {
+      const yil = eidsOfficial.modelYili
+        ? Number.parseInt(eidsOfficial.modelYili, 10)
+        : NaN;
+      if (Number.isFinite(yil)) {
+        setVehicleYear(yil);
+      }
+
+      let modelPool: IdNameRow[] = hierarchical
+        ? [...parents, ...children]
+        : [...flatModels];
+
+      if (eidsOfficial.markaAdi) {
+        const brandHit =
+          brands.find((b) => looseNameMatch(b.name, eidsOfficial.markaAdi)) ??
+          null;
+        if (brandHit) {
+          setBrandId(brandHit.id);
+          setBrandName(brandHit.name ?? null);
+          setBrandCode(brandHit.code ?? null);
+          const hier = await fetchBrandModelsHierarchy(supabase, brandHit.id);
+          setHierarchical(hier.hierarchical);
+          if (hier.hierarchical) {
+            setParents(hier.parents);
+            setChildren([]);
+            setFlatModels([]);
+            modelPool = [...hier.parents];
+          } else {
+            setFlatModels(hier.parents);
+            setParents([]);
+            setChildren([]);
+            modelPool = [...hier.parents];
+          }
+        }
+      }
+
+      if (eidsOfficial.ticariAdi && modelPool.length > 0) {
+        let best: IdNameRow | null = null;
+        let bestLen = 0;
+        for (const m of modelPool) {
+          const n = (m.name ?? "").trim();
+          if (!n || !looseNameMatch(n, eidsOfficial.ticariAdi)) continue;
+          const len = normTrToken(n).length;
+          if (len > bestLen) {
+            best = m;
+            bestLen = len;
+          }
+        }
+        if (best) {
+          setModelId(best.id);
+          setParentId(best.id);
+          setChildId(best.id);
+          setModelName(best.name ?? null);
+          await loadBody(best.id);
+          await loadEngines(best.id);
+        }
+      }
+
+      setEidsMsg("Seçimin e-Devlet kaydına göre düzeltildi.");
+    } catch (e) {
+      console.warn("[eids autoFix]", e);
+      setErr("Otomatik düzeltme başarısız. Manuel seç.");
+    } finally {
+      setEidsBusy(false);
     }
   };
 
@@ -1804,17 +1869,18 @@ export function CreateListingFlow({
                   Bilgiler uyuşuyor · plaka yetkisi OK
                 </p>
               ) : (
-                <div className="space-y-2 border-t border-red-100 bg-red-50 px-3 py-3">
-                  {eidsMismatches.map((m) => (
-                    <button
-                      key={m.field}
-                      type="button"
-                      onClick={() => goToMismatchPage(m.goPage)}
-                      className="w-full rounded-lg bg-red-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-red-700"
-                    >
-                      {m.goLabel}
-                    </button>
-                  ))}
+                <div className="border-t border-red-100 bg-red-50 px-3 py-3">
+                  <p className="mb-2 text-center text-xs font-medium text-red-800">
+                    {eidsMismatches.map((m) => m.title).join(" · ")}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={eidsBusy}
+                    onClick={() => void autoFixFromEids()}
+                    className="w-full rounded-lg bg-red-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {eidsBusy ? "Düzeltiliyor…" : "Otomatik düzelt"}
+                  </button>
                 </div>
               )}
             </div>
