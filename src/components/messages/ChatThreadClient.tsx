@@ -44,16 +44,24 @@ export function ChatThreadClient({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const hasMessagesRef = useRef(initialMessages.length > 0);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  /** Sayfa/footer’a kaymadan yalnızca mesaj kutusunu alta kaydır. */
+  const scrollToBottom = useCallback((smooth = false) => {
+    const el = listRef.current;
+    if (!el) return;
+    const top = el.scrollHeight;
+    if (smooth) {
+      el.scrollTo({ top, behavior: "smooth" });
+    } else {
+      el.scrollTop = top;
+    }
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(false);
   }, [messages, scrollToBottom]);
 
   useEffect(() => {
@@ -83,7 +91,6 @@ export function ChatThreadClient({
     if (blocked) return;
     let cancelled = false;
     (async () => {
-      // UPDATE + .or() PostgREST’te hata verebiliyor; iki ayrı güncelleme.
       const { error: e1 } = await supabase
         .from("messages")
         .update({ is_read: true })
@@ -205,6 +212,7 @@ export function ChatThreadClient({
         .update({ updated_at: new Date().toISOString() })
         .eq("id", conversationId);
       dispatchUnreadMessagesRefresh();
+      requestAnimationFrame(() => scrollToBottom(true));
     } catch {
       setSendError("Bağlantı hatası. Tekrar deneyin.");
     } finally {
@@ -221,46 +229,43 @@ export function ChatThreadClient({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {listingTitle ? (
         <div
-          className={`mb-3 flex items-center gap-2.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 transition-opacity ${
+          className={`mb-2 flex shrink-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2 py-1.5 ${
             listingActive ? "" : "opacity-50"
           }`}
         >
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-200">
+          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-zinc-200">
             {listingImageUrl ? (
               <Image
                 src={listingImageUrl}
                 alt=""
-                width={40}
-                height={40}
+                width={32}
+                height={32}
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-zinc-500">
+              <div className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-zinc-500">
                 İlan
               </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-              İlan
-            </p>
             {listingHref && listingActive ? (
               <Link
                 href={listingHref}
-                className="line-clamp-2 text-sm font-semibold text-emerald-800 underline-offset-2 hover:underline"
+                className="line-clamp-1 text-xs font-semibold text-emerald-800 underline-offset-2 hover:underline"
               >
                 {listingTitle}
               </Link>
             ) : (
-              <p className="line-clamp-2 text-sm font-semibold text-zinc-700">
+              <p className="line-clamp-1 text-xs font-semibold text-zinc-700">
                 {listingTitle}
               </p>
             )}
             {!listingActive ? (
-              <p className="mt-0.5 text-xs font-medium text-zinc-500">
+              <p className="text-[10px] font-medium text-zinc-500">
                 Artık aktif değil
               </p>
             ) : null}
@@ -268,9 +273,12 @@ export function ChatThreadClient({
         </div>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto rounded-xl border border-zinc-200 bg-zinc-50/80 p-3 sm:p-4">
+      <div
+        ref={listRef}
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 bg-zinc-50/80 p-2.5 sm:p-3"
+      >
         {messages.length === 0 ? (
-          <p className="text-center text-xs text-zinc-500">
+          <p className="my-auto text-center text-xs text-zinc-500">
             Henüz mesaj yok. İlk mesajı siz gönderin.
           </p>
         ) : (
@@ -346,18 +354,17 @@ export function ChatThreadClient({
             );
           })
         )}
-        <div ref={bottomRef} />
       </div>
 
       {!listingActive ? (
         <div
-          className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm text-zinc-600"
+          className="mt-2 shrink-0 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-center text-sm text-zinc-600"
           role="status"
         >
           {listingInactiveMessage}
         </div>
       ) : (
-        <form onSubmit={send} className="mt-4 flex gap-2">
+        <form onSubmit={send} className="mt-2 flex shrink-0 gap-2">
           <label htmlFor="msg-input" className="sr-only">
             Mesaj yazın
           </label>
@@ -365,9 +372,13 @@ export function ChatThreadClient({
             id="msg-input"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onFocus={() => {
+              // Klavye açılınca footer’a değil chat kutusuna odaklan
+              requestAnimationFrame(() => scrollToBottom(false));
+            }}
             placeholder="Mesajınızı yazın…"
-            rows={2}
-            className="min-h-[44px] flex-1 resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80"
+            rows={1}
+            className="max-h-28 min-h-[42px] flex-1 resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80"
           />
           <button
             type="submit"
@@ -379,7 +390,7 @@ export function ChatThreadClient({
         </form>
       )}
       {sendError && listingActive ? (
-        <p className="mt-2 text-sm text-red-600" role="alert">
+        <p className="mt-1.5 shrink-0 text-sm text-red-600" role="alert">
           {sendError}
         </p>
       ) : null}

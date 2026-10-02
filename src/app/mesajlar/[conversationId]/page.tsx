@@ -142,14 +142,26 @@ export default async function MesajConversationPage({ params }: Props) {
     : null;
 
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-2 py-6 sm:px-4 md:px-6 md:py-8">
-      <div className="mb-3 md:hidden">
-        <Link href="/mesajlar" className="text-sm font-medium text-emerald-800 hover:underline">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-2 pt-2 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:px-6 md:pb-4 md:pt-3">
+      <div className="mb-2 shrink-0 md:hidden">
+        <Link
+          href="/mesajlar"
+          className="inline-flex items-center text-sm font-medium text-emerald-800 hover:underline"
+        >
           ← Sohbet listesi
         </Link>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="hidden md:block">
+      <div
+        className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-[280px_minmax(0,1fr)] md:!h-[calc(100dvh-4.5rem)] md:!max-h-[calc(100dvh-4.5rem)]"
+        style={{
+          // Header (~3.75rem) + mobil alt menü (~4.75rem); desktop’ta footer mesajlarda gizli
+          height:
+            "calc(100dvh - 3.75rem - 4.75rem - env(safe-area-inset-bottom, 0px))",
+          maxHeight:
+            "calc(100dvh - 3.75rem - 4.75rem - env(safe-area-inset-bottom, 0px))",
+        }}
+      >
+        <div className="hidden min-h-0 md:block">
           <ConversationsPane
             env={env}
             rows={rows}
@@ -160,15 +172,15 @@ export default async function MesajConversationPage({ params }: Props) {
             unreadMap={unreadMap}
             adminUserIds={new Set(adminMap.keys())}
             activeConversationId={conversationId}
-            className="max-h-[82vh] overflow-y-auto"
+            className="h-full overflow-y-auto"
           />
         </div>
 
-        <section className="flex h-[82vh] min-h-0 flex-col rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
-          <div className="mb-4 border-b border-zinc-200 pb-3">
+        <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-3 sm:p-4">
+          <div className="mb-2 shrink-0 border-b border-zinc-200 pb-2">
             <Link
               href={`/kullanici/${otherId}`}
-              className="flex items-center gap-2.5 rounded-lg px-1 py-0.5 transition-colors hover:bg-zinc-50"
+              className="flex items-center gap-2 rounded-lg px-0.5 py-0.5 transition-colors hover:bg-zinc-50"
             >
               <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-200">
                 {otherAvatarUrl ? (
@@ -187,14 +199,14 @@ export default async function MesajConversationPage({ params }: Props) {
               </div>
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <h1 className="truncate text-base font-semibold tracking-tight text-zinc-900 sm:text-lg">
+                  <h1 className="truncate text-sm font-semibold tracking-tight text-zinc-900 sm:text-base">
                     {otherName}
                   </h1>
                   {otherIsAdmin ? (
                     <AdminVerifiedBadge className="shrink-0" size={16} />
                   ) : null}
                 </div>
-                <p className="mt-0.5 text-xs text-zinc-600">
+                <p className="text-[11px] text-zinc-500">
                   {supportChat ? "Destek sohbeti" : "İlan üzerinden sohbet"}
                 </p>
               </div>

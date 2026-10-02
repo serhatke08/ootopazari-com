@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LegalPageLinks } from "@/components/LegalPageLinks";
 
 const quickLinks = (hasListings: boolean) =>
@@ -18,6 +21,12 @@ export function SiteFooter({
   loggedIn?: boolean;
   hasListings?: boolean;
 }) {
+  const pathname = usePathname() || "";
+  // Sohbet ekranı tam yükseklik kullansın — footer scroll tuzağı olmasın
+  if (pathname.startsWith("/mesajlar")) {
+    return null;
+  }
+
   const links = quickLinks(hasListings);
   const accountLinks = loggedIn
     ? [{ label: "Hesabım", href: "/profil" }]
