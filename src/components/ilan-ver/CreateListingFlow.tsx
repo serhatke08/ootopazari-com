@@ -103,6 +103,30 @@ const VEHICLE_PAGES: FlowPage[] = WEB_EIDS_STEP_ENABLED
 
 const OTHER_PAGES: FlowPage[] = ["category", "content", "boosts"];
 
+type EidsMismatch = {
+  field: "year" | "brand" | "model";
+  title: string;
+  detail: string;
+  goPage: FlowPage;
+  goLabel: string;
+};
+
+function normTrToken(s: string): string {
+  return s
+    .toLocaleLowerCase("tr")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/** Marka / model: bir taraf diğerini içeriyorsa OK (GETZ vs Getz 1.5…). */
+function looseNameMatch(a: string | null | undefined, b: string | null | undefined): boolean {
+  const na = normTrToken(a ?? "");
+  const nb = normTrToken(b ?? "");
+  if (!na || !nb) return true;
+  return na.includes(nb) || nb.includes(na);
+}
+
 const COLORS = [
   "Beyaz",
   "Siyah",
@@ -213,6 +237,12 @@ export function CreateListingFlow({
   const [eidsVehicleOk, setEidsVehicleOk] = useState(false);
   const [eidsBusy, setEidsBusy] = useState(false);
   const [eidsMsg, setEidsMsg] = useState<string | null>(null);
+  const [eidsOfficial, setEidsOfficial] = useState<{
+    markaAdi: string | null;
+    ticariAdi: string | null;
+    modelYili: string | null;
+  } | null>(null);
+  const [eidsMismatches, setEidsMismatches] = useState<EidsMismatch[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
@@ -722,6 +752,8 @@ export function CreateListingFlow({
   const lookupPlate = async () => {
     setEidsBusy(true);
     setEidsMsg(null);
+    setEidsMismatches([]);
+    setEidsOfficial(null);
     try {
       const {
         data: { session },
@@ -751,7 +783,11 @@ export function CreateListingFlow({
         error?: string;
         message?: string;
         errors?: string[];
-        data?: { markaAdi?: string | null; ticariAdi?: string | null };
+        data?: {
+          markaAdi?: string | null;
+          ticariAdi?: string | null;
+          modelYili?: string | null;
+        };
       };
       if (!res.ok || !body.ok) {
         console.warn("[eids lookup-vehicle]", {
@@ -759,6 +795,7 @@ export function CreateListingFlow({
           body,
           plakaNo,
         });
+        setEidsVehicleOk(false);
         setEidsMsg(
           humanizeEidsLookupError({
             status: res.status,
@@ -769,21 +806,140 @@ export function CreateListingFlow({
         );
         return;
       }
-      const marka = body.data?.markaAdi || body.markaAdi || null;
-      const ticari = body.data?.ticariAdi || null;
+      const marka = (body.data?.markaAdi || body.markaAdi || null)?.trim() || null;
+      const ticari = body.data?.ticariAdi?.trim() || null;
+      const yil = body.data?.modelYili?.trim() || null;
+      setEidsOfficial({ markaAdi: marka, ticariAdi: ticari, modelYili: yil });
       setEidsVehicleOk(true);
-      setEidsMsg(
-        marka
-          ? `Plaka yetkisi OK · ${marka}${ticari ? ` ${ticari}` : ""}`
-          : "Plaka yetkisi doğrulandı."
-      );
+
+      const mismatches: EidsMismatch[] = [];
+      const officialYear = yil ? Number.parseInt(yil, 10) : NaN;
+      if (
+        Number.isFinite(officialYear) &&
+        vehicleYear != null &&
+        officialYear !== vehicleYear
+      ) {
+        mismatches.push({
+          field: "year",
+          title: "Model yılı uyuşmuyor",
+          detail: `Sen: ${vehicleYear} · e-Devlet: ${officialYear}`,
+          goPage: "year",
+          goLabel: "Yıl sayfasına git",
+        });
+      }
+      if (marka && brandName && !looseNameMatch(brandName, marka)) {
+        mismatches.push({
+          field: "brand",
+          title: "Marka uyuşmuyor",
+          detail: `Sen: ${brandName} · e-Devlet: ${marka}`,
+          goPage: "brand",
+          goLabel: "Marka sayfasına git",
+        });
+      }
+      if (ticari && modelName && !looseNameMatch(modelName, ticari)) {
+        mismatches.push({
+          field: "model",
+          title: "Model uyuşmuyor",
+          detail: `Sen: ${modelName} · e-Devlet: ${ticari}`,
+          goPage: "model",
+          goLabel: "Model sayfasına git",
+        });
+      }
+      setEidsMismatches(mismatches);
+
+      const officialLine = [marka, ticari, yil].filter(Boolean).join(" · ");
+      if (mismatches.length === 0) {
+        setEidsMsg(
+          officialLine
+            ? `Plaka yetkisi OK · ${officialLine}`
+            : "Plaka yetkisi doğrulandı."
+        );
+      } else {
+        setEidsMsg(
+          `Plaka yetkisi OK, ama girdiğin bilgiler e-Devlet kaydıyla uyuşmuyor${
+            officialLine ? ` (${officialLine})` : ""
+          }.`
+        );
+      }
     } catch (e) {
       console.warn("[eids lookup-vehicle] exception", e);
+      setEidsVehicleOk(false);
       setEidsMsg("Plaka sorgusu başarısız. Bağlantını kontrol edip tekrar dene.");
     } finally {
       setEidsBusy(false);
     }
   };
+
+  const goToMismatchPage = (goPage: FlowPage) => {
+    const idx = pages.indexOf(goPage);
+    if (idx >= 0) {
+      setErr(null);
+      setPageIndex(idx);
+    }
+  };
+
+  // Kullanıcı yıl/marka/model düzeltince eids adımında uyuşmazlığı tazele
+  useEffect(() => {
+    if (!eidsOfficial || !eidsVehicleOk) return;
+    const mismatches: EidsMismatch[] = [];
+    const officialYear = eidsOfficial.modelYili
+      ? Number.parseInt(eidsOfficial.modelYili, 10)
+      : NaN;
+    if (
+      Number.isFinite(officialYear) &&
+      vehicleYear != null &&
+      officialYear !== vehicleYear
+    ) {
+      mismatches.push({
+        field: "year",
+        title: "Model yılı uyuşmuyor",
+        detail: `Sen: ${vehicleYear} · e-Devlet: ${officialYear}`,
+        goPage: "year",
+        goLabel: "Yıl sayfasına git",
+      });
+    }
+    if (
+      eidsOfficial.markaAdi &&
+      brandName &&
+      !looseNameMatch(brandName, eidsOfficial.markaAdi)
+    ) {
+      mismatches.push({
+        field: "brand",
+        title: "Marka uyuşmuyor",
+        detail: `Sen: ${brandName} · e-Devlet: ${eidsOfficial.markaAdi}`,
+        goPage: "brand",
+        goLabel: "Marka sayfasına git",
+      });
+    }
+    if (
+      eidsOfficial.ticariAdi &&
+      modelName &&
+      !looseNameMatch(modelName, eidsOfficial.ticariAdi)
+    ) {
+      mismatches.push({
+        field: "model",
+        title: "Model uyuşmuyor",
+        detail: `Sen: ${modelName} · e-Devlet: ${eidsOfficial.ticariAdi}`,
+        goPage: "model",
+        goLabel: "Model sayfasına git",
+      });
+    }
+    setEidsMismatches(mismatches);
+    if (mismatches.length === 0) {
+      const officialLine = [
+        eidsOfficial.markaAdi,
+        eidsOfficial.ticariAdi,
+        eidsOfficial.modelYili,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      setEidsMsg(
+        officialLine
+          ? `Plaka yetkisi OK · ${officialLine}`
+          : "Plaka yetkisi doğrulandı."
+      );
+    }
+  }, [eidsOfficial, eidsVehicleOk, vehicleYear, brandName, modelName]);
 
   async function publish() {
     if (busy || lock.current) return;
@@ -1519,11 +1675,48 @@ export function CreateListingFlow({
           {eidsMsg ? (
             <p
               className={`text-sm font-medium ${
-                eidsVehicleOk ? "text-emerald-700" : "text-amber-800"
+                eidsVehicleOk && eidsMismatches.length === 0
+                  ? "text-emerald-700"
+                  : eidsVehicleOk
+                    ? "text-amber-800"
+                    : "text-amber-800"
               }`}
             >
               {eidsMsg}
             </p>
+          ) : null}
+          {eidsOfficial && eidsVehicleOk ? (
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
+              <p className="font-semibold text-zinc-900">e-Devlet kaydı</p>
+              <p>
+                {[eidsOfficial.markaAdi, eidsOfficial.ticariAdi, eidsOfficial.modelYili]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
+              </p>
+            </div>
+          ) : null}
+          {eidsMismatches.length > 0 ? (
+            <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
+              <p className="text-sm font-bold text-amber-950">
+                Düzeltmen gerekenler
+              </p>
+              {eidsMismatches.map((m) => (
+                <div
+                  key={m.field}
+                  className="rounded-md border border-amber-200 bg-white px-3 py-2"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">{m.title}</p>
+                  <p className="mt-0.5 text-xs text-zinc-600">{m.detail}</p>
+                  <button
+                    type="button"
+                    onClick={() => goToMismatchPage(m.goPage)}
+                    className="mt-2 w-full rounded-lg bg-zinc-900 px-3 py-2 text-xs font-bold text-[#ffcc00] hover:bg-zinc-800"
+                  >
+                    {m.goLabel}
+                  </button>
+                </div>
+              ))}
+            </div>
           ) : null}
         </div>
       ) : null}
