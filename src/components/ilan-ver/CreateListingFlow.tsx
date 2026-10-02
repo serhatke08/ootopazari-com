@@ -255,6 +255,10 @@ export function CreateListingFlow({
   const [cityId, setCityId] = useState<string | null>(null);
   const [district, setDistrict] = useState("");
   const [phone, setPhone] = useState("");
+  /** 'none' | 'acil' | 'boost' | 'both' — app ile aynı */
+  const [packageIntent, setPackageIntent] = useState<
+    "none" | "acil" | "boost" | "both"
+  >("none");
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -346,6 +350,7 @@ export function CreateListingFlow({
       district,
       phone,
       coverPhotoIndex: coverIndex,
+      packageIntent,
       pageIndex,
       webStep: pageIndex + 1,
       source: "web",
@@ -386,6 +391,7 @@ export function CreateListingFlow({
     district,
     phone,
     coverIndex,
+    packageIntent,
     pageIndex,
   ]);
 
@@ -560,13 +566,14 @@ export function CreateListingFlow({
       if (!title.trim()) return "Başlık zorunlu.";
       if (!description.trim()) return "Açıklama zorunlu.";
       if (parsePriceTry(priceStr) == null) return "Geçerli fiyat girin.";
-    }
-    if (page === "boosts") {
       if (!cityId) return "Şehir seçin.";
       if (!district.trim()) return "İlçe / semt yazın.";
       if (!isValidTrMobile10(normalizePhoneDigits(phone).slice(-10))) {
         return "Geçerli cep telefonu girin.";
       }
+    }
+    if (page === "boosts") {
+      // Paket isteğe bağlı — konum content’te doğrulandı
     }
     return null;
   }
@@ -698,6 +705,14 @@ export function CreateListingFlow({
     if (d.cityId) setCityId(d.cityId);
     if (d.district) setDistrict(d.district);
     if (d.phone) setPhone(d.phone);
+    if (
+      d.packageIntent === "acil" ||
+      d.packageIntent === "boost" ||
+      d.packageIntent === "both" ||
+      d.packageIntent === "none"
+    ) {
+      setPackageIntent(d.packageIntent);
+    }
     // landOn varsa tekrar taslak index'ine basma
     if (!opts?.landOn) {
       setPageIndex(Math.min(Math.max(d.pageIndex ?? 0, 0), list.length - 1));
@@ -1229,6 +1244,14 @@ export function CreateListingFlow({
 
       await evaluateListingQualityAfterSave(supabase, listingId, "listings");
       await deleteListingDraft();
+      if (packageIntent === "boost" || packageIntent === "both") {
+        window.location.href = `/ilan-one-cikar?listing=${encodeURIComponent(listingId)}`;
+        return;
+      }
+      if (packageIntent === "acil") {
+        window.location.href = `/acil?listing=${encodeURIComponent(listingId)}`;
+        return;
+      }
       window.location.href = "/profil/ilanlarim";
       return;
     } catch (e) {
@@ -1262,13 +1285,28 @@ export function CreateListingFlow({
       case "eids":
         return "e-Devlet doğrulama";
       case "content":
-        return "Fotoğraf, başlık, fiyat";
+        return "Fotoğraf, içerik, konum";
       case "boosts":
-        return "Konum ve yayınla";
+        return "Daha hızlı sat";
       default:
         return "İlan ver";
     }
   })();
+
+  function togglePackageIntent(kind: "acil" | "boost") {
+    setPackageIntent((prev) => {
+      if (kind === "acil") {
+        if (prev === "acil") return "none";
+        if (prev === "boost") return "both";
+        if (prev === "both") return "boost";
+        return "acil";
+      }
+      if (prev === "boost") return "none";
+      if (prev === "acil") return "both";
+      if (prev === "both") return "acil";
+      return "boost";
+    });
+  }
 
   const thumbUrls = useMemo(
     () => files.map((f) => URL.createObjectURL(f)),
@@ -2013,13 +2051,8 @@ export function CreateListingFlow({
             }
             inputMode="numeric"
           />
-        </div>
-      ) : null}
-
-      {page === "boosts" ? (
-        <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
           <label className="block text-sm font-medium">
-            Şehir
+            Şehir <span className="text-red-600">*</span>
             <select
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={cityId ?? ""}
@@ -2034,7 +2067,7 @@ export function CreateListingFlow({
             </select>
           </label>
           <label className="block text-sm font-medium">
-            İlçe
+            İlçe <span className="text-red-600">*</span>
             <input
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={district}
@@ -2042,7 +2075,7 @@ export function CreateListingFlow({
             />
           </label>
           <label className="block text-sm font-medium">
-            Telefon
+            Telefon <span className="text-red-600">*</span>
             <input
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               value={phone}
@@ -2050,9 +2083,74 @@ export function CreateListingFlow({
               inputMode="tel"
             />
           </label>
+        </div>
+      ) : null}
+
+      {page === "boosts" ? (
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-600">
+            İsteğe bağlı paketler. Seçmeden de yayınlayabilirsin.
+          </p>
+          <button
+            type="button"
+            onClick={() => togglePackageIntent("acil")}
+            className={`w-full rounded-xl border-2 p-4 text-left transition ${
+              packageIntent === "acil" || packageIntent === "both"
+                ? "border-orange-500 bg-orange-50"
+                : "border-zinc-200 bg-white hover:bg-zinc-50"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <span
+                className={`mt-0.5 text-lg ${
+                  packageIntent === "acil" || packageIntent === "both"
+                    ? "text-orange-600"
+                    : "text-zinc-300"
+                }`}
+              >
+                {packageIntent === "acil" || packageIntent === "both"
+                  ? "●"
+                  : "○"}
+              </span>
+              <div>
+                <p className="text-sm font-bold text-zinc-900">Acil ilan</p>
+                <p className="mt-0.5 text-xs text-zinc-600">
+                  Acil vitrinde öne çıksın, alıcılar daha çabuk görsün.
+                </p>
+              </div>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => togglePackageIntent("boost")}
+            className={`w-full rounded-xl border-2 p-4 text-left transition ${
+              packageIntent === "boost" || packageIntent === "both"
+                ? "border-indigo-600 bg-indigo-50"
+                : "border-zinc-200 bg-white hover:bg-zinc-50"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <span
+                className={`mt-0.5 text-lg ${
+                  packageIntent === "boost" || packageIntent === "both"
+                    ? "text-indigo-600"
+                    : "text-zinc-300"
+                }`}
+              >
+                {packageIntent === "boost" || packageIntent === "both"
+                  ? "●"
+                  : "○"}
+              </span>
+              <div>
+                <p className="text-sm font-bold text-zinc-900">Öne çıkarma</p>
+                <p className="mt-0.5 text-xs text-zinc-600">
+                  Ana akışta daha görünür olsun.
+                </p>
+              </div>
+            </div>
+          </button>
           <p className="text-xs text-zinc-500">
-            Öne çıkarma paketleri yayın sonrası Profil → İlanlarım’dan
-            alınabilir.
+            Seçtiğin paketleri ilan oluştuktan sonra satın alabilirsin.
           </p>
         </div>
       ) : null}
@@ -2082,7 +2180,9 @@ export function CreateListingFlow({
           {pageIndex >= pages.length - 1
             ? busy
               ? "Yayınlanıyor…"
-              : "İlanı yayınla"
+              : packageIntent === "none"
+                ? "Paketsiz devam et / yayınla"
+                : "Devam et / yayınla"
             : "İleri"}
         </button>
       </div>
