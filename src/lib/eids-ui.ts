@@ -34,3 +34,38 @@ export function humanizeEidsFailMessage(
   }
   return "e-Devlet doğrulaması başarısız. Tekrar dene.";
 }
+
+/** Plaka / araç yetkisi hatalarını kullanıcı diline çevir. */
+export function humanizeEidsLookupError(input: {
+  status?: number;
+  error?: string | null;
+  message?: string | null;
+  errors?: string[] | null;
+}): string {
+  const code = (input.error || "").trim();
+  const joined = (input.errors || []).filter(Boolean).join(" · ");
+  const raw = (input.message || joined || code || "").trim();
+
+  if (input.status === 401 || code === "unauthorized") {
+    return "Oturumun süresi dolmuş. Tekrar giriş yapıp dene.";
+  }
+  if (code === "plaka_missing" || code === "invalid_json") {
+    return "Geçerli bir plaka yaz (ör. 34ABC123).";
+  }
+  if (code === "eids_user_not_verified") {
+    return "Önce e-Devlet ile hesabını doğrula.";
+  }
+  if (code === "arac_yetki_failed" || raw) {
+    if (/yetki|izin|yetkili değil|bulunamadı/i.test(raw)) {
+      return "Bu plaka için yetkin görünmüyor. Plakayı kontrol et; araç sende / yetkilinde değilse bakanlık reddeder.";
+    }
+    if (isEidsMinistryGateError(raw)) {
+      return humanizeEidsFailMessage(raw);
+    }
+    if (raw && !/^[a-z0-9_]+$/i.test(raw)) {
+      return raw;
+    }
+    return "Plaka sorgusu başarısız. Plakayı kontrol edip tekrar dene.";
+  }
+  return "Plaka sorgusu başarısız. Biraz sonra tekrar dene.";
+}

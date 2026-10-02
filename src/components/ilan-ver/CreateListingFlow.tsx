@@ -28,6 +28,7 @@ import {
 import { listingCreatedClientField } from "@/lib/client-analytics";
 import {
   humanizeEidsFailMessage,
+  humanizeEidsLookupError,
   isEidsMinistryGateError,
   WEB_EIDS_UI_ENABLED,
 } from "@/lib/eids-ui";
@@ -232,20 +233,8 @@ export function CreateListingFlow({
   );
   const draftSkip = useRef(false);
   const lock = useRef(false);
-  /** e-Devlet dönüşünde kategori flaşı olmasın */
-  const [bootReady, setBootReady] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      const sp = new URLSearchParams(window.location.search);
-      const fromEids =
-        sp.get("step") === "eids" ||
-        sp.get("eids") === "ok" ||
-        sp.get("eids") === "fail";
-      return !fromEids;
-    } catch {
-      return true;
-    }
-  });
+  /** e-Devlet dönüşünde kategori flaşını önlemek (SSR ile aynı initial → hydration OK) */
+  const [bootReady, setBootReady] = useState(true);
 
   const progress = pages.length ? (pageIndex + 1) / pages.length : 0;
 
@@ -378,6 +367,9 @@ export function CreateListingFlow({
       const step = sp.get("step");
       const fromEids =
         step === "eids" || eidsStatus === "ok" || eidsStatus === "fail";
+      if (fromEids) {
+        setBootReady(false);
+      }
 
       const d = await fetchListingDraft();
       const cityRows = await fetchCities(supabase);
@@ -416,7 +408,7 @@ export function CreateListingFlow({
         if (kodOk) {
           setEidsAccountOk(true);
           setEidsMsg(
-            "Hesap e-Devlet ile doğrulandı. Plakayı yazıp «Plakayı sorgula»ya bas."
+            "Hesap doğrulandı. Plakayı yazıp sorgula."
           );
         } else if (isEidsMinistryGateError(eidsDurum)) {
           setEidsMsg(humanizeEidsFailMessage(eidsDurum));
@@ -736,13 +728,14 @@ export function CreateListingFlow({
       } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
-        setEidsMsg("Oturum gerekli.");
+        setEidsMsg("Oturum gerekli. Tekrar giriş yap.");
         return;
       }
       if (!eidsAccountOk) {
         setEidsMsg("Önce e-Devlet ile hesabı doğrula.");
         return;
       }
+      const plakaNo = plate.trim();
       const res = await fetch("/api/eids/lookup-vehicle", {
         method: "POST",
         credentials: "include",
@@ -750,29 +743,43 @@ export function CreateListingFlow({
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ plaka: plate.trim() }),
+        body: JSON.stringify({ plakaNo, plaka: plakaNo }),
       });
-      const body = (await res.json()) as {
+      const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         markaAdi?: string;
         error?: string;
+        message?: string;
+        errors?: string[];
+        data?: { markaAdi?: string | null; ticariAdi?: string | null };
       };
       if (!res.ok || !body.ok) {
+        console.warn("[eids lookup-vehicle]", {
+          status: res.status,
+          body,
+          plakaNo,
+        });
         setEidsMsg(
-          body.error?.includes("03_") || body.error?.includes("telefon")
-            ? "Telefon numarası uyuşmazlığı."
-            : body.error || "Plaka yetkisi alınamadı."
+          humanizeEidsLookupError({
+            status: res.status,
+            error: body.error,
+            message: body.message,
+            errors: body.errors,
+          })
         );
         return;
       }
+      const marka = body.data?.markaAdi || body.markaAdi || null;
+      const ticari = body.data?.ticariAdi || null;
       setEidsVehicleOk(true);
       setEidsMsg(
-        body.markaAdi
-          ? `Yetki OK · ${body.markaAdi}`
+        marka
+          ? `Plaka yetkisi OK · ${marka}${ticari ? ` ${ticari}` : ""}`
           : "Plaka yetkisi doğrulandı."
       );
-    } catch {
-      setEidsMsg("Plaka sorgusu başarısız.");
+    } catch (e) {
+      console.warn("[eids lookup-vehicle] exception", e);
+      setEidsMsg("Plaka sorgusu başarısız. Bağlantını kontrol edip tekrar dene.");
     } finally {
       setEidsBusy(false);
     }
@@ -1460,7 +1467,7 @@ export function CreateListingFlow({
             />
             <p className="text-sm text-zinc-700">
               {eidsAccountOk
-                ? "Hesap doğrulandı. Plaka yetkisini sorgula."
+                ? "Plakayı yazıp sorgula."
                 : "Önce e-Devlet ile hesabı doğrula, sonra plaka."}
             </p>
           </div>
@@ -1491,12 +1498,7 @@ export function CreateListingFlow({
               />
               e-Devlet ile doğrula
             </button>
-          ) : (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-              Kimlik doğrulandı. Telefon ve hesap kilitli — sadece plaka
-              sorgusu kaldı.
-            </div>
-          )}
+          ) : null}
           <label className="block text-sm font-medium">
             Plaka
             <input

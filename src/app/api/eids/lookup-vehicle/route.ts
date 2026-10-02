@@ -19,18 +19,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: { plakaNo?: unknown };
+  let body: { plakaNo?: unknown; plaka?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "invalid_json",
+        message: "İstek okunamadı. Sayfayı yenileyip tekrar dene.",
+      },
+      { status: 400 }
+    );
   }
 
-  const plakaNo = normalizePlakaNo(
-    typeof body.plakaNo === "string" ? body.plakaNo : ""
-  );
+  const plakaRaw =
+    typeof body.plakaNo === "string"
+      ? body.plakaNo
+      : typeof body.plaka === "string"
+        ? body.plaka
+        : "";
+  const plakaNo = normalizePlakaNo(plakaRaw);
   if (!plakaNo) {
-    return NextResponse.json({ error: "plaka_missing" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "plaka_missing",
+        message: "Geçerli bir plaka yaz (ör. 34ABC123).",
+      },
+      { status: 400 }
+    );
   }
 
   const admin = createSupabaseServiceClient();
@@ -77,6 +93,10 @@ export async function POST(req: Request) {
         error: "arac_yetki_failed",
         errors: arac.errors,
         statusCode: arac.statusCode,
+        message:
+          (arac.errors && arac.errors[0]) ||
+          "Plaka yetkisi alınamadı. Plakayı kontrol edip tekrar dene.",
+        raw: arac.raw ?? null,
       },
       { status: 400 }
     );

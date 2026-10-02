@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { humanizeEidsFailMessage } from "@/lib/eids-ui";
+import { humanizeEidsFailMessage, humanizeEidsLookupError } from "@/lib/eids-ui";
 
 type Props = {
   userId: string;
@@ -181,6 +181,7 @@ export function EidsWebPanel({
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
+        message?: string;
         data?: {
           markaAdi?: string;
           ticariAdi?: string;
@@ -189,10 +190,14 @@ export function EidsWebPanel({
         errors?: string[];
       };
       if (!res.ok || !body.ok) {
+        console.warn("[eids lookup-vehicle]", { status: res.status, body, plaka });
         setErr(
-          body.error ||
-            (Array.isArray(body.errors) ? body.errors.join(", ") : null) ||
-            "Plaka doğrulanamadı"
+          humanizeEidsLookupError({
+            status: res.status,
+            error: body.error,
+            message: body.message,
+            errors: body.errors,
+          })
         );
         setBusy(false);
         return;
@@ -242,7 +247,7 @@ export function EidsWebPanel({
         <h2 className="text-base font-semibold text-zinc-900">1) Cep telefonu</h2>
         {locked ? (
           <p className="mt-1 text-sm text-zinc-600">
-            Doğrulanmış hesap — telefon değiştirilemez.
+            Doğrulanmış hesap telefonu.
           </p>
         ) : (
           <p className="mt-1 text-sm text-zinc-600">
@@ -288,13 +293,11 @@ export function EidsWebPanel({
           )}
         </p>
         {locked ? (
-          <div className="mt-4 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-            <p className="font-semibold">Doğrulanmış hesap bilgileri</p>
-            {displayName ? <p>Ad soyad: {displayName}</p> : null}
-            <p>Telefon: {phone || "—"}</p>
+          <div className="mt-4 space-y-1 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+            {displayName ? <p className="font-semibold">{displayName}</p> : null}
+            <p>{phone || "—"}</p>
             {eidsVerifiedAt ? (
-              <p>
-                Doğrulama:{" "}
+              <p className="text-xs text-emerald-800">
                 {new Date(eidsVerifiedAt).toLocaleString("tr-TR")}
               </p>
             ) : null}

@@ -191,18 +191,22 @@ async function resolveTurkeyCountryId(
   const { data, error } = await supabase
     .from("countries")
     .select("id")
-    .or(
-      [
-        "iso_code.eq.TR",
-        "code.eq.TR",
-        "iso2.eq.TR",
-        "alpha_2.eq.TR",
-        "alpha2.eq.TR",
-      ].join(",")
-    )
+    .eq("code", "TR")
     .limit(1);
 
   if (!error && data?.[0]?.id != null) return String(data[0].id);
+
+  // Eski şemalar: iso alanları varsa dene (yoksa PostgREST 400 verir — sessizce geç)
+  for (const field of ["iso_code", "iso2", "alpha_2", "alpha2"] as const) {
+    const probe = await supabase
+      .from("countries")
+      .select(`id,${field}`)
+      .eq(field, "TR")
+      .limit(1);
+    if (!probe.error && probe.data?.[0]?.id != null) {
+      return String(probe.data[0].id);
+    }
+  }
 
   const { data: byName, error: nameErr } = await supabase
     .from("countries")
