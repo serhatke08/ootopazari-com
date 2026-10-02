@@ -14,7 +14,6 @@ import {
 import { fetchListingQuota } from "@/lib/listing-quota";
 import { listingQualityResubmitPending } from "@/lib/listing-quality";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { ListingQualityOwnerScorePanel } from "@/components/listing/ListingQualityOwnerScorePanel";
 import { ReactivateListingButton } from "@/components/ReactivateListingButton";
 import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import { fetchBoostPaymentInfoByListing } from "@/lib/feature-boost-payment-status";
@@ -95,11 +94,6 @@ export default async function ProfilIlanlarimPage() {
                   canBoost={approved && !isListingSuspended(listing) && !expired}
                   paymentInfo={id ? boostPayments.get(id) ?? null : null}
                   compact
-                />
-                <ListingQualityOwnerScorePanel
-                  listing={listing}
-                  editHref={numStr ? `/ilan-duzenle/${numStr}` : null}
-                  variant="inline"
                 />
                 <ListingCard
                   listing={listing}
