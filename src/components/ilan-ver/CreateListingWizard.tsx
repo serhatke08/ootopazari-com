@@ -2135,7 +2135,7 @@ export function CreateListingWizard({
           <div>
             <div className="mb-1 flex items-baseline justify-between gap-2">
               <label className="text-sm font-medium text-zinc-700">
-                İlan başlığı *
+                İlan başlığı <span className="text-red-600">*</span>
               </label>
               <span className="text-[11px] tabular-nums text-zinc-500">
                 {title.length}/{LISTING_TITLE_MAX_LENGTH}
@@ -2152,7 +2152,7 @@ export function CreateListingWizard({
           <div>
             <div className="mb-1 flex items-baseline justify-between gap-2">
               <label className="text-sm font-medium text-zinc-700">
-                Açıklama *
+                Açıklama <span className="text-red-600">*</span>
               </label>
               <span className="text-[11px] tabular-nums text-zinc-500">
                 {userDescription.length}/{LISTING_DESCRIPTION_MAX_LENGTH}

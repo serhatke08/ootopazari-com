@@ -1442,6 +1442,12 @@ export function CreateListingFlow({
         return packages.length === 0 || Boolean(packageId);
       case "transmission":
         return Boolean(transmission);
+      case "content":
+        return (
+          title.trim().length > 0 &&
+          description.trim().length > 0 &&
+          parsePriceTry(priceStr) != null
+        );
       default:
         return true;
     }
@@ -2160,7 +2166,7 @@ export function CreateListingFlow({
           <div>
             <div className="mb-1 flex items-baseline justify-between gap-2">
               <label className="text-sm font-medium text-zinc-700">
-                Başlık
+                Başlık <span className="text-red-600">*</span>
               </label>
               <span className="text-[11px] tabular-nums text-zinc-500">
                 {title.length}/{LISTING_TITLE_MAX_LENGTH}
@@ -2171,13 +2177,14 @@ export function CreateListingFlow({
               placeholder="Başlık"
               value={title}
               maxLength={LISTING_TITLE_MAX_LENGTH}
+              required
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
           <div>
             <div className="mb-1 flex items-baseline justify-between gap-2">
               <label className="text-sm font-medium text-zinc-700">
-                Açıklama
+                Açıklama <span className="text-red-600">*</span>
               </label>
               <span className="text-[11px] tabular-nums text-zinc-500">
                 {description.length}/{LISTING_DESCRIPTION_MAX_LENGTH}
@@ -2188,18 +2195,25 @@ export function CreateListingFlow({
               placeholder="Açıklama"
               value={description}
               maxLength={LISTING_DESCRIPTION_MAX_LENGTH}
+              required
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          <input
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            placeholder="Fiyat (TL) — örn. 1.250.000"
-            value={priceStr}
-            onChange={(e) =>
-              setPriceStr(formatPriceThousandsTr(e.target.value))
-            }
-            inputMode="numeric"
-          />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Fiyat (TL) <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              placeholder="örn. 1.250.000"
+              value={priceStr}
+              required
+              onChange={(e) =>
+                setPriceStr(formatPriceThousandsTr(e.target.value))
+              }
+              inputMode="numeric"
+            />
+          </div>
           <label className="block text-sm font-medium">
             Şehir <span className="text-red-600">*</span>
             <select
