@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChatThreadClient } from "@/components/messages/ChatThreadClient";
 import {
+  getSupportAgentUserId,
   isSupportAgentUserId,
   SUPPORT_AGENT_DISPLAY_NAME,
 } from "@/lib/support-agent";
@@ -70,19 +71,22 @@ export default async function ProfilDestekPage() {
         </Link>
       </div>
 
-      <div className="min-h-[28rem] rounded-xl border border-zinc-200 bg-white p-4">
+      <div className="min-h-[28rem]">
         <ChatThreadClient
           conversationId={conversation.id}
           currentUserId={user.id}
           initialMessages={messages}
-          listingTitle={SUPPORT_AGENT_DISPLAY_NAME}
+          listingTitle={null}
           listingHref={null}
           listingImageUrl={null}
           listingActive
           listingInactiveMessage=""
+          otherUserId={getSupportAgentUserId()}
           otherUserName={SUPPORT_AGENT_DISPLAY_NAME}
           otherUserAvatarUrl={null}
+          otherIsAdmin
           blocked={false}
+          isSupportConversation
         />
       </div>
     </div>

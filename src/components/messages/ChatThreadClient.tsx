@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import {
   discardEmptyConversationIfAbandoned,
   type MessageRow,
@@ -20,10 +21,19 @@ type Props = {
   listingImageUrl?: string | null;
   listingActive: boolean;
   listingInactiveMessage: string;
+  otherUserId: string;
   otherUserName: string;
   otherUserAvatarUrl: string | null;
+  otherIsAdmin?: boolean;
   blocked: boolean;
   isSupportConversation?: boolean;
+};
+
+const CHAT_BG_STYLE: CSSProperties = {
+  backgroundColor: "#0a0a0a",
+  backgroundImage: "url(/promo/chat-bg-v2.jpg)",
+  backgroundRepeat: "repeat",
+  backgroundSize: "380px 380px",
 };
 
 export function ChatThreadClient({
@@ -35,8 +45,10 @@ export function ChatThreadClient({
   listingImageUrl = null,
   listingActive,
   listingInactiveMessage,
+  otherUserId,
   otherUserName,
   otherUserAvatarUrl,
+  otherIsAdmin = false,
   blocked,
   isSupportConversation = false,
 }: Props) {
@@ -229,59 +241,95 @@ export function ChatThreadClient({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {listingTitle ? (
-        <div
-          className={`mb-2 flex shrink-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2 py-1.5 ${
-            listingActive ? "" : "opacity-50"
-          }`}
+    <div
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-700/80"
+      style={CHAT_BG_STYLE}
+    >
+      {/* Kullanıcı + ilan — desenli kutunun içinde */}
+      <div className="shrink-0 border-b border-white/10 bg-black/55 px-2.5 py-2 backdrop-blur-[2px] sm:px-3">
+        <Link
+          href={`/kullanici/${otherUserId}`}
+          className="flex items-center gap-2 rounded-lg px-0.5 py-0.5 transition-colors hover:bg-white/5"
         >
-          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-zinc-200">
-            {listingImageUrl ? (
+          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-700">
+            {otherUserAvatarUrl ? (
               <Image
-                src={listingImageUrl}
+                src={otherUserAvatarUrl}
                 alt=""
                 width={32}
                 height={32}
-                className="h-full w-full object-cover"
+                className="h-8 w-8 object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-zinc-500">
-                İlan
+              <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-200">
+                {otherUserName.trim().slice(0, 1).toUpperCase() || "?"}
               </div>
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            {listingHref && listingActive ? (
-              <Link
-                href={listingHref}
-                className="line-clamp-1 text-xs font-semibold text-emerald-800 underline-offset-2 hover:underline"
-              >
-                {listingTitle}
-              </Link>
-            ) : (
-              <p className="line-clamp-1 text-xs font-semibold text-zinc-700">
-                {listingTitle}
-              </p>
-            )}
-            {!listingActive ? (
-              <p className="text-[10px] font-medium text-zinc-500">
-                Artık aktif değil
-              </p>
-            ) : null}
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h1 className="truncate text-sm font-semibold tracking-tight text-white sm:text-base">
+                {otherUserName}
+              </h1>
+              {otherIsAdmin ? (
+                <AdminVerifiedBadge className="shrink-0" size={16} />
+              ) : null}
+            </div>
+            <p className="text-[11px] text-zinc-400">
+              {isSupportConversation
+                ? "Destek sohbeti"
+                : "İlan üzerinden sohbet"}
+            </p>
           </div>
-        </div>
-      ) : null}
+        </Link>
+
+        {listingTitle ? (
+          <div
+            className={`mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 ${
+              listingActive ? "" : "opacity-50"
+            }`}
+          >
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-zinc-700">
+              {listingImageUrl ? (
+                <Image
+                  src={listingImageUrl}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-zinc-300">
+                  İlan
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              {listingHref && listingActive ? (
+                <Link
+                  href={listingHref}
+                  className="line-clamp-1 text-xs font-semibold text-[#ffcc00] underline-offset-2 hover:underline"
+                >
+                  {listingTitle}
+                </Link>
+              ) : (
+                <p className="line-clamp-1 text-xs font-semibold text-zinc-100">
+                  {listingTitle}
+                </p>
+              )}
+              {!listingActive ? (
+                <p className="text-[10px] font-medium text-zinc-400">
+                  Artık aktif değil
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       <div
         ref={listRef}
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 p-2.5 sm:p-3"
-        style={{
-          backgroundColor: "#0a0a0a",
-          backgroundImage: "url(/promo/chat-bg.jpg)",
-          backgroundRepeat: "repeat",
-          backgroundSize: "420px 420px",
-        }}
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-2.5 sm:p-3"
       >
         {messages.length === 0 ? (
           <p className="my-auto text-center text-xs text-zinc-400">
@@ -336,7 +384,8 @@ export function ChatThreadClient({
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-zinc-600">
-                            {otherUserName.trim().slice(0, 1).toUpperCase() || "?"}
+                            {otherUserName.trim().slice(0, 1).toUpperCase() ||
+                              "?"}
                           </div>
                         )
                       ) : null}
@@ -362,44 +411,45 @@ export function ChatThreadClient({
         )}
       </div>
 
-      {!listingActive ? (
-        <div
-          className="mt-2 shrink-0 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-center text-sm text-zinc-600"
-          role="status"
-        >
-          {listingInactiveMessage}
-        </div>
-      ) : (
-        <form onSubmit={send} className="mt-2 flex shrink-0 gap-2">
-          <label htmlFor="msg-input" className="sr-only">
-            Mesaj yazın
-          </label>
-          <textarea
-            id="msg-input"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onFocus={() => {
-              // Klavye açılınca footer’a değil chat kutusuna odaklan
-              requestAnimationFrame(() => scrollToBottom(false));
-            }}
-            placeholder="Mesajınızı yazın…"
-            rows={1}
-            className="max-h-28 min-h-[42px] flex-1 resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80"
-          />
-          <button
-            type="submit"
-            disabled={sending || !text.trim()}
-            className="shrink-0 self-end rounded-lg bg-[#ffcc00] px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50"
+      <div className="shrink-0 border-t border-white/10 bg-black/55 px-2.5 py-2 backdrop-blur-[2px] sm:px-3">
+        {!listingActive ? (
+          <div
+            className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-center text-sm text-zinc-300"
+            role="status"
           >
-            {sending ? "…" : "Gönder"}
-          </button>
-        </form>
-      )}
-      {sendError && listingActive ? (
-        <p className="mt-1.5 shrink-0 text-sm text-red-600" role="alert">
-          {sendError}
-        </p>
-      ) : null}
+            {listingInactiveMessage}
+          </div>
+        ) : (
+          <form onSubmit={send} className="flex gap-2">
+            <label htmlFor="msg-input" className="sr-only">
+              Mesaj yazın
+            </label>
+            <textarea
+              id="msg-input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onFocus={() => {
+                requestAnimationFrame(() => scrollToBottom(false));
+              }}
+              placeholder="Mesajınızı yazın…"
+              rows={1}
+              className="max-h-28 min-h-[42px] flex-1 resize-none rounded-lg border border-zinc-600 bg-zinc-900/90 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 shadow-sm focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80"
+            />
+            <button
+              type="submit"
+              disabled={sending || !text.trim()}
+              className="shrink-0 self-end rounded-lg bg-[#ffcc00] px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50"
+            >
+              {sending ? "…" : "Gönder"}
+            </button>
+          </form>
+        )}
+        {sendError && listingActive ? (
+          <p className="mt-1.5 text-sm text-red-400" role="alert">
+            {sendError}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

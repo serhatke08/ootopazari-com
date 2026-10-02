@@ -1,10 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ConversationsPane } from "@/components/messages/ConversationsPane";
-import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
-import { fetchAdminProfilesByUserIds } from "@/lib/admin-profile";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { MissingEnv } from "@/components/MissingEnv";
 import { ChatThreadClient } from "@/components/messages/ChatThreadClient";
@@ -27,6 +24,7 @@ import {
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
 import { buildListingSeoPath } from "@/lib/listing-seo";
 import { publicAvatarUrl, resolveListingImageUrl } from "@/lib/storage";
+import { fetchAdminProfilesByUserIds } from "@/lib/admin-profile";
 import {
   isSupportAgentUserId,
   isSupportConversation,
@@ -176,42 +174,7 @@ export default async function MesajConversationPage({ params }: Props) {
           />
         </div>
 
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-3 sm:p-4">
-          <div className="mb-2 shrink-0 border-b border-zinc-200 pb-2">
-            <Link
-              href={`/kullanici/${otherId}`}
-              className="flex items-center gap-2 rounded-lg px-0.5 py-0.5 transition-colors hover:bg-zinc-50"
-            >
-              <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-200">
-                {otherAvatarUrl ? (
-                  <Image
-                    src={otherAvatarUrl}
-                    alt=""
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-600">
-                    {otherName.trim().slice(0, 1).toUpperCase() || "?"}
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <h1 className="truncate text-sm font-semibold tracking-tight text-zinc-900 sm:text-base">
-                    {otherName}
-                  </h1>
-                  {otherIsAdmin ? (
-                    <AdminVerifiedBadge className="shrink-0" size={16} />
-                  ) : null}
-                </div>
-                <p className="text-[11px] text-zinc-500">
-                  {supportChat ? "Destek sohbeti" : "İlan üzerinden sohbet"}
-                </p>
-              </div>
-            </Link>
-          </div>
+        <section className="flex min-h-0 flex-col overflow-hidden">
           <ChatThreadClient
             conversationId={conversationId}
             currentUserId={user.id}
@@ -223,8 +186,10 @@ export default async function MesajConversationPage({ params }: Props) {
             listingInactiveMessage={
               listingStatus.active ? "" : listingStatus.message
             }
+            otherUserId={otherId}
             otherUserName={otherName}
             otherUserAvatarUrl={otherAvatarUrl}
+            otherIsAdmin={otherIsAdmin}
             blocked={blocked}
             isSupportConversation={supportChat}
           />
