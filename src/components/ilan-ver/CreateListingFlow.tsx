@@ -1308,6 +1308,23 @@ export function CreateListingFlow({
     });
   }
 
+  const saveDraftAndExit = async () => {
+    setErr(null);
+    try {
+      // Banner taslağı varken boş kategoriye basma
+      if (draftBanner && pageIndex === 0 && !categoryId) {
+        window.location.href = "/";
+        return;
+      }
+      draftSkip.current = false;
+      await persistDraft();
+      window.location.href = "/profil/ilanlarim";
+    } catch (e) {
+      console.warn("[saveDraftAndExit]", e);
+      setErr("Taslak kaydedilemedi. Tekrar dene.");
+    }
+  };
+
   const thumbUrls = useMemo(
     () => files.map((f) => URL.createObjectURL(f)),
     [files]
@@ -1378,13 +1395,23 @@ export function CreateListingFlow({
       ) : null}
       {bootReady ? (
         <>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-bold text-[#002776]">İlan Ver</h1>
-        {listingQuota && !listingQuota.unlimited ? (
-          <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
-            Hak: {listingQuota.remaining}/{listingQuota.limit}
-          </span>
-        ) : null}
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="shrink-0 text-lg font-bold text-[#002776]">İlan Ver</h1>
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => void saveDraftAndExit()}
+            disabled={busy}
+            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 sm:text-xs"
+          >
+            Taslak kaydet ve çık
+          </button>
+          {listingQuota && !listingQuota.unlimited ? (
+            <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
+              Hak: {listingQuota.remaining}/{listingQuota.limit}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="h-1 overflow-hidden rounded-full bg-zinc-200">
