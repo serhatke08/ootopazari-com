@@ -1897,43 +1897,101 @@ export function CreateListingFlow({
         <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
           <input
             ref={fileInputRef}
+            id="ilan-ver-photos"
             type="file"
-            accept="image/*"
+            accept="image/*,image/heic,image/heif,.heic,.heif"
             multiple
-            className="hidden"
+            className="sr-only"
             onChange={(e) => {
               const list = e.target.files;
-              if (!list) return;
-              setFiles((prev) =>
-                [...prev, ...Array.from(list)].slice(0, MAX_LISTING_PHOTOS)
-              );
+              if (!list || list.length === 0) return;
+              const incoming = Array.from(list).filter((f) => {
+                const t = (f.type || "").toLowerCase();
+                const n = f.name.toLowerCase();
+                return (
+                  t.startsWith("image/") ||
+                  n.endsWith(".heic") ||
+                  n.endsWith(".heif") ||
+                  n.endsWith(".jpg") ||
+                  n.endsWith(".jpeg") ||
+                  n.endsWith(".png") ||
+                  n.endsWith(".webp")
+                );
+              });
+              if (incoming.length === 0) {
+                setErr("Geçerli bir fotoğraf seç (JPG, PNG, WEBP veya HEIC).");
+                e.target.value = "";
+                return;
+              }
+              setErr(null);
+              setFiles((prev) => {
+                const next = [...prev, ...incoming].slice(0, MAX_LISTING_PHOTOS);
+                if (next.length >= MAX_LISTING_PHOTOS && incoming.length > 0) {
+                  /* limit reached — ok */
+                }
+                return next;
+              });
               e.target.value = "";
             }}
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-lg border border-dashed border-zinc-300 py-6 text-sm font-semibold text-zinc-700"
+          <label
+            htmlFor="ilan-ver-photos"
+            className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 py-6 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
           >
             Fotoğraf ekle ({files.length}/{MAX_LISTING_PHOTOS})
-          </button>
+            <span className="mt-1 text-[11px] font-normal text-zinc-500">
+              Birden fazla seçebilirsin
+            </span>
+          </label>
           {thumbUrls.length ? (
             <div className="grid grid-cols-3 gap-2">
               {thumbUrls.map((u, i) => (
-                <button
-                  key={u}
-                  type="button"
-                  onClick={() => setCoverIndex(i)}
+                <div
+                  key={`${u}-${i}`}
                   className={`relative overflow-hidden rounded-lg border-2 ${
                     coverIndex === i ? "border-[#ffcc00]" : "border-transparent"
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u} alt="" className="aspect-square w-full object-cover" />
-                </button>
+                  <img
+                    src={u}
+                    alt=""
+                    className="aspect-square w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCoverIndex(i)}
+                    className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                  >
+                    {coverIndex === i ? "Kapak" : "Kapak yap"}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Fotoğrafı sil"
+                    onClick={() => {
+                      setFiles((prev) => {
+                        const next = prev.filter((_, idx) => idx !== i);
+                        setCoverIndex((c) => {
+                          if (next.length === 0) return 0;
+                          if (c === i) return 0;
+                          if (c > i) return c - 1;
+                          return c;
+                        });
+                        return next;
+                      });
+                    }}
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-bold text-white"
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
             </div>
-          ) : null}
+          ) : (
+            <p className="text-center text-xs text-zinc-500">
+              Henüz fotoğraf yok. Yukarıdan ekle.
+            </p>
+          )}
           <input
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             placeholder="Başlık"
