@@ -251,10 +251,19 @@ function seriVeModelFromRow(
 function stripDuplicateVehicleSpecLines(text: string): string {
   const linePatterns = [
     /^Araç\s+durumu\s*:/i,
+    /^Servis\s+garantisi\s*:/i,
     /^Garanti\s*:/i,
     /^Ağır\s+hasar\s+kayıtlı\s*:/i,
     /^Ağır\s+hasar\s+kaydı\s*:/i,
     /^Plaka\s*\/\s*uyruk\s*:/i,
+    /^Marka\s*:/i,
+    /^Seri\s*\/\s*Model\s*:/i,
+    /^Kasa\s+Tipi\s*:/i,
+    /^Motor\s*:/i,
+    /^Paket\s*:/i,
+    /^Yakıt(\s+Tipi)?\s*:/i,
+    /^Vites\s*:/i,
+    /^Çekiş\s*:/i,
   ];
   const lines = text.split(/\r?\n/);
   const kept = lines.filter((line) => {
@@ -302,7 +311,7 @@ function labelFromEquipmentLines(
 
 function extractDescriptionBody(text: string): string {
   const specLine =
-    /^(Araç\s+durumu|Garanti|Ağır\s+hasar|Plaka|Marka|Seri\/Model|Kasa\s+Tipi|Motor|Paket|Yakıt|Vites|Çekiş)\s*:/i;
+    /^(Araç\s+durumu|Servis\s+garantisi|Garanti|Ağır\s+hasar|Plaka|Marka|Seri\/Model|Kasa\s+Tipi|Motor|Paket|Yakıt|Vites|Çekiş)\s*:/i;
   const lines = text.split(/\r?\n/);
   const kept = lines.filter((line) => {
     const t = line.trim();

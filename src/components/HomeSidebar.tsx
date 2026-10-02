@@ -19,7 +19,7 @@ export function HomeSidebar({ categories }: { categories: CategoryRow[] }) {
           <VehicleCascadeSidebar categories={categories} fillColumn compact />
         </Suspense>
       </div>
-      <div className="relative z-0 shrink-0 border-t border-zinc-200/80 bg-zinc-50 pt-2 pb-2">
+      <div className="relative z-0 shrink-0 -mt-1 border-t border-zinc-200/80 bg-zinc-50 pt-0.5 pb-1.5">
         <HomeAppPromoRail />
       </div>
     </div>

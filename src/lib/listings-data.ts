@@ -659,6 +659,8 @@ function isPubliclyLiveListing(row: {
 function applyListingOrder(q: any, sort: HomeListingsSort | undefined): any {
   const nulls = { nullsFirst: false } as const;
   switch (sort) {
+    case "oldest":
+      return q.order("created_at", { ascending: true, ...nulls });
     case "price_asc":
       return q.order("price", { ascending: true, ...nulls });
     case "price_desc":

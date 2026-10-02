@@ -8,6 +8,7 @@ export const HOME_LISTINGS_PAGE_SIZE =
 
 export const HOME_LISTINGS_SORT_OPTIONS = [
   { value: "newest", label: "En yeni" },
+  { value: "oldest", label: "En eski" },
   { value: "price_asc", label: "Fiyat (artan)" },
   { value: "price_desc", label: "Fiyat (azalan)" },
   { value: "km_asc", label: "KM (artan)" },

@@ -153,70 +153,14 @@ export type ComposeDescriptionInput = {
   isMotorcycle?: boolean;
 };
 
-function fmtBool(v: boolean | null | undefined): string {
-  if (v === true) return "Evet";
-  if (v === false) return "Hayır";
-  return "—";
-}
-
 /**
- * Kullanıcı metni + özet satırlar; sonunda Araç Durumu / Garanti / Plaka blokları (araçta).
+ * Kullanıcı açıklaması. Araç özet satırları (garanti vb.) artık açıklamaya
+ * yapıştırılmaz — yapısal alanlarda / detay şemasında tutulur.
  */
 export function composeListingDescription(
   input: ComposeDescriptionInput
 ): string {
-  const parts: string[] = [];
-  const u = input.userDescription.trim();
-  if (u) parts.push(u);
-
-  const line = (label: string, val: string | null | undefined) => {
-    const v = val?.trim();
-    if (v) parts.push(`${label}: ${v}`);
-  };
-
-  if (input.isVehicle) {
-    line("Marka", input.otherBrandNote);
-    if (input.isMotorcycle) {
-      line("Model", input.seriModelNote);
-      line("CC", input.motorNote);
-    } else {
-      line("Seri/Model", input.seriModelNote);
-      line("Kasa Tipi", input.kasaTipiNote);
-      line("Motor", input.motorNote);
-      line("Paket", input.paketNote);
-    }
-    const yvt = [
-      input.fuelType?.trim() && `Yakıt: ${input.fuelType.trim()}`,
-      input.transmissionType?.trim() && `Vites: ${input.transmissionType.trim()}`,
-      input.driveType?.trim() && `Çekiş: ${input.driveType.trim()}`,
-    ].filter(Boolean);
-    if (yvt.length) parts.push(yvt.join(" · "));
-    line("Araç durumu", input.vehicleCondition);
-    if (input.warranty !== null && input.warranty !== undefined) {
-      parts.push(`Servis Garantisi: ${fmtBool(input.warranty)}`);
-    }
-    if (
-      input.heavyDamageRecorded !== null &&
-      input.heavyDamageRecorded !== undefined
-    ) {
-      parts.push(
-        `Ağır Hasar Kayıtlı: ${fmtBool(input.heavyDamageRecorded)}`
-      );
-    }
-    line("Plaka / Uyruk", input.plakaUyruk);
-    if (input.driveType?.trim()) {
-      /* çekiş zaten yvt satırında */
-    }
-    parts.push("");
-    parts.push(`Araç Durumu: ${input.vehicleCondition?.trim() || "—"}`);
-    parts.push(`Servis Garantisi: ${fmtBool(input.warranty ?? null)}`);
-    parts.push(
-      `Ağır Hasar Kayıtlı: ${fmtBool(input.heavyDamageRecorded ?? null)}`
-    );
-    parts.push(`Plaka / Uyruk: ${input.plakaUyruk?.trim() || "—"}`);
-  }
-
-  return parts.join("\n").trim();
+  return input.userDescription.trim();
 }
 
 /** `vehicle_model` metni: özel seri modunda yalnızca kullanıcı metni; değilse model+motor+paket. */
