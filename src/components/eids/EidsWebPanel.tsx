@@ -52,7 +52,6 @@ export function EidsWebPanel({
   const [err, setErr] = useState<string | null>(null);
   const [plaka, setPlaka] = useState("");
   const [plateResult, setPlateResult] = useState<string | null>(null);
-  const [diag, setDiag] = useState<string | null>(null);
   const locked = eidsVerified;
 
   const banner = useMemo(() => {
@@ -212,22 +211,6 @@ export function EidsWebPanel({
     setBusy(false);
   }, [plaka]);
 
-  const runDiag = useCallback(async () => {
-    setBusy(true);
-    setDiag(null);
-    try {
-      const res = await fetch("/api/eids/diag", {
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-      const body = await res.json();
-      setDiag(JSON.stringify(body, null, 2));
-    } catch (e) {
-      setDiag(e instanceof Error ? e.message : "diag_failed");
-    }
-    setBusy(false);
-  }, []);
-
   const displayName = [eidsAd, eidsSoyad].filter(Boolean).join(" ");
 
   return (
@@ -358,26 +341,6 @@ export function EidsWebPanel({
           <p className="mt-3 text-sm font-medium text-emerald-800">
             {plateResult}
           </p>
-        ) : null}
-      </section>
-
-      <section className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-5">
-        <h2 className="text-sm font-semibold text-zinc-800">Teknik teşhis</h2>
-        <p className="mt-1 text-xs text-zinc-600">
-          Proxy + Bakanlık kapısı. Geliştirici / destek için.
-        </p>
-        <button
-          type="button"
-          onClick={() => void runDiag()}
-          disabled={busy}
-          className="mt-3 inline-flex rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
-        >
-          Teşhis çalıştır
-        </button>
-        {diag ? (
-          <pre className="mt-3 max-h-64 overflow-auto rounded-lg bg-zinc-900 p-3 text-[11px] leading-relaxed text-zinc-100">
-            {diag}
-          </pre>
         ) : null}
       </section>
     </div>
