@@ -23,9 +23,11 @@ const linkClass =
   "text-zinc-900 hover:underline decoration-zinc-900/40 font-semibold";
 
 const navSearchFormClass =
-  "flex min-w-0 w-full";
+  "flex min-w-0 w-full items-center gap-2";
 const navSearchInputClass =
   "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25";
+const navSearchBtnClass =
+  "shrink-0 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-extrabold text-[#ffcc00] shadow-sm hover:bg-zinc-800 active:bg-zinc-950";
 
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -133,11 +135,19 @@ function NavSearchForm({
     : "";
   const [draft, setDraft] = useState<string | null>(null);
   const [baseline, setBaseline] = useState(externalQ);
+  const [focused, setFocused] = useState(false);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   if (baseline !== externalQ) {
     setBaseline(externalQ);
     setDraft(null);
   }
   const value = draft ?? externalQ;
+
+  useEffect(() => {
+    return () => {
+      if (blurTimer.current) clearTimeout(blurTimer.current);
+    };
+  }, []);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -146,6 +156,7 @@ function NavSearchForm({
     if (listingNo) {
       router.prefetch(`/ilan/${listingNo}`);
       router.push(`/ilan/${listingNo}`);
+      onSubmitted?.();
       return;
     }
     if (onHome && siteSearch) {
@@ -156,6 +167,8 @@ function NavSearchForm({
     router.push(raw ? `/?q=${encodeURIComponent(raw)}` : "/");
     onSubmitted?.();
   }
+
+  const showAra = focused || value.trim().length > 0;
 
   return (
     <form
@@ -172,12 +185,28 @@ function NavSearchForm({
         name="q"
         value={value}
         onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => {
+          if (blurTimer.current) {
+            clearTimeout(blurTimer.current);
+            blurTimer.current = null;
+          }
+          setFocused(true);
+        }}
+        onBlur={() => {
+          // Butona tıklayabilmek için blur’u geciktir
+          blurTimer.current = setTimeout(() => setFocused(false), 180);
+        }}
         placeholder="Ara…"
         autoComplete="off"
         autoFocus={autoFocus}
         enterKeyHint="search"
         className={navSearchInputClass}
       />
+      {showAra ? (
+        <button type="submit" className={navSearchBtnClass}>
+          Ara
+        </button>
+      ) : null}
     </form>
   );
 }
