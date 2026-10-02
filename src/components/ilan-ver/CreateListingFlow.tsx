@@ -523,20 +523,6 @@ export function CreateListingFlow({
     [pages, bodyStyles.length, engines.length, packages.length, persistDraft]
   );
 
-  const goNext = async () => {
-    setErr(null);
-    const block = validateCurrentPage();
-    if (block) {
-      setErr(block);
-      return;
-    }
-    if (pageIndex >= pages.length - 1) {
-      await publish();
-      return;
-    }
-    await goTo(pageIndex + 1);
-  };
-
   /** Sayfa bazlı zorunlu alanlar — mobil akışla aynı sıkılık.
    *  Liste seçimleri (marka/model…) tile tıklanınca setState + goNext yarışır;
    *  onları burada kontrol etme — sticky İleri zaten selectionHasValue ile kilitli. */
@@ -617,6 +603,7 @@ export function CreateListingFlow({
   const loadPackages = async (eId: string) => {
     const rows = await fetchPackagesForEngine(supabase, eId);
     setPackages(rows);
+    return rows;
   };
 
   const selectCategory = async (c: CategoryRow) => {
@@ -901,6 +888,17 @@ export function CreateListingFlow({
         setVehicleYear(yil);
       }
 
+      // Model değişince alt seçimler geçersiz — sıfırla
+      setBodyStyleId(null);
+      setBodyStyleName(null);
+      setBodyStyles([]);
+      setEngineId(null);
+      setEngineName(null);
+      setEngines([]);
+      setPackageId(null);
+      setPackageName(null);
+      setPackages([]);
+
       let modelPool: IdNameRow[] = hierarchical
         ? [...parents, ...children]
         : [...flatModels];
@@ -951,13 +949,72 @@ export function CreateListingFlow({
         }
       }
 
-      setEidsMsg("Seçimin e-Devlet kaydına göre düzeltildi.");
+      setEidsMsg(
+        "Seçimin e-Devlet kaydına göre düzeltildi. İleri’ye basınca eksik kalan motor / paket vb. adımlara gideceksin."
+      );
     } catch (e) {
       console.warn("[eids autoFix]", e);
       setErr("Otomatik düzeltme başarısız. Manuel seç.");
     } finally {
       setEidsBusy(false);
     }
+  };
+
+  /** Marka/model sonrası doldurulması gereken ama boş kalan adımlar */
+  function hierarchyGaps(): { page: FlowPage; label: string }[] {
+    if (!isVehicle) return [];
+    const gaps: { page: FlowPage; label: string }[] = [];
+    if (bodyStyles.length > 0 && !bodyStyleId) {
+      gaps.push({ page: "bodyStyle", label: "Kasa tipi" });
+    }
+    if (engines.length > 0 && !engineId) {
+      gaps.push({ page: "engine", label: "Motor / donanım" });
+    }
+    if (packages.length > 0 && !packageId) {
+      gaps.push({ page: "package", label: "Paket" });
+    }
+    if (!transmission) {
+      gaps.push({ page: "transmission", label: "Vites" });
+    }
+    return gaps;
+  }
+
+  const goNext = async () => {
+    setErr(null);
+    const block = validateCurrentPage();
+    if (block) {
+      setErr(block);
+      return;
+    }
+
+    // e-Devlet düzeltmesi sonrası atlanan kasa/motor/paket vb. — geri al
+    if (
+      isVehicle &&
+      (page === "eids" ||
+        page === "details" ||
+        page === "content" ||
+        page === "boosts")
+    ) {
+      const gaps = hierarchyGaps();
+      if (gaps.length > 0) {
+        const labels = gaps.map((g) => g.label).join(", ");
+        const idx = pages.indexOf(gaps[0].page);
+        if (idx >= 0) {
+          await goTo(idx);
+        }
+        // goTo err'i temizler — mesajı sonra koy
+        setErr(
+          `Eksik kalan: ${labels}. Bu sayfada eklenmesi gereken şeyler.`
+        );
+        return;
+      }
+    }
+
+    if (pageIndex >= pages.length - 1) {
+      await publish();
+      return;
+    }
+    await goTo(pageIndex + 1);
   };
 
   // Kullanıcı yıl/marka/model düzeltince eids adımında uyuşmazlığı tazele
@@ -1671,7 +1728,17 @@ export function CreateListingFlow({
                     if (e.id !== "_skip") {
                       setEngineId(e.id);
                       setEngineName(e.name ?? null);
-                      await loadPackages(e.id);
+                      const rows = await loadPackages(e.id);
+                      // goTo closure packages.length henüz 0 olabilir — paket varsa doğrudan git
+                      if (rows.length > 0) {
+                        const idx = pages.indexOf("package");
+                        if (idx >= 0) {
+                          setErr(null);
+                          setPageIndex(idx);
+                          await persistDraft();
+                          return;
+                        }
+                      }
                     }
                     await goNext();
                   })();
@@ -1935,9 +2002,38 @@ export function CreateListingFlow({
                 </div>
               </div>
               {eidsMismatches.length === 0 ? (
-                <p className="border-t border-emerald-100 bg-emerald-50 px-3 py-2 text-center text-xs font-semibold text-emerald-800">
-                  Bilgiler uyuşuyor · plaka yetkisi OK
-                </p>
+                (() => {
+                  const gaps = hierarchyGaps();
+                  if (gaps.length > 0) {
+                    return (
+                      <div className="border-t border-amber-100 bg-amber-50 px-3 py-3">
+                        <p className="mb-1 text-center text-xs font-semibold text-emerald-800">
+                          Bilgiler uyuşuyor · plaka yetkisi OK
+                        </p>
+                        <p className="mb-2 text-center text-xs font-medium text-amber-900">
+                          Eksik kalan:{" "}
+                          {gaps.map((g) => g.label).join(", ")}. Bu sayfada
+                          eklenmesi gereken şeyler.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const idx = pages.indexOf(gaps[0].page);
+                            if (idx >= 0) void goTo(idx);
+                          }}
+                          className="w-full rounded-lg bg-amber-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-amber-700"
+                        >
+                          Eksikleri tamamla
+                        </button>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p className="border-t border-emerald-100 bg-emerald-50 px-3 py-2 text-center text-xs font-semibold text-emerald-800">
+                      Bilgiler uyuşuyor · plaka yetkisi OK
+                    </p>
+                  );
+                })()
               ) : (
                 <div className="border-t border-red-100 bg-red-50 px-3 py-3">
                   <p className="mb-2 text-center text-xs font-medium text-red-800">
