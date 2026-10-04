@@ -14,7 +14,7 @@ import { useUnreadMessageCount } from "@/hooks/useUnreadMessageCount";
 import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
 import { useUserHasListings } from "@/hooks/useUserHasListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
-import { isListingDetailPath } from "@/lib/listing-seo";
+import { buildListingSeoPath, isListingDetailPath } from "@/lib/listing-seo";
 import { useSiteSearch } from "@/components/SiteSearchProvider";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 import { initialFromName } from "@/lib/user-display-name";
@@ -91,8 +91,13 @@ type HeaderNotification = {
   id: string;
   title: string;
   body: string | null;
+  type: string | null;
+  listing_id: string | null;
+  conversation_id: string | null;
   read_at: string | null;
   created_at: string;
+  /** Çözülmüş hedef (ilan / mesaj). */
+  href?: string | null;
 };
 
 function NavSearchFallback({ id }: { id: string }) {
@@ -349,11 +354,51 @@ export function SiteHeaderClient({
       if (!user) return;
       const { data } = await supabase
         .from("user_notifications")
-        .select("id,title,body,read_at,created_at")
-        .eq("user_id", user.id)
+        .select(
+          "id,title,body,type,listing_id,conversation_id,read_at,created_at"
+        )
+        .or(`user_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
         .limit(8);
-      setNotifications((data ?? []) as HeaderNotification[]);
+      const rows = (data ?? []) as HeaderNotification[];
+
+      const listingIds = [
+        ...new Set(
+          rows
+            .map((r) => r.listing_id)
+            .filter((id): id is string => typeof id === "string" && id.length > 0)
+        ),
+      ];
+      const hrefByListingId = new Map<string, string>();
+      if (listingIds.length > 0) {
+        const { data: listings } = await supabase
+          .from("listings")
+          .select("id,listing_number,title")
+          .in("id", listingIds);
+        for (const row of listings ?? []) {
+          const o = row as {
+            id: string;
+            listing_number: number | string | null;
+            title?: string | null;
+          };
+          const href = buildListingSeoPath(o.listing_number, o.title ?? null);
+          if (href) hrefByListingId.set(o.id, href);
+        }
+      }
+
+      setNotifications(
+        rows.map((n) => {
+          let href: string | null = null;
+          if (n.type === "message" && n.conversation_id) {
+            href = `/mesajlar/${n.conversation_id}`;
+          } else if (n.listing_id && hrefByListingId.has(n.listing_id)) {
+            href = hrefByListingId.get(n.listing_id) ?? null;
+          } else if (n.conversation_id) {
+            href = `/mesajlar/${n.conversation_id}`;
+          }
+          return { ...n, href };
+        })
+      );
     } finally {
       setNotifLoading(false);
     }
@@ -542,15 +587,13 @@ export function SiteHeaderClient({
                               <ul className="space-y-1.5">
                                 {notifications.map((n) => {
                                   const unread = n.read_at == null;
-                                  return (
-                                    <li
-                                      key={n.id}
-                                      className={`rounded-lg border px-2.5 py-2 ${
-                                        unread
-                                          ? "border-amber-200 bg-amber-50/70"
-                                          : "border-zinc-200 bg-white"
-                                      }`}
-                                    >
+                                  const cardClass = `block rounded-lg border px-2.5 py-2 text-left transition hover:border-amber-300 hover:bg-amber-50/50 ${
+                                    unread
+                                      ? "border-amber-200 bg-amber-50/70"
+                                      : "border-zinc-200 bg-white"
+                                  }`;
+                                  const content = (
+                                    <>
                                       <div className="flex items-start justify-between gap-2">
                                         <p className="line-clamp-2 text-xs font-semibold text-zinc-900">
                                           {n.title}
@@ -558,7 +601,11 @@ export function SiteHeaderClient({
                                         {unread ? (
                                           <button
                                             type="button"
-                                            onClick={() => void markOne(n.id)}
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              void markOne(n.id);
+                                            }}
                                             className="shrink-0 rounded border border-zinc-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 hover:bg-zinc-50"
                                           >
                                             Okundu
@@ -581,6 +628,24 @@ export function SiteHeaderClient({
                                           }
                                         )}
                                       </p>
+                                    </>
+                                  );
+                                  return (
+                                    <li key={n.id}>
+                                      {n.href ? (
+                                        <Link
+                                          href={n.href}
+                                          className={cardClass}
+                                          onClick={() => {
+                                            setNotifOpen(false);
+                                            if (unread) void markOne(n.id);
+                                          }}
+                                        >
+                                          {content}
+                                        </Link>
+                                      ) : (
+                                        <div className={cardClass}>{content}</div>
+                                      )}
                                     </li>
                                   );
                                 })}

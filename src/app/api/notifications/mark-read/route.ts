@@ -24,12 +24,13 @@ export async function POST(req: Request) {
       : null;
 
   const now = new Date().toISOString();
+  const mine = `user_id.eq.${user.id},recipient_id.eq.${user.id}`;
 
   if (markAll) {
     const { error } = await supabase
       .from("user_notifications")
       .update({ read_at: now })
-      .eq("user_id", user.id)
+      .or(mine)
       .is("read_at", null);
     if (error) {
       return NextResponse.json(
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     .from("user_notifications")
     .update({ read_at: now })
     .eq("id", notificationId)
-    .eq("user_id", user.id);
+    .or(mine);
 
   if (error) {
     return NextResponse.json(

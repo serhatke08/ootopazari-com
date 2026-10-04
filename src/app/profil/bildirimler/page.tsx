@@ -22,7 +22,7 @@ export default async function ProfilBildirimlerPage() {
         .filter((id): id is string => typeof id === "string" && id.length > 0)
     ),
   ];
-  const listingNumMap = new Map<string, string>();
+  const listingHrefMap = new Map<string, string>();
   if (listingIds.length > 0) {
     const { data: listings } = await supabase
       .from("listings")
@@ -36,7 +36,7 @@ export default async function ProfilBildirimlerPage() {
       };
       const href = buildListingSeoPath(o.listing_number, o.title ?? null);
       if (href) {
-        listingNumMap.set(o.id, href);
+        listingHrefMap.set(o.id, href);
       }
     }
   }
@@ -55,53 +55,84 @@ export default async function ProfilBildirimlerPage() {
         <ul className="mt-4 space-y-2">
           {rows.map((n) => {
             const unread = n.read_at == null;
+            const href =
+              n.type === "message" && n.conversation_id
+                ? `/mesajlar/${n.conversation_id}`
+                : n.listing_id && listingHrefMap.has(n.listing_id)
+                  ? listingHrefMap.get(n.listing_id)!
+                  : n.conversation_id
+                    ? `/mesajlar/${n.conversation_id}`
+                    : null;
+            const cardClass = `rounded-xl border px-4 py-3 text-sm ${
+              unread
+                ? "border-amber-200 bg-amber-50/80"
+                : "border-zinc-200 bg-white"
+            }`;
+
             return (
-              <li key={n.id}>
-                <div
-                  className={`rounded-xl border px-4 py-3 text-sm ${
-                    unread
-                      ? "border-amber-200 bg-amber-50/80"
-                      : "border-zinc-200 bg-white"
-                  }`}
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="font-semibold text-zinc-900">{n.title}</p>
-                    {unread ? (
-                      <NotificationsMarkControls notificationId={n.id} />
-                    ) : null}
-                  </div>
-                  {n.body ? (
-                    <p className="mt-1.5 whitespace-pre-wrap text-zinc-700">{n.body}</p>
+              <li key={n.id} className={cardClass}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  {href ? (
+                    <Link
+                      href={href}
+                      className="min-w-0 flex-1 font-semibold text-zinc-900 hover:underline"
+                    >
+                      {n.title}
+                    </Link>
+                  ) : (
+                    <p className="min-w-0 flex-1 font-semibold text-zinc-900">
+                      {n.title}
+                    </p>
+                  )}
+                  {unread ? (
+                    <NotificationsMarkControls notificationId={n.id} />
                   ) : null}
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
-                    <time dateTime={n.created_at}>
-                      {new Date(n.created_at).toLocaleString("tr-TR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
-                    {n.listing_id ? (
-                      listingNumMap.has(n.listing_id) ? (
-                        <Link
-                          href={listingNumMap.get(n.listing_id) ?? "/ilanlar"}
-                          className="font-medium text-zinc-800 underline hover:text-zinc-950"
-                        >
-                          İlana git
-                        </Link>
-                      ) : (
-                        <Link
-                          href="/profil/ilanlarim"
-                          className="font-medium text-zinc-800 underline hover:text-zinc-950"
-                        >
-                          İlanlarım
-                        </Link>
-                      )
-                    ) : null}
-                  </div>
                 </div>
+                {href ? (
+                  <Link href={href} className="mt-1.5 block">
+                    {n.body ? (
+                      <p className="whitespace-pre-wrap text-zinc-700">
+                        {n.body}
+                      </p>
+                    ) : null}
+                    <div className="mt-2 text-xs text-zinc-500">
+                      <time dateTime={n.created_at}>
+                        {new Date(n.created_at).toLocaleString("tr-TR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </time>
+                      <span className="ml-2 font-medium text-zinc-800 underline">
+                        {n.type === "message" ||
+                        (n.conversation_id && !n.listing_id)
+                          ? "Mesaja git"
+                          : "İlana git"}
+                      </span>
+                    </div>
+                  </Link>
+                ) : (
+                  <>
+                    {n.body ? (
+                      <p className="mt-1.5 whitespace-pre-wrap text-zinc-700">
+                        {n.body}
+                      </p>
+                    ) : null}
+                    <div className="mt-2 text-xs text-zinc-500">
+                      <time dateTime={n.created_at}>
+                        {new Date(n.created_at).toLocaleString("tr-TR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </time>
+                    </div>
+                  </>
+                )}
               </li>
             );
           })}

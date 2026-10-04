@@ -7,6 +7,7 @@ export type UserNotificationRow = {
   title: string;
   body: string | null;
   listing_id: string | null;
+  conversation_id?: string | null;
   read_at: string | null;
   created_at: string;
 };
@@ -18,8 +19,10 @@ export async function fetchUserNotifications(
 ): Promise<UserNotificationRow[]> {
   const { data, error } = await supabase
     .from("user_notifications")
-    .select("id,user_id,type,title,body,listing_id,read_at,created_at")
-    .eq("user_id", userId)
+    .select(
+      "id,user_id,type,title,body,listing_id,conversation_id,read_at,created_at"
+    )
+    .or(`user_id.eq.${userId},recipient_id.eq.${userId}`)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -39,7 +42,7 @@ export async function countUnreadNotifications(
   const { count, error } = await supabase
     .from("user_notifications")
     .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
+    .or(`user_id.eq.${userId},recipient_id.eq.${userId}`)
     .is("read_at", null);
 
   if (error) {
@@ -56,11 +59,12 @@ export async function markNotificationRead(
   userId: string,
   notificationId: string
 ): Promise<boolean> {
+  const mine = `user_id.eq.${userId},recipient_id.eq.${userId}`;
   const { error } = await supabase
     .from("user_notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", notificationId)
-    .eq("user_id", userId);
+    .or(mine);
 
   return !error;
 }
@@ -69,10 +73,11 @@ export async function markAllNotificationsRead(
   supabase: SupabaseClient,
   userId: string
 ): Promise<boolean> {
+  const mine = `user_id.eq.${userId},recipient_id.eq.${userId}`;
   const { error } = await supabase
     .from("user_notifications")
     .update({ read_at: new Date().toISOString() })
-    .eq("user_id", userId)
+    .or(mine)
     .is("read_at", null);
 
   return !error;

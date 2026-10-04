@@ -30,7 +30,7 @@ export function useUnreadNotificationCount(
         const { count: c } = await supabase
           .from("user_notifications")
           .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id)
+          .or(`user_id.eq.${user.id},recipient_id.eq.${user.id}`)
           .is("read_at", null);
 
         if (!cancelled) setCount(c ?? 0);

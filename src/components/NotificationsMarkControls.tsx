@@ -46,7 +46,11 @@ export function NotificationsMarkControls(props: Props) {
     <button
       type="button"
       disabled={loading}
-      onClick={() => void markRead()}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void markRead();
+      }}
       className="shrink-0 rounded-md border border-zinc-200 bg-white px-2 py-0.5 text-[11px] font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
     >
       {loading ? "…" : "Okundu"}
