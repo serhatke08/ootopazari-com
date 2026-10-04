@@ -18,6 +18,7 @@ const ADMIN_LISTING_SELECT = [
   "moderation_status",
   "activation_status",
   "created_at",
+  "created_client",
 ].join(", ");
 
 import type { AdminListingRow } from "@/lib/admin-listings-types";
@@ -48,6 +49,8 @@ function toAdminRow(
     activation_status:
       row.activation_status != null ? String(row.activation_status) : null,
     created_at: row.created_at != null ? String(row.created_at) : null,
+    created_client:
+      row.created_client != null ? String(row.created_client) : null,
     feed_rank: row.feed_rank,
     tier_label: feedSortTierLabel(tier),
     is_demoted: row.quality_demoted_at != null && String(row.quality_demoted_at).trim() !== "",
@@ -68,29 +71,53 @@ export async function fetchAdminListingsForGrid(
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  let { data, error } = await query;
-  if (error && /cover_quality_score|feed_sort_tier|activation_status/i.test(error.message)) {
+  type RowsResult = {
+    data: Record<string, unknown>[] | null;
+    error: { message: string } | null;
+  };
+
+  let result: RowsResult = (await query) as RowsResult;
+  if (result.error && /created_client/i.test(result.error.message)) {
+    const withoutClient = ADMIN_LISTING_SELECT.replace(", created_client", "");
+    result = (await service
+      .from(table)
+      .select(withoutClient)
+      .order("created_at", { ascending: false })
+      .limit(limit)) as RowsResult;
+  }
+  if (
+    result.error &&
+    /cover_quality_score|feed_sort_tier|activation_status/i.test(
+      result.error.message
+    )
+  ) {
     const fallbackSelect = [
       "id",
       "listing_number",
       "title",
       "moderation_status",
       "created_at",
+      "created_client",
     ].join(", ");
-    ({ data, error } = await service
+    result = (await service
       .from(table)
       .select(fallbackSelect)
       .order("created_at", { ascending: false })
-      .limit(limit));
+      .limit(limit)) as RowsResult;
+    if (result.error && /created_client/i.test(result.error.message)) {
+      result = (await service
+        .from(table)
+        .select("id, listing_number, title, moderation_status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(limit)) as RowsResult;
+    }
   }
 
-  if (error) {
-    console.warn("fetchAdminListingsForGrid:", error.message);
+  if (result.error) {
+    console.warn("fetchAdminListingsForGrid:", result.error.message);
     return [];
   }
 
-  const ranked = assignFeedRanks(
-    (data ?? []) as unknown as Record<string, unknown>[]
-  );
+  const ranked = assignFeedRanks(result.data ?? []);
   return ranked.map(toAdminRow);
 }
