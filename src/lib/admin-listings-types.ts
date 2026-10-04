@@ -9,6 +9,8 @@ export type AdminListingRow = {
   moderation_status: string | null;
   activation_status: string | null;
   created_at: string | null;
+  /** ios | android | web — yayınlandığı istemci */
+  created_client: string | null;
   feed_rank: number;
   tier_label: string;
   is_demoted: boolean;
