@@ -1,7 +1,8 @@
 import "server-only";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
+import { getSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -9,17 +10,51 @@ export type AdminApiContext =
   | { ok: true; userId: string; service: SupabaseClient }
   | { ok: false; status: 401 | 403 | 500; error: string; message?: string };
 
-/** Web admin: yalnızca sil / askıya al — service_role + admin_profiles doğrulaması. */
+async function resolveUserIdFromRequest(): Promise<string | null> {
+  // 1) Cookie oturumu (web admin)
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.id) return user.id;
+  } catch {
+    /* ignore */
+  }
+
+  // 2) Bearer JWT (mobil uygulama)
+  try {
+    const { headers } = await import("next/headers");
+    const h = await headers();
+    const auth = h.get("authorization") ?? h.get("Authorization");
+    if (!auth?.startsWith("Bearer ")) return null;
+    const jwt = auth.slice("Bearer ".length).trim();
+    if (!jwt) return null;
+    const { url, anonKey } = getSupabaseEnv();
+    const client = createClient(url, anonKey, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const {
+      data: { user },
+      error,
+    } = await client.auth.getUser();
+    if (error || !user) return null;
+    return user.id;
+  } catch {
+    return null;
+  }
+}
+
+/** Web admin + mobil: service_role + admin_profiles doğrulaması. */
 export async function requireAdminServiceClient(): Promise<AdminApiContext> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const userId = await resolveUserIdFromRequest();
+  if (!userId) {
     return { ok: false, status: 401, error: "unauthorized" };
   }
 
-  const admin = await fetchAdminProfileByUserId(supabase, user.id);
+  const probe = createSupabaseServiceClient() ?? (await createSupabaseServerClient());
+  const admin = await fetchAdminProfileByUserId(probe, userId);
   if (!admin) {
     return { ok: false, status: 403, error: "forbidden" };
   }
@@ -34,7 +69,7 @@ export async function requireAdminServiceClient(): Promise<AdminApiContext> {
     };
   }
 
-  return { ok: true, userId: user.id, service };
+  return { ok: true, userId, service };
 }
 
 export const ADMIN_LISTING_TABLES = [
