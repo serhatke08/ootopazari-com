@@ -1033,49 +1033,55 @@ function VehicleCascadeSidebarInner({
               <p className="text-[11px] text-zinc-500">Model yükleniyor...</p>
             ) : (
               <ul className={compact ? "space-y-0.5" : "space-y-1"}>
-                {selectableModels
-                  .map((m) => {
-                    const mCnt =
-                      seriesIdCounts.get(m.id) ??
-                      modelNameCounts.get(
-                        normalizeListingModelKey(rowLabel(m))
-                      ) ??
-                      0;
-                    return { m, mCnt };
-                  })
-                  .filter(
-                    ({ m, mCnt }) =>
-                      !modelCountsReady || m.id === modelId || mCnt > 0
-                  )
-                  .map(({ m, mCnt }) => (
-                    <li key={m.id} className="min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setModelId(m.id);
-                          resetBelowModel();
-                          navigateToListings({
-                            modelId: m.id,
-                            bodyStyleId: "",
-                            engineId: "",
-                            packageId: "",
-                          });
-                        }}
-                        className="flex w-full items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
-                      >
-                        <span className="min-w-0 flex-1 truncate">
-                          {rowLabel(m)}
-                        </span>
-                        {listingCountBadge(mCnt, compact)}
-                        <span
-                          className="shrink-0 text-[8px] text-zinc-400"
-                          aria-hidden
-                        >
-                          ▶
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+                {!modelCountsReady ? (
+                  <li className="min-w-0">
+                    <p className="px-1 py-2 text-[11px] text-zinc-500">
+                      Model yükleniyor...
+                    </p>
+                  </li>
+                ) : null}
+                {modelCountsReady
+                  ? selectableModels
+                      .map((m) => {
+                        const mCnt =
+                          seriesIdCounts.get(m.id) ??
+                          modelNameCounts.get(
+                            normalizeListingModelKey(rowLabel(m))
+                          ) ??
+                          0;
+                        return { m, mCnt };
+                      })
+                      .filter(({ m, mCnt }) => m.id === modelId || mCnt > 0)
+                      .map(({ m, mCnt }) => (
+                        <li key={m.id} className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setModelId(m.id);
+                              resetBelowModel();
+                              navigateToListings({
+                                modelId: m.id,
+                                bodyStyleId: "",
+                                engineId: "",
+                                packageId: "",
+                              });
+                            }}
+                            className="flex w-full items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
+                          >
+                            <span className="min-w-0 flex-1 truncate">
+                              {rowLabel(m)}
+                            </span>
+                            {listingCountBadge(mCnt, compact)}
+                            <span
+                              className="shrink-0 text-[8px] text-zinc-400"
+                              aria-hidden
+                            >
+                              ▶
+                            </span>
+                          </button>
+                        </li>
+                      ))
+                  : null}
               </ul>
             )}
           </li>
@@ -1104,69 +1110,84 @@ function VehicleCascadeSidebarInner({
               </button>
             ) : (
               <ul className={compact ? "space-y-0.5" : "space-y-1"}>
-                {engines
-                  .filter(
-                    (eng) =>
-                      !engineCountsReady ||
-                      eng.id === engineId ||
-                      (engineIdCounts.get(eng.id) ?? 0) > 0
-                  )
-                  .map((eng) => {
-                  const engCnt = engineIdCounts.get(eng.id) ?? 0;
-                  return (
-                    <li key={eng.id} className="min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEngineId(eng.id);
-                          setEngineOther(false);
-                          resetBelowEngine();
-                          navigateToListings({
-                            engineId: eng.id,
-                            engineOther: false,
-                            packageId: "",
-                          });
-                        }}
-                        className="flex w-full items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
+                {!engineCountsReady ? (
+                  <li className="min-w-0">
+                    <p className="px-1 py-2 text-[11px] text-zinc-500">
+                      Motor yükleniyor...
+                    </p>
+                  </li>
+                ) : null}
+                {engineCountsReady
+                  ? engines
+                      .filter(
+                        (eng) =>
+                          eng.id === engineId ||
+                          (engineIdCounts.get(eng.id) ?? 0) > 0
+                      )
+                      .map((eng) => {
+                        const engCnt = engineIdCounts.get(eng.id) ?? 0;
+                        return (
+                          <li key={eng.id} className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEngineId(eng.id);
+                                setEngineOther(false);
+                                resetBelowEngine();
+                                navigateToListings({
+                                  engineId: eng.id,
+                                  engineOther: false,
+                                  packageId: "",
+                                });
+                              }}
+                              className="flex w-full items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-left text-[11px] font-semibold text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50/50"
+                            >
+                              <span className="min-w-0 flex-1 truncate">
+                                {rowLabel(eng)}
+                              </span>
+                              {listingCountBadge(engCnt, compact)}
+                              <span
+                                className="shrink-0 text-[8px] text-zinc-400"
+                                aria-hidden
+                              >
+                                ▶
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })
+                  : null}
+                {engineCountsReady &&
+                (otherEngineCount > 0 || engineOther) ? (
+                  <li className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEngineId("");
+                        setEngineOther(true);
+                        setPackageId("");
+                        navigateToListings({
+                          engineId: "",
+                          engineOther: true,
+                          packageId: "",
+                        });
+                      }}
+                      className={`flex w-full items-center justify-between gap-1.5 rounded-md border px-1.5 py-1 text-left text-[11px] font-semibold transition ${
+                        engineOther
+                          ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                          : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                      }`}
+                    >
+                      <span className="min-w-0 flex-1 truncate">Diğer</span>
+                      {listingCountBadge(otherEngineCount, compact)}
+                      <span
+                        className="shrink-0 text-[8px] text-zinc-400"
+                        aria-hidden
                       >
-                        <span className="min-w-0 flex-1 truncate">
-                          {rowLabel(eng)}
-                        </span>
-                        {listingCountBadge(engCnt, compact)}
-                        <span className="shrink-0 text-[8px] text-zinc-400" aria-hidden>
-                          ▶
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-                {!engineCountsReady || otherEngineCount > 0 || engineOther ? (
-                <li className="min-w-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEngineId("");
-                      setEngineOther(true);
-                      setPackageId("");
-                      navigateToListings({
-                        engineId: "",
-                        engineOther: true,
-                        packageId: "",
-                      });
-                    }}
-                    className={`flex w-full items-center justify-between gap-1.5 rounded-md border px-1.5 py-1 text-left text-[11px] font-semibold transition ${
-                      engineOther
-                        ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                        : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                    }`}
-                  >
-                    <span className="min-w-0 flex-1 truncate">Diğer</span>
-                    {listingCountBadge(otherEngineCount, compact)}
-                    <span className="shrink-0 text-[8px] text-zinc-400" aria-hidden>
-                      ▶
-                    </span>
-                  </button>
-                </li>
+                        ▶
+                      </span>
+                    </button>
+                  </li>
                 ) : null}
               </ul>
             )}
@@ -1191,38 +1212,45 @@ function VehicleCascadeSidebarInner({
               </button>
             ) : (
               <ul className={compact ? "space-y-0.5" : "space-y-1"}>
-                {packages
-                  .filter(
-                    (pk) =>
-                      !packageCountsReady ||
-                      pk.id === packageId ||
-                      (packageIdCounts.get(pk.id) ?? 0) > 0
-                  )
-                  .map((pk) => {
-                  const pkActive = packageId === pk.id;
-                  const pkCnt = packageIdCounts.get(pk.id) ?? 0;
-                  return (
-                    <li key={pk.id} className="min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPackageId(pk.id);
-                          navigateToListings({ packageId: pk.id });
-                        }}
-                        className={`flex w-full items-center justify-between gap-1.5 rounded-md border px-1.5 py-1 text-left text-[11px] font-semibold transition ${
-                          pkActive
-                            ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
-                            : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
-                        }`}
-                      >
-                        <span className="min-w-0 flex-1 truncate">
-                          {rowLabel(pk)}
-                        </span>
-                        {listingCountBadge(pkCnt, compact)}
-                      </button>
-                    </li>
-                  );
-                })}
+                {!packageCountsReady ? (
+                  <li className="min-w-0">
+                    <p className="px-1 py-2 text-[11px] text-zinc-500">
+                      Paket yükleniyor...
+                    </p>
+                  </li>
+                ) : (
+                  packages
+                    .filter(
+                      (pk) =>
+                        pk.id === packageId ||
+                        (packageIdCounts.get(pk.id) ?? 0) > 0
+                    )
+                    .map((pk) => {
+                      const pkActive = packageId === pk.id;
+                      const pkCnt = packageIdCounts.get(pk.id) ?? 0;
+                      return (
+                        <li key={pk.id} className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPackageId(pk.id);
+                              navigateToListings({ packageId: pk.id });
+                            }}
+                            className={`flex w-full items-center justify-between gap-1.5 rounded-md border px-1.5 py-1 text-left text-[11px] font-semibold transition ${
+                              pkActive
+                                ? "border-amber-500 bg-[#ffcc00] text-zinc-900 ring-1 ring-amber-400/70"
+                                : "border-zinc-200 bg-white text-zinc-800 hover:border-amber-300 hover:bg-amber-50/50"
+                            }`}
+                          >
+                            <span className="min-w-0 flex-1 truncate">
+                              {rowLabel(pk)}
+                            </span>
+                            {listingCountBadge(pkCnt, compact)}
+                          </button>
+                        </li>
+                      );
+                    })
+                )}
               </ul>
             )}
           </li>
