@@ -12,6 +12,7 @@ import {
   normalizeGsmNo,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
+import { bindEidsKullaniciToProfile } from "@/lib/eids-bind";
 import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -171,15 +172,23 @@ async function completeMinistryApis(
           (kk.ok ? null : `http_${kk.httpStatus}`);
 
         if (kk.ok && kk.kullaniciKodu) {
-          await admin
-            .from("profiles")
-            .update({
-              eids_kullanici_kodu: kk.kullaniciKodu,
-              eids_ad: kk.ad ?? null,
-              eids_soyad: kk.soyad ?? null,
-              eids_verified_at: new Date().toISOString(),
-            })
-            .eq("id", session.user_id);
+          const bound = await bindEidsKullaniciToProfile(admin, {
+            userId: session.user_id,
+            kullaniciKodu: kk.kullaniciKodu,
+            ad: kk.ad ?? null,
+            soyad: kk.soyad ?? null,
+          });
+          if (bound.ok) {
+            kullaniciOk = true;
+            kullaniciKodu = kk.kullaniciKodu;
+            kullaniciAd = kk.ad ?? null;
+            kullaniciSoyad = kk.soyad ?? null;
+            kullaniciHata = null;
+          } else {
+            kullaniciOk = false;
+            kullaniciKodu = null;
+            kullaniciHata = bound.error;
+          }
         }
       } catch (e) {
         kullaniciHata =

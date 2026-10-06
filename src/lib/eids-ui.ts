@@ -23,6 +23,12 @@ export function isEidsMinistryGateError(
 export function humanizeEidsFailMessage(
   durum: string | null | undefined
 ): string {
+  if (durum === "eids_already_linked") {
+    return (
+      "Bu e-Devlet hesabı başka bir Oto Pazarı hesabına zaten bağlı. " +
+      "Bir e-Devlet yalnızca bir uygulamaya bağlanabilir."
+    );
+  }
   if (isEidsMinistryGateError(durum)) {
     return (
       "e-Devlet girişi tamamlandı; Ticaret Bakanlığı API şu an kullanıcı kodunu vermiyor (03_). " +

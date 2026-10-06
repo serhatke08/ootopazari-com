@@ -6,6 +6,7 @@ import {
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
 import { eidsDurumIsSuccess, type EidsSessionRow } from "@/lib/eids";
+import { bindEidsKullaniciToProfile } from "@/lib/eids-bind";
 import { resolveRequestUser } from "@/lib/supabase/request-user";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -135,16 +136,18 @@ export async function POST(req: Request) {
       try {
         const kk = await callGetKullaniciKodu({ yetkiKodu, gsmNo });
         if (kk.ok && kk.kullaniciKodu) {
-          kullaniciKodu = kk.kullaniciKodu;
-          await admin
-            .from("profiles")
-            .update({
-              eids_kullanici_kodu: kk.kullaniciKodu,
-              eids_ad: kk.ad ?? null,
-              eids_soyad: kk.soyad ?? null,
-              eids_verified_at: new Date().toISOString(),
-            })
-            .eq("id", user.id);
+          const bound = await bindEidsKullaniciToProfile(admin, {
+            userId: user.id,
+            kullaniciKodu: kk.kullaniciKodu,
+            ad: kk.ad ?? null,
+            soyad: kk.soyad ?? null,
+          });
+          if (bound.ok) {
+            kullaniciKodu = kk.kullaniciKodu;
+          } else {
+            kullaniciHata = bound.error;
+            kullaniciKodu = null;
+          }
         } else {
           kullaniciHata =
             kk.hataMesaji || kk.hataKodu || `http_${kk.httpStatus}`;
@@ -194,13 +197,15 @@ export async function POST(req: Request) {
   }
 
   const ok = edevletOk && Boolean(kullaniciKodu);
+  const err = ok ? null : kullaniciHata || "kullanici_failed";
   return NextResponse.json({
     ok,
     listingId: session.listing_id,
     kullaniciKodu,
-    error: ok ? null : kullaniciHata || "kullanici_failed",
-    gsmHint: ok
-      ? null
-      : "Telefon numarası uyuşmazlığı. Profildeki numara, e-Devlet’teki telefon numarasıyla aynı olmalı (5xxxxxxxxx).",
+    error: err,
+    gsmHint:
+      ok || err === "eids_already_linked"
+        ? null
+        : "Telefon numarası uyuşmazlığı. Profildeki numara, e-Devlet’teki telefon numarasıyla aynı olmalı (5xxxxxxxxx).",
   });
 }

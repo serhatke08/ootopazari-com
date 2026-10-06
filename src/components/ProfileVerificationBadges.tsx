@@ -207,21 +207,27 @@ export function ProfileVerificationBadges({
                     {eidsOk ? "Doğrulandı" : "Bekliyor"}
                   </p>
                   {!eidsOk ? (
-                    <Link
-                      href="/profil/eids"
-                      onClick={close}
-                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#ffcc00] px-3 py-1.5 text-xs font-bold text-zinc-900 hover:bg-[#f0c000]"
-                    >
-                      <Image
-                        src="/branding/edevlet_icon.png"
-                        alt=""
-                        width={16}
-                        height={16}
-                        className="h-4 w-4 object-contain"
-                        unoptimized
-                      />
-                      e-Devlet ile doğrula
-                    </Link>
+                    <>
+                      <Link
+                        href="/profil/eids"
+                        onClick={close}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#ffcc00] px-3 py-1.5 text-xs font-bold text-zinc-900 hover:bg-[#f0c000]"
+                      >
+                        <Image
+                          src="/branding/edevlet_icon.png"
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="h-4 w-4 object-contain"
+                          unoptimized
+                        />
+                        e-Devlet ile doğrula
+                      </Link>
+                      <p className="mt-2 text-[11px] font-medium leading-snug text-zinc-500">
+                        Bir e-Devlet hesabı yalnızca bir Oto Pazarı hesabına
+                        bağlanabilir.
+                      </p>
+                    </>
                   ) : null}
                 </div>
               </li>
