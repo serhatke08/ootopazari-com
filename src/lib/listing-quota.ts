@@ -6,6 +6,10 @@ import type { ApplicationStatus, PaymentStatus } from "@/lib/bayi-types";
 export const YEARLY_FREE_LISTING_QUOTA = 5;
 export const FREE_LISTING_WINDOW_DAYS = 365;
 export const LISTING_ACTIVE_DAYS = 30;
+/** Ücretsiz hak bitince yeni ilan pasife düşer; aktifleştirme ücreti (TRY). */
+export const PAID_LISTING_ACTIVATION_FEE_TRY = 199.99;
+export const ACTIVATION_STATUS_ACTIVE = "active";
+export const ACTIVATION_STATUS_PASSIVE_PAYMENT = "passive_payment_required";
 /** Pasif ilan hesapta bu kadar gün kalır; sonra listings_archived'a taşınır. */
 export const LISTING_EXPIRED_GRACE_DAYS = 15;
 export const LISTINGS_ARCHIVED_TABLE = "listings_archived";

@@ -252,6 +252,8 @@ const LISTING_CLIENT_WRITE_KEYS = new Set([
 const LISTING_CLIENT_INSERT_ONLY_KEYS = new Set([
   "user_id",
   "activated_at",
+  "activation_status",
+  "activation_fee_amount",
   "moderation_status",
   "moderation_reason",
   "created_client",

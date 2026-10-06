@@ -46,6 +46,7 @@ export function PublishSuccessOverlay(props: PublishSuccessOverlayProps) {
   }, [props.kind, nextHref, delayMs]);
 
   if (props.kind === "toast") {
+    const passivePublish = nextHref.includes("passive=");
     return (
       <div
         className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
@@ -57,10 +58,12 @@ export function PublishSuccessOverlay(props: PublishSuccessOverlayProps) {
             ✓
           </div>
           <h2 className="mt-4 text-center text-xl font-black tracking-tight text-zinc-950">
-            Yayınlandı!
+            {passivePublish ? "Pasife kaydedildi" : "Yayınlandı!"}
           </h2>
           <p className="mt-1 text-center text-sm text-zinc-600">
-            İlanın yayına alındı. Paket seçimine yönlendiriliyorsun…
+            {passivePublish
+              ? "Ücretsiz hakkın dolu. İlan pasifte — İlanlarım’dan 199,99 ₺ ile aktifleştir."
+              : "İlanın yayına alındı. Paket seçimine yönlendiriliyorsun…"}
           </p>
           <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
             <MiniListingCard preview={preview} />

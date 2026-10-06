@@ -64,6 +64,9 @@ import {
 import { ExpertizCarPreview } from "@/components/ExpertizDiagram";
 import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
 import {
+  ACTIVATION_STATUS_ACTIVE,
+  ACTIVATION_STATUS_PASSIVE_PAYMENT,
+  PAID_LISTING_ACTIVATION_FEE_TRY,
   recordActivationUse,
   type ListingQuotaSnapshot,
 } from "@/lib/listing-quota";
@@ -1348,15 +1351,20 @@ export function CreateListingWizard({
         return;
       }
 
-      if (listingQuota && !listingQuota.unlimited && listingQuota.remaining <= 0) {
-        setErr(
-          `Son 12 ayda ${listingQuota.limit} ücretsiz yayın hakkınız doldu.`
-        );
-        return;
-      }
+      const freeRightsLeft =
+        !listingQuota ||
+        listingQuota.unlimited ||
+        listingQuota.remaining > 0;
+      const publishAsPassive = !freeRightsLeft;
 
       base.user_id = uid;
-      base.activated_at = new Date().toISOString();
+      base.activation_status = publishAsPassive
+        ? ACTIVATION_STATUS_PASSIVE_PAYMENT
+        : ACTIVATION_STATUS_ACTIVE;
+      base.activation_fee_amount = PAID_LISTING_ACTIVATION_FEE_TRY;
+      if (!publishAsPassive) {
+        base.activated_at = new Date().toISOString();
+      }
       Object.assign(base, listingCreatedClientField());
 
       const duplicateId = await findLiveDuplicateListingId(supabase, {
@@ -1398,12 +1406,14 @@ export function CreateListingWizard({
       }
 
       const listingId = inserted.id as string;
-      await recordActivationUse(
-        supabase,
-        uid,
-        listingId,
-        listingQuota?.unlimited ? "membership" : "free"
-      );
+      if (!publishAsPassive) {
+        await recordActivationUse(
+          supabase,
+          uid,
+          listingId,
+          listingQuota?.unlimited ? "membership" : "free"
+        );
+      }
 
       // Görsel yükleme - hata olursa ilan silinecek
       let uploadSuccess = false;
@@ -1470,7 +1480,9 @@ export function CreateListingWizard({
       await evaluateListingQualityAfterSave(supabase, listingId, "listings");
 
       await deleteListingDraft();
-      window.location.href = "/profil/ilanlarim";
+      window.location.href = publishAsPassive
+        ? `/profil/ilanlarim?passive=${encodeURIComponent(listingId)}`
+        : "/profil/ilanlarim";
       published = true;
     } finally {
       if (!published) {
@@ -1531,9 +1543,13 @@ export function CreateListingWizard({
           ) : null}
         </div>
         {!isEditMode && listingQuota && !listingQuota.unlimited && listingQuota.remaining <= 0 ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            Son 12 ayda {listingQuota.limit} ücretsiz yayın hakkınız doldu.
-            Pasif ilanı tekrar aktif etmek de 1 hak kullanır.
+          <p className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-950">
+            Son 12 ayda {listingQuota.limit} ücretsiz hakkın doldu. İlan yine
+            kaydedilir ama pasife düşer; vitrine çıkarmak için{" "}
+            {PAID_LISTING_ACTIVATION_FEE_TRY.toLocaleString("tr-TR", {
+              minimumFractionDigits: 2,
+            })}{" "}
+            ₺ ödersin.
           </p>
         ) : null}
 

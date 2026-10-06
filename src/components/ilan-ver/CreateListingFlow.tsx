@@ -64,6 +64,9 @@ import { getSupabaseEnv } from "@/lib/env";
 import { fetchCities, type CategoryRow } from "@/lib/listings-data";
 import { publicListingImageUrl } from "@/lib/storage";
 import {
+  ACTIVATION_STATUS_ACTIVE,
+  ACTIVATION_STATUS_PASSIVE_PAYMENT,
+  PAID_LISTING_ACTIVATION_FEE_TRY,
   recordActivationUse,
   type ListingQuotaSnapshot,
 } from "@/lib/listing-quota";
@@ -1901,15 +1904,11 @@ export function CreateListingFlow({
         return;
       }
 
-      if (
-        !isEditMode &&
-        listingQuota &&
-        !listingQuota.unlimited &&
-        listingQuota.remaining <= 0
-      ) {
-        setErr(`Son 12 ayda ${listingQuota.limit} ücretsiz hakkınız doldu.`);
-        return;
-      }
+      const freeRightsLeft =
+        !listingQuota ||
+        listingQuota.unlimited ||
+        listingQuota.remaining > 0;
+      const publishAsPassive = !isEditMode && !freeRightsLeft;
 
       const resolvedModel = childId || parentId || modelId;
 
@@ -1944,7 +1943,13 @@ export function CreateListingFlow({
       };
       if (!isEditMode) {
         base.user_id = user.id;
-        base.activated_at = new Date().toISOString();
+        base.activation_status = publishAsPassive
+          ? ACTIVATION_STATUS_PASSIVE_PAYMENT
+          : ACTIVATION_STATUS_ACTIVE;
+        base.activation_fee_amount = PAID_LISTING_ACTIVATION_FEE_TRY;
+        if (!publishAsPassive) {
+          base.activated_at = new Date().toISOString();
+        }
         Object.assign(base, moderationPayload(), listingCreatedClientField());
       } else {
         Object.assign(base, moderationPayload());
@@ -2128,12 +2133,15 @@ export function CreateListingFlow({
       }
 
       const listingId = inserted.id as string;
-      await recordActivationUse(
-        supabase,
-        user.id,
-        listingId,
-        listingQuota?.unlimited ? "membership" : "free"
-      );
+      // Pasif yayın ücretsiz hak tüketmez; aktif yayın membership/free kaydı yazar.
+      if (!publishAsPassive) {
+        await recordActivationUse(
+          supabase,
+          user.id,
+          listingId,
+          listingQuota?.unlimited ? "membership" : "free"
+        );
+      }
 
       const env = getSupabaseEnv();
       const prepared = await compressListingImageFiles(files);
@@ -2182,6 +2190,16 @@ export function CreateListingFlow({
           : `${priceNum.toLocaleString("tr-TR")} ₺`,
         metaLine: metaParts.join(" · "),
       };
+
+      // Pasif yayın: vitrine düşmez; İlanlarım’dan 199,99 ₺ ile aktifleştirilir.
+      if (publishAsPassive) {
+        setPublishOverlay({
+          kind: "toast",
+          preview,
+          nextHref: `/profil/ilanlarim?passive=${encodeURIComponent(listingRef)}`,
+        });
+        return;
+      }
 
       let nextHref: string | null = null;
       if (packageIntent === "boost" || packageIntent === "both") {
@@ -2402,8 +2420,21 @@ export function CreateListingFlow({
             </button>
           )}
           {!isEditMode && listingQuota && !listingQuota.unlimited ? (
-            <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
-              Hak: {listingQuota.remaining}/{listingQuota.limit}
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                listingQuota.remaining <= 0
+                  ? "bg-orange-50 text-orange-900"
+                  : "bg-amber-50 text-amber-900"
+              }`}
+              title={
+                listingQuota.remaining <= 0
+                  ? `Ücretsiz hak bitti — ilan pasife düşer, aktifleştirme ${PAID_LISTING_ACTIVATION_FEE_TRY.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺`
+                  : undefined
+              }
+            >
+              {listingQuota.remaining <= 0
+                ? `Hak doldu · pasif + ${PAID_LISTING_ACTIVATION_FEE_TRY.toLocaleString("tr-TR", { minimumFractionDigits: 0 })} ₺`
+                : `Hak: ${listingQuota.remaining}/${listingQuota.limit}`}
             </span>
           ) : null}
         </div>
@@ -2422,10 +2453,6 @@ export function CreateListingFlow({
           title={selectionTrail.join(" › ")}
         >
           {selectionTrail.join(" › ")}
-        </p>
-      ) : page === "category" ? (
-        <p className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50 px-3 py-2 text-[12.5px] font-semibold leading-snug text-zinc-500">
-          Seçimlerin burada görünecek
         </p>
       ) : null}
 
