@@ -257,6 +257,9 @@ const LISTING_CLIENT_INSERT_ONLY_KEYS = new Set([
   "created_client",
 ]);
 
+/** Türkiye mağaza — ana sayfa `country_id` filtresi bunu bekler. */
+export const TURKEY_COUNTRY_ID = "00000000-0000-0000-0000-000000000001";
+
 /** Tarayıcıdan gelen ilan yazımında öne çıkar / askı / sahte user_id yok. */
 export function sanitizeListingClientWrite(
   raw: Record<string, unknown>,
@@ -275,6 +278,11 @@ export function sanitizeListingClientWrite(
   }
   if (mode === "update" && options?.qualityResubmitPending) {
     out.moderation_status = "pending";
+  }
+  // country_id null kalırsa TR feed `.eq(country_id)` ile ilanı gizler.
+  const cid = out.country_id;
+  if (cid == null || String(cid).trim() === "") {
+    out.country_id = TURKEY_COUNTRY_ID;
   }
   return out;
 }

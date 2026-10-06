@@ -28,6 +28,7 @@ import {
   formatPriceThousandsTr,
   formatMileageThousandsTr,
   sanitizeListingClientWrite,
+  TURKEY_COUNTRY_ID,
 } from "@/lib/listing-create";
 import type { ExpertizDurum } from "@/lib/expertiz";
 import {
@@ -344,6 +345,10 @@ export function CreateListingFlow({
   const [packageIntent, setPackageIntent] = useState<
     "none" | "acil" | "boost" | "both"
   >("none");
+  /** Boosts adımında hangi sekmenin detayı açık. */
+  const [boostsDetailTab, setBoostsDetailTab] = useState<"boost" | "acil">(
+    "boost"
+  );
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -1919,7 +1924,7 @@ export function CreateListingFlow({
       } else {
         Object.assign(base, moderationPayload());
       }
-      if (userCountryId) base.country_id = userCountryId;
+      base.country_id = userCountryId?.trim() || TURKEY_COUNTRY_ID;
       if (isVehicle) {
         base.vehicle_brand_id = brandId;
         base.vehicle_model = modelName || "—";
@@ -3445,64 +3450,50 @@ export function CreateListingFlow({
             İsteğe bağlı. Paket seçersen yayın sonrası ödeme sayfasına
             gidersin; seçmezsen paketsiz yayınlanır.
           </p>
-          <button
-            type="button"
-            onClick={() => togglePackageIntent("acil")}
-            className={`w-full rounded-xl border-2 p-4 text-left transition ${
-              packageIntent === "acil" || packageIntent === "both"
-                ? "border-orange-500 bg-orange-50"
-                : "border-zinc-200 bg-white hover:bg-zinc-50"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <span
-                className={`mt-0.5 text-lg ${
-                  packageIntent === "acil" || packageIntent === "both"
-                    ? "text-orange-600"
-                    : "text-zinc-300"
-                }`}
-              >
-                {packageIntent === "acil" || packageIntent === "both"
-                  ? "●"
-                  : "○"}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm font-bold text-zinc-900">Acil ilan</p>
-                  <p className="text-sm font-extrabold text-orange-700">
-                    {ACIL_PACKS.map((p) => `${p.label} ${p.priceTry}₺`).join(
-                      " · "
-                    )}
-                  </p>
-                </div>
-                <p className="mt-0.5 text-xs text-zinc-600">
-                  Acil vitrinde öne çıksın, alıcılar daha çabuk görsün.
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setBoostsDetailTab("boost")}
+              className={`rounded-xl border-2 px-3 py-3 text-center transition ${
+                boostsDetailTab === "boost"
+                  ? "border-indigo-600 bg-indigo-50"
+                  : "border-zinc-200 bg-white hover:bg-zinc-50"
+              }`}
+            >
+              <p className="text-sm font-black text-zinc-900">Öne çıkarma</p>
+              {(packageIntent === "boost" || packageIntent === "both") && (
+                <p className="mt-0.5 text-[11px] font-bold text-indigo-700">
+                  ✓ seçili
                 </p>
-              </div>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => togglePackageIntent("boost")}
-            className={`w-full rounded-xl border-2 p-4 text-left transition ${
-              packageIntent === "boost" || packageIntent === "both"
-                ? "border-indigo-600 bg-indigo-50"
-                : "border-zinc-200 bg-white hover:bg-zinc-50"
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setBoostsDetailTab("acil")}
+              className={`rounded-xl border-2 px-3 py-3 text-center transition ${
+                boostsDetailTab === "acil"
+                  ? "border-orange-500 bg-orange-50"
+                  : "border-zinc-200 bg-white hover:bg-zinc-50"
+              }`}
+            >
+              <p className="text-sm font-black text-zinc-900">Acil</p>
+              {(packageIntent === "acil" || packageIntent === "both") && (
+                <p className="mt-0.5 text-[11px] font-bold text-orange-700">
+                  ✓ seçili
+                </p>
+              )}
+            </button>
+          </div>
+
+          <div
+            className={`rounded-xl border-2 p-4 ${
+              boostsDetailTab === "boost"
+                ? "border-indigo-200 bg-white"
+                : "border-orange-200 bg-white"
             }`}
           >
-            <div className="flex items-start gap-3">
-              <span
-                className={`mt-0.5 text-lg ${
-                  packageIntent === "boost" || packageIntent === "both"
-                    ? "text-indigo-600"
-                    : "text-zinc-300"
-                }`}
-              >
-                {packageIntent === "boost" || packageIntent === "both"
-                  ? "●"
-                  : "○"}
-              </span>
-              <div className="min-w-0 flex-1">
+            {boostsDetailTab === "boost" ? (
+              <>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-sm font-bold text-zinc-900">Öne çıkarma</p>
                   <p className="text-sm font-extrabold text-indigo-700">
@@ -3513,13 +3504,54 @@ export function CreateListingFlow({
                     )}
                   </p>
                 </div>
-                <p className="mt-0.5 text-xs text-zinc-600">
+                <p className="mt-1 text-xs text-zinc-600">
                   Ana akışta daha görünür olsun. (
                   {FEATURE_BOOST_PACKS.map((p) => p.label).join(" / ")})
                 </p>
-              </div>
-            </div>
-          </button>
+                <button
+                  type="button"
+                  onClick={() => togglePackageIntent("boost")}
+                  className={`mt-3 w-full rounded-lg px-3 py-2.5 text-sm font-bold ${
+                    packageIntent === "boost" || packageIntent === "both"
+                      ? "bg-indigo-100 text-indigo-900"
+                      : "bg-zinc-100 text-zinc-800"
+                  }`}
+                >
+                  {packageIntent === "boost" || packageIntent === "both"
+                    ? "Seçildi · kaldırmak için dokun"
+                    : "Bu paketi seç"}
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-sm font-bold text-zinc-900">Acil ilan</p>
+                  <p className="text-sm font-extrabold text-orange-700">
+                    {ACIL_PACKS.map((p) => `${p.label} ${p.priceTry}₺`).join(
+                      " · "
+                    )}
+                  </p>
+                </div>
+                <p className="mt-1 text-xs text-zinc-600">
+                  Acil vitrinde öne çıksın, alıcılar daha çabuk görsün.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => togglePackageIntent("acil")}
+                  className={`mt-3 w-full rounded-lg px-3 py-2.5 text-sm font-bold ${
+                    packageIntent === "acil" || packageIntent === "both"
+                      ? "bg-orange-100 text-orange-900"
+                      : "bg-zinc-100 text-zinc-800"
+                  }`}
+                >
+                  {packageIntent === "acil" || packageIntent === "both"
+                    ? "Seçildi · kaldırmak için dokun"
+                    : "Bu paketi seç"}
+                </button>
+              </>
+            )}
+          </div>
+
           <p className="text-xs text-zinc-500">
             Paketsiz devam edersen doğrudan yayınlanır. Paket seçtiysen ödeme
             tamamlanınca vitrin / öne çıkarma aktif olur.

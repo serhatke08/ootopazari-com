@@ -31,6 +31,7 @@ import {
   formatPriceThousandsTr,
   formatMileageThousandsTr,
   sanitizeListingClientWrite,
+  TURKEY_COUNTRY_ID,
 } from "@/lib/listing-create";
 import { listingCreatedClientField } from "@/lib/client-analytics";
 import { compressListingImageFiles } from "@/lib/compress-listing-image";
@@ -1185,7 +1186,7 @@ export function CreateListingWizard({
       contact_phone: formatContactPhone(ten),
       ...moderationPayload(),
     };
-    if (userCountryId) base.country_id = userCountryId;
+    base.country_id = userCountryId?.trim() || TURKEY_COUNTRY_ID;
 
     if (isVehicle) {
       base.vehicle_brand_id = brandOther ? null : brandId;
