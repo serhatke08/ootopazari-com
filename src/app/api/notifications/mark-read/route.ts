@@ -25,11 +25,13 @@ export async function POST(req: Request) {
 
   const now = new Date().toISOString();
   const mine = `user_id.eq.${user.id},recipient_id.eq.${user.id}`;
+  // Web read_at + app is_read birlikte güncellenir — tek taraflı “okundu sıfırlandı” olmaz.
+  const patch = { read_at: now, is_read: true };
 
   if (markAll) {
     const { error } = await supabase
       .from("user_notifications")
-      .update({ read_at: now })
+      .update(patch)
       .or(mine)
       .is("read_at", null);
     if (error) {
@@ -38,6 +40,12 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+    // Eski app kayıtları: is_read=false ama read_at dolu kalmış olabilir
+    await supabase
+      .from("user_notifications")
+      .update(patch)
+      .or(mine)
+      .eq("is_read", false);
     return NextResponse.json({ ok: true });
   }
 
@@ -45,9 +53,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "notificationId" }, { status: 400 });
   }
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("user_notifications")
-    .update({ read_at: now })
+    .update(patch, { count: "exact" })
     .eq("id", notificationId)
     .or(mine);
 
@@ -55,6 +63,12 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { ok: false, message: error.message },
       { status: 500 }
+    );
+  }
+  if ((count ?? 0) < 1) {
+    return NextResponse.json(
+      { ok: false, message: "not_updated" },
+      { status: 404 }
     );
   }
   return NextResponse.json({ ok: true });

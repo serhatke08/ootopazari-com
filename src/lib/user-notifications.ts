@@ -9,8 +9,16 @@ export type UserNotificationRow = {
   listing_id: string | null;
   conversation_id?: string | null;
   read_at: string | null;
+  is_read?: boolean | null;
   created_at: string;
 };
+
+export function notificationIsUnread(n: {
+  read_at?: string | null;
+  is_read?: boolean | null;
+}): boolean {
+  return n.read_at == null && n.is_read !== true;
+}
 
 export async function fetchUserNotifications(
   supabase: SupabaseClient,
@@ -20,7 +28,7 @@ export async function fetchUserNotifications(
   const { data, error } = await supabase
     .from("user_notifications")
     .select(
-      "id,user_id,type,title,body,listing_id,conversation_id,read_at,created_at"
+      "id,user_id,type,title,body,listing_id,conversation_id,read_at,is_read,created_at"
     )
     .or(`user_id.eq.${userId},recipient_id.eq.${userId}`)
     .order("created_at", { ascending: false })
@@ -54,6 +62,13 @@ export async function countUnreadNotifications(
   return count ?? 0;
 }
 
+function readPatch() {
+  return {
+    read_at: new Date().toISOString(),
+    is_read: true,
+  };
+}
+
 export async function markNotificationRead(
   supabase: SupabaseClient,
   userId: string,
@@ -62,7 +77,7 @@ export async function markNotificationRead(
   const mine = `user_id.eq.${userId},recipient_id.eq.${userId}`;
   const { error } = await supabase
     .from("user_notifications")
-    .update({ read_at: new Date().toISOString() })
+    .update(readPatch())
     .eq("id", notificationId)
     .or(mine);
 
@@ -74,11 +89,17 @@ export async function markAllNotificationsRead(
   userId: string
 ): Promise<boolean> {
   const mine = `user_id.eq.${userId},recipient_id.eq.${userId}`;
+  const patch = readPatch();
   const { error } = await supabase
     .from("user_notifications")
-    .update({ read_at: new Date().toISOString() })
+    .update(patch)
     .or(mine)
     .is("read_at", null);
-
-  return !error;
+  if (error) return false;
+  await supabase
+    .from("user_notifications")
+    .update(patch)
+    .or(mine)
+    .eq("is_read", false);
+  return true;
 }

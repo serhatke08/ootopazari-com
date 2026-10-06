@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildListingSeoPath } from "@/lib/listing-seo";
-import { fetchUserNotifications } from "@/lib/user-notifications";
+import {
+  fetchUserNotifications,
+  notificationIsUnread,
+} from "@/lib/user-notifications";
 import { NotificationsMarkControls } from "@/components/NotificationsMarkControls";
 
 export default async function ProfilBildirimlerPage() {
@@ -45,7 +48,7 @@ export default async function ProfilBildirimlerPage() {
     <div className="mx-auto mt-8 w-full max-w-lg">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-zinc-900">Bildirimler</h2>
-        {rows.some((r) => r.read_at == null) ? (
+        {rows.some((r) => notificationIsUnread(r)) ? (
           <NotificationsMarkControls markAll />
         ) : null}
       </div>
@@ -54,7 +57,7 @@ export default async function ProfilBildirimlerPage() {
       ) : (
         <ul className="mt-4 space-y-2">
           {rows.map((n) => {
-            const unread = n.read_at == null;
+            const unread = notificationIsUnread(n);
             const href =
               n.type === "message" && n.conversation_id
                 ? `/mesajlar/${n.conversation_id}`

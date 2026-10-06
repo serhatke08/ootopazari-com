@@ -27,6 +27,7 @@ export function useUnreadNotificationCount(
           return;
         }
 
+        // Okunmamış = read_at yok (is_read ile senkron tutuluyor)
         const { count: c } = await supabase
           .from("user_notifications")
           .select("*", { count: "exact", head: true })

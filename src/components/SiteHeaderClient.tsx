@@ -95,6 +95,7 @@ type HeaderNotification = {
   listing_id: string | null;
   conversation_id: string | null;
   read_at: string | null;
+  is_read?: boolean | null;
   created_at: string;
   /** Çözülmüş hedef (ilan / mesaj). */
   href?: string | null;
@@ -355,7 +356,7 @@ export function SiteHeaderClient({
       const { data } = await supabase
         .from("user_notifications")
         .select(
-          "id,title,body,type,listing_id,conversation_id,read_at,created_at"
+          "id,title,body,type,listing_id,conversation_id,read_at,is_read,created_at"
         )
         .or(`user_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
@@ -420,7 +421,7 @@ export function SiteHeaderClient({
     setNotifications((prev) =>
       prev.map((n) =>
         n.id === notificationId
-          ? { ...n, read_at: new Date().toISOString() }
+          ? { ...n, read_at: new Date().toISOString(), is_read: true }
           : n
       )
     );
@@ -434,7 +435,9 @@ export function SiteHeaderClient({
     });
     if (!res.ok) return;
     const now = new Date().toISOString();
-    setNotifications((prev) => prev.map((n) => ({ ...n, read_at: now })));
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read_at: now, is_read: true }))
+    );
   }
 
   const hideTopNavOnMobile = isListingDetailPath(pathname);
@@ -564,7 +567,9 @@ export function SiteHeaderClient({
                             <p className="text-sm font-semibold text-zinc-900">
                               Bildirimler
                             </p>
-                            {notifications.some((n) => n.read_at == null) ? (
+                            {notifications.some(
+                              (n) => n.read_at == null && n.is_read !== true
+                            ) ? (
                               <button
                                 type="button"
                                 onClick={() => void markAll()}
@@ -586,7 +591,8 @@ export function SiteHeaderClient({
                             ) : (
                               <ul className="space-y-1.5">
                                 {notifications.map((n) => {
-                                  const unread = n.read_at == null;
+                                  const unread =
+                                    n.read_at == null && n.is_read !== true;
                                   const cardClass = `block rounded-lg border px-2.5 py-2 text-left transition hover:border-amber-300 hover:bg-amber-50/50 ${
                                     unread
                                       ? "border-amber-200 bg-amber-50/70"
