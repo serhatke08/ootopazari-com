@@ -48,6 +48,10 @@ export type ListingDraftPayload = {
   imagePaths?: string[];
   coverPhotoIndex?: number;
   packageIntent?: string;
+  /** Öne çıkarma ürün id (`feature_boost_…`) */
+  boostProductId?: string | null;
+  /** Acil ürün id (`acil_5d` / `acil_15d`) */
+  acilProductId?: string | null;
   pageIndex?: number;
   /** web wizard step 1..n */
   webStep?: number;

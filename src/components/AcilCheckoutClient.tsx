@@ -15,9 +15,14 @@ type ListingOpt = {
 type Props = {
   listings: ListingOpt[];
   initialListingKey?: string | null;
+  initialPackId?: string | null;
 };
 
-export function AcilCheckoutClient({ listings, initialListingKey }: Props) {
+export function AcilCheckoutClient({
+  listings,
+  initialListingKey,
+  initialPackId,
+}: Props) {
   const initial = useMemo(() => {
     if (!initialListingKey) return listings[0]?.id ?? "";
     const key = initialListingKey.trim();
@@ -29,7 +34,12 @@ export function AcilCheckoutClient({ listings, initialListingKey }: Props) {
   }, [listings, initialListingKey]);
 
   const [listingId, setListingId] = useState(initial);
-  const [packId, setPackId] = useState<string>(ACIL_PACKS[0]?.productId ?? "");
+  /** Paket seçilmeden 0 ₺ / buton pasif. */
+  const [packId, setPackId] = useState<string>(() => {
+    const key = initialPackId?.trim() ?? "";
+    if (!key) return "";
+    return ACIL_PACKS.some((p) => p.productId === key) ? key : "";
+  });
   const [msg, setMsg] = useState<string | null>(null);
 
   const selected = listings.find((l) => l.id === listingId) ?? null;
@@ -70,7 +80,9 @@ export function AcilCheckoutClient({ listings, initialListingKey }: Props) {
           <button
             key={p.productId}
             type="button"
-            onClick={() => setPackId(p.productId)}
+            onClick={() =>
+              setPackId((prev) => (prev === p.productId ? "" : p.productId))
+            }
             className={`flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition ${
               packId === p.productId
                 ? "border-orange-500 bg-orange-50"
@@ -105,7 +117,7 @@ export function AcilCheckoutClient({ listings, initialListingKey }: Props) {
       >
         {pack
           ? `Öde · ${formatTryPrice(pack.priceTry)}`
-          : "Paket seç"}
+          : "Öde · 0 ₺"}
       </button>
 
       <p className="text-center text-xs text-zinc-500">

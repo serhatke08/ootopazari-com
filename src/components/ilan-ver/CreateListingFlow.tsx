@@ -345,10 +345,22 @@ export function CreateListingFlow({
   const [packageIntent, setPackageIntent] = useState<
     "none" | "acil" | "boost" | "both"
   >("none");
+  const [boostProductId, setBoostProductId] = useState<string | null>(null);
+  const [acilProductId, setAcilProductId] = useState<string | null>(null);
   /** Boosts adımında hangi sekmenin detayı açık. */
   const [boostsDetailTab, setBoostsDetailTab] = useState<"boost" | "acil">(
     "boost"
   );
+
+  function syncPackageIntent(
+    nextBoost: string | null,
+    nextAcil: string | null
+  ): "none" | "acil" | "boost" | "both" {
+    if (nextBoost && nextAcil) return "both";
+    if (nextBoost) return "boost";
+    if (nextAcil) return "acil";
+    return "none";
+  }
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -458,6 +470,8 @@ export function CreateListingFlow({
       phone,
       coverPhotoIndex: coverIndex,
       packageIntent,
+      boostProductId,
+      acilProductId,
       pageIndex,
       webStep: pageIndex + 1,
       source: "web",
@@ -508,6 +522,8 @@ export function CreateListingFlow({
     phone,
     coverIndex,
     packageIntent,
+    boostProductId,
+    acilProductId,
     pageIndex,
     isEditMode,
   ]);
@@ -1216,6 +1232,12 @@ export function CreateListingFlow({
       d.packageIntent === "none"
     ) {
       setPackageIntent(d.packageIntent);
+    }
+    if (typeof d.boostProductId === "string" && d.boostProductId.trim()) {
+      setBoostProductId(d.boostProductId.trim());
+    }
+    if (typeof d.acilProductId === "string" && d.acilProductId.trim()) {
+      setAcilProductId(d.acilProductId.trim());
     }
     // landOn varsa tekrar taslak index'ine basma
     if (!opts?.landOn) {
@@ -2161,10 +2183,16 @@ export function CreateListingFlow({
       let nextHref: string | null = null;
       if (packageIntent === "boost" || packageIntent === "both") {
         const q = new URLSearchParams({ listing: listingRef });
-        if (packageIntent === "both") q.set("next", "acil");
+        if (boostProductId) q.set("pack", boostProductId);
+        if (packageIntent === "both") {
+          q.set("next", "acil");
+          if (acilProductId) q.set("acilPack", acilProductId);
+        }
         nextHref = `/ilan-one-cikar?${q.toString()}`;
       } else if (packageIntent === "acil") {
-        nextHref = `/ilan-acil?listing=${encodeURIComponent(listingRef)}`;
+        const q = new URLSearchParams({ listing: listingRef });
+        if (acilProductId) q.set("pack", acilProductId);
+        nextHref = `/ilan-acil?${q.toString()}`;
       }
 
       if (nextHref) {
@@ -2219,18 +2247,26 @@ export function CreateListingFlow({
     }
   })();
 
-  function togglePackageIntent(kind: "acil" | "boost") {
-    setPackageIntent((prev) => {
-      if (kind === "acil") {
-        if (prev === "acil") return "none";
-        if (prev === "boost") return "both";
-        if (prev === "both") return "boost";
-        return "acil";
-      }
-      if (prev === "boost") return "none";
-      if (prev === "acil") return "both";
-      if (prev === "both") return "acil";
-      return "boost";
+  function selectBoostPack(productId: string) {
+    const next =
+      boostProductId === productId ? null : productId;
+    setBoostProductId(next);
+    const intent = syncPackageIntent(next, acilProductId);
+    setPackageIntent(intent);
+    void persistDraft({
+      boostProductId: next,
+      packageIntent: intent,
+    });
+  }
+
+  function selectAcilPack(productId: string) {
+    const next = acilProductId === productId ? null : productId;
+    setAcilProductId(next);
+    const intent = syncPackageIntent(boostProductId, next);
+    setPackageIntent(intent);
+    void persistDraft({
+      acilProductId: next,
+      packageIntent: intent,
     });
   }
 
@@ -3447,8 +3483,8 @@ export function CreateListingFlow({
       {page === "boosts" ? (
         <div className="space-y-3">
           <p className="text-sm text-zinc-600">
-            İsteğe bağlı. Paket seçersen yayın sonrası ödeme sayfasına
-            gidersin; seçmezsen paketsiz yayınlanır.
+            İsteğe bağlı. Paketi seç → yayınla → önizle → öde. Seçmezsen paketsiz
+            yayınlanır.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -3461,11 +3497,13 @@ export function CreateListingFlow({
               }`}
             >
               <p className="text-sm font-black text-zinc-900">Öne çıkarma</p>
-              {(packageIntent === "boost" || packageIntent === "both") && (
+              {boostProductId ? (
                 <p className="mt-0.5 text-[11px] font-bold text-indigo-700">
-                  ✓ seçili
+                  ✓{" "}
+                  {FEATURE_BOOST_PACKS.find((p) => p.productId === boostProductId)
+                    ?.label ?? "seçili"}
                 </p>
-              )}
+              ) : null}
             </button>
             <button
               type="button"
@@ -3477,16 +3515,18 @@ export function CreateListingFlow({
               }`}
             >
               <p className="text-sm font-black text-zinc-900">Acil</p>
-              {(packageIntent === "acil" || packageIntent === "both") && (
+              {acilProductId ? (
                 <p className="mt-0.5 text-[11px] font-bold text-orange-700">
-                  ✓ seçili
+                  ✓{" "}
+                  {ACIL_PACKS.find((p) => p.productId === acilProductId)?.label ??
+                    "seçili"}
                 </p>
-              )}
+              ) : null}
             </button>
           </div>
 
           <div
-            className={`rounded-xl border-2 p-4 ${
+            className={`space-y-2 rounded-xl border-2 p-3 ${
               boostsDetailTab === "boost"
                 ? "border-indigo-200 bg-white"
                 : "border-orange-200 bg-white"
@@ -3494,67 +3534,73 @@ export function CreateListingFlow({
           >
             {boostsDetailTab === "boost" ? (
               <>
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm font-bold text-zinc-900">Öne çıkarma</p>
-                  <p className="text-sm font-extrabold text-indigo-700">
-                    {formatTryPrice(FEATURE_BOOST_PACKS[0].fallbackPriceTry)} –{" "}
-                    {formatTryPrice(
-                      FEATURE_BOOST_PACKS[FEATURE_BOOST_PACKS.length - 1]
-                        .fallbackPriceTry
-                    )}
-                  </p>
-                </div>
-                <p className="mt-1 text-xs text-zinc-600">
-                  Ana akışta daha görünür olsun. (
-                  {FEATURE_BOOST_PACKS.map((p) => p.label).join(" / ")})
+                <p className="text-sm font-bold text-zinc-900">Öne çıkarma paketi seç</p>
+                <p className="text-xs text-zinc-600">
+                  Ana akışta daha görünür olsun. Bir süre seç.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => togglePackageIntent("boost")}
-                  className={`mt-3 w-full rounded-lg px-3 py-2.5 text-sm font-bold ${
-                    packageIntent === "boost" || packageIntent === "both"
-                      ? "bg-indigo-100 text-indigo-900"
-                      : "bg-zinc-100 text-zinc-800"
-                  }`}
-                >
-                  {packageIntent === "boost" || packageIntent === "both"
-                    ? "Seçildi · kaldırmak için dokun"
-                    : "Bu paketi seç"}
-                </button>
+                {FEATURE_BOOST_PACKS.map((p) => {
+                  const selected = boostProductId === p.productId;
+                  return (
+                    <button
+                      key={p.productId}
+                      type="button"
+                      onClick={() => selectBoostPack(p.productId)}
+                      className={`flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left transition ${
+                        selected
+                          ? "border-indigo-600 bg-indigo-50"
+                          : "border-zinc-200 bg-white hover:bg-zinc-50"
+                      }`}
+                    >
+                      <span>
+                        <span className="block text-sm font-bold text-zinc-900">
+                          {p.label}
+                        </span>
+                        <span className="block text-[11px] text-zinc-600">
+                          {p.subtitle}
+                        </span>
+                      </span>
+                      <span className="text-sm font-extrabold text-indigo-700">
+                        {formatTryPrice(p.fallbackPriceTry)}
+                      </span>
+                    </button>
+                  );
+                })}
               </>
             ) : (
               <>
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm font-bold text-zinc-900">Acil ilan</p>
-                  <p className="text-sm font-extrabold text-orange-700">
-                    {ACIL_PACKS.map((p) => `${p.label} ${p.priceTry}₺`).join(
-                      " · "
-                    )}
-                  </p>
-                </div>
-                <p className="mt-1 text-xs text-zinc-600">
-                  Acil vitrinde öne çıksın, alıcılar daha çabuk görsün.
+                <p className="text-sm font-bold text-zinc-900">Acil paketi seç</p>
+                <p className="text-xs text-zinc-600">
+                  Acil vitrinde öne çıksın. Bir süre seç.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => togglePackageIntent("acil")}
-                  className={`mt-3 w-full rounded-lg px-3 py-2.5 text-sm font-bold ${
-                    packageIntent === "acil" || packageIntent === "both"
-                      ? "bg-orange-100 text-orange-900"
-                      : "bg-zinc-100 text-zinc-800"
-                  }`}
-                >
-                  {packageIntent === "acil" || packageIntent === "both"
-                    ? "Seçildi · kaldırmak için dokun"
-                    : "Bu paketi seç"}
-                </button>
+                {ACIL_PACKS.map((p) => {
+                  const selected = acilProductId === p.productId;
+                  return (
+                    <button
+                      key={p.productId}
+                      type="button"
+                      onClick={() => selectAcilPack(p.productId)}
+                      className={`flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left transition ${
+                        selected
+                          ? "border-orange-500 bg-orange-50"
+                          : "border-zinc-200 bg-white hover:bg-zinc-50"
+                      }`}
+                    >
+                      <span className="text-sm font-bold text-zinc-900">
+                        {p.label} Acil
+                      </span>
+                      <span className="text-sm font-extrabold text-orange-700">
+                        {formatTryPrice(p.priceTry)}
+                      </span>
+                    </button>
+                  );
+                })}
               </>
             )}
           </div>
 
           <p className="text-xs text-zinc-500">
-            Paketsiz devam edersen doğrudan yayınlanır. Paket seçtiysen ödeme
-            tamamlanınca vitrin / öne çıkarma aktif olur.
+            Paketsiz devam edersen doğrudan yayınlanır. Paket seçtiysen yayın
+            sonrası seçtiğin paket önizlenir ve ödemeye geçersin.
           </p>
         </div>
       ) : null}

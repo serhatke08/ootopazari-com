@@ -14,6 +14,7 @@ import { PaymentLegalNotice } from "@/components/PaymentLegalNotice";
 type Props = {
   listings: FeatureBoostListingOption[];
   initialListingNumber?: string | null;
+  initialPackId?: string | null;
   paymentInfoByListing?: Record<string, ListingBoostPaymentInfo>;
 };
 
@@ -35,16 +36,30 @@ function pickInitialListingIds(
     : [];
 }
 
+function resolveInitialPackId(raw?: string | null): string | null {
+  const key = raw?.trim();
+  if (!key) return null;
+  const hit = FEATURE_BOOST_PACKS.find(
+    (p) =>
+      p.productId === key ||
+      (key === "feature_boost_1d_24h" && p.productId === "feature_boost_one_time")
+  );
+  return hit?.productId ?? null;
+}
+
 export function FeatureBoostCheckout({
   listings,
   initialListingNumber,
+  initialPackId,
   paymentInfoByListing = {},
 }: Props) {
   const router = useRouter();
   const [selectedListingIds, setSelectedListingIds] = useState<string[]>(() =>
     pickInitialListingIds(listings, initialListingNumber)
   );
-  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(() =>
+    resolveInitialPackId(initialPackId)
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

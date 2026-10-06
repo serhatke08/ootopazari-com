@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ listing?: string }>;
+  searchParams: Promise<{ listing?: string; pack?: string }>;
 };
 
 export default async function IlanOneCikarPage({ searchParams }: Props) {
@@ -35,7 +35,7 @@ export default async function IlanOneCikarPage({ searchParams }: Props) {
     redirect(`/giris?next=${encodeURIComponent("/ilan-one-cikar")}`);
   }
 
-  const { listing: listingParam } = await searchParams;
+  const { listing: listingParam, pack: packParam } = await searchParams;
   const rows = await fetchListingsForUser(supabase, user.id);
   await enrichListingRowsCoverImages(supabase, env, rows);
 
@@ -79,6 +79,7 @@ export default async function IlanOneCikarPage({ searchParams }: Props) {
         <FeatureBoostCheckout
           listings={listings}
           initialListingNumber={listingParam?.trim() || null}
+          initialPackId={packParam?.trim() || null}
           paymentInfoByListing={paymentInfoByListing}
         />
 
