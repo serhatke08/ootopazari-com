@@ -514,6 +514,120 @@ export async function fetchListingEnginePackageLabels(
   return { motor, paket, horsepower, engineCapacityCc };
 }
 
+export type ListingCatalogEquipment = {
+  rows: Array<{ title: string; value: string }>;
+  note: string | null;
+  infoUrl: string | null;
+};
+
+/** İlan detay Donanım sekmesi: katalog satırları + kronik + web URL. */
+export async function fetchListingCatalogEquipment(
+  supabase: SupabaseClient,
+  input: {
+    packageId?: string | null;
+    modelId?: string | null;
+  }
+): Promise<ListingCatalogEquipment> {
+  const empty: ListingCatalogEquipment = {
+    rows: [],
+    note: null,
+    infoUrl: null,
+  };
+  const packageId = input.packageId?.trim();
+  const modelId = input.modelId?.trim();
+
+  try {
+    if (packageId) {
+      const [{ data: items }, { data: pkg }] = await Promise.all([
+        supabase
+          .from("vehicle_package_equipment_items")
+          .select(
+            "sort_order, vehicle_equipment_options(title, value, sort_order)"
+          )
+          .eq("package_id", packageId)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("vehicle_engine_packages")
+          .select("catalog_note, info_url")
+          .eq("id", packageId)
+          .maybeSingle(),
+      ]);
+      const rows = (items ?? [])
+        .map((row) => {
+          const opt = (row as { vehicle_equipment_options?: unknown })
+            .vehicle_equipment_options;
+          const o = Array.isArray(opt) ? opt[0] : opt;
+          if (!o || typeof o !== "object") return null;
+          const title = String(
+            (o as { title?: unknown }).title ?? ""
+          ).trim();
+          const value = String(
+            (o as { value?: unknown }).value ?? ""
+          ).trim();
+          if (!title || !value) return null;
+          return { title, value };
+        })
+        .filter((r): r is { title: string; value: string } => r != null);
+      const note =
+        typeof pkg?.catalog_note === "string"
+          ? pkg.catalog_note.trim() || null
+          : null;
+      const infoUrl =
+        typeof pkg?.info_url === "string" ? pkg.info_url.trim() || null : null;
+      if (rows.length || note || infoUrl) {
+        return { rows, note, infoUrl };
+      }
+    }
+
+    if (modelId) {
+      const [{ data: items }, { data: model }] = await Promise.all([
+        supabase
+          .from("vehicle_model_equipment_items")
+          .select(
+            "sort_order, vehicle_equipment_options(title, value, sort_order)"
+          )
+          .eq("model_id", modelId)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("vehicle_brand_models")
+          .select("catalog_note, info_url")
+          .eq("id", modelId)
+          .maybeSingle(),
+      ]);
+      const rows = (items ?? [])
+        .map((row) => {
+          const opt = (row as { vehicle_equipment_options?: unknown })
+            .vehicle_equipment_options;
+          const o = Array.isArray(opt) ? opt[0] : opt;
+          if (!o || typeof o !== "object") return null;
+          const title = String(
+            (o as { title?: unknown }).title ?? ""
+          ).trim();
+          const value = String(
+            (o as { value?: unknown }).value ?? ""
+          ).trim();
+          if (!title || !value) return null;
+          return { title, value };
+        })
+        .filter((r): r is { title: string; value: string } => r != null);
+      return {
+        rows,
+        note:
+          typeof model?.catalog_note === "string"
+            ? model.catalog_note.trim() || null
+            : null,
+        infoUrl:
+          typeof model?.info_url === "string"
+            ? model.info_url.trim() || null
+            : null,
+      };
+    }
+  } catch (e) {
+    console.warn("fetchListingCatalogEquipment:", e);
+  }
+  return empty;
+}
+
 export async function resolveListingVehicleCatalogParts(
   supabase: SupabaseClient,
   input: {
