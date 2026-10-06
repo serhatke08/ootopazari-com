@@ -10,8 +10,33 @@ export const LISTING_ACTIVE_DAYS = 30;
 export const PAID_LISTING_ACTIVATION_FEE_TRY = 199.99;
 export const ACTIVATION_STATUS_ACTIVE = "active";
 export const ACTIVATION_STATUS_PASSIVE_PAYMENT = "passive_payment_required";
+export const ACTIVATION_STATUS_PASSIVE_EXPIRED = "passive_expired";
 /** Pasif ilan hesapta bu kadar gün kalır; sonra listings_archived'a taşınır. */
 export const LISTING_EXPIRED_GRACE_DAYS = 15;
+
+export function listingActivationStatusOf(listing: {
+  activation_status?: unknown;
+}): string {
+  return String(listing.activation_status ?? ACTIVATION_STATUS_ACTIVE)
+    .trim()
+    .toLowerCase();
+}
+
+/** Vitrinde değil — ödeme / süre / diğer pasif durumlar. */
+export function isListingActivationPassive(listing: {
+  activation_status?: unknown;
+}): boolean {
+  const status = listingActivationStatusOf(listing);
+  return status !== "" && status !== ACTIVATION_STATUS_ACTIVE;
+}
+
+export function isListingPassivePaymentRequired(listing: {
+  activation_status?: unknown;
+}): boolean {
+  return (
+    listingActivationStatusOf(listing) === ACTIVATION_STATUS_PASSIVE_PAYMENT
+  );
+}
 export const LISTINGS_ARCHIVED_TABLE = "listings_archived";
 
 export const LISTING_ACTIVATION_USES_TABLE = "listing_activation_uses";

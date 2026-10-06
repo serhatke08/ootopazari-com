@@ -3,7 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseListingDate } from "@/lib/listing-feature-boost";
 import {
   listingActiveCutoffIso,
+  listingActivationStatusOf,
   listingIsPastActiveWindow,
+  ACTIVATION_STATUS_ACTIVE,
 } from "@/lib/listing-quota";
 import {
   compareListingFeedSort,
@@ -1070,7 +1072,10 @@ export async function fetchListingForDetailPage(
   const viewerIsAdmin = options?.viewerIsAdmin === true;
 
   if (status === "approved") {
-    if (listingIsPastActiveWindow(row)) {
+    const activation = listingActivationStatusOf(row);
+    const activationPassive =
+      activation !== "" && activation !== ACTIVATION_STATUS_ACTIVE;
+    if (activationPassive || listingIsPastActiveWindow(row)) {
       if (viewer && ownerId && viewer === ownerId) {
         return { listing: row, access: "expired_owner" };
       }
@@ -1111,6 +1116,19 @@ export function isListingSuspended(listing: ListingRow): boolean {
 
 export function isListingExpiredStatus(listing: ListingRow): boolean {
   return String(listing.moderation_status ?? "").toLowerCase() === "expired";
+}
+
+/** Ücretsiz hak bitince kaydedilen / ödeme bekleyen pasif ilan. */
+export function isListingPassivePaymentStatus(listing: ListingRow): boolean {
+  return (
+    listingActivationStatusOf(listing) === "passive_payment_required"
+  );
+}
+
+/** activation_status aktif değil (pasif ödeme / süre doldu vb.). */
+export function isListingActivationInactive(listing: ListingRow): boolean {
+  const status = listingActivationStatusOf(listing);
+  return status !== "" && status !== ACTIVATION_STATUS_ACTIVE;
 }
 
 export async function fetchListingsByIds(

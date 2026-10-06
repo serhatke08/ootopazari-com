@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
+  isListingActivationInactive,
   isListingExpiredStatus,
+  isListingPassivePaymentStatus,
   isListingSuspended,
   type ListingRow,
 } from "@/lib/listings-data";
@@ -17,7 +19,10 @@ import { ListingCoverImage } from "@/components/ListingCoverImage";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
 import { listingHomeBoostChromeActive } from "@/lib/listing-feature-boost";
-import { formatListingPurgeCountdown } from "@/lib/listing-quota";
+import {
+  formatListingPurgeCountdown,
+  PAID_LISTING_ACTIVATION_FEE_TRY,
+} from "@/lib/listing-quota";
 import { initialFromName } from "@/lib/user-display-name";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import { EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
@@ -53,9 +58,13 @@ type Props = {
   /** Askıya alınmış ilan: soluk görünüm + etiket */
   suspended?: boolean;
   expired?: boolean;
+  /** activation_status pasif (ödeme bekliyor / yayında değil) */
+  activationPassive?: boolean;
   /** Kalite düzeltmesi — yönetici onayı bekleniyor. */
   qualityReviewPending?: boolean;
   suspensionReason?: string | null;
+  /** İlanlarım’da yeni pasif kaydı vurgula */
+  highlightPassive?: boolean;
   /** Kartta görsel altında küçük profil satırı. */
   ownerName?: string | null;
   ownerAvatarSrc?: string | null;
@@ -137,8 +146,10 @@ export function ListingCard({
   brandName = null,
   suspended: suspendedProp,
   expired: expiredProp,
+  activationPassive: activationPassiveProp,
   qualityReviewPending = false,
   suspensionReason,
+  highlightPassive = false,
   ownerName,
   ownerAvatarSrc,
   ownerHref,
@@ -153,7 +164,14 @@ export function ListingCard({
   const suspended =
     suspendedProp ?? isListingSuspended(listing);
   const expired = expiredProp ?? isListingExpiredStatus(listing);
-  const inactive = suspended || expired || qualityReviewPending;
+  const activationPassive =
+    activationPassiveProp ?? isListingActivationInactive(listing);
+  const passivePayment = isListingPassivePaymentStatus(listing);
+  const inactive =
+    suspended || expired || qualityReviewPending || activationPassive;
+  const feeLabel = PAID_LISTING_ACTIVATION_FEE_TRY.toLocaleString("tr-TR", {
+    minimumFractionDigits: 2,
+  });
   const boostActive =
     !inactive && listingHomeBoostChromeActive(listing);
   const cityText =
@@ -205,20 +223,35 @@ export function ListingCard({
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
-      <ListingCoverImage
-        env={env}
-        imageUrl={listing.image_url}
-        listingId={listingId}
-        alt={displayTitle}
-        objectFit={isHomeGrid ? "cover" : "contain"}
-        scale={!isHomeGrid}
-        sizes="(max-width: 767px) 33vw, (max-width: 1023px) 25vw, 14vw"
-        priority={coverPriority}
-        fastPath={coverFastPath}
-        deferLoad={coverDefer}
-        fetchPriority={coverFetchPriority}
-        onLoaded={onCoverLoaded}
-      />
+      <div
+        className={
+          activationPassive || expired
+            ? "h-full w-full scale-105 blur-[2.5px] saturate-50"
+            : "h-full w-full"
+        }
+      >
+        <ListingCoverImage
+          env={env}
+          imageUrl={listing.image_url}
+          listingId={listingId}
+          alt={displayTitle}
+          objectFit={isHomeGrid ? "cover" : "contain"}
+          scale={!isHomeGrid}
+          sizes="(max-width: 767px) 33vw, (max-width: 1023px) 25vw, 14vw"
+          priority={coverPriority}
+          fastPath={coverFastPath}
+          deferLoad={coverDefer}
+          fetchPriority={coverFetchPriority}
+          onLoaded={onCoverLoaded}
+        />
+      </div>
+      {activationPassive || expired ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-red-950/35 px-2">
+          <span className="rounded-md bg-red-600 px-2.5 py-1 text-center text-[11px] font-black uppercase tracking-wide text-white shadow-lg sm:text-xs">
+            İlan aktif değil!!!
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 
@@ -248,12 +281,23 @@ export function ListingCard({
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-[10px] border bg-white shadow-sm transition ${
-        showBoostGoldBorder
-          ? "border-[#ffc400] shadow-[0_0_0_1px_rgba(255,196,0,0.55)] hover:border-[#ffc400]"
-          : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
-      } ${inactive ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
+        highlightPassive || passivePayment
+          ? "border-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
+          : showBoostGoldBorder
+            ? "border-[#ffc400] shadow-[0_0_0_1px_rgba(255,196,0,0.55)] hover:border-[#ffc400]"
+            : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
+      } ${inactive && !activationPassive && !expired ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
     >
-      {expired ? (
+      {passivePayment || (activationPassive && !expired) ? (
+        <div className="border-b border-red-600 bg-red-600 px-2 py-2 sm:px-4">
+          <p className="text-center text-[11px] font-black uppercase tracking-wide text-white sm:text-xs">
+            İlan aktif değil!!!
+          </p>
+          <p className="mt-0.5 text-center text-[10px] font-semibold text-red-50 sm:text-[11px]">
+            Vitrinde görünmüyor. Aktifleştirmek için {feeLabel} ₺ öde.
+          </p>
+        </div>
+      ) : expired ? (
         <div className="border-b border-amber-100 bg-amber-50 px-2 py-1.5 sm:px-4">
           <p className="text-center text-[10px] font-bold uppercase tracking-wide text-amber-800 sm:text-[11px]">
             Süresi doldu · pasif

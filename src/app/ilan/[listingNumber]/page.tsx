@@ -6,7 +6,11 @@ import type { Metadata } from "next";
 import { MissingEnv } from "@/components/MissingEnv";
 import { BrandPagePlaceholder } from "@/components/BrandPagePlaceholder";
 import { loadListingDetailRequest } from "@/lib/listing-detail-request";
-import { formatListingPurgeCountdown, formatListingPublishedAt } from "@/lib/listing-quota";
+import {
+  formatListingPurgeCountdown,
+  formatListingPublishedAt,
+  PAID_LISTING_ACTIVATION_FEE_TRY,
+} from "@/lib/listing-quota";
 import { isListingMessagingAllowed } from "@/lib/listing-messaging";
 import {
   buildCategoryMap,
@@ -50,6 +54,7 @@ import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
 import {
   fetchVehicleBrandModelSeriCode,
   fetchListingEnginePackageLabels,
+  fetchListingCatalogEquipment,
   resolveListingVehicleCatalogParts,
 } from "@/lib/vehicle-hierarchy";
 import {
@@ -338,9 +343,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const listing = detail.listing;
   const titleBase = seoLabel?.trim() || "İlan";
+  const activationMeta = String(detail.listing.activation_status ?? "active")
+    .trim()
+    .toLowerCase();
   const title =
     detail.access === "expired_owner" || detail.access === "expired_admin"
-      ? `Süresi doldu — ${titleBase}`
+      ? activationMeta === "passive_payment_required"
+        ? `Aktif değil — ${titleBase}`
+        : `Süresi doldu — ${titleBase}`
       : detail.access === "suspended_owner" || detail.access === "suspended_admin"
         ? `Askıya alındı — ${titleBase}`
         : titleBase;
@@ -487,6 +497,16 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     detailAccess === "expired_owner" || detailAccess === "expired_admin";
   const isSuspendedDetailView =
     isSuspendedOwnerView || isSuspendedAdminView || isExpiredDetailView;
+  const activationStatus = String(listing.activation_status ?? "active")
+    .trim()
+    .toLowerCase();
+  const isPassivePaymentDetail =
+    isExpiredDetailView &&
+    activationStatus === "passive_payment_required";
+  const isActivationPassiveDetail =
+    isExpiredDetailView &&
+    activationStatus !== "" &&
+    activationStatus !== "active";
 
   const id = listing.id as string | undefined;
   const row = listing as Record<string, unknown>;
@@ -515,6 +535,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     viewerProfile,
     hierarchyLabels,
     catalogParts,
+    catalogEquipment,
   ] = await Promise.all([
     needCityLookup ? fetchCities(supabase) : Promise.resolve([]),
     fetchCategories(supabase),
@@ -572,6 +593,13 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
           engineCapacityCc: null,
           variantRemainder: null,
         }),
+    fetchListingCatalogEquipment(supabase, {
+      packageId: packageId ? String(packageId) : null,
+      modelId:
+        brandModelFk != null && String(brandModelFk).trim() !== ""
+          ? String(brandModelFk)
+          : null,
+    }),
   ]);
 
   const [statsMap, sessionFav] = statsPair;
@@ -829,8 +857,49 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     paketDisplay?.trim(),
   ].filter((p): p is string => !!p);
 
-  const equipmentTabContent =
-    equipmentLines.length > 0 ? (
+  const catalogEquipRows = catalogEquipment.rows;
+  const catalogNote = catalogEquipment.note?.trim() || null;
+  const catalogInfoUrl = catalogEquipment.infoUrl?.trim() || null;
+  const hasCatalogEquipment =
+    catalogEquipRows.length > 0 || !!catalogNote || !!catalogInfoUrl;
+
+  const equipmentTabContent = hasCatalogEquipment ? (
+    <div className="space-y-3 text-xs text-black">
+      {catalogEquipRows.length > 0 ? (
+        <ul className="divide-y divide-black/8 overflow-hidden rounded-md border border-black/8">
+          {catalogEquipRows.map((item) => (
+            <li
+              key={`${item.title}:${item.value}`}
+              className="flex items-start justify-between gap-3 px-2.5 py-2"
+            >
+              <span className="font-semibold">{item.title}</span>
+              <span className="text-right text-black/80">{item.value}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {catalogNote ? (
+        <p className="whitespace-pre-wrap leading-relaxed text-black/80">
+          {catalogNote}
+        </p>
+      ) : null}
+      {catalogInfoUrl ? (
+        <a
+          href={
+            catalogInfoUrl.startsWith("http")
+              ? catalogInfoUrl
+              : `https://${catalogInfoUrl}`
+          }
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 font-semibold text-blue-700 underline"
+        >
+          <span aria-hidden>↗</span>
+          {catalogInfoUrl}
+        </a>
+      ) : null}
+    </div>
+  ) : equipmentLines.length > 0 ? (
       <ul className="space-y-1 text-xs text-black">
         {equipmentLines.map((line) => (
           <li
@@ -956,7 +1025,37 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       {id && !isSuspendedDetailView ? (
         <ListingViewTracker listingId={id} />
       ) : null}
-      {isExpiredDetailView ? (
+      {isPassivePaymentDetail ? (
+        <div
+          className="mx-4 mb-4 rounded-xl border-2 border-red-600 bg-red-600 px-4 py-3 text-white shadow-md md:mx-0"
+          role="alert"
+        >
+          <p className="text-lg font-black tracking-tight">
+            İLAN AKTİF DEĞİL!!!
+          </p>
+          <p className="mt-1 text-sm font-semibold text-red-50">
+            Bu ilan vitrinde görünmüyor. Ücretsiz hakkın dolu olduğu için pasife
+            kaydedildi. Aktif yayına almak için{" "}
+            {PAID_LISTING_ACTIVATION_FEE_TRY.toLocaleString("tr-TR", {
+              minimumFractionDigits: 2,
+            })}{" "}
+            ₺ öde — Profil → İlanlarım.
+          </p>
+        </div>
+      ) : isActivationPassiveDetail ? (
+        <div
+          className="mx-4 mb-4 rounded-xl border-2 border-red-500 bg-red-50 px-4 py-3 text-red-950 md:mx-0"
+          role="alert"
+        >
+          <p className="text-base font-black text-red-700">
+            İlan aktif değil!!!
+          </p>
+          <p className="mt-1 text-sm font-semibold text-red-800/90">
+            Bu ilan şu an yayında değil / pasifte. Profil → İlanlarım üzerinden
+            durumunu kontrol edebilirsin.
+          </p>
+        </div>
+      ) : isExpiredDetailView ? (
         <div
           className="mx-4 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 md:mx-0"
           role="status"
@@ -1009,7 +1108,20 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
 
       <div className="listing-detail-layout">
         <div className="listing-detail-gallery min-w-0 px-4 md:px-0">
-          <div className="rounded-xl border border-black/10 bg-white">
+          <div
+            className={`relative rounded-xl border border-black/10 bg-white ${
+              isActivationPassiveDetail || isExpiredDetailView
+                ? "overflow-hidden"
+                : ""
+            }`}
+          >
+            <div
+              className={
+                isActivationPassiveDetail || isExpiredDetailView
+                  ? "blur-[2.5px] saturate-50"
+                  : undefined
+              }
+            >
             <ListingImageGallery
               images={galleryUrls}
               alt="İlan görseli"
@@ -1067,6 +1179,14 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                 </div>
               }
             />
+            </div>
+            {isActivationPassiveDetail || isExpiredDetailView ? (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-red-950/25 px-4">
+                <span className="rounded-lg bg-red-600 px-4 py-2 text-center text-sm font-black uppercase tracking-wide text-white shadow-xl sm:text-base">
+                  İlan aktif değil!!!
+                </span>
+              </div>
+            ) : null}
             {vehicleBreadcrumb.length > 0 ? (
               <nav
                 className="flex flex-wrap items-center gap-x-1 gap-y-0.5 px-3 pb-3 text-xs text-black/70"

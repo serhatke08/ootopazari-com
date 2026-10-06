@@ -6,6 +6,7 @@ import {
   FEATURE_BOOST_PACKS,
   formatTryPrice,
 } from "@/lib/listing-feature-boost";
+import { PAID_LISTING_ACTIVATION_FEE_TRY } from "@/lib/listing-quota";
 
 export type PublishedListingPreview = {
   listingRef: string;
@@ -34,7 +35,12 @@ export type PublishSuccessOverlayProps = ToastProps | UpsellProps;
 
 export function PublishSuccessOverlay(props: PublishSuccessOverlayProps) {
   const { preview } = props;
-  const delayMs = props.kind === "toast" ? (props.delayMs ?? 2200) : 0;
+  const passivePublish =
+    props.kind === "toast" && props.nextHref.includes("passive=");
+  const delayMs =
+    props.kind === "toast"
+      ? (props.delayMs ?? (passivePublish ? 4200 : 2200))
+      : 0;
   const nextHref = props.kind === "toast" ? props.nextHref : "";
 
   useEffect(() => {
@@ -46,7 +52,61 @@ export function PublishSuccessOverlay(props: PublishSuccessOverlayProps) {
   }, [props.kind, nextHref, delayMs]);
 
   if (props.kind === "toast") {
-    const passivePublish = nextHref.includes("passive=");
+    if (passivePublish) {
+      const fee = PAID_LISTING_ACTIVATION_FEE_TRY.toLocaleString("tr-TR", {
+        minimumFractionDigits: 2,
+      });
+      return (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/65 p-4 backdrop-blur-md"
+          role="alert"
+          aria-live="assertive"
+        >
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-2 ring-red-500/40">
+            <div className="bg-red-600 px-5 py-4 text-center text-white">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-red-100">
+                Dikkat
+              </p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight">
+                İLAN AKTİF DEĞİL!!!
+              </h2>
+              <p className="mt-1.5 text-sm font-semibold text-red-50">
+                Vitrine çıkmadı — pasife kaydedildi.
+              </p>
+            </div>
+            <div className="space-y-3 p-5">
+              <div className="overflow-hidden rounded-xl border-2 border-red-200 bg-red-50/40">
+                <MiniListingCard preview={preview} passive />
+              </div>
+              <p className="text-center text-sm font-bold leading-snug text-red-700">
+                Ücretsiz hakkın dolu. İlanı yayına almak için İlanlarım’dan{" "}
+                {fee} ₺ öde.
+              </p>
+              <div className="h-1.5 overflow-hidden rounded-full bg-red-100">
+                <div
+                  className="h-full rounded-full bg-red-600 transition-none"
+                  style={{
+                    width: "100%",
+                    transformOrigin: "left",
+                    animation: `publishProgress ${delayMs}ms linear forwards`,
+                  }}
+                />
+              </div>
+              <p className="text-center text-[11px] font-medium text-zinc-500">
+                İlanlarım’a yönlendiriliyorsun…
+              </p>
+            </div>
+          </div>
+          <style>{`
+            @keyframes publishProgress {
+              from { transform: scaleX(0); }
+              to { transform: scaleX(1); }
+            }
+          `}</style>
+        </div>
+      );
+    }
+
     return (
       <div
         className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
@@ -58,12 +118,10 @@ export function PublishSuccessOverlay(props: PublishSuccessOverlayProps) {
             ✓
           </div>
           <h2 className="mt-4 text-center text-xl font-black tracking-tight text-zinc-950">
-            {passivePublish ? "Pasife kaydedildi" : "Yayınlandı!"}
+            Yayınlandı!
           </h2>
           <p className="mt-1 text-center text-sm text-zinc-600">
-            {passivePublish
-              ? "Ücretsiz hakkın dolu. İlan pasifte — İlanlarım’dan 199,99 ₺ ile aktifleştir."
-              : "İlanın yayına alındı. Paket seçimine yönlendiriliyorsun…"}
+            İlanın yayına alındı. Paket seçimine yönlendiriliyorsun…
           </p>
           <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
             <MiniListingCard preview={preview} />
@@ -202,25 +260,44 @@ export function PublishSuccessOverlay(props: PublishSuccessOverlayProps) {
   );
 }
 
-function MiniListingCard({ preview }: { preview: PublishedListingPreview }) {
+function MiniListingCard({
+  preview,
+  passive = false,
+}: {
+  preview: PublishedListingPreview;
+  passive?: boolean;
+}) {
   return (
-    <div className="flex gap-3 p-2.5">
+    <div className="relative flex gap-3 p-2.5">
       <div className="relative h-20 w-[5.5rem] shrink-0 overflow-hidden rounded-lg bg-zinc-200">
         {preview.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={preview.coverUrl}
             alt=""
-            className="h-full w-full object-cover"
+            className={`h-full w-full object-cover ${
+              passive ? "scale-110 blur-[3px] saturate-50" : ""
+            }`}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-[10px] text-zinc-500">
             Fotoğraf
           </div>
         )}
+        {passive ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-red-950/45 px-1">
+            <span className="rounded bg-red-600 px-1.5 py-0.5 text-center text-[9px] font-black uppercase leading-tight tracking-wide text-white shadow">
+              Aktif değil
+            </span>
+          </div>
+        ) : null}
       </div>
       <div className="min-w-0 flex-1 py-0.5">
-        <p className="line-clamp-2 text-sm font-bold leading-snug text-zinc-900">
+        <p
+          className={`line-clamp-2 text-sm font-bold leading-snug ${
+            passive ? "text-zinc-600" : "text-zinc-900"
+          }`}
+        >
           {preview.title || "İlanın"}
         </p>
         {preview.metaLine ? (
@@ -228,11 +305,19 @@ function MiniListingCard({ preview }: { preview: PublishedListingPreview }) {
             {preview.metaLine}
           </p>
         ) : null}
-        <p className="mt-1 text-sm font-extrabold text-[#002776]">
+        <p
+          className={`mt-1 text-sm font-extrabold ${
+            passive ? "text-zinc-500 line-through decoration-red-400" : "text-[#002776]"
+          }`}
+        >
           {preview.priceLabel}
         </p>
-        <p className="mt-0.5 text-[10px] font-medium text-zinc-400">
-          #{preview.listingRef}
+        <p
+          className={`mt-0.5 text-[10px] font-medium ${
+            passive ? "font-bold text-red-600" : "text-zinc-400"
+          }`}
+        >
+          {passive ? "PASİF · yayında değil" : `#${preview.listingRef}`}
         </p>
       </div>
     </div>

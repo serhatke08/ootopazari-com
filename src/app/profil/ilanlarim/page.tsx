@@ -8,10 +8,15 @@ import {
   buildCategoryMap,
   fetchCategories,
   fetchListingsForUser,
+  isListingActivationInactive,
   isListingExpiredStatus,
+  isListingPassivePaymentStatus,
   isListingSuspended,
 } from "@/lib/listings-data";
-import { fetchListingQuota } from "@/lib/listing-quota";
+import {
+  fetchListingQuota,
+  PAID_LISTING_ACTIVATION_FEE_TRY,
+} from "@/lib/listing-quota";
 import { listingQualityResubmitPending } from "@/lib/listing-quality";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { ReactivateListingButton } from "@/components/ReactivateListingButton";
@@ -19,9 +24,16 @@ import { fetchListingPublicStatsMap } from "@/lib/listing-stats";
 import { fetchBoostPaymentInfoByListing } from "@/lib/feature-boost-payment-status";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 
-export default async function ProfilIlanlarimPage() {
+type Props = {
+  searchParams: Promise<{ passive?: string }>;
+};
+
+export default async function ProfilIlanlarimPage({ searchParams }: Props) {
   const env = tryGetSupabaseEnv();
   if (!env) return null;
+
+  const sp = await searchParams;
+  const highlightPassiveRef = String(sp.passive ?? "").trim();
 
   const supabase = await createSupabaseServerClient();
   const {
@@ -48,9 +60,26 @@ export default async function ProfilIlanlarimPage() {
   ]);
   const loggedIn = !!sessionFav.user;
   const favSet = sessionFav.favoriteIds;
+  const feeLabel = PAID_LISTING_ACTIVATION_FEE_TRY.toLocaleString("tr-TR", {
+    minimumFractionDigits: 2,
+  });
 
   return (
     <div className="mt-8">
+      {highlightPassiveRef ? (
+        <div
+          className="mb-4 rounded-xl border-2 border-red-600 bg-red-600 px-4 py-3 text-white shadow-md"
+          role="alert"
+        >
+          <p className="text-base font-black tracking-tight">
+            İLAN AKTİF DEĞİL!!!
+          </p>
+          <p className="mt-1 text-sm font-semibold text-red-50">
+            Yeni ilanın pasife kaydedildi — vitrinde görünmez. Aktif yayına almak
+            için {feeLabel} ₺ ödemen gerekiyor.
+          </p>
+        </div>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
         <Link
           href="/ilan-ver"
@@ -85,13 +114,28 @@ export default async function ProfilIlanlarimPage() {
               listing.moderation_status === "approved" &&
               !listingQualityResubmitPending(listing);
             const expired = isListingExpiredStatus(listing);
+            const activationPassive = isListingActivationInactive(listing);
+            const passivePayment = isListingPassivePaymentStatus(listing);
             const pendingReview = listingQualityResubmitPending(listing);
+            const highlight =
+              !!highlightPassiveRef &&
+              (highlightPassiveRef === String(id ?? "") ||
+                highlightPassiveRef === String(numStr ?? ""));
             return (
-              <li key={id ?? String(listing.listing_number)}>
+              <li
+                key={id ?? String(listing.listing_number)}
+                id={highlight ? "passive-new-listing" : undefined}
+                className={highlight ? "scroll-mt-24" : undefined}
+              >
                 <ListingFeatureBoostPanel
                   listing={listing}
                   listingLabel={listingLabel}
-                  canBoost={approved && !isListingSuspended(listing) && !expired}
+                  canBoost={
+                    approved &&
+                    !isListingSuspended(listing) &&
+                    !expired &&
+                    !activationPassive
+                  }
                   paymentInfo={id ? boostPayments.get(id) ?? null : null}
                   compact
                 />
@@ -104,6 +148,8 @@ export default async function ProfilIlanlarimPage() {
                   favorited={id ? favSet.has(id) : false}
                   suspended={isListingSuspended(listing) && !pendingReview}
                   expired={expired}
+                  activationPassive={activationPassive}
+                  highlightPassive={highlight || passivePayment}
                   qualityReviewPending={pendingReview}
                   suspensionReason={
                     listing.suspension_reason != null
@@ -113,12 +159,17 @@ export default async function ProfilIlanlarimPage() {
                   ownerActions={
                     id && numStr ? (
                       <>
-                        {expired ? (
+                        {expired && !passivePayment ? (
                           <ReactivateListingButton
                             listingId={id}
                             remaining={quota.remaining}
                             unlimited={quota.unlimited}
                           />
+                        ) : null}
+                        {passivePayment ? (
+                          <span className="rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-800">
+                            Aktifleştir · {feeLabel} ₺
+                          </span>
                         ) : null}
                         <Link
                           href={`/ilan-duzenle/${numStr}`}
