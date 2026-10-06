@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPageLinks } from "@/components/LegalPageLinks";
-import { MerchantLegalBlock } from "@/components/MerchantLegalBlock";
-import { getMerchantLegalInfo } from "@/lib/merchant-legal";
+import { getPublicContactInfo } from "@/lib/merchant-legal";
 
 export const metadata: Metadata = {
   title: "Hakkımızda",
-  description: "Oto Pazarı hakkında ve satıcı bilgileri.",
+  description: "Oto Pazarı hakkında kısa bilgi.",
+  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
   alternates: { canonical: "/hakkimizda" },
 };
 
 export default function HakkimizdaPage() {
-  const merchant = getMerchantLegalInfo();
+  const contact = getPublicContactInfo();
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
@@ -32,13 +32,17 @@ export default function HakkimizdaPage() {
           ürün satışı veya kargo hizmeti sunulmaz.
         </p>
 
-        <div className="mt-8">
-          <MerchantLegalBlock info={merchant} />
-        </div>
-
         <p className="mt-6">
+          Destek:{" "}
+          <a
+            href={`mailto:${contact.email}`}
+            className="font-semibold text-zinc-900 underline"
+          >
+            {contact.email}
+          </a>
+          {" · "}
           <Link href="/iletisim" className="font-semibold text-zinc-900 underline">
-            İletişim sayfası
+            İletişim
           </Link>
         </p>
 

@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import { LegalPageLinks } from "@/components/LegalPageLinks";
-import { MerchantLegalBlock } from "@/components/MerchantLegalBlock";
-import { getMerchantLegalInfo } from "@/lib/merchant-legal";
+import { getPublicContactInfo } from "@/lib/merchant-legal";
 
 export const metadata: Metadata = {
   title: "İletişim",
-  description: "Oto Pazarı iletişim, satıcı ve destek bilgileri.",
-  robots: { index: false, follow: true },
+  description: "Oto Pazarı destek e-posta iletişimi.",
+  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
   alternates: { canonical: "/iletisim" },
 };
 
 export default function IletisimPage() {
-  const merchant = getMerchantLegalInfo();
+  const contact = getPublicContactInfo();
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
@@ -20,37 +19,28 @@ export default function IletisimPage() {
           İletişim
         </h1>
         <p className="mt-4 text-sm leading-6 text-zinc-600">
-          İlan, üyelik, bayi başvurusu, ödeme ve iade talepleri için aşağıdaki
-          kanallardan bize ulaşabilirsiniz.
+          İlan, üyelik, bayi başvurusu, ödeme ve iade talepleri için e-posta ile
+          bize ulaşabilirsiniz.
         </p>
 
-        <div className="mt-6">
-          <MerchantLegalBlock info={merchant} />
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-            <p className="text-sm font-bold text-zinc-950">E-posta destek</p>
-            <a
-              href={`mailto:${merchant.email}`}
-              className="mt-1 block text-sm text-zinc-700 underline"
-            >
-              {merchant.email}
-            </a>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-              Ödeme, iade, teknik sorun ve hesap işlemleri.
-            </p>
-          </div>
-          {merchant.phone ? (
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-              <p className="text-sm font-bold text-zinc-950">Telefon</p>
+        <div className="mt-6 max-w-md rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-sm font-bold text-zinc-950">E-posta</p>
+          <a
+            href={`mailto:${contact.email}`}
+            className="mt-1 block text-sm font-semibold text-zinc-800 underline"
+          >
+            {contact.email}
+          </a>
+          {contact.phone ? (
+            <>
+              <p className="mt-4 text-sm font-bold text-zinc-950">Telefon</p>
               <a
-                href={`tel:${merchant.phone.replace(/\s/g, "")}`}
-                className="mt-1 block text-sm text-zinc-700 underline"
+                href={`tel:${contact.phone.replace(/\s/g, "")}`}
+                className="mt-1 block text-sm font-semibold text-zinc-800 underline"
               >
-                {merchant.phone}
+                {contact.phone}
               </a>
-            </div>
+            </>
           ) : null}
         </div>
 

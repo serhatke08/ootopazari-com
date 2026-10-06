@@ -1,16 +1,26 @@
 import type { MerchantLegalInfo } from "@/lib/merchant-legal";
+import { merchantAddressPublicEnabled } from "@/lib/merchant-legal";
 
 type Props = {
   info: MerchantLegalInfo;
   compact?: boolean;
+  /** true olsa bile MERCHANT_SHOW_ADDRESS=1 yoksa adres basılmaz */
+  showAddress?: boolean;
 };
 
-export function MerchantLegalBlock({ info, compact = false }: Props) {
+export function MerchantLegalBlock({
+  info,
+  compact = false,
+  showAddress = false,
+}: Props) {
+  const canShowAddress =
+    showAddress &&
+    merchantAddressPublicEnabled() &&
+    Boolean(info.address.trim());
+
   const rows: { label: string; value: string }[] = [
     { label: "Ticari unvan", value: info.legalName },
-    ...(info.address
-      ? [{ label: "Adres", value: info.address }]
-      : []),
+    ...(canShowAddress ? [{ label: "Adres", value: info.address }] : []),
     { label: "E-posta", value: info.email },
     ...(info.phone ? [{ label: "Telefon", value: info.phone }] : []),
     ...(info.taxOffice && info.taxNumber
