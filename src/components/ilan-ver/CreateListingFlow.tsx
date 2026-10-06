@@ -263,7 +263,8 @@ export function CreateListingFlow({
     [rawCategories]
   );
 
-  const [pages, setPages] = useState<FlowPage[]>(["category"]);
+  // Araç akışı varsayılan — yalnız ["category"] olursa progress bar ilk sayfada %100 dolu kalır.
+  const [pages, setPages] = useState<FlowPage[]>(() => [...VEHICLE_PAGES]);
   const [pageIndex, setPageIndex] = useState(0);
   const page = pages[pageIndex] ?? "category";
 
@@ -375,7 +376,12 @@ export function CreateListingFlow({
   /** e-Devlet dönüşünde kategori flaşını önlemek (SSR ile aynı initial → hydration OK) */
   const [bootReady, setBootReady] = useState(true);
 
-  const progress = pages.length ? (pageIndex + 1) / pages.length : 0;
+  const progressDenom = Math.max(
+    pages.length,
+    // Kategori henüz seçilmediyse barı dolu gösterme
+    categoryId ? pages.length : VEHICLE_PAGES.length
+  );
+  const progress = progressDenom > 0 ? (pageIndex + 1) / progressDenom : 0;
 
   const seriesName =
     hierarchical && parentId
@@ -2403,10 +2409,10 @@ export function CreateListingFlow({
         </div>
       </div>
 
-      <div className="h-1 overflow-hidden rounded-full bg-zinc-200">
+      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200">
         <div
           className="h-full rounded-full bg-[#002776] transition-all duration-300"
-          style={{ width: `${Math.round(progress * 100)}%` }}
+          style={{ width: `${Math.max(4, Math.round(progress * 100))}%` }}
         />
       </div>
 
@@ -2416,6 +2422,10 @@ export function CreateListingFlow({
           title={selectionTrail.join(" › ")}
         >
           {selectionTrail.join(" › ")}
+        </p>
+      ) : page === "category" ? (
+        <p className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50 px-3 py-2 text-[12.5px] font-semibold leading-snug text-zinc-500">
+          Seçimlerin burada görünecek
         </p>
       ) : null}
 
