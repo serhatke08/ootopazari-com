@@ -86,6 +86,7 @@ import {
   PublishSuccessOverlay,
   type PublishedListingPreview,
 } from "@/components/ilan-ver/PublishSuccessOverlay";
+import { FeatureBoostPackPicker } from "@/components/FeatureBoostPackPicker";
 import {
   brandLogoSrc,
   categoryIconSrc,
@@ -347,10 +348,6 @@ export function CreateListingFlow({
   >("none");
   const [boostProductId, setBoostProductId] = useState<string | null>(null);
   const [acilProductId, setAcilProductId] = useState<string | null>(null);
-  /** Boosts adımında hangi sekmenin detayı açık. */
-  const [boostsDetailTab, setBoostsDetailTab] = useState<"boost" | "acil">(
-    "boost"
-  );
 
   function syncPackageIntent(
     nextBoost: string | null,
@@ -2330,7 +2327,12 @@ export function CreateListingFlow({
       : "border-zinc-300";
 
   return (
-    <div id="ilan-ver-top" className="mx-auto max-w-md space-y-3 pb-24">
+    <div
+      id="ilan-ver-top"
+      className={`mx-auto space-y-3 pb-28 ${
+        page === "boosts" ? "max-w-lg" : "max-w-md"
+      }`}
+    >
       {publishOverlay?.kind === "toast" ? (
         <PublishSuccessOverlay
           kind="toast"
@@ -3481,131 +3483,122 @@ export function CreateListingFlow({
       ) : null}
 
       {page === "boosts" ? (
-        <div className="space-y-3">
-          <p className="text-sm text-zinc-600">
+        <div className="space-y-4 pb-8">
+          <p className="text-sm leading-snug text-zinc-600">
             İsteğe bağlı. Paketi seç → yayınla → önizle → öde. Seçmezsen paketsiz
             yayınlanır.
           </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setBoostsDetailTab("boost")}
-              className={`rounded-xl border-2 px-3 py-3 text-center transition ${
-                boostsDetailTab === "boost"
-                  ? "border-indigo-600 bg-indigo-50"
-                  : "border-zinc-200 bg-white hover:bg-zinc-50"
-              }`}
-            >
-              <p className="text-sm font-black text-zinc-900">Öne çıkarma</p>
+
+          {(boostProductId || acilProductId) && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-900">
+              Seçilen:{" "}
+              {[
+                boostProductId
+                  ? `Öne çıkarma ${
+                      FEATURE_BOOST_PACKS.find(
+                        (p) => p.productId === boostProductId
+                      )?.label ?? ""
+                    } (${formatTryPrice(
+                      FEATURE_BOOST_PACKS.find(
+                        (p) => p.productId === boostProductId
+                      )?.fallbackPriceTry ?? 0
+                    )})`
+                  : null,
+                acilProductId
+                  ? `Acil ${
+                      ACIL_PACKS.find((p) => p.productId === acilProductId)
+                        ?.label ?? ""
+                    } (${formatTryPrice(
+                      ACIL_PACKS.find((p) => p.productId === acilProductId)
+                        ?.priceTry ?? 0
+                    )})`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+          )}
+
+          <section className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-black text-zinc-950">
+                  Öne çıkarma
+                </h3>
+                <p className="mt-0.5 text-[11px] text-zinc-500">
+                  Ana akışta daha görünür · süre seç
+                </p>
+              </div>
               {boostProductId ? (
-                <p className="mt-0.5 text-[11px] font-bold text-indigo-700">
-                  ✓{" "}
-                  {FEATURE_BOOST_PACKS.find((p) => p.productId === boostProductId)
-                    ?.label ?? "seçili"}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => selectBoostPack(boostProductId)}
+                  className="shrink-0 text-[11px] font-bold text-zinc-500 underline"
+                >
+                  Kaldır
+                </button>
               ) : null}
-            </button>
-            <button
-              type="button"
-              onClick={() => setBoostsDetailTab("acil")}
-              className={`rounded-xl border-2 px-3 py-3 text-center transition ${
-                boostsDetailTab === "acil"
-                  ? "border-orange-500 bg-orange-50"
-                  : "border-zinc-200 bg-white hover:bg-zinc-50"
-              }`}
-            >
-              <p className="text-sm font-black text-zinc-900">Acil</p>
+            </div>
+            <FeatureBoostPackPicker
+              selectedPackId={boostProductId}
+              listingCount={1}
+              disabled={false}
+              onSelect={(id) => selectBoostPack(id)}
+            />
+          </section>
+
+          <section className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-black text-zinc-950">Acil ilan</h3>
+                <p className="mt-0.5 text-[11px] text-zinc-500">
+                  Acil vitrinde öne çık · süre seç
+                </p>
+              </div>
               {acilProductId ? (
-                <p className="mt-0.5 text-[11px] font-bold text-orange-700">
-                  ✓{" "}
-                  {ACIL_PACKS.find((p) => p.productId === acilProductId)?.label ??
-                    "seçili"}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => selectAcilPack(acilProductId)}
+                  className="shrink-0 text-[11px] font-bold text-zinc-500 underline"
+                >
+                  Kaldır
+                </button>
               ) : null}
-            </button>
-          </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              {ACIL_PACKS.map((p) => {
+                const selected = acilProductId === p.productId;
+                return (
+                  <button
+                    key={p.productId}
+                    type="button"
+                    onClick={() => selectAcilPack(p.productId)}
+                    className={`relative flex flex-col items-center justify-center rounded-xl border px-2 py-3 text-center transition sm:rounded-2xl sm:px-3 sm:py-4 ${
+                      selected
+                        ? "border-orange-500 bg-orange-50 shadow-md ring-2 ring-orange-400/40"
+                        : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
+                    }`}
+                  >
+                    <span className="text-base font-black text-zinc-950 sm:text-lg">
+                      {p.label}
+                    </span>
+                    <span className="mt-1.5 text-sm font-black tabular-nums text-orange-700 sm:text-xl">
+                      {formatTryPrice(p.priceTry)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
 
-          <div
-            className={`space-y-2 rounded-xl border-2 p-3 ${
-              boostsDetailTab === "boost"
-                ? "border-indigo-200 bg-white"
-                : "border-orange-200 bg-white"
-            }`}
-          >
-            {boostsDetailTab === "boost" ? (
-              <>
-                <p className="text-sm font-bold text-zinc-900">Öne çıkarma paketi seç</p>
-                <p className="text-xs text-zinc-600">
-                  Ana akışta daha görünür olsun. Bir süre seç.
-                </p>
-                {FEATURE_BOOST_PACKS.map((p) => {
-                  const selected = boostProductId === p.productId;
-                  return (
-                    <button
-                      key={p.productId}
-                      type="button"
-                      onClick={() => selectBoostPack(p.productId)}
-                      className={`flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left transition ${
-                        selected
-                          ? "border-indigo-600 bg-indigo-50"
-                          : "border-zinc-200 bg-white hover:bg-zinc-50"
-                      }`}
-                    >
-                      <span>
-                        <span className="block text-sm font-bold text-zinc-900">
-                          {p.label}
-                        </span>
-                        <span className="block text-[11px] text-zinc-600">
-                          {p.subtitle}
-                        </span>
-                      </span>
-                      <span className="text-sm font-extrabold text-indigo-700">
-                        {formatTryPrice(p.fallbackPriceTry)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-bold text-zinc-900">Acil paketi seç</p>
-                <p className="text-xs text-zinc-600">
-                  Acil vitrinde öne çıksın. Bir süre seç.
-                </p>
-                {ACIL_PACKS.map((p) => {
-                  const selected = acilProductId === p.productId;
-                  return (
-                    <button
-                      key={p.productId}
-                      type="button"
-                      onClick={() => selectAcilPack(p.productId)}
-                      className={`flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left transition ${
-                        selected
-                          ? "border-orange-500 bg-orange-50"
-                          : "border-zinc-200 bg-white hover:bg-zinc-50"
-                      }`}
-                    >
-                      <span className="text-sm font-bold text-zinc-900">
-                        {p.label} Acil
-                      </span>
-                      <span className="text-sm font-extrabold text-orange-700">
-                        {formatTryPrice(p.priceTry)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </>
-            )}
-          </div>
-
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs leading-snug text-zinc-500">
             Paketsiz devam edersen doğrudan yayınlanır. Paket seçtiysen yayın
             sonrası seçtiğin paket önizlenir ve ödemeye geçersin.
           </p>
         </div>
       ) : null}
 
-      <div className="sticky bottom-16 z-10 flex gap-2 border-t border-zinc-200 bg-zinc-50/95 py-3 backdrop-blur sm:bottom-0">
+      <div className="sticky bottom-16 z-10 -mx-1 flex gap-2 border-t border-zinc-200 bg-zinc-50/95 px-1 py-3 backdrop-blur sm:bottom-0">
         <button
           type="button"
           onClick={() => void goBack()}
@@ -3636,7 +3629,7 @@ export function CreateListingFlow({
                 ? "Değişiklikleri kaydet"
                 : packageIntent === "none"
                   ? "Paketsiz devam et / yayınla"
-                  : "Devam et / yayınla"
+                  : "Yayınla ve öde"
             : "İleri"}
         </button>
       </div>
