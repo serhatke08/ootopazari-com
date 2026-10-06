@@ -80,7 +80,9 @@ import {
   draftHasProgress,
   draftSummaryLine,
   fetchListingDraft,
+  filesFromDraftImageUrls,
   saveListingDraft,
+  uploadListingDraftImages,
   type ListingDraftPayload,
 } from "@/lib/listing-draft";
 import { sortByCreateListingCategoryOrder } from "@/lib/vehicle-category-sort";
@@ -333,6 +335,9 @@ export function CreateListingFlow({
   const [eidsMismatches, setEidsMismatches] = useState<EidsMismatch[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
+  /** Storage path listesi — taslak JSON’a yazılır */
+  const [draftImagePaths, setDraftImagePaths] = useState<string[]>([]);
+  const draftImagesSyncing = useRef(false);
   const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>(
     () => (initialGalleryUrls?.length ? [...initialGalleryUrls] : [])
   );
@@ -474,6 +479,7 @@ export function CreateListingFlow({
       cityId,
       district,
       phone,
+      imagePaths: draftImagePaths,
       coverPhotoIndex: coverIndex,
       packageIntent,
       boostProductId,
@@ -526,6 +532,7 @@ export function CreateListingFlow({
     cityId,
     district,
     phone,
+    draftImagePaths,
     coverIndex,
     packageIntent,
     boostProductId,
@@ -661,6 +668,39 @@ export function CreateListingFlow({
     }, 800);
     return () => window.clearTimeout(t);
   }, [persistDraft]);
+
+  // Fotoğraflar değişince storage’a yükle → imagePaths taslağa yazılsın
+  useEffect(() => {
+    if (isEditMode || draftSkip.current) return;
+    let cancelled = false;
+    const t = window.setTimeout(() => {
+      void (async () => {
+        if (draftImagesSyncing.current) return;
+        draftImagesSyncing.current = true;
+        try {
+          if (files.length === 0) {
+            if (draftImagePaths.length > 0) {
+              await uploadListingDraftImages([]);
+              if (!cancelled) setDraftImagePaths([]);
+            }
+            return;
+          }
+          const prepared = await compressListingImageFiles(files);
+          const { paths } = await uploadListingDraftImages(prepared);
+          if (cancelled) return;
+          setDraftImagePaths(paths);
+        } finally {
+          draftImagesSyncing.current = false;
+        }
+      })();
+    }, 600);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+    // draftImagePaths bilerek bağımlılık değil — döngü olmasın
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, isEditMode]);
 
   const goTo = useCallback(
     async (
@@ -1245,6 +1285,27 @@ export function CreateListingFlow({
     if (typeof d.acilProductId === "string" && d.acilProductId.trim()) {
       setAcilProductId(d.acilProductId.trim());
     }
+    if (d.coverPhotoIndex != null && Number.isFinite(Number(d.coverPhotoIndex))) {
+      setCoverIndex(Math.max(0, Number(d.coverPhotoIndex)));
+    }
+    const imageUrls = Array.isArray(d.imagePaths)
+      ? d.imagePaths.filter((u): u is string => typeof u === "string" && !!u.trim())
+      : [];
+    if (imageUrls.length > 0) {
+      const restored = await filesFromDraftImageUrls(imageUrls);
+      setFiles(restored);
+      // draftSkip açıkken effect yüklemez — path’leri burada netleştir
+      if (restored.length > 0) {
+        const prepared = await compressListingImageFiles(restored);
+        const { paths } = await uploadListingDraftImages(prepared);
+        setDraftImagePaths(paths);
+      } else {
+        setDraftImagePaths([]);
+      }
+    } else {
+      setFiles([]);
+      setDraftImagePaths([]);
+    }
     // landOn varsa tekrar taslak index'ine basma
     if (!opts?.landOn) {
       setPageIndex(Math.min(Math.max(d.pageIndex ?? 0, 0), list.length - 1));
@@ -1255,7 +1316,7 @@ export function CreateListingFlow({
     setDraftBanner(null);
     setTimeout(() => {
       draftSkip.current = false;
-    }, 500);
+    }, 800);
   }
 
   const startEids = async () => {

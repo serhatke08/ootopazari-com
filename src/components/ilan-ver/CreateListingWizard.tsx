@@ -80,7 +80,9 @@ import {
   draftHasProgress,
   draftSummaryLine,
   fetchListingDraft,
+  filesFromDraftImageUrls,
   saveListingDraft,
+  uploadListingDraftImages,
   type ListingDraftPayload,
 } from "@/lib/listing-draft";
 
@@ -319,6 +321,8 @@ export function CreateListingWizard({
   } | null>(null);
   const draftHydrated = useRef(false);
   const draftSkipSave = useRef(false);
+  const draftImagesSyncing = useRef(false);
+  const [draftImagePaths, setDraftImagePaths] = useState<string[]>([]);
   const [draftBanner, setDraftBanner] = useState<ListingDraftPayload | null>(
     null
   );
@@ -367,6 +371,7 @@ export function CreateListingWizard({
       cityId,
       district: district || null,
       phone: phoneInput || null,
+      imagePaths: draftImagePaths,
       coverPhotoIndex: coverIndex,
       webStep: step,
       pageIndex: Math.max(0, step - 1),
@@ -414,12 +419,13 @@ export function CreateListingWizard({
     cityId,
     district,
     phoneInput,
+    draftImagePaths,
     coverIndex,
     step,
   ]);
 
   const applyDraftPayload = useCallback(
-    (d: ListingDraftPayload) => {
+    async (d: ListingDraftPayload) => {
       draftSkipSave.current = true;
       if (d.categoryId) setCategoryId(d.categoryId);
       if (d.brandId) setBrandId(d.brandId);
@@ -449,6 +455,25 @@ export function CreateListingWizard({
       if (d.district) setDistrict(d.district);
       if (d.phone) setPhoneInput(d.phone);
       if (d.coverPhotoIndex != null) setCoverIndex(d.coverPhotoIndex);
+      const imageUrls = Array.isArray(d.imagePaths)
+        ? d.imagePaths.filter(
+            (u): u is string => typeof u === "string" && !!u.trim()
+          )
+        : [];
+      if (imageUrls.length > 0) {
+        const restored = await filesFromDraftImageUrls(imageUrls);
+        setFiles(restored);
+        if (restored.length > 0) {
+          const prepared = await compressListingImageFiles(restored);
+          const { paths } = await uploadListingDraftImages(prepared);
+          setDraftImagePaths(paths);
+        } else {
+          setDraftImagePaths([]);
+        }
+      } else {
+        setFiles([]);
+        setDraftImagePaths([]);
+      }
       const st = d.webStep ?? (d.pageIndex != null ? d.pageIndex + 1 : 1);
       setStep(Math.min(3, Math.max(1, st)));
       setDraftBanner(null);
@@ -490,6 +515,37 @@ export function CreateListingWizard({
     step,
     title,
   ]);
+
+  // Fotoğrafları taslak storage’a yaz
+  useEffect(() => {
+    if (isEditMode || draftSkipSave.current || draftBannerPending) return;
+    let cancelled = false;
+    const t = window.setTimeout(() => {
+      void (async () => {
+        if (draftImagesSyncing.current) return;
+        draftImagesSyncing.current = true;
+        try {
+          if (files.length === 0) {
+            if (draftImagePaths.length > 0) {
+              await uploadListingDraftImages([]);
+              if (!cancelled) setDraftImagePaths([]);
+            }
+            return;
+          }
+          const prepared = await compressListingImageFiles(files);
+          const { paths } = await uploadListingDraftImages(prepared);
+          if (!cancelled) setDraftImagePaths(paths);
+        } finally {
+          draftImagesSyncing.current = false;
+        }
+      })();
+    }, 700);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, isEditMode, draftBannerPending]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const categoryCode = selectedCategory?.code ?? null;
@@ -1506,8 +1562,10 @@ export function CreateListingWizard({
               type="button"
               className="rounded-lg bg-[#ffcc00] px-3 py-1.5 text-sm font-bold text-zinc-900"
               onClick={() => {
-                applyDraftPayload(draftBanner);
-                setDraftBannerPending(false);
+                void (async () => {
+                  await applyDraftPayload(draftBanner);
+                  setDraftBannerPending(false);
+                })();
               }}
             >
               Devam et

@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
 import { resolveRequestUser } from "@/lib/supabase/request-user";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import {
+  LISTING_DRAFT_BUCKET,
+  draftJsonPath,
+  ensureListingDraftBucket,
+  extractDraftObjectPath,
+  isHttpUrl,
+  removeAllUserDraftFiles,
+  resolveDraftImageUrlsForClient,
+} from "@/lib/listing-draft-storage";
 
 export const dynamic = "force-dynamic";
-
-const BUCKET = "listing-drafts";
-
-function draftPath(userId: string) {
-  return `${userId}/draft.json`;
-}
 
 /**
  * App + web ortak ilan taslağı.
  * GET → { ok, draft } | { ok:true, draft:null }
  * PUT body { draft: object } → kaydet
- * DELETE → sil
+ * DELETE → draft.json + görseller
  */
 export async function GET(req: Request) {
   const { user } = await resolveRequestUser(req);
@@ -25,22 +28,27 @@ export async function GET(req: Request) {
   if (!admin) {
     return NextResponse.json({ error: "server_config" }, { status: 500 });
   }
+  await ensureListingDraftBucket(admin);
 
   const { data, error } = await admin.storage
-    .from(BUCKET)
-    .download(draftPath(user.id));
+    .from(LISTING_DRAFT_BUCKET)
+    .download(draftJsonPath(user.id));
 
   if (error || !data) {
-    // not found
     return NextResponse.json({ ok: true, draft: null });
   }
 
   try {
     const text = await data.text();
-    const parsed = JSON.parse(text) as unknown;
+    const parsed = JSON.parse(text) as Record<string, unknown>;
     if (!parsed || typeof parsed !== "object") {
       return NextResponse.json({ ok: true, draft: null });
     }
+    parsed.imagePaths = await resolveDraftImageUrlsForClient(
+      admin,
+      user.id,
+      parsed.imagePaths
+    );
     return NextResponse.json({ ok: true, draft: parsed });
   } catch {
     return NextResponse.json({ ok: true, draft: null });
@@ -56,6 +64,7 @@ export async function PUT(req: Request) {
   if (!admin) {
     return NextResponse.json({ error: "server_config" }, { status: 500 });
   }
+  await ensureListingDraftBucket(admin);
 
   let body: { draft?: unknown };
   try {
@@ -67,13 +76,23 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "missing_draft" }, { status: 400 });
   }
 
-  const draft = body.draft as Record<string, unknown>;
-  // Yerel dosya yollarını buluta yazma (app↔web kırılır)
+  const draft = { ...(body.draft as Record<string, unknown>) };
+
+  // Yerel dosya yollarını at; http URL veya storage path tut.
   if (Array.isArray(draft.imagePaths)) {
-    draft.imagePaths = draft.imagePaths.filter(
-      (p) => typeof p === "string" && /^https?:\/\//i.test(p)
-    );
+    const kept: string[] = [];
+    for (const p of draft.imagePaths) {
+      if (typeof p !== "string" || !p.trim()) continue;
+      const objectPath = extractDraftObjectPath(user.id, p);
+      if (objectPath) {
+        kept.push(objectPath);
+        continue;
+      }
+      if (isHttpUrl(p)) kept.push(p.trim());
+    }
+    draft.imagePaths = kept;
   }
+
   draft.updatedAt = new Date().toISOString();
   draft.source = draft.source ?? "unknown";
 
@@ -81,8 +100,8 @@ export async function PUT(req: Request) {
     type: "application/json",
   });
   const { error } = await admin.storage
-    .from(BUCKET)
-    .upload(draftPath(user.id), blob, {
+    .from(LISTING_DRAFT_BUCKET)
+    .upload(draftJsonPath(user.id), blob, {
       upsert: true,
       contentType: "application/json",
     });
@@ -105,7 +124,7 @@ export async function DELETE(req: Request) {
   if (!admin) {
     return NextResponse.json({ error: "server_config" }, { status: 500 });
   }
-
-  await admin.storage.from(BUCKET).remove([draftPath(user.id)]);
+  await ensureListingDraftBucket(admin);
+  await removeAllUserDraftFiles(admin, user.id);
   return NextResponse.json({ ok: true });
 }

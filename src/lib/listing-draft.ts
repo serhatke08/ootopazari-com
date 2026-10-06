@@ -45,6 +45,7 @@ export type ListingDraftPayload = {
   cityId?: string | null;
   district?: string | null;
   phone?: string | null;
+  /** Storage path veya imzalı/public URL listesi */
   imagePaths?: string[];
   coverPhotoIndex?: number;
   packageIntent?: string;
@@ -77,6 +78,9 @@ export function draftSummaryLine(d: ListingDraftPayload): string {
   if (d.brandName?.trim()) parts.push(d.brandName.trim());
   if (d.modelName?.trim()) parts.push(d.modelName.trim());
   if (parts.length === 0 && d.title?.trim()) parts.push(d.title.trim());
+  if ((d.imagePaths?.length ?? 0) > 0) {
+    parts.push(`${d.imagePaths!.length} foto`);
+  }
   return parts.length ? parts.join(" · ") : "Taslak ilan";
 }
 
@@ -112,4 +116,57 @@ export async function deleteListingDraft(): Promise<boolean> {
     headers: { Accept: "application/json" },
   });
   return res.ok;
+}
+
+/** Taslak görsellerini storage’a yükler; imzalı URL listesi döner. */
+export async function uploadListingDraftImages(
+  files: File[]
+): Promise<{ urls: string[]; paths: string[] }> {
+  const fd = new FormData();
+  for (const f of files) fd.append("files", f);
+  const res = await fetch("/api/listing-draft/images", {
+    method: "POST",
+    credentials: "include",
+    body: fd,
+  });
+  if (!res.ok) return { urls: [], paths: [] };
+  const body = (await res.json()) as {
+    urls?: string[];
+    paths?: string[];
+  };
+  return {
+    urls: Array.isArray(body.urls) ? body.urls : [],
+    paths: Array.isArray(body.paths) ? body.paths : [],
+  };
+}
+
+/** GET’ten gelen imzalı URL’leri File[] olarak forma geri yükler. */
+export async function filesFromDraftImageUrls(
+  urls: string[]
+): Promise<File[]> {
+  const out: File[] = [];
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    if (!url) continue;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      const type = blob.type || "image/jpeg";
+      const ext = type.includes("png")
+        ? "png"
+        : type.includes("webp")
+          ? "webp"
+          : "jpg";
+      out.push(
+        new File([blob], `draft-${i}.${ext}`, {
+          type,
+          lastModified: Date.now(),
+        })
+      );
+    } catch {
+      /* skip broken url */
+    }
+  }
+  return out;
 }
