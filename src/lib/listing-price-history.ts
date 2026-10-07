@@ -14,6 +14,11 @@ export type PriceHistoryEntry = {
   indicatorColor: string;
 };
 
+export type PriceHistoryChange = {
+  from: PriceHistoryEntry;
+  to: PriceHistoryEntry;
+};
+
 export function formatListingPriceTry(price: number | null | undefined): string {
   if (price == null || !Number.isFinite(Number(price))) return "Fiyat sorunuz";
   return new Intl.NumberFormat("tr-TR", {
@@ -31,6 +36,46 @@ export function formatPriceHistoryDate(iso: string): string {
     month: "long",
     year: "numeric",
   });
+}
+
+export function listingPriceHistoryHasChanges(
+  items: PriceHistoryEntry[]
+): boolean {
+  if (items.length < 2) return false;
+  for (let i = 0; i < items.length - 1; i++) {
+    if (items[i].price !== items[i + 1].price) return true;
+  }
+  return false;
+}
+
+/** En eski kayıt = ilk fiyat. */
+export function listingPriceHistoryInitial(
+  items: PriceHistoryEntry[]
+): PriceHistoryEntry | null {
+  if (items.length === 0) return null;
+  return items.reduce((a, b) =>
+    new Date(a.recordedAt).getTime() < new Date(b.recordedAt).getTime() ? a : b
+  );
+}
+
+/** Değişimler (en yeni üstte): eski fiyat → yeni fiyat. */
+export function listingPriceHistoryChanges(
+  items: PriceHistoryEntry[]
+): PriceHistoryChange[] {
+  if (items.length < 2) return [];
+  const chronological = [...items].sort(
+    (a, b) =>
+      new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
+  );
+  const changes: PriceHistoryChange[] = [];
+  for (let i = 1; i < chronological.length; i++) {
+    const older = chronological[i - 1];
+    const newer = chronological[i];
+    if (newer.price !== older.price) {
+      changes.push({ from: older, to: newer });
+    }
+  }
+  return changes.reverse();
 }
 
 export async function fetchListingPriceHistory(

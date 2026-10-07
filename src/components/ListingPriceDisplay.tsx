@@ -42,7 +42,9 @@ export function ListingPriceDisplay({
   
   const dotColor = priceRatingIndicatorColor(summary.average, summary.count);
   const hasRatings = summary.count > 0 && summary.average != null;
-  const priceColor = overlay || !mounted ? undefined : hasRatings ? dotColor : "#18181b";
+  // Oy yoksa eski koyu gri; değerlendirme varsa nokta ile aynı renk.
+  const priceColor =
+    overlay || !mounted ? undefined : hasRatings ? dotColor : "#18181b";
   
   const basePriceCls = overlay
     ? "text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs"

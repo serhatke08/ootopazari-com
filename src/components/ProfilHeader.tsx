@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import { ProfileVerificationBadges } from "@/components/ProfileVerificationBadges";
-import { WEB_EIDS_UI_ENABLED } from "@/lib/eids-ui";
 import { setProfileAvatarUrl } from "@/lib/profile-avatar-db";
 import { AVATARS_BUCKET } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";

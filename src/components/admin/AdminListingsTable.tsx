@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AdminListingRow } from "@/lib/admin-listings-types";
+import { AdminListingPlatformIcon } from "@/components/admin/AdminListingPlatformIcon";
 import { CenteredDialog } from "@/components/CenteredDialog";
 
 type Props = {
@@ -115,6 +116,7 @@ export function AdminListingsTable({ initialRows }: Props) {
           <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600">
             <tr>
               <th className="px-3 py-2.5">Sıra</th>
+              <th className="px-3 py-2.5">Platform</th>
               <th className="px-3 py-2.5">İlan no</th>
               <th className="px-3 py-2.5">Başlık</th>
               <th className="px-3 py-2.5">Kapak</th>
@@ -134,6 +136,9 @@ export function AdminListingsTable({ initialRows }: Props) {
               return (
                 <tr key={row.id} className="text-zinc-800">
                   <td className="px-3 py-2 font-mono text-xs">{row.feed_rank}</td>
+                  <td className="px-3 py-2">
+                    <AdminListingPlatformIcon client={row.created_client} />
+                  </td>
                   <td className="px-3 py-2 font-mono text-xs">
                     {row.listing_number ?? "—"}
                   </td>

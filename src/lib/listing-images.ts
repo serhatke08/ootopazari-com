@@ -105,9 +105,21 @@ export async function collectListingGalleryUrlsWithStorageFallback(
 
   const isImage = (n: string) =>
     /\.(jpe?g|png|webp|gif|heic|heif|avif)$/i.test(n);
+  /** 0 byte / boş metadata = kırık foto — gösterme. */
+  const hasBytes = (o: { metadata?: Record<string, unknown> | null }) => {
+    const meta = o.metadata;
+    if (!meta) return true;
+    const size = meta.size ?? meta.contentLength;
+    if (typeof size === "number") return size > 0;
+    if (typeof size === "string") {
+      const n = Number(size);
+      return Number.isFinite(n) ? n > 0 : true;
+    }
+    return true;
+  };
   const names = data
+    .filter((o) => isImage(o.name) && hasBytes(o))
     .map((o) => o.name)
-    .filter(isImage)
     .sort((a, b) => {
       const na = parseInt(a.split(".")[0]!, 10);
       const nb = parseInt(b.split(".")[0]!, 10);

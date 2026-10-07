@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import type { CategoryRow } from "@/lib/listings-data";
+import {
+  fetchApprovedListingCountsByField,
+  type CategoryRow,
+} from "@/lib/listings-data";
 import type { HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
 import {
   HOME_FILTER_FUELS,
@@ -195,10 +198,33 @@ export function HomeFilterSheet({
   >([]);
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
+  const [categoryCounts, setCategoryCounts] = useState<Map<string, number> | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const supabase = createSupabaseBrowserClient();
+    void fetchApprovedListingCountsByField(supabase, "category_id").then(
+      (m) => {
+        if (!cancelled) setCategoryCounts(m);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const visibleCategories = useMemo(
-    () => categories.filter((c) => !isHiddenFilterCategory(c.code, c.name)),
-    [categories]
+    () =>
+      categories.filter((c) => {
+        if (isHiddenFilterCategory(c.code, c.name)) return false;
+        if (draft.categoryId && c.id === draft.categoryId) return true;
+        if (!categoryCounts) return true;
+        return (categoryCounts.get(c.id) ?? 0) > 0;
+      }),
+    [categories, categoryCounts, draft.categoryId]
   );
 
   useEffect(() => {

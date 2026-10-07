@@ -66,6 +66,7 @@ export function ListingImageGallery({
   const [lightbox, setLightbox] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [hiddenSrcs, setHiddenSrcs] = useState<Set<string>>(() => new Set());
   const swipeRef = useRef({
     pointerId: -1,
     startX: 0,
@@ -79,11 +80,33 @@ export function ListingImageGallery({
     startPanX: 0,
     startPanY: 0,
   });
-  const list = images.filter(Boolean);
+  const list = images.filter((u) => Boolean(u) && !hiddenSrcs.has(u));
   const main = list[active] ?? list[0];
   const hasMultiple = list.length > 1;
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const mainLoaded = loadedSrc === main;
+
+  useEffect(() => {
+    setHiddenSrcs(new Set());
+    setActive(0);
+    setLoadedSrc(null);
+  }, [images]);
+
+  useEffect(() => {
+    if (active >= list.length && list.length > 0) {
+      setActive(list.length - 1);
+    }
+  }, [active, list.length]);
+
+  const dropBroken = useCallback((src: string | undefined) => {
+    if (!src) return;
+    setHiddenSrcs((prev) => {
+      if (prev.has(src)) return prev;
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+  }, []);
 
   const goPrev = useCallback(() => {
     setActive((a) => (a > 0 ? a - 1 : list.length - 1));
@@ -303,7 +326,7 @@ export function ListingImageGallery({
             loading={active === 0 ? "eager" : "lazy"}
             sizes="(max-width: 1024px) 100vw, 800px"
             onLoad={() => setLoadedSrc(main)}
-            onError={() => setLoadedSrc(main)}
+            onError={() => dropBroken(main)}
           />
         </div>
         {overlay ? (

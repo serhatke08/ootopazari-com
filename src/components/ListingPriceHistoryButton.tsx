@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CenteredDialog } from "@/components/CenteredDialog";
 import {
   formatListingPriceTry,
   formatPriceHistoryDate,
+  listingPriceHistoryChanges,
+  listingPriceHistoryHasChanges,
+  listingPriceHistoryInitial,
   type PriceHistoryEntry,
 } from "@/lib/listing-price-history";
-import { PRICE_RATING_OPTIONS } from "@/lib/listing-price-ratings";
 
 type Props = {
   history: PriceHistoryEntry[];
@@ -47,54 +49,62 @@ export function ListingPriceHistoryButton({
     setOpen((o) => !o);
   }, []);
 
+  const hasChanges = useMemo(
+    () => listingPriceHistoryHasChanges(history),
+    [history]
+  );
+  const initial = useMemo(
+    () => listingPriceHistoryInitial(history),
+    [history]
+  );
+  const changes = useMemo(
+    () => listingPriceHistoryChanges(history),
+    [history]
+  );
+
   const dialog = open ? (
     <CenteredDialog
       title="Fiyat geçmişi"
       titleId="price-history-dialog-title"
       onClose={close}
     >
-      {history.length === 0 ? (
+      {!hasChanges || !initial ? (
         <p className="text-sm text-black/55">
-          Henüz fiyat değişikliği kaydı yok.
+          Henüz fiyat değişikliği olmadı.
         </p>
       ) : (
-        <ul className="max-h-64 space-y-2 overflow-y-auto">
-          {history.map((entry) => (
-            <li
-              key={entry.id}
-              className="rounded-lg border border-black/8 bg-black/[0.02] px-2.5 py-2"
-            >
-              <div className="flex items-start gap-2">
-                <span
-                  className="mt-1.5 h-3 w-3 shrink-0 rounded-full"
-                  style={{ backgroundColor: entry.indicatorColor }}
-                  title="O dönemdeki fiyat değerlendirmesi"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold tabular-nums text-black">
-                    {formatListingPriceTry(entry.price)}
-                  </p>
-                  <p className="text-[11px] text-black/50">
-                    {formatPriceHistoryDate(entry.recordedAt)}
-                  </p>
-                  {entry.ratingCount > 0 ? (
-                    <p className="mt-1 text-[10px] leading-relaxed text-black/60">
-                      {PRICE_RATING_OPTIONS.map((opt) => (
-                        <span key={opt.value} className="mr-2 inline-block">
-                          {opt.shortLabel}: {entry.counts[opt.countKey]}
-                        </span>
-                      ))}
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-[10px] text-black/45">
-                      Oylama yoktu
-                    </p>
-                  )}
+        <div className="max-h-64 space-y-2.5 overflow-y-auto">
+          <div className="rounded-lg border border-black/8 bg-black/[0.02] px-3 py-2.5">
+            <p className="text-[11px] font-semibold text-black/50">İlk fiyat</p>
+            <p className="mt-0.5 text-lg font-extrabold tabular-nums text-black">
+              {formatListingPriceTry(initial.price)}
+            </p>
+          </div>
+
+          <ul className="space-y-2">
+            {changes.map((change) => (
+              <li
+                key={`${change.from.id}-${change.to.id}`}
+                className="rounded-lg border border-black/8 bg-black/[0.02] px-3 py-2.5"
+              >
+                <p className="text-[11px] text-black/50">
+                  {formatPriceHistoryDate(change.to.recordedAt)}
+                </p>
+                <div className="mt-1.5 flex min-w-0 items-center gap-2.5">
+                  <span className="truncate text-sm tabular-nums text-black/55 line-through decoration-black/35">
+                    {formatListingPriceTry(change.from.price)}
+                  </span>
+                  <span className="shrink-0 font-bold text-black/35" aria-hidden>
+                    —
+                  </span>
+                  <span className="truncate text-sm font-extrabold tabular-nums text-black">
+                    {formatListingPriceTry(change.to.price)}
+                  </span>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </CenteredDialog>
   ) : null;
