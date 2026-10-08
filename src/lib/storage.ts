@@ -1,5 +1,4 @@
 import type { SupabasePublicEnv } from "@/lib/env";
-import { isHeicLikeUrl } from "@/lib/image-format";
 
 const BUCKET = "listings-images";
 
@@ -10,7 +9,11 @@ function normalizeBucketPath(pathInsideBucket: string): string {
 }
 
 function extractPublicBucketPath(url: string): string | null {
-  const m = url.match(
+  const cleaned = url
+    .replace("/storage/v1/render/image/public/", "/storage/v1/object/public/")
+    .replace("/storage/v1/render/image/sign/", "/storage/v1/object/sign/")
+    .replace(/[?#].*$/, "");
+  const m = cleaned.match(
     /\/storage\/v1\/object\/public\/listings-images\/(.+)$/i
   );
   return m?.[1] ? decodeURIComponent(m[1]) : null;
@@ -29,19 +32,12 @@ export function publicListingImageUrl(
   return `${base}/storage/v1/object/public/${BUCKET}/${p}`;
 }
 
-/** HEIC/HEIF görselleri tarayıcıda göstermek için Supabase image render (webp). */
+/** Ham public URL — Image Transformation (`/render/image`) yok. */
 export function listingImageDisplayUrl(
   env: SupabasePublicEnv,
   imageUrl: string | null | undefined
 ): string | null {
-  const resolved = resolveListingImageUrl(env, imageUrl);
-  if (!resolved || !isHeicLikeUrl(resolved)) return resolved;
-
-  const path = extractPublicBucketPath(resolved);
-  if (!path) return resolved;
-
-  const base = env.url.replace(/\/$/, "");
-  return `${base}/storage/v1/render/image/public/${BUCKET}/${path}?format=webp&quality=85`;
+  return resolveListingImageUrl(env, imageUrl);
 }
 
 /**

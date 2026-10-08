@@ -1,7 +1,7 @@
-const MAX_EDGE = 1080;
-const JPEG_QUALITY = 0.62;
+const MAX_WIDTH = 1080;
+const JPEG_QUALITY = 0.8;
 
-/** Mobil ile uyumlu: ~1080px, kalite ~0.62. Başarısız olursa orijinal dosya döner. */
+/** Mobil ile uyumlu: genişlik ≤1080px, JPEG %80. Başarısız olursa orijinal dosya döner. */
 export async function compressListingImageFile(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") {
     return file;
@@ -12,13 +12,12 @@ export async function compressListingImageFile(file: File): Promise<File> {
 
   try {
     const bitmap = await createImageBitmap(file);
-    const longest = Math.max(bitmap.width, bitmap.height);
-    if (longest <= MAX_EDGE && file.size < 450_000) {
+    if (bitmap.width <= MAX_WIDTH && file.size < 450_000 && file.type === "image/jpeg") {
       bitmap.close();
       return file;
     }
 
-    const scale = Math.min(1, MAX_EDGE / longest);
+    const scale = Math.min(1, MAX_WIDTH / bitmap.width);
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
 

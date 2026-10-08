@@ -9,6 +9,7 @@ import {
   listUserDraftFiles,
   signDraftPaths,
 } from "@/lib/listing-draft-storage";
+import { compressListingImageBuffer } from "@/lib/compress-listing-image-server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,14 +17,6 @@ export const runtime = "nodejs";
 const MAX_FILES = 10;
 const MAX_BYTES = 12 * 1024 * 1024;
 
-function extFor(file: File): string {
-  const name = file.name.toLowerCase();
-  if (name.endsWith(".png") || file.type === "image/png") return "png";
-  if (name.endsWith(".webp") || file.type === "image/webp") return "webp";
-  if (name.endsWith(".heic") || file.type === "image/heic") return "heic";
-  if (name.endsWith(".heif") || file.type === "image/heif") return "heif";
-  return "jpg";
-}
 
 /**
  * POST multipart: files[] — kullanıcının taslak görsellerini tamamen değiştirir.
@@ -78,14 +71,14 @@ export async function POST(req: Request) {
     if (file.size <= 0 || file.size > MAX_BYTES) {
       return NextResponse.json({ error: "invalid_file_size" }, { status: 400 });
     }
-    const ext = extFor(file);
-    const path = draftImageObjectPath(user.id, `${i}.${ext}`);
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const raw = Buffer.from(await file.arrayBuffer());
+    const compressed = await compressListingImageBuffer(raw);
+    const path = draftImageObjectPath(user.id, `${i}.${compressed.ext}`);
     const { error } = await admin.storage
       .from(LISTING_DRAFT_BUCKET)
-      .upload(path, buffer, {
+      .upload(path, compressed.buffer, {
         upsert: true,
-        contentType: file.type || `image/${ext}`,
+        contentType: compressed.contentType,
       });
     if (error) {
       return NextResponse.json(
