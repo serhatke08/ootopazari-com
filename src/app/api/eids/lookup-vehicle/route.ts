@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   callEidsAracYetki,
+  isEidsMinistryRateLimit,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
 import { resolveRequestUser } from "@/lib/supabase/request-user";
@@ -85,6 +86,26 @@ export async function POST(req: Request) {
         plakaNo,
         data: arac.data,
       });
+    }
+
+    const errBlob = (arac.errors ?? []).join(" ");
+    if (
+      arac.statusCode === 429 ||
+      arac.httpStatus === 429 ||
+      isEidsMinistryRateLimit(errBlob, String(arac.statusCode ?? ""))
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "ministry_rate_limited",
+          errors: arac.errors ?? ["İzin verilen istek sınırı aşıldı."],
+          statusCode: 429,
+          message:
+            "Ticaret Bakanlığı EİDS kotası doldu (bizim limitimiz değil). Birkaç dakika bekleyip tek sefer dene; peş peşe basmak kotayı daha da eritir.",
+          raw: arac.raw ?? null,
+        },
+        { status: 429 }
+      );
     }
 
     return NextResponse.json(

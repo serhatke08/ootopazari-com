@@ -61,6 +61,16 @@ export function humanizeEidsLookupError(input: {
   if (code === "eids_user_not_verified") {
     return "Önce e-Devlet ile hesabını doğrula.";
   }
+  if (
+    code === "ministry_rate_limited" ||
+    input.status === 429 ||
+    /izin verilen istek sınırı|istek sınırı aşıldı|rate.?limit/i.test(raw)
+  ) {
+    return (
+      "Ticaret Bakanlığı EİDS kotası doldu — uygulama değil, bakanlık limiti. " +
+      "Birkaç dakika bekle, sonra bir kez dene. Peş peşe basmak kotayı daha çabuk bitirir."
+    );
+  }
   if (code === "arac_yetki_failed" || raw) {
     if (/05_Servisten timeout|timeout alindi/i.test(raw)) {
       return "Bakanlık araç servisi yanıt vermedi. Biraz sonra tekrar dene; sürerse entegrasyondestek@ticaret.gov.tr.";

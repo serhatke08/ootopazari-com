@@ -49,6 +49,21 @@ export function gsmNoCandidates(raw: string | null | undefined): string[] {
   return Array.from(new Set(out));
 }
 
+/** Bakanlık kota / rate-limit metni. */
+export function isEidsMinistryRateLimit(
+  ...parts: Array<string | null | undefined>
+): boolean {
+  const blob = parts.filter(Boolean).join(" ").toLocaleLowerCase("tr");
+  if (!blob) return false;
+  return (
+    /izin verilen istek sınırı/i.test(blob) ||
+    /istek sınırı aşıldı/i.test(blob) ||
+    /rate.?limit/i.test(blob) ||
+    /too many requests/i.test(blob) ||
+    /\b429\b/.test(blob)
+  );
+}
+
 /** Plaka: boşluksuz büyük harf. */
 export function normalizePlakaNo(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -164,6 +179,13 @@ export async function callGetKullaniciKodu(params: {
       raw: json,
     };
     if (ok) return last;
+    // Kota yediyse diğer gsm formatlarını deneme — limiti daha da eritir.
+    if (
+      status === 429 ||
+      isEidsMinistryRateLimit(hataMesaji, hataKodu, String(status))
+    ) {
+      return last;
+    }
   }
   return (
     last ?? {
