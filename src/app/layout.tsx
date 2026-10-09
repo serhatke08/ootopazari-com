@@ -136,7 +136,9 @@ export default function RootLayout({
           </SiteMainShell>
           <NavSkeletonGate />
           <MobileBottomNavRoot />
-          <AppDownloadPromoPopup />
+          <Suspense fallback={null}>
+            <AppDownloadPromoPopup />
+          </Suspense>
           </div>
         </SiteSearchProvider>
         <Analytics />

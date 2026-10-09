@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useIsClient } from "@/hooks/use-is-client";
@@ -15,6 +16,28 @@ import {
 const STORAGE_KEY = "oto_app_download_promo_dismissed_at";
 const DISMISS_MS = 3 * 24 * 60 * 60 * 1000;
 const SHOW_DELAY_MS = 700;
+
+/** e-Devlet / EİDS dönüşünde promo modal doğrulamayı bozar — hiç gösterme. */
+function isEidsFlowPath(pathname: string, search: string): boolean {
+  const p = (pathname || "").toLowerCase();
+  if (
+    p.startsWith("/eids") ||
+    p.startsWith("/app/eids") ||
+    p.startsWith("/profil/eids")
+  ) {
+    return true;
+  }
+  if (!search) return false;
+  try {
+    const q = new URLSearchParams(
+      search.startsWith("?") ? search.slice(1) : search
+    );
+    if (q.has("eids") || q.has("yetkiKodu") || q.has("yetki_kodu")) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
 
 function wasRecentlyDismissed(): boolean {
   try {
@@ -38,16 +61,23 @@ function markDismissed() {
 
 export function AppDownloadPromoPopup() {
   const mounted = useIsClient();
+  const pathname = usePathname() || "";
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString() ? `?${searchParams.toString()}` : "";
   const [open, setOpen] = useState(false);
   const [store, setStore] = useState<MobileStoreKind>("other");
+  const blockForEids = isEidsFlowPath(pathname, search);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || blockForEids) {
+      setOpen(false);
+      return;
+    }
     if (wasRecentlyDismissed()) return;
     setStore(detectMobileStore(navigator.userAgent));
     const t = window.setTimeout(() => setOpen(true), SHOW_DELAY_MS);
     return () => window.clearTimeout(t);
-  }, [mounted]);
+  }, [mounted, blockForEids]);
 
   const close = useCallback(() => {
     markDismissed();
