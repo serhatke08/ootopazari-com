@@ -35,7 +35,7 @@ export async function bindEidsKullaniciToProfile(
       ok: false,
       error: "eids_already_linked",
       message:
-        "Bu e-Devlet hesabı başka bir Oto Pazarı hesabına bağlı. Bir e-Devlet yalnızca bir hesaba bağlanabilir.",
+        "Bu e-Devlet hesabı başka bir Oto Pazarı hesabına tanımlı. O hesaba giriş yapın veya farklı bir e-Devlet kullanın.",
     };
   }
 
@@ -75,7 +75,7 @@ export async function bindEidsKullaniciToProfile(
         ok: false,
         error: "eids_already_linked",
         message:
-          "Bu e-Devlet hesabı başka bir Oto Pazarı hesabına bağlı. Bir e-Devlet yalnızca bir hesaba bağlanabilir.",
+          "Bu e-Devlet hesabı başka bir Oto Pazarı hesabına tanımlı. O hesaba giriş yapın veya farklı bir e-Devlet kullanın.",
       };
     }
     return {
