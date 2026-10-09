@@ -484,12 +484,29 @@ export async function GET(req: Request) {
 
   const overallOk = edevletOk && ministry.kullaniciOk;
 
+  // Bind çakışması: oturumu failed işaretle (completed kalmasın).
+  if (!overallOk && ministry.kullaniciHata === "eids_already_linked") {
+    try {
+      await admin
+        .from("eids_verification_sessions")
+        .update({
+          status: "failed",
+          durum: "eids_already_linked",
+        })
+        .eq("id", finalSession.id);
+    } catch {
+      /* ignore */
+    }
+  }
+
   if (finalSession.source === "app") {
+    const failDurum =
+      ministry.kullaniciHata === "eids_already_linked"
+        ? "eids_already_linked"
+        : ministry.kullaniciHata || durum || "fail";
     const appUrl = buildEidsAppRedirectUrl({
       yetkiKodu,
-      durum: overallOk
-        ? durum || "ok"
-        : ministry.kullaniciHata || durum || "fail",
+      durum: overallOk ? durum || "ok" : failDurum,
       state: finalSession.state,
       listingId: finalSession.listing_id,
       ok: overallOk,
