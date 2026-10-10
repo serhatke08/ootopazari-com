@@ -62,9 +62,9 @@ export function sanitizeEidsWebReturnPath(
 }
 
 /**
- * App’e dönüş.
- * Öncelik: EIDS_APP_UNIVERSAL_LINK_BASE (https://…/app/eids)
- * Yoksa: EIDS_APP_DEEP_LINK_SCHEME (otopazari://eids/result)
+ * App’e dönüş — her zaman https universal link (/app/eids).
+ * Custom scheme (otopazari://) Safari’de “şurada açılsın mı?” sorar; kullanma.
+ * Öncelik: EIDS_APP_UNIVERSAL_LINK_BASE → yoksa site origin + /app/eids.
  */
 export function buildEidsAppRedirectUrl(params: {
   yetkiKodu: string;
@@ -80,22 +80,18 @@ export function buildEidsAppRedirectUrl(params: {
   q.set("ok", params.ok ? "1" : "0");
   if (params.listingId) q.set("listingId", params.listingId);
 
-  const universal = process.env.EIDS_APP_UNIVERSAL_LINK_BASE?.trim();
-  if (universal) {
-    try {
-      const u = new URL(universal);
-      for (const [k, v] of q) u.searchParams.set(k, v);
-      return u.toString();
-    } catch {
-      /* fall through */
-    }
+  const universal =
+    process.env.EIDS_APP_UNIVERSAL_LINK_BASE?.trim() ||
+    `${getSiteOrigin()}/app/eids`;
+  try {
+    const u = new URL(universal);
+    for (const [k, v] of q) u.searchParams.set(k, v);
+    return u.toString();
+  } catch {
+    const u = new URL("/app/eids", getSiteOrigin());
+    for (const [k, v] of q) u.searchParams.set(k, v);
+    return u.toString();
   }
-
-  const scheme =
-    process.env.EIDS_APP_DEEP_LINK_SCHEME?.trim() || "otopazari://eids/result";
-  const base = scheme.includes("://") ? scheme : `otopazari://${scheme}`;
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}${q.toString()}`;
 }
 
 export function buildEidsWebRedirectPath(session: {

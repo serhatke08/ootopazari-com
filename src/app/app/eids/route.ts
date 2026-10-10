@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 /**
- * Universal-link köprüsü — layout/popup YOK (düz HTML).
- * App açılmazsa kullanıcı “Uygulamayı aç” görür; promo modal engellemez.
+ * Universal-link hedefi.
+ * iOS Associated Domains doğruysa bu sayfa hiç açılmaz — app doğrudan açılır.
+ * Açılırsa: Android’de intent:// dene; iOS’ta custom scheme otomatik
+ * çalıştırma (Safari “Oto Pazarı’nda açılsın mı?” sorar) — kullanıcı dokunuşu.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -30,12 +32,16 @@ export async function GET(req: Request) {
   if (listingId) q.set("listingId", listingId);
   if (kullaniciKodu) q.set("kullaniciKodu", kullaniciKodu);
   if (apiHata) q.set("apiHata", apiHata);
+  const qs = q.toString();
   const sep = deepScheme.includes("?") ? "&" : "?";
-  const deepHref = `${deepScheme}${sep}${q.toString()}`;
+  const deepHref = `${deepScheme}${sep}${qs}`;
+
+  // Android App Link / intent fallback
+  const intentHref = `intent://eids/result?${qs}#Intent;scheme=otopazari;package=com.partridge.otomobile;end`;
 
   const title = ok ? "Doğrulama tamamlandı" : "Doğrulama sonucu";
   const message = ok
-    ? "E-Devlet doğrulaması alındı. Oto Pazarı uygulamasına yönlendiriliyorsunuz…"
+    ? "E-Devlet doğrulaması alındı. Uygulamaya dönülüyor…"
     : "Doğrulama tamamlanamadı veya iptal edildi. Uygulamadan tekrar deneyebilirsiniz.";
 
   const html = `<!DOCTYPE html>
@@ -49,15 +55,31 @@ export async function GET(req: Request) {
     body{font-family:system-ui,sans-serif;max-width:28rem;margin:3rem auto;padding:0 1rem;color:#18181b;line-height:1.45}
     a.btn{display:inline-flex;margin-top:1.25rem;background:#ffcc00;color:#18181b;font-weight:700;text-decoration:none;padding:.75rem 1rem;border-radius:.6rem}
     a.secondary{display:inline-block;margin-top:.75rem;color:#52525b;font-size:.9rem}
-    code{font-size:.75rem;word-break:break-all;background:#f4f4f5;padding:.5rem .65rem;border-radius:.5rem;display:block;margin-top:1rem}
   </style>
-  <script>setTimeout(function(){location.href=${JSON.stringify(deepHref)};},350);</script>
+  <script>
+(function(){
+  var ua = navigator.userAgent || "";
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+  var deep = ${JSON.stringify(deepHref)};
+  var intent = ${JSON.stringify(intentHref)};
+  // Android: intent:// otomatik (chooser daha az sorar / app açılır)
+  if (isAndroid) {
+    setTimeout(function(){ location.replace(intent); }, 200);
+    return;
+  }
+  // iOS: custom scheme otomatik ÇALIŞTIRMA — Safari onay diyaloğu çıkarır.
+  // Universal Link zaten app’i açmalıydı; açmadıysa kullanıcı butona bassın.
+  if (!isIOS) {
+    setTimeout(function(){ location.replace(deep); }, 250);
+  }
+})();
+  </script>
 </head>
 <body>
   <h1>${title}</h1>
   <p>${message}</p>
-  ${yetkiKodu ? `<code>Yetki: ${yetkiKodu.replace(/[<>&]/g, "")}</code>` : ""}
-  <p><a class="btn" href="${deepHref.replace(/"/g, "&quot;")}">Uygulamayı aç</a></p>
+  <p><a class="btn" id="openApp" href="${deepHref.replace(/"/g, "&quot;")}">Oto Pazarı’nı aç</a></p>
   <p><a class="secondary" href="/">Web ana sayfa</a></p>
 </body>
 </html>`;
