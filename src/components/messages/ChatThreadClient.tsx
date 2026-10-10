@@ -144,9 +144,24 @@ export function ChatThreadClient({
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          const row = payload.new as MessageRow;
+          const row = payload.new as MessageRow & {
+            client_message_id?: string | null;
+          };
           setMessages((prev) => {
-            if (prev.some((m) => m.id === row.id)) return prev;
+            const cid = row.client_message_id?.trim();
+            const idx = prev.findIndex(
+              (m) =>
+                m.id === row.id ||
+                (cid != null &&
+                  cid.length > 0 &&
+                  (m as { client_message_id?: string | null })
+                    .client_message_id === cid)
+            );
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = { ...next[idx], ...row };
+              return next;
+            }
             return [...prev, row];
           });
           if (row.sender_id !== currentUserId) {
@@ -175,6 +190,8 @@ export function ChatThreadClient({
     setSending(true);
     try {
       const clientMessageId = `${currentUserId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const selectCols =
+        "id,conversation_id,sender_id,content,is_read,created_at,client_message_id";
       let { data, error } = await supabase
         .from("messages")
         .insert({
@@ -184,7 +201,7 @@ export function ChatThreadClient({
           is_read: false,
           client_message_id: clientMessageId,
         })
-        .select("id,conversation_id,sender_id,content,is_read,created_at")
+        .select(selectCols)
         .single();
 
       if (error && /client_message_id/i.test(error.message)) {
@@ -208,7 +225,23 @@ export function ChatThreadClient({
       if (data) {
         const row = data as MessageRow;
         setMessages((prev) => {
-          if (prev.some((m) => m.id === row.id)) return prev;
+          const cid = row.client_message_id?.trim();
+          if (
+            prev.some(
+              (m) =>
+                m.id === row.id ||
+                (cid != null &&
+                  cid.length > 0 &&
+                  m.client_message_id === cid)
+            )
+          ) {
+            return prev.map((m) =>
+              m.id === row.id ||
+              (cid != null && cid.length > 0 && m.client_message_id === cid)
+                ? { ...m, ...row }
+                : m
+            );
+          }
           return [...prev, row];
         });
       }

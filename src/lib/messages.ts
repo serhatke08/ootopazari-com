@@ -24,6 +24,7 @@ export type MessageRow = {
   content: string;
   is_read: boolean | null;
   created_at: string | null;
+  client_message_id?: string | null;
 };
 
 /** Engellenen kullanıcı id’leri (iki yön). */
