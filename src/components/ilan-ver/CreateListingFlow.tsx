@@ -1768,8 +1768,12 @@ export function CreateListingFlow({
       }
     }
 
+    // Son sayfa (boosts): sticky İleri otomatik yayınlamaz —
+    // “Paketsiz geç” / “Yayınla ve paketi onayla” butonları publish çağırır.
     if (pageIndex >= pages.length - 1) {
-      await publish();
+      if (isEditMode) {
+        await publish();
+      }
       return;
     }
     await goTo(pageIndex + 1);
@@ -3592,8 +3596,8 @@ export function CreateListingFlow({
       {page === "boosts" ? (
         <div className="space-y-4 pb-8">
           <p className="text-sm leading-snug text-zinc-600">
-            İsteğe bağlı. Paketi seç → yayınla → önizle → öde. Seçmezsen paketsiz
-            yayınlanır.
+            İsteğe bağlı. Aşağıdan paket seç veya paketsiz geç. Paket seçersen
+            “Yayınla ve paketi onayla” ile ilan yayınlanır, ödemeye gidersin.
           </p>
 
           {(boostProductId || acilProductId) && (
@@ -3699,46 +3703,83 @@ export function CreateListingFlow({
           </section>
 
           <p className="text-xs leading-snug text-zinc-500">
-            Paketsiz devam edersen doğrudan yayınlanır. Paket seçtiysen yayın
-            sonrası seçtiğin paket önizlenir ve ödemeye geçersin.
+            Paketsiz geçebilirsin. Paket seçersen yayın + ödeme aynı butonda.
           </p>
         </div>
       ) : null}
 
-      <div className="sticky bottom-16 z-10 -mx-1 flex gap-2 border-t border-zinc-200 bg-zinc-50/95 px-1 py-3 backdrop-blur sm:bottom-0">
-        <button
-          type="button"
-          onClick={() => void goBack()}
-          disabled={pageIndex === 0 || busy}
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
-        >
-          Geri
-        </button>
-        <button
-          type="button"
-          disabled={
-            busy ||
-            !selectionHasValue ||
-            (WEB_EIDS_STEP_ENABLED &&
-              page === "eids" &&
-              !eidsVehicleOk &&
-              isVehicle)
-          }
-          onClick={() => void goNext()}
-          className="flex-1 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
-        >
-          {pageIndex >= pages.length - 1
-            ? busy
-              ? isEditMode
-                ? "Kaydediliyor…"
-                : "Yayınlanıyor…"
-              : isEditMode
-                ? "Değişiklikleri kaydet"
-                : packageIntent === "none"
-                  ? "Paketsiz devam et / yayınla"
-                  : "Yayınla ve öde"
-            : "İleri"}
-        </button>
+      <div className="sticky bottom-16 z-10 -mx-1 flex flex-col gap-2 border-t border-zinc-200 bg-zinc-50/95 px-1 py-3 backdrop-blur sm:bottom-0">
+        {page === "boosts" && !isEditMode ? (
+          <>
+            {packageIntent !== "none" ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void publish()}
+                className="w-full rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+              >
+                {busy ? "Yayınlanıyor…" : "Yayınla ve paketi onayla"}
+              </button>
+            ) : null}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void goBack()}
+                disabled={pageIndex === 0 || busy}
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+              >
+                Geri
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setBoostProductId(null);
+                  setAcilProductId(null);
+                  setPackageIntent("none");
+                  void publish();
+                }}
+                className="flex-1 rounded-lg border border-zinc-800 bg-white px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+              >
+                {busy ? "Yayınlanıyor…" : "Paketsiz geç"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => void goBack()}
+              disabled={pageIndex === 0 || busy}
+              className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            >
+              Geri
+            </button>
+            <button
+              type="button"
+              disabled={
+                busy ||
+                !selectionHasValue ||
+                (WEB_EIDS_STEP_ENABLED &&
+                  page === "eids" &&
+                  !eidsVehicleOk &&
+                  isVehicle)
+              }
+              onClick={() => void goNext()}
+              className="flex-1 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+            >
+              {pageIndex >= pages.length - 1
+                ? busy
+                  ? isEditMode
+                    ? "Kaydediliyor…"
+                    : "Yayınlanıyor…"
+                  : isEditMode
+                    ? "Değişiklikleri kaydet"
+                    : "İleri"
+                : "İleri"}
+            </button>
+          </div>
+        )}
       </div>
         </>
       ) : null}
