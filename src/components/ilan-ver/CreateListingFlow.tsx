@@ -3175,16 +3175,25 @@ export function CreateListingFlow({
                     setPlate(e.target.value.toLocaleUpperCase("tr"))
                   }
                   placeholder="34ABC123"
-                  disabled={!eidsAccountOk}
+                  disabled={!eidsAccountOk || eidsVehicleOk}
                 />
               </label>
               <button
                 type="button"
-                disabled={eidsBusy || !eidsAccountOk || !plate.trim()}
+                disabled={
+                  eidsBusy ||
+                  !eidsAccountOk ||
+                  !plate.trim() ||
+                  eidsVehicleOk
+                }
                 onClick={() => void lookupPlate()}
                 className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-bold text-[#ffcc00] disabled:opacity-50"
               >
-                {eidsBusy ? "Sorgulanıyor…" : "Plakayı sorgula"}
+                {eidsBusy
+                  ? "Sorgulanıyor…"
+                  : eidsVehicleOk
+                    ? "Plaka doğrulandı"
+                    : "Plakayı sorgula"}
               </button>
               <p className="text-left text-[11px] leading-snug text-zinc-500">
                 Not: Sadece kendi adına kayıtlı veya e-Devlet’te yetkili
