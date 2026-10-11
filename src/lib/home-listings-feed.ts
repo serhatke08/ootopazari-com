@@ -181,10 +181,12 @@ export async function fetchHomeListingsFeed(
   const ids = rows.map((r) => r.id).filter(Boolean) as string[];
 
   if (lite) {
-    const sessionFav = await getSessionAndFavoriteSet(supabase, ids);
+    const [sessionFav, priceRatings] = await Promise.all([
+      getSessionAndFavoriteSet(supabase, ids),
+      fetchPriceRatingSummariesMap(supabase, ids),
+    ]);
     const emptyStats = new Map<string, ListingPublicStats>();
     const emptyOwners = new Map<string, OwnerMini>();
-    const emptyRatings = new Map<string, PriceRatingSummary>();
     return {
       items: buildCardItems(
         rows,
@@ -194,7 +196,7 @@ export async function fetchHomeListingsFeed(
         emptyStats,
         sessionFav.favoriteIds,
         emptyOwners,
-        emptyRatings
+        priceRatings
       ),
       total,
       loggedIn: !!sessionFav.user,
