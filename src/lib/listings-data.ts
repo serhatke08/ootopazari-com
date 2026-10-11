@@ -651,13 +651,6 @@ function noteApprovedLiveFilterError(message: string): boolean {
   return false;
 }
 
-function isPubliclyLiveListing(row: {
-  created_at?: unknown;
-  activated_at?: unknown;
-}): boolean {
-  return !listingIsPastActiveWindow(row);
-}
-
 function applyListingOrder(q: any, sort: HomeListingsSort | undefined): any {
   const nulls = { nullsFirst: false } as const;
   switch (sort) {
@@ -1338,7 +1331,7 @@ export type ListingCountGroupField =
   | "vehicle_engine_package_id";
 
 /**
- * Onaylı ilanları tek alana göre gruplayıp sayar (büyük tabloda sayfalı okur).
+ * Vitrindeki canlı ilanları (onaylı + aktif + 30 gün) tek alana göre sayar.
  * `vehicle_brand_id` + `categoryId`: yalnız o kategorideki marka dağılımı.
  */
 export async function fetchApprovedListingCountsByField(
@@ -1351,25 +1344,18 @@ export async function fetchApprovedListingCountsByField(
   let from = 0;
 
   for (;;) {
-    let q = supabase
-      .from("listings")
-      .select(`${field},created_at,activated_at`)
-      .eq("moderation_status", "approved");
-    if (options?.categoryId) {
-      q = q.eq("category_id", options.categoryId);
-    }
-    let { data, error } = await q.range(from, from + pageSize - 1);
-    if (error && /activated_at/i.test(error.message)) {
-      let retry = supabase
-        .from("listings")
-        .select(`${field},created_at`)
-        .eq("moderation_status", "approved");
+    const run = () => {
+      let q = applyApprovedLiveFilter(
+        supabase.from("listings").select(field)
+      );
       if (options?.categoryId) {
-        retry = retry.eq("category_id", options.categoryId);
+        q = q.eq("category_id", options.categoryId);
       }
-      const fallback = await retry.range(from, from + pageSize - 1);
-      data = fallback.data as typeof data;
-      error = fallback.error;
+      return q.range(from, from + pageSize - 1);
+    };
+    let { data, error } = await run();
+    if (error && noteApprovedLiveFilterError(error.message)) {
+      ({ data, error } = await run());
     }
     if (error) {
       console.warn("listing counts by field:", field, error.message);
@@ -1377,7 +1363,6 @@ export async function fetchApprovedListingCountsByField(
     }
     const rows = (data ?? []) as Record<string, string | null>[];
     for (const row of rows) {
-      if (!isPubliclyLiveListing(row)) continue;
       const key = row[field];
       if (key == null || key === "") continue;
       map.set(key, (map.get(key) ?? 0) + 1);
@@ -1522,23 +1507,16 @@ export async function fetchApprovedListingCountsByVehicleModel(
   let from = 0;
 
   for (;;) {
-    let { data, error } = await supabase
-      .from("listings")
-      .select("vehicle_model,created_at,activated_at")
-      .eq("moderation_status", "approved")
-      .eq("category_id", options.categoryId)
-      .eq("vehicle_brand_id", options.vehicleBrandId)
-      .range(from, from + pageSize - 1);
-    if (error && /activated_at/i.test(error.message)) {
-      const fallback = await supabase
-        .from("listings")
-        .select("vehicle_model,created_at")
-        .eq("moderation_status", "approved")
+    const run = () =>
+      applyApprovedLiveFilter(
+        supabase.from("listings").select("vehicle_model")
+      )
         .eq("category_id", options.categoryId)
         .eq("vehicle_brand_id", options.vehicleBrandId)
         .range(from, from + pageSize - 1);
-      data = fallback.data as typeof data;
-      error = fallback.error;
+    let { data, error } = await run();
+    if (error && noteApprovedLiveFilterError(error.message)) {
+      ({ data, error } = await run());
     }
 
     if (error) {
@@ -1547,11 +1525,8 @@ export async function fetchApprovedListingCountsByVehicleModel(
     }
     const rows = (data ?? []) as {
       vehicle_model?: string | null;
-      created_at?: unknown;
-      activated_at?: unknown;
     }[];
     for (const row of rows) {
-      if (!isPubliclyLiveListing(row)) continue;
       const key = normalizeListingModelKey(row.vehicle_model);
       if (!key) continue;
       map.set(key, (map.get(key) ?? 0) + 1);
@@ -1592,28 +1567,19 @@ export async function fetchApprovedListingCountsByEnginePackages(
 
   const engineCounts = new Map<string, number>();
   if (allPackageIds.length > 0) {
-    let { data, error } = await supabase
-      .from("listings")
-      .select("vehicle_engine_package_id,created_at,activated_at")
-      .eq("moderation_status", "approved")
-      .in("vehicle_engine_package_id", allPackageIds);
-    if (error && /activated_at/i.test(error.message)) {
-      const fallback = await supabase
-        .from("listings")
-        .select("vehicle_engine_package_id,created_at")
-        .eq("moderation_status", "approved")
-        .in("vehicle_engine_package_id", allPackageIds);
-      data = fallback.data as typeof data;
-      error = fallback.error;
+    const runPackages = () =>
+      applyApprovedLiveFilter(
+        supabase.from("listings").select("vehicle_engine_package_id")
+      ).in("vehicle_engine_package_id", allPackageIds);
+    let { data, error } = await runPackages();
+    if (error && noteApprovedLiveFilterError(error.message)) {
+      ({ data, error } = await runPackages());
     }
 
     if (!error && data) {
       for (const row of data as {
         vehicle_engine_package_id?: string | null;
-        created_at?: unknown;
-        activated_at?: unknown;
       }[]) {
-        if (!isPubliclyLiveListing(row)) continue;
         const pkgId = row.vehicle_engine_package_id;
         const engineId = pkgId ? packageToEngine.get(pkgId) : undefined;
         if (!engineId) continue;
@@ -1643,21 +1609,18 @@ export async function fetchApprovedListingCountsByEnginePackages(
     .replace(/\\/g, "\\\\")
     .replace(/%/g, "\\%")
     .replace(/_/g, "\\_");
-  let { data: legacyRows, error: legacyError } = await supabase
-    .from("listings")
-    .select("vehicle_model,vehicle_engine_package_id,created_at,activated_at")
-    .eq("moderation_status", "approved")
-    .eq("category_id", options.categoryId)
-    .eq("vehicle_brand_id", options.vehicleBrandId)
-    .ilike("vehicle_model", `%${escModel}%`);
-  if (legacyError && /activated_at/i.test(legacyError.message)) {
-    const fallback = await supabase
-      .from("listings")
-      .select("vehicle_model,vehicle_engine_package_id,created_at")
-      .eq("moderation_status", "approved")
+  const runLegacy = () =>
+    applyApprovedLiveFilter(
+      supabase
+        .from("listings")
+        .select("vehicle_model,vehicle_engine_package_id")
+    )
       .eq("category_id", options.categoryId)
       .eq("vehicle_brand_id", options.vehicleBrandId)
       .ilike("vehicle_model", `%${escModel}%`);
+  let { data: legacyRows, error: legacyError } = await runLegacy();
+  if (legacyError && noteApprovedLiveFilterError(legacyError.message)) {
+    const fallback = await runLegacy();
     legacyRows = fallback.data as typeof legacyRows;
     legacyError = fallback.error;
   }
@@ -1667,10 +1630,7 @@ export async function fetchApprovedListingCountsByEnginePackages(
   for (const row of legacyRows as {
     vehicle_model?: string | null;
     vehicle_engine_package_id?: string | null;
-    created_at?: unknown;
-    activated_at?: unknown;
   }[]) {
-    if (!isPubliclyLiveListing(row)) continue;
     if (row.vehicle_engine_package_id) continue;
     const listingKey = normalizeListingModelKey(row.vehicle_model);
     if (!listingKey) continue;
