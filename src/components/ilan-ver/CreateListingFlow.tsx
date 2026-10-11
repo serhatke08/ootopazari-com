@@ -242,7 +242,7 @@ type Props = {
 export function CreateListingFlow({
   categories: rawCategories,
   userCountryId,
-  listingQuota,
+  listingQuota: listingQuotaProp,
   editListingId = null,
   editListingNumber = null,
   initialGalleryUrls = [],
@@ -252,6 +252,7 @@ export function CreateListingFlow({
   const vehiclePages = isEditMode ? EDIT_VEHICLE_PAGES : VEHICLE_PAGES;
   const otherPages = isEditMode ? EDIT_OTHER_PAGES : OTHER_PAGES;
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [listingQuota, setListingQuota] = useState(listingQuotaProp);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editPrefilled = useRef(false);
   const editOpenedSnapshot = useRef<{
@@ -259,6 +260,40 @@ export function CreateListingFlow({
     quality_passive_source?: unknown;
     cover_quality_score?: unknown;
   } | null>(null);
+
+  useEffect(() => {
+    setListingQuota(listingQuotaProp);
+  }, [listingQuotaProp]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = () => {
+      void fetch("/api/listings/quota", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j: ListingQuotaSnapshot & { ok?: boolean }) => {
+          if (cancelled || !j?.ok) return;
+          setListingQuota({
+            year: Number(j.year ?? new Date().getFullYear()),
+            limit: Number(j.limit ?? 5),
+            used: Number(j.used ?? 0),
+            remaining: Number(j.remaining ?? 0),
+            unlimited: Boolean(j.unlimited),
+          });
+        })
+        .catch(() => {});
+    };
+    refresh();
+    const onVis = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", refresh);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
 
   const categories = useMemo(
     () =>
@@ -369,6 +404,9 @@ export function CreateListingFlow({
   }
 
   const [busy, setBusy] = useState(false);
+  /** Liste seçimi / İleri — sonraki adıma geçerken spinner */
+  const [navBusy, setNavBusy] = useState(false);
+  const [pendingTileId, setPendingTileId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [fieldErrorId, setFieldErrorId] = useState<string | null>(null);
   const [publishOverlay, setPublishOverlay] = useState<
@@ -1169,25 +1207,45 @@ export function CreateListingFlow({
     }, 500);
   };
 
+  const withNavBusy = async (
+    fn: () => Promise<void>,
+    tileId?: string | null
+  ) => {
+    if (navBusy || busy) return;
+    setNavBusy(true);
+    setPendingTileId(tileId ?? null);
+    try {
+      await fn();
+    } finally {
+      setNavBusy(false);
+      setPendingTileId(null);
+    }
+  };
+
+  const tileLoading = (id: string, selected = false) =>
+    navBusy && (pendingTileId === id || selected);
+
   const selectCategory = async (c: CategoryRow) => {
-    const code = String(c.code ?? "");
-    const vehicle = isVehicleCategoryCode(code);
-    const nextPages = vehicle ? vehiclePages : otherPages;
-    setCategoryId(c.id);
-    setCategoryCode(code);
-    setCategoryName(c.name ?? code);
-    setBrandId(null);
-    setModelId(null);
-    setParentId(null);
-    setChildId(null);
-    setBodyStyleId(null);
-    setEngineId(null);
-    setPackageId(null);
-    setPages(nextPages);
-    setDraftBanner(null);
-    if (vehicle) await loadBrands(c.id);
-    setPageIndex(1);
-    await persistDraft();
+    await withNavBusy(async () => {
+      const code = String(c.code ?? "");
+      const vehicle = isVehicleCategoryCode(code);
+      const nextPages = vehicle ? vehiclePages : otherPages;
+      setCategoryId(c.id);
+      setCategoryCode(code);
+      setCategoryName(c.name ?? code);
+      setBrandId(null);
+      setModelId(null);
+      setParentId(null);
+      setChildId(null);
+      setBodyStyleId(null);
+      setEngineId(null);
+      setPackageId(null);
+      setPages(nextPages);
+      setDraftBanner(null);
+      if (vehicle) await loadBrands(c.id);
+      setPageIndex(1);
+      void persistDraft();
+    }, c.id);
   };
 
   async function applyDraft(
@@ -1779,6 +1837,8 @@ export function CreateListingFlow({
     await goTo(pageIndex + 1);
   };
 
+  const goNextWithBusy = () => withNavBusy(() => goNext());
+
   // Kullanıcı yıl/marka/model düzeltince eids adımında uyuşmazlığı tazele
   useEffect(() => {
     if (!eidsOfficial || !eidsVehicleOk) return;
@@ -1969,10 +2029,31 @@ export function CreateListingFlow({
         return;
       }
 
+      // Yayın anında kota DB'den (SSR/router cache bayat kalmasın).
+      let quotaNow = listingQuota;
+      try {
+        const qRes = await fetch("/api/listings/quota", { cache: "no-store" });
+        const qJson = (await qRes.json()) as ListingQuotaSnapshot & {
+          ok?: boolean;
+        };
+        if (qJson?.ok) {
+          quotaNow = {
+            year: Number(qJson.year ?? new Date().getFullYear()),
+            limit: Number(qJson.limit ?? 5),
+            used: Number(qJson.used ?? 0),
+            remaining: Number(qJson.remaining ?? 0),
+            unlimited: Boolean(qJson.unlimited),
+          };
+          setListingQuota(quotaNow);
+        }
+      } catch {
+        /* SSR prop ile devam */
+      }
+
       const freeRightsLeft =
-        !listingQuota ||
-        listingQuota.unlimited ||
-        listingQuota.remaining > 0;
+        !quotaNow ||
+        quotaNow.unlimited ||
+        quotaNow.remaining > 0;
       const publishAsPassive = !isEditMode && !freeRightsLeft;
 
       const resolvedModel = childId || parentId || modelId;
@@ -2204,7 +2285,7 @@ export function CreateListingFlow({
           supabase,
           user.id,
           listingId,
-          listingQuota?.unlimited ? "membership" : "free"
+          quotaNow?.unlimited ? "membership" : "free"
         );
       }
 
@@ -2579,6 +2660,8 @@ export function CreateListingFlow({
               compact
               title={c.name ?? c.code ?? c.id}
               selected={categoryId === c.id}
+              loading={tileLoading(c.id, categoryId === c.id)}
+              disabled={navBusy}
               leading={
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -2601,9 +2684,13 @@ export function CreateListingFlow({
               compact
               title={String(y)}
               selected={vehicleYear === y}
+              loading={tileLoading(String(y), vehicleYear === y)}
+              disabled={navBusy}
               onClick={() => {
-                setVehicleYear(y);
-                void goNext();
+                void withNavBusy(async () => {
+                  setVehicleYear(y);
+                  await goNext();
+                }, String(y));
               }}
             />
           ))}
@@ -2620,6 +2707,8 @@ export function CreateListingFlow({
                 compact
                 title={b.name ?? b.code ?? b.id}
                 selected={brandId === b.id}
+                loading={tileLoading(b.id, brandId === b.id)}
+                disabled={navBusy}
                 leading={
                   logo ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -2644,7 +2733,7 @@ export function CreateListingFlow({
                   ) : null
                 }
                 onClick={() => {
-                  void (async () => {
+                  void withNavBusy(async () => {
                     setBrandId(b.id);
                     setBrandName(b.name ?? null);
                     setBrandCode(b.code ?? null);
@@ -2653,7 +2742,7 @@ export function CreateListingFlow({
                     setChildId(null);
                     await loadModels(b.id);
                     await goNext();
-                  })();
+                  }, b.id);
                 }}
               />
             );
@@ -2670,11 +2759,13 @@ export function CreateListingFlow({
                 key={m.id}
                 title={m.name ?? m.id}
                 selected={childId === m.id}
+                loading={tileLoading(m.id, childId === m.id)}
+                disabled={navBusy}
                 onClick={() => {
-                  void (async () => {
+                  void withNavBusy(async () => {
                     setChildId(m.id);
                     await afterModelChosen(m.id, m.name ?? null);
-                  })();
+                  }, m.id);
                 }}
               />
             ))
@@ -2685,15 +2776,17 @@ export function CreateListingFlow({
                 key={m.id}
                 title={m.name ?? m.id}
                 selected={parentId === m.id}
+                loading={tileLoading(m.id, parentId === m.id)}
+                disabled={navBusy}
                 onClick={() => {
-                  void (async () => {
+                  void withNavBusy(async () => {
                     setParentId(m.id);
                     const kids = await fetchChildBrandModels(supabase, m.id);
                     setChildren(kids);
                     if (kids.length === 0) {
                       await afterModelChosen(m.id, m.name ?? null);
                     }
-                  })();
+                  }, m.id);
                 }}
               />
             ))
@@ -2704,10 +2797,12 @@ export function CreateListingFlow({
                 key={m.id}
                 title={m.name ?? m.id}
                 selected={modelId === m.id}
+                loading={tileLoading(m.id, modelId === m.id)}
+                disabled={navBusy}
                 onClick={() => {
-                  void (async () => {
+                  void withNavBusy(async () => {
                     await afterModelChosen(m.id, m.name ?? null);
-                  })();
+                  }, m.id);
                 }}
               />
             ))
@@ -2724,14 +2819,16 @@ export function CreateListingFlow({
                 key={b.id}
                 title={b.name ?? b.id}
                 selected={bodyStyleId === b.id}
+                loading={tileLoading(b.id, bodyStyleId === b.id)}
+                disabled={navBusy}
                 onClick={() => {
-                  void (async () => {
+                  void withNavBusy(async () => {
                     if (b.id !== "_skip") {
                       setBodyStyleId(b.id);
                       setBodyStyleName(b.name ?? null);
                     }
                     await goNext();
-                  })();
+                  }, b.id);
                 }}
               />
             )
@@ -2748,8 +2845,10 @@ export function CreateListingFlow({
                 key={e.id}
                 title={e.name ?? e.id}
                 selected={engineId === e.id}
+                loading={tileLoading(e.id, engineId === e.id)}
+                disabled={navBusy}
                 onClick={() => {
-                  void (async () => {
+                  void withNavBusy(async () => {
                     if (e.id !== "_skip") {
                       setEngineId(e.id);
                       setEngineName(e.name ?? null);
@@ -2783,7 +2882,7 @@ export function CreateListingFlow({
                       return;
                     }
                     await goNext();
-                  })();
+                  }, e.id);
                 }}
               />
             )
@@ -2800,8 +2899,10 @@ export function CreateListingFlow({
                 key={p.id}
                 title={p.name ?? p.id}
                 selected={packageId === p.id}
+                loading={tileLoading(p.id, packageId === p.id)}
+                disabled={navBusy}
                 onClick={() => {
-                  void (async () => {
+                  void withNavBusy(async () => {
                     if (p.id !== "_skip") {
                       setPackageId(p.id);
                       setPackageName(p.name ?? null);
@@ -2811,7 +2912,7 @@ export function CreateListingFlow({
                       });
                     }
                     await goNext();
-                  })();
+                  }, p.id);
                 }}
               />
             )
@@ -2827,10 +2928,14 @@ export function CreateListingFlow({
               key={t}
               title={t}
               selected={transmission === t}
+              loading={tileLoading(t, transmission === t)}
+              disabled={navBusy}
               onClick={() => {
-                setTransmission(t);
-                void persistDraft({ transmission: t });
-                void goNext();
+                void withNavBusy(async () => {
+                  setTransmission(t);
+                  void persistDraft({ transmission: t });
+                  await goNext();
+                }, t);
               }}
             />
           ))}
@@ -3202,7 +3307,8 @@ export function CreateListingFlow({
               <p className="text-left text-[11px] leading-snug text-zinc-500">
                 Not: Sadece kendi adına kayıtlı veya e-Devlet’te yetkili
                 göründüğün araçları sorgulayabilirsin (ör. malik, eş, anne/baba,
-                çocuk — yetki tanımlıysa). Başkasının plakasını sorgulayamazsın.
+                çocuk — yetki tanımlıysa). Başkasının (yetkin olmayan) plakasını
+                sorgulayamazsın; yetkin yoksa Ticaret Bakanlığı sorguyu reddeder.
               </p>
             </div>
           )}
@@ -3714,34 +3820,48 @@ export function CreateListingFlow({
             {packageIntent !== "none" ? (
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || navBusy}
                 onClick={() => void publish()}
-                className="w-full rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
               >
-                {busy ? "Yayınlanıyor…" : "Yayınla ve paketi onayla"}
+                {busy ? (
+                  <>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-zinc-900 border-t-transparent" />
+                    Yayınlanıyor…
+                  </>
+                ) : (
+                  "Yayınla ve paketi onayla"
+                )}
               </button>
             ) : null}
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => void goBack()}
-                disabled={pageIndex === 0 || busy}
+                disabled={pageIndex === 0 || busy || navBusy}
                 className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
               >
                 Geri
               </button>
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || navBusy}
                 onClick={() => {
                   setBoostProductId(null);
                   setAcilProductId(null);
                   setPackageIntent("none");
                   void publish();
                 }}
-                className="flex-1 rounded-lg border border-zinc-800 bg-white px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-white px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
               >
-                {busy ? "Yayınlanıyor…" : "Paketsiz geç"}
+                {busy ? (
+                  <>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-zinc-900 border-t-transparent" />
+                    Yayınlanıyor…
+                  </>
+                ) : (
+                  "Paketsiz geç"
+                )}
               </button>
             </div>
           </>
@@ -3750,7 +3870,7 @@ export function CreateListingFlow({
             <button
               type="button"
               onClick={() => void goBack()}
-              disabled={pageIndex === 0 || busy}
+              disabled={pageIndex === 0 || busy || navBusy}
               className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
             >
               Geri
@@ -3759,24 +3879,32 @@ export function CreateListingFlow({
               type="button"
               disabled={
                 busy ||
+                navBusy ||
                 !selectionHasValue ||
                 (WEB_EIDS_STEP_ENABLED &&
                   page === "eids" &&
                   !eidsVehicleOk &&
                   isVehicle)
               }
-              onClick={() => void goNext()}
-              className="flex-1 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+              onClick={() => void goNextWithBusy()}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
             >
-              {pageIndex >= pages.length - 1
-                ? busy
-                  ? isEditMode
-                    ? "Kaydediliyor…"
-                    : "Yayınlanıyor…"
-                  : isEditMode
-                    ? "Değişiklikleri kaydet"
-                    : "İleri"
-                : "İleri"}
+              {busy || navBusy ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-zinc-900 border-t-transparent" />
+                  {pageIndex >= pages.length - 1
+                    ? busy
+                      ? isEditMode
+                        ? "Kaydediliyor…"
+                        : "Yayınlanıyor…"
+                      : "…"
+                    : "…"}
+                </>
+              ) : pageIndex >= pages.length - 1 ? (
+                isEditMode ? "Değişiklikleri kaydet" : "İleri"
+              ) : (
+                "İleri"
+              )}
             </button>
           </div>
         )}

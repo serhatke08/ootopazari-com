@@ -15,11 +15,17 @@ export async function compressListingImageBuffer(
 ): Promise<CompressedImage> {
   const buffer = await sharp(input)
     .rotate()
+    .toColorspace("srgb")
     .resize({
       width: MAX_WIDTH,
       withoutEnlargement: true,
     })
-    .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+    .jpeg({
+      quality: JPEG_QUALITY,
+      progressive: false,
+      chromaSubsampling: "4:2:0",
+      optimizeScans: false,
+    })
     .toBuffer();
 
   return { buffer, contentType: "image/jpeg", ext: "jpg" };

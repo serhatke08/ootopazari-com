@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Kota her istekte DB'den — router/layout cache bayat hak göstermesin. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function ProfilLayout({
   children,
 }: {

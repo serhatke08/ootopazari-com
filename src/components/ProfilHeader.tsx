@@ -130,6 +130,7 @@ export function ProfilHeader({
   const [photoErr, setPhotoErr] = useState<string | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [liveQuota, setLiveQuota] = useState(listingQuota);
 
   const [firstName, setFirstName] = useState(initialFirst ?? "");
   const [lastName, setLastName] = useState(initialLast ?? "");
@@ -140,6 +141,43 @@ export function ProfilHeader({
     setLastName(initialLast ?? "");
     setUsername(initialUsername ?? "");
   }, [initialFirst, initialLast, initialUsername]);
+
+  useEffect(() => {
+    setLiveQuota(listingQuota);
+  }, [listingQuota]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshQuota = () => {
+      void fetch("/api/listings/quota", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j: {
+          ok?: boolean;
+          remaining?: number;
+          limit?: number;
+          unlimited?: boolean;
+        }) => {
+          if (cancelled || !j?.ok) return;
+          setLiveQuota({
+            remaining: Number(j.remaining ?? 0),
+            limit: Number(j.limit ?? 5),
+            unlimited: Boolean(j.unlimited),
+          });
+        })
+        .catch(() => {});
+    };
+    refreshQuota();
+    const onVis = () => {
+      if (document.visibilityState === "visible") refreshQuota();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", refreshQuota);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", refreshQuota);
+    };
+  }, []);
 
   const avatarSrc = initialAvatarSrc;
   const initialsLabel = initialInitials;
@@ -473,9 +511,9 @@ export function ProfilHeader({
                     </span>{" "}
                     <span className="text-zinc-500">takip</span>
                   </div>
-                  {listingQuota ? (
+                  {liveQuota ? (
                     <div>
-                      {listingQuota.unlimited ? (
+                      {liveQuota.unlimited ? (
                         <>
                           <span className="font-bold text-zinc-900">∞</span>{" "}
                           <span className="text-zinc-500">ilan hakkı</span>
@@ -483,7 +521,7 @@ export function ProfilHeader({
                       ) : (
                         <>
                           <span className="tabular-nums font-bold text-zinc-900">
-                            {listingQuota.remaining}/{listingQuota.limit}
+                            {liveQuota.remaining}/{liveQuota.limit}
                           </span>{" "}
                           <span className="text-zinc-500">ilan hakkı</span>
                         </>

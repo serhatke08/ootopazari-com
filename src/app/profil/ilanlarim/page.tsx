@@ -28,6 +28,9 @@ type Props = {
   searchParams: Promise<{ passive?: string }>;
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function ProfilIlanlarimPage({ searchParams }: Props) {
   const env = tryGetSupabaseEnv();
   if (!env) return null;

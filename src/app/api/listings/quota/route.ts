@@ -3,6 +3,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { expireDueListings, fetchListingQuota } from "@/lib/listing-quota";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -15,5 +18,12 @@ export async function GET() {
   await expireDueListings(supabase, { userId: user.id });
   const quotaClient = createSupabaseServiceClient() ?? supabase;
   const quota = await fetchListingQuota(quotaClient, user.id);
-  return NextResponse.json({ ok: true, ...quota });
+  return NextResponse.json(
+    { ok: true, ...quota },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      },
+    }
+  );
 }

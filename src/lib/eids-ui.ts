@@ -80,7 +80,7 @@ export function humanizeEidsLookupError(input: {
       return "Araç yetki servisi bulunamadı. Destek ekibine bildir.";
     }
     if (/yetki|izin|yetkili değil|bulunamadı/i.test(raw)) {
-      return "Bu plaka için yetkin görünmüyor. Plakayı kontrol et; araç sende / yetkilinde değilse bakanlık reddeder.";
+      return "Bu plaka için yetkin görünmüyor. Plakayı kontrol et; araç sende / yetkilinde değilse Ticaret Bakanlığı reddeder.";
     }
     if (isEidsMinistryGateError(raw)) {
       return humanizeEidsFailMessage(raw);

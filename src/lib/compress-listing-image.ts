@@ -1,8 +1,34 @@
 const MAX_WIDTH = 1080;
 const JPEG_QUALITY = 0.8;
 
-/** Mobil ile uyumlu: genişlik ≤1080px, JPEG %80. Başarısız olursa orijinal dosya döner. */
-export async function compressListingImageFile(file: File): Promise<File> {
+function asJpegFile(blob: Blob, originalName: string): File {
+  const base = originalName.replace(/\.[^.]+$/, "") || "photo";
+  return new File([blob], `${base}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
+/** Sharp (sunucu): ICC’siz sRGB JPEG — Flutter decode bozulmasın. */
+async function compressListingImageViaApi(file: File): Promise<File | null> {
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/listing-images/prepare", {
+      method: "POST",
+      body: fd,
+      credentials: "same-origin",
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (blob.size <= 0) return null;
+    return asJpegFile(blob, file.name);
+  } catch {
+    return null;
+  }
+}
+
+async function compressListingImageFileCanvas(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") {
     return file;
   }
@@ -12,11 +38,6 @@ export async function compressListingImageFile(file: File): Promise<File> {
 
   try {
     const bitmap = await createImageBitmap(file);
-    if (bitmap.width <= MAX_WIDTH && file.size < 450_000 && file.type === "image/jpeg") {
-      bitmap.close();
-      return file;
-    }
-
     const scale = Math.min(1, MAX_WIDTH / bitmap.width);
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -36,17 +57,26 @@ export async function compressListingImageFile(file: File): Promise<File> {
       canvas.toBlob((b) => resolve(b), "image/jpeg", JPEG_QUALITY);
     });
     if (!blob) return file;
-
-    const base = file.name.replace(/\.[^.]+$/, "") || "photo";
-    return new File([blob], `${base}.jpg`, {
-      type: "image/jpeg",
-      lastModified: Date.now(),
-    });
+    return asJpegFile(blob, file.name);
   } catch {
     return file;
   }
 }
 
+/** Mobil ile uyumlu: genişlik ≤1080px, JPEG %80. Önce Sharp, olmazsa canvas. */
+export async function compressListingImageFile(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") {
+    return file;
+  }
+  const viaApi = await compressListingImageViaApi(file);
+  if (viaApi) return viaApi;
+  return compressListingImageFileCanvas(file);
+}
+
 export async function compressListingImageFiles(files: File[]): Promise<File[]> {
-  return Promise.all(files.map((f) => compressListingImageFile(f)));
+  const out: File[] = [];
+  for (const f of files) {
+    out.push(await compressListingImageFile(f));
+  }
+  return out;
 }

@@ -184,9 +184,14 @@ export async function userHasUnlimitedListingQuota(
     return false;
   }
   for (const row of data ?? []) {
+    const payment = String(
+      (row as { payment_status?: string }).payment_status ?? ""
+    ).toLowerCase();
+    // Süre dolmamış + overdue/unpaid → sınırsız hak YOK (ücretsiz kota geçerli).
+    if (payment !== "paid") continue;
     const state = normalizeDealerState(
       String((row as { status?: string }).status ?? "") as ApplicationStatus,
-      String((row as { payment_status?: string }).payment_status ?? "") as PaymentStatus,
+      payment as PaymentStatus,
       (row as { membership_expires_at?: string | null }).membership_expires_at ??
         null
     );
@@ -203,20 +208,20 @@ export async function countFreeActivationUses(
   const run = (timeCol: "used_at" | "created_at") =>
     supabase
       .from(LISTING_ACTIVATION_USES_TABLE)
-      .select("id")
+      .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("kind", "free")
       .gte(timeCol, cutoff);
 
-  let { data, error } = await run("used_at");
+  let { count, error } = await run("used_at");
   if (error && /used_at/i.test(error.message)) {
-    ({ data, error } = await run("created_at"));
+    ({ count, error } = await run("created_at"));
   }
   if (error) {
     console.warn("listing_activation_uses count:", error.message);
     return 0;
   }
-  return data?.length ?? 0;
+  return count ?? 0;
 }
 
 export async function fetchListingQuota(
