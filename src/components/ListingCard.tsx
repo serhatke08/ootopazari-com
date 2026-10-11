@@ -417,10 +417,10 @@ export function ListingCard({
                 summary={ratingSummary}
                 loggedIn={loggedIn}
                 dotSize="sm"
-                priceClassName="min-w-0 truncate text-[9px] font-bold tabular-nums leading-tight text-emerald-700"
+                priceClassName="min-w-0 truncate text-[9px] font-bold tabular-nums leading-tight"
               />
             ) : (
-              <p className="truncate text-[9px] font-bold tabular-nums leading-tight text-emerald-700">
+              <p className="truncate text-[9px] font-bold tabular-nums leading-tight text-zinc-900">
                 {price}
               </p>
             )}
@@ -435,7 +435,7 @@ export function ListingCard({
               loggedIn={loggedIn}
             />
           ) : (
-            <p className="text-sm font-bold text-emerald-700 sm:text-base md:text-lg">
+            <p className="text-sm font-bold text-zinc-900 sm:text-base md:text-lg">
               {price}
             </p>
           )

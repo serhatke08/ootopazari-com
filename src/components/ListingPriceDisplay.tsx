@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ListingPriceHistoryButton } from "@/components/ListingPriceHistoryButton";
 import { ListingPriceRatingDot } from "@/components/ListingPriceRatingDot";
 import type { PriceHistoryEntry } from "@/lib/listing-price-history";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
-import { priceRatingIndicatorColor } from "@/lib/listing-price-ratings";
+import { priceRatingDisplayColor } from "@/lib/listing-price-ratings";
 
 type Props = {
   listingId: string;
@@ -34,17 +33,9 @@ export function ListingPriceDisplay({
   popoverPlacement = "above",
   dotSize = "md",
 }: Props) {
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
-  const dotColor = priceRatingIndicatorColor(summary.average, summary.count);
-  const hasRatings = summary.count > 0 && summary.average != null;
-  // Oy yoksa eski koyu gri; değerlendirme varsa nokta ile aynı renk.
-  const priceColor =
-    overlay || !mounted ? undefined : hasRatings ? dotColor : "#18181b";
+  const priceColor = overlay
+    ? undefined
+    : priceRatingDisplayColor(summary.average, summary.count);
   
   const basePriceCls = overlay
     ? "text-[0.6875rem] font-semibold tabular-nums leading-tight text-white drop-shadow-md sm:text-xs"

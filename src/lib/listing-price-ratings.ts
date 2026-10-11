@@ -20,21 +20,21 @@ export const PRICE_RATING_OPTIONS: Array<{
     value: 1,
     label: "Makul fiyat",
     shortLabel: "Makul",
-    color: "#16a34a",
+    color: "#22C55E",
     countKey: "fair",
   },
   {
     value: 2,
     label: "Biraz pahalı",
     shortLabel: "Biraz pahalı",
-    color: "#ca8a04",
+    color: "#EAB308",
     countKey: "expensive",
   },
   {
     value: 3,
     label: "Fahiş fiyat",
     shortLabel: "Fahiş",
-    color: "#dc2626",
+    color: "#EF4444",
     countKey: "exorbitant",
   },
 ];
@@ -63,15 +63,25 @@ export function isPriceRatingValue(v: unknown): v is PriceRatingValue {
   return v === 1 || v === 2 || v === 3;
 }
 
+/** Nokta — oy yokken soluk gri. Mobil `indicatorColor` ile aynı. */
 export function priceRatingIndicatorColor(
   average: number | null,
   count: number
 ): string {
-  if (count <= 0 || average == null) return "#9ca3af";
-  if (average < 2) return "#16a34a";
-  if (average < 2.5) return "#ca8a04";
-  if (average < 3) return "#ea580c";
-  return "#dc2626";
+  if (count <= 0 || average == null) return "#BDBDBD";
+  if (average < 1.8) return "#22C55E";
+  if (average < 2.2) return "#EAB308";
+  if (average < 2.6) return "#F97316";
+  return "#EF4444";
+}
+
+/** Fiyat yazısı — oy yokken koyu gri. Mobil `priceDisplayColor` ile aynı. */
+export function priceRatingDisplayColor(
+  average: number | null,
+  count: number
+): string {
+  if (count <= 0 || average == null) return "#18181B";
+  return priceRatingIndicatorColor(average, count);
 }
 
 /** Anket rengine göre yarı saydam arka plan. */
@@ -152,27 +162,106 @@ export async function fetchPriceRatingSummariesMap(
   const ids = [...new Set(listingIds.filter(Boolean))];
   if (ids.length === 0) return map;
 
+  const rpcOk = await fillSummariesFromRpc(supabase, ids, map);
+  if (!rpcOk) {
+    await fillSummariesFromTable(supabase, ids, userId, map);
+  }
+
+  if (userId) {
+    await attachUserRatings(supabase, ids, userId, map);
+  }
+
+  for (const id of ids) {
+    if (!map.has(id)) map.set(id, EMPTY_PRICE_RATING_SUMMARY);
+  }
+  return map;
+}
+
+async function fillSummariesFromRpc(
+  supabase: SupabaseClient,
+  ids: string[],
+  map: Map<string, PriceRatingSummary>
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("get_listing_price_rating_stats", {
+    listing_ids: ids,
+  });
+  if (error) {
+    console.warn("get_listing_price_rating_stats:", error.message);
+    return false;
+  }
+  const rows = (data ?? []) as Array<{
+    listing_id?: string;
+    rating_count?: number | string | null;
+    rating_avg?: number | string | null;
+    fair_count?: number | string | null;
+    high_count?: number | string | null;
+    unfair_count?: number | string | null;
+  }>;
+  for (const row of rows) {
+    const id = String(row.listing_id ?? "").trim();
+    if (!id) continue;
+    const count = Number(row.rating_count ?? 0);
+    if (!Number.isFinite(count) || count <= 0) continue;
+    const avg = Number(row.rating_avg);
+    map.set(id, {
+      count,
+      average: Number.isFinite(avg) ? avg : null,
+      userRating: null,
+      counts: {
+        fair: Number(row.fair_count ?? 0) || 0,
+        expensive: Number(row.high_count ?? 0) || 0,
+        exorbitant: Number(row.unfair_count ?? 0) || 0,
+      },
+    });
+  }
+  return true;
+}
+
+async function fillSummariesFromTable(
+  supabase: SupabaseClient,
+  ids: string[],
+  userId: string | null | undefined,
+  map: Map<string, PriceRatingSummary>
+) {
   const { data, error } = await supabase
     .from("listing_price_ratings")
     .select("listing_id,rating,user_id")
     .in("listing_id", ids);
-
   if (error) {
     console.warn("listing_price_ratings fetch:", error.message);
-    for (const id of ids) map.set(id, EMPTY_PRICE_RATING_SUMMARY);
-    return map;
+    return;
   }
-
   const rows = (data ?? []) as Array<{
     listing_id: string;
     rating: number;
     user_id: string;
   }>;
-
   for (const id of ids) {
     map.set(id, buildSummary(rows, id, userId));
   }
-  return map;
+}
+
+async function attachUserRatings(
+  supabase: SupabaseClient,
+  ids: string[],
+  userId: string,
+  map: Map<string, PriceRatingSummary>
+) {
+  const { data, error } = await supabase
+    .from("listing_price_ratings")
+    .select("listing_id,rating")
+    .eq("user_id", userId)
+    .in("listing_id", ids);
+  if (error) return;
+  for (const row of data ?? []) {
+    const id = String(
+      (row as { listing_id?: string }).listing_id ?? ""
+    ).trim();
+    const rating = (row as { rating?: number }).rating;
+    if (!id || !isPriceRatingValue(rating)) continue;
+    const prev = map.get(id) ?? EMPTY_PRICE_RATING_SUMMARY;
+    map.set(id, { ...prev, userRating: rating });
+  }
 }
 
 export function summaryAfterVote(

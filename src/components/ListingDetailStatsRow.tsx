@@ -6,8 +6,8 @@ import { ListingPriceRatingDot } from "@/components/ListingPriceRatingDot";
 import type { PriceHistoryEntry } from "@/lib/listing-price-history";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import {
+  priceRatingDisplayColor,
   priceRatingFill,
-  priceRatingIndicatorColor,
 } from "@/lib/listing-price-ratings";
 
 type Props = {
@@ -62,7 +62,7 @@ export function ListingDetailStatsRow({
   }, [listingId]);
 
   const hasRating = summary.count > 0 && summary.average != null;
-  const ratingColor = priceRatingIndicatorColor(summary.average, summary.count);
+  const ratingColor = priceRatingDisplayColor(summary.average, summary.count);
 
   return (
     <div className="flex items-center gap-3">
