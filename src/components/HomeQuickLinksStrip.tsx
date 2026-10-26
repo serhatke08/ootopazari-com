@@ -35,7 +35,7 @@ function QuickLinkItem({
   return (
     <Link
       href={href}
-      prefetch
+      prefetch={false}
       className="group flex w-[4.25rem] shrink-0 flex-col items-center gap-0.5 sm:w-[4.5rem]"
       draggable={false}
       onClick={(e) => {

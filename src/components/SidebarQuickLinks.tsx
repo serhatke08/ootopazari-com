@@ -38,6 +38,7 @@ export function SidebarQuickLinks({
         <Link
           key={item.href + item.label}
           href={item.href}
+          prefetch={false}
           onClick={() => onNavigate?.()}
           className={linkClass}
         >

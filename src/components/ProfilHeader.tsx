@@ -160,7 +160,7 @@ export function ProfilHeader({
           if (cancelled || !j?.ok) return;
           setLiveQuota({
             remaining: Number(j.remaining ?? 0),
-            limit: Number(j.limit ?? 5),
+            limit: Number(j.limit ?? 1),
             unlimited: Boolean(j.unlimited),
           });
         })

@@ -1455,7 +1455,7 @@ export function CreateListingWizard({
           isDuplicateLiveListingError(msg)
             ? DUPLICATE_LIVE_LISTING_MESSAGE
             : /quota|hakk/i.test(msg)
-              ? `Son 12 ayda ${listingQuota?.limit ?? 5} ücretsiz yayın hakkınız doldu.`
+              ? `Son 12 ayda ${listingQuota?.limit ?? 1} ücretsiz yayın hakkınız doldu.`
               : msg
         );
         return;

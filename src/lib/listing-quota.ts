@@ -3,7 +3,7 @@ import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
 import { normalizeDealerState } from "@/lib/bayi-application-status";
 import type { ApplicationStatus, PaymentStatus } from "@/lib/bayi-types";
 
-export const YEARLY_FREE_LISTING_QUOTA = 5;
+export const YEARLY_FREE_LISTING_QUOTA = 1;
 export const FREE_LISTING_WINDOW_DAYS = 365;
 export const LISTING_ACTIVE_DAYS = 30;
 /** Ücretsiz hak bitince yeni ilan pasife düşer; aktifleştirme ücreti (TRY). */

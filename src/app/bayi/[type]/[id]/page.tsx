@@ -17,6 +17,9 @@ type Props = {
   params: Promise<{ type: string; id: string }>;
 };
 
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { type, id } = await params;
   const dealerType = type as DealerType;

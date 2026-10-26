@@ -18,6 +18,13 @@ type Props = {
   params: Promise<{ type: string }>;
 };
 
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+
+export function generateStaticParams() {
+  return DEALER_TYPES.map((type) => ({ type }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { type } = await params;
   const dealerType = type as DealerType;

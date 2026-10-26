@@ -21,11 +21,24 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+
+export function generateStaticParams() {
+  return DEALER_TYPES.map((type) => ({ type }));
+}
+
+function parseDealerType(type: string): DealerType | null {
+  return DEALER_TYPES.includes(type as DealerType)
+    ? (type as DealerType)
+    : null;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { type } = await params;
-  const dealerType = type as DealerType;
+  const dealerType = parseDealerType(type);
 
-  if (!DEALER_TYPES.includes(dealerType)) {
+  if (!dealerType) {
     return { title: "Bayi Bulunamadı" };
   }
 
@@ -60,9 +73,9 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
 
   const { type } = await params;
   const sp = await searchParams;
-  const dealerType = type as DealerType;
+  const dealerType = parseDealerType(type);
 
-  if (!DEALER_TYPES.includes(dealerType)) {
+  if (!dealerType) {
     redirect("/");
   }
 

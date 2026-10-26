@@ -274,7 +274,7 @@ export function CreateListingFlow({
           if (cancelled || !j?.ok) return;
           setListingQuota({
             year: Number(j.year ?? new Date().getFullYear()),
-            limit: Number(j.limit ?? 5),
+            limit: Number(j.limit ?? 1),
             used: Number(j.used ?? 0),
             remaining: Number(j.remaining ?? 0),
             unlimited: Boolean(j.unlimited),
@@ -2039,7 +2039,7 @@ export function CreateListingFlow({
         if (qJson?.ok) {
           quotaNow = {
             year: Number(qJson.year ?? new Date().getFullYear()),
-            limit: Number(qJson.limit ?? 5),
+            limit: Number(qJson.limit ?? 1),
             used: Number(qJson.used ?? 0),
             remaining: Number(qJson.remaining ?? 0),
             unlimited: Boolean(qJson.unlimited),
