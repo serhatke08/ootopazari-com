@@ -1,0 +1,14 @@
+id,name,code,sort_order,created_at
+af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Otomobil,otomobil,10,2026-03-04T00:03:17.490067+00:00
+6c04ccd8-b81e-4936-afe8-8423878b9169,SUV & Pickup,suv_pickup,11,2026-03-04T00:03:17.490067+00:00
+90d20cef-6847-40d7-bd30-0b53bb5d283f,Elektrikli,elektrikli,13,2026-06-04T08:17:21.982052+00:00
+c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Motosiklet,motosiklet,12,2026-03-04T00:03:17.490067+00:00
+40cd8039-3d34-4c61-a438-82559a88ddd3,Elektrikli Scooter ve Bisiklet,scooter_bisiklet,16,2026-05-30T16:12:10.6344+00:00
+0aa5da74-e038-4ea8-aacd-500ced2e20d0,İş ve Tarım Makinası,is_ve_tarim_makinesi,15,2026-03-04T20:41:18.273003+00:00
+38e31f19-1cb0-47a2-a978-4636431f95f4,Panelvan Ticari Araçlar,panelvan,14,2026-03-04T00:03:17.490067+00:00
+37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Klasik Araçlar,klasik,20,2026-03-04T00:03:17.490067+00:00
+61ca73ff-4cde-4fab-a184-e985812ec0c4,Deniz Araçları,deniz,21,2026-03-04T00:03:17.490067+00:00
+c6340a9c-5319-47bd-a22d-832db287e4e1,Hasarlı Araçlar,hasarli,22,2026-03-04T00:03:17.490067+00:00
+0345621c-d8b8-436b-ba8e-7118117e53e9,Karavan,karavan,23,2026-03-04T00:03:17.490067+00:00
+6d828996-6ae1-4b18-aca3-e3d13f340662,Hava Araçları,hava,24,2026-03-04T00:03:17.490067+00:00
+33f2eb24-973d-4234-8727-93a26c4eacf2,ATV & UTV,atv_utv,25,2026-03-04T20:57:10.355815+00:00

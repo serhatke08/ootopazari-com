@@ -1,0 +1,383 @@
+id,category_id,name,code,sort_order,show_in_us_otomobil_list,show_in_us_suv_pickup_list,show_in_us_motosiklet_list,show_in_us_panelvan_list,show_in_us_klasik_list,show_in_us_deniz_list,show_in_us_hasarli_list,show_in_us_karavan_list,show_in_us_hava_list,show_in_us_atv_utv_list,show_in_us_is_ve_tarim_list,show_in_us_elektrikli_list
+facf92f8-941b-458d-8a4d-900a2f7310ab,90d20cef-6847-40d7-bd30-0b53bb5d283f,Toyota,toyota,118,true,true,true,true,true,true,true,true,true,true,true,true
+20a2d8da-6e9c-49ef-824b-381bb0d5eedb,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Alfa Romeo,alfa_romeo,10,true,true,true,true,true,true,true,true,true,true,true,true
+1286126c-15d9-4221-9db8-d3077467f437,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,MG,mg,220,false,true,true,true,true,true,true,true,true,true,true,true
+f3a96d7b-c67f-44ad-b941-11a9940a6ab8,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Genesis,genesis,510,true,true,true,true,true,true,true,true,true,true,true,true
+d2341d6d-6a79-42c3-b778-5beed908c22d,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Lotus,lotus,530,false,true,true,true,true,true,true,true,true,true,true,true
+7af5cf8e-a0b6-46d4-90d3-e47ef09b671e,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Smart,smart,640,false,true,true,true,true,true,true,true,true,true,true,true
+258bbb68-a128-4dc6-a9da-c170a075e81b,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Abarth,abarth,650,false,true,true,true,true,true,true,true,true,true,true,true
+06876968-3873-4f60-b502-e71921d76fe4,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Diğer Markalar,diger_markalar,9999,true,true,true,true,true,true,true,true,true,true,true,true
+214a3de5-a153-4d75-9577-46e4f180fe72,6c04ccd8-b81e-4936-afe8-8423878b9169,BYD,byd,40,true,true,true,true,true,true,true,true,true,true,true,true
+0f3a44ff-617d-460f-8828-39dc02357928,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Hummer,hummer,9001,false,true,true,true,true,true,true,true,true,true,true,true
+80f07094-3cde-4606-b2b0-20667875af37,90d20cef-6847-40d7-bd30-0b53bb5d283f,Opel,opel,240,true,true,true,true,true,true,true,true,true,true,true,true
+c142e31d-94dc-4662-b079-5ad847af277e,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,BMW,bmw,30,true,true,true,true,true,true,true,true,true,true,true,true
+c2a030be-9f7b-4aac-912d-b6bceab88253,6c04ccd8-b81e-4936-afe8-8423878b9169,BMW,bmw,30,true,true,true,true,true,true,true,true,true,true,true,true
+60734e22-2a82-48bb-a692-6dcfc539b5fe,6c04ccd8-b81e-4936-afe8-8423878b9169,Citroën,citroen,70,true,true,true,true,true,true,true,true,true,true,true,true
+cb99e932-29c5-4229-b08b-d7f6d08593fe,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Diğer Markalar,diger_markalar,1064,true,true,true,true,true,true,true,true,true,true,true,true
+80f1f467-21ad-4b3c-89a6-1d9380573686,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Audi,audi,20,true,true,true,true,true,true,true,true,true,true,true,true
+a2088c1c-1cbc-456b-9c75-b3707a56a817,6c04ccd8-b81e-4936-afe8-8423878b9169,Audi,audi,20,true,true,true,true,true,true,true,true,true,true,true,true
+cc5c32c8-c6e4-4445-890d-daa4eecac1e2,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,KTM,ktm,210,true,true,true,true,true,true,true,true,true,true,true,true
+55d33786-2bb7-4ccb-b846-94a2460a7213,6c04ccd8-b81e-4936-afe8-8423878b9169,Chery,chery,9984,true,true,true,true,true,true,true,true,true,true,true,true
+e8101495-c7f7-4f8f-beaa-1c2e967e11f2,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Kymco,kymco,230,true,true,true,true,true,true,true,true,true,true,true,true
+434cd6c1-31e7-42be-9d86-3289c7e00ad3,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Lifan,lifan,240,true,true,false,true,true,true,true,true,true,true,true,true
+2aeb1c53-54b1-4e7c-a5cc-7174af8fa746,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Mondial,mondial,250,true,true,false,true,true,true,true,true,true,true,true,true
+13229fed-26a8-4d79-af0b-1cc38a877969,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Norton Motorcycles,norton_motorcycles,300,true,true,false,true,true,true,true,true,true,true,true,true
+90a55712-e9cf-4d35-b1e7-a6e3a7b7ca0d,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Piaggio,piaggio,320,true,true,true,true,true,true,true,true,true,true,true,true
+59d31e3a-78ab-4be6-b438-6d930ad78b18,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,QJ Motor,qjmotor,330,true,true,true,true,true,true,true,true,true,true,true,true
+e338699d-b607-435f-b083-888dbedbd14e,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,RKS,rks,340,true,true,false,true,true,true,true,true,true,true,true,true
+bd72e32e-8054-4f9d-bd5f-1d223a963e01,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Royal Enfield,royal_enfield,350,true,true,true,true,true,true,true,true,true,true,true,true
+f0a9ce94-d632-453a-9b62-f12a0f2795f0,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,SYM,sym,390,true,true,true,true,true,true,true,true,true,true,true,true
+60622b0d-2945-47f5-92be-10d6296b782e,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Triumph,triumph,400,true,true,true,true,true,true,true,true,true,true,true,true
+5371d23b-2f38-4bff-84d9-6dbec5f2ee8c,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,TVS,tvs_motor,410,true,true,false,true,true,true,true,true,true,true,true,true
+1006a55f-1cec-4a48-9c31-5b5bc0603ce4,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Vespa,vespa,430,true,true,true,true,true,true,true,true,true,true,true,true
+60cff7d6-e88a-4025-86a2-d49a51169100,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Voge,voge,440,true,true,false,true,true,true,true,true,true,true,true,true
+4f16d319-742f-4153-9aa0-f513a679d87f,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Zero,zero_motorcycles,470,true,true,true,true,true,true,true,true,true,true,true,true
+00d89b54-2924-4b95-9da8-36282266e04a,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Zontes,zontes,480,true,true,false,true,true,true,true,true,true,true,true,true
+34fb755f-3f46-4301-a929-77bc67f02574,38e31f19-1cb0-47a2-a978-4636431f95f4,Renault,renault,3,true,true,true,false,true,true,true,true,true,true,true,true
+cc9ad367-d3b0-48fe-b136-b09603add3c6,38e31f19-1cb0-47a2-a978-4636431f95f4,Peugeot,peugeot,4,true,true,true,false,true,true,true,true,true,true,true,true
+c597db5c-bd8b-448e-b4be-0052b0444936,38e31f19-1cb0-47a2-a978-4636431f95f4,Citroën,citroen,5,true,true,true,false,true,true,true,true,true,true,true,true
+58e62057-247f-44a0-8c4b-5cf5a3ec608b,38e31f19-1cb0-47a2-a978-4636431f95f4,Opel,opel,9,true,true,true,false,true,true,true,true,true,true,true,true
+3ff3d358-e07b-461e-84fd-b5410f89f4c0,38e31f19-1cb0-47a2-a978-4636431f95f4,Dacia,dacia,10,true,true,true,false,true,true,true,true,true,true,true,true
+858e0d71-5819-4f61-b234-efaae269c648,0345621c-d8b8-436b-ba8e-7118117e53e9,Çekme Karavan,cekme_karavan,31,true,true,true,true,true,true,true,true,true,true,true,true
+a9de1197-07bd-4eeb-873c-0642b572ff39,61ca73ff-4cde-4fab-a184-e985812ec0c4,Azimut Yachts,azimut_yachts,11,true,true,true,true,true,true,true,true,true,true,true,true
+f43a42f4-69c4-4f9e-8195-12dada9bbd4a,61ca73ff-4cde-4fab-a184-e985812ec0c4,Bayliner,bayliner,9,true,true,true,true,true,true,true,true,true,true,true,true
+72b1d733-bd28-4765-b889-15f469147e9f,61ca73ff-4cde-4fab-a184-e985812ec0c4,Beneteau,beneteau,15,true,true,true,true,true,true,true,true,true,true,true,true
+c2999090-eacf-4138-b845-8c5b7f2f88f9,61ca73ff-4cde-4fab-a184-e985812ec0c4,Boston Whaler,boston_whaler,18,true,true,true,true,true,true,true,true,true,true,true,true
+cfc795d7-4ede-4a2b-8ed7-24846743625d,61ca73ff-4cde-4fab-a184-e985812ec0c4,Diğer Markalar,diger_markalar,1020,true,true,true,true,true,true,true,true,true,true,true,true
+4b59827b-6746-4c86-aeff-d6d772d65188,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Toyota,toyota,118,true,true,true,true,true,true,true,true,true,true,true,true
+6164f849-4825-454c-9130-cd6dcaed9cfa,6c04ccd8-b81e-4936-afe8-8423878b9169,Toyota,toyota,218,true,true,true,true,true,true,true,true,true,true,true,true
+e25e0186-d263-4be0-8daa-59b57a29a34b,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Volkswagen,volkswagen,320,true,true,true,true,true,true,true,true,true,true,true,true
+e02451fe-bd30-4e48-b472-d2a70a0eb4ac,6c04ccd8-b81e-4936-afe8-8423878b9169,Volkswagen,volkswagen,340,true,true,true,true,true,true,true,true,true,true,true,true
+31214b99-22eb-4e8c-a0d1-b3b2061067bd,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Mercedes-Benz,mercedes_benz,190,true,true,true,true,true,true,true,true,true,true,true,true
+6f6413a2-bfe6-4e06-92db-f1e540fa604e,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Citroën,citroen,70,false,true,true,true,true,true,true,true,true,true,true,true
+a204d1f4-45c8-4bc6-b029-089e8fc9d106,90d20cef-6847-40d7-bd30-0b53bb5d283f,Mercedes-Benz,mercedes_benz,190,true,true,true,true,true,true,true,true,true,true,true,true
+c113ddd7-6860-4bdb-bc04-a43040c8c765,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Nissan,nissan,230,true,true,true,true,true,true,true,true,true,true,true,true
+8c74dc09-aab8-40b5-a149-2b2c1ea73c89,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Aprilia,aprilia,10,true,true,true,true,true,true,true,true,true,true,true,true
+f6a70c59-db22-4679-9643-1216c0c3036e,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Chery,chery,50,false,true,true,true,true,true,true,true,true,true,true,true
+5cc7e59f-ff44-41c1-a9ec-08879c8ec1a6,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Benelli,benelli,40,true,true,true,true,true,true,true,true,true,true,true,true
+b124a185-80a2-46e6-9228-325cc428090f,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,BMW,bmw_motorrad,70,true,true,true,true,true,true,true,true,true,true,true,true
+adeb6c29-1bbe-4b28-bb7d-54eb59933b3c,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Datsun,datsun,26,true,true,true,true,true,true,true,true,true,true,true,true
+d6e7a47a-1fe1-49f4-973f-04f3484845d0,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Chevrolet,chevrolet,60,true,true,true,true,true,true,true,true,true,true,true,true
+688c6dda-7215-4890-8812-004956eabd17,38e31f19-1cb0-47a2-a978-4636431f95f4,Nissan,nissan,11,true,true,true,true,true,true,true,true,true,true,true,true
+fa2bf563-04e6-490f-b620-8e4d4347bfe5,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,DS,ds_automobiles,100,false,true,true,true,true,true,true,true,true,true,true,true
+c4ba356c-a316-4b8f-b47e-fe16b17bef42,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,DeLorean,delorean,34,true,true,true,true,true,true,true,true,true,true,true,true
+fd86d814-8cc3-4e2e-80c2-46f7d0c76eb8,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Oldsmobile,oldsmobile,8,true,true,true,true,true,true,true,true,true,true,true,true
+1e1b7310-00ed-4d74-8975-7405efea6ee9,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Fiat,fiat,110,true,true,true,true,true,true,true,true,true,true,true,true
+2ed43601-787e-418b-85db-58b735887582,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Pontiac,pontiac,5,true,true,true,true,true,true,true,true,true,true,true,true
+ad0be1f7-065e-4624-b238-71d7fd17e6a5,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Saab,saab,64,true,true,true,true,true,true,true,true,true,true,true,true
+7c7a3cd1-55e7-4476-ae5b-43c4164ed531,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,UM Motorcycles,um_motorcycles,420,true,true,false,true,true,true,true,true,true,true,true,true
+57509afd-7f14-46b0-9f00-2eda6554b09d,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Mercedes-Benz,mercedes_benz,20,true,true,true,true,true,true,true,true,true,true,true,true
+4c2f1036-3c5d-411e-a6fe-5785f7a0ad5c,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Lexus,lexus,170,true,true,true,true,true,true,true,true,true,true,true,true
+b200a431-9ff9-48f0-bb34-d4d5d1f683e7,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Mazda,mazda,180,true,true,true,true,true,true,true,true,true,true,true,true
+28f0971e-c038-4705-836f-0adec31f0081,6c04ccd8-b81e-4936-afe8-8423878b9169,Togg,togg,9003,true,false,true,true,true,true,true,true,true,true,true,true
+51349032-7281-477d-8555-0f8fbbc0c268,38e31f19-1cb0-47a2-a978-4636431f95f4,Fiat,fiat,1,true,true,true,true,true,true,true,true,true,true,true,true
+ee30d787-5553-46cb-93c4-858923bf646c,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Mitsubishi,mitsubishi,210,true,true,true,true,true,true,true,true,true,true,true,true
+c444d96e-b309-4daf-bcf8-aa319b5a1275,38e31f19-1cb0-47a2-a978-4636431f95f4,Ford,ford,2,true,true,true,true,true,true,true,true,true,true,true,true
+8dc14496-5a5f-470a-8deb-05bd45117140,6c04ccd8-b81e-4936-afe8-8423878b9169,Chrysler,chrysler,530,true,true,true,true,true,true,true,true,true,true,true,true
+9b6f95fe-b41e-4625-a742-54073d4030cf,6c04ccd8-b81e-4936-afe8-8423878b9169,Infiniti,infiniti,460,true,true,true,true,true,true,true,true,true,true,true,true
+1707fd15-1f5d-4842-ad41-deeccdbab284,38e31f19-1cb0-47a2-a978-4636431f95f4,Volkswagen,volkswagen,6,true,true,true,true,true,true,true,true,true,true,true,true
+4f78e297-53ce-4654-a81a-699b74d9a8b8,38e31f19-1cb0-47a2-a978-4636431f95f4,Mercedes-Benz,mercedes_benz,7,true,true,true,true,true,true,true,true,true,true,true,true
+0a74fa09-5594-4e68-93a6-b02be634a644,38e31f19-1cb0-47a2-a978-4636431f95f4,Hyundai,hyundai,12,true,true,true,true,true,true,true,true,true,true,true,true
+9359a0b9-70f5-4efc-b2b8-3369e0c0d02b,38e31f19-1cb0-47a2-a978-4636431f95f4,Toyota,toyota,8,true,true,true,true,true,true,true,true,true,true,true,true
+2fcf5af1-0df5-4f94-a2b1-464926a8b2bf,38e31f19-1cb0-47a2-a978-4636431f95f4,Kia,kia,13,true,true,true,true,true,true,true,true,true,true,true,true
+d203452e-be71-4fb1-8dcf-a3ab9c94f627,38e31f19-1cb0-47a2-a978-4636431f95f4,Mitsubishi,mitsubishi,14,true,true,true,true,true,true,true,true,true,true,true,true
+27ee0fc0-eb76-4a23-904b-80124efe0095,38e31f19-1cb0-47a2-a978-4636431f95f4,Isuzu,isuzu,15,true,true,true,true,true,true,true,true,true,true,true,true
+048ab6d6-d430-49e8-8355-7465e8ff5709,38e31f19-1cb0-47a2-a978-4636431f95f4,Iveco,iveco,16,true,true,true,true,true,true,true,true,true,true,true,true
+493ab4c7-7990-4658-8583-3f6d2597c575,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,MINI,mini,200,true,true,true,true,true,true,true,true,true,true,true,true
+5458355c-849e-420f-91aa-22ed91540872,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Subaru,subaru,290,true,true,true,true,true,true,true,true,true,true,true,true
+bf8ab3d5-76db-416f-85b7-b2d25fb90d48,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Volvo,volvo,330,true,true,true,true,true,true,true,true,true,true,true,true
+f23f5a76-366a-4dc2-92bd-a6701eb53d83,6c04ccd8-b81e-4936-afe8-8423878b9169,Maserati,maserati,430,true,true,true,true,true,true,true,true,true,true,true,true
+ab79a180-10a7-49b3-be0a-04ac60ab00dc,6c04ccd8-b81e-4936-afe8-8423878b9169,Suzuki,suzuki,320,true,true,true,true,true,true,true,true,true,true,true,true
+76f1d8e2-3ac4-47fe-9755-15574b95dc10,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Tesla,tesla,340,true,true,true,true,true,true,true,true,true,true,true,true
+ace2074e-0dd1-42ac-9799-69d9735519fc,6c04ccd8-b81e-4936-afe8-8423878b9169,Tesla,tesla,360,true,true,true,true,true,true,true,true,true,true,true,true
+a11d017f-6109-4880-a5fe-9fe80d265519,6c04ccd8-b81e-4936-afe8-8423878b9169,Volvo,volvo,350,true,true,true,true,true,true,true,true,true,true,true,true
+34095cd4-d1e8-4ce0-90e0-796a2c3e5ae3,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Porsche,porsche,350,true,true,true,true,true,true,true,true,true,true,true,true
+a20a31c7-d2d8-41a5-8e09-d3a9bd1aef4b,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Lamborghini,lamborghini,370,true,true,true,true,true,true,true,true,true,true,true,true
+a1eb103d-f69e-4d30-a9f8-ff337c79738c,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Aston Martin,aston_martin,390,true,true,true,true,true,true,true,true,true,true,true,true
+b911200f-fe1e-4f8f-b27d-120fc1727a3a,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Rolls-Royce,rolls_royce,420,true,true,true,true,true,true,true,true,true,true,true,true
+53ea070b-a64a-4e22-8109-6b94fbb996b1,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Maserati,maserati,430,true,true,true,true,true,true,true,true,true,true,true,true
+7deff8cd-4375-44c6-80a2-dd0d2ac77baa,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Cadillac,cadillac,460,true,true,true,true,true,true,true,true,true,true,true,true
+49b767a9-7469-48e1-8750-719827ff7f4d,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Lincoln,lincoln,470,true,true,true,true,true,true,true,true,true,true,true,true
+93c4ef6a-8f02-4b23-8753-5e6097f265f4,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Buick,buick,540,true,true,true,true,true,true,true,true,true,true,true,true
+6822a650-0025-41f1-978e-345e8ace5b48,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Chrysler,chrysler,550,true,true,true,true,true,true,true,true,true,true,true,true
+c8ef4ac3-9ab0-4e2d-b164-d7ab48db4529,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Tofaş,tofas,315,false,true,true,true,true,true,true,true,true,true,true,true
+ae938e75-dd57-4a81-9c27-96c77eaaf683,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Bentley,bentley,400,true,true,true,true,true,true,true,true,true,true,true,true
+cee91d9b-3ce5-4b73-a170-e2cfc7540e41,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Lancia,lancia,46,true,true,true,true,true,true,true,true,true,true,true,true
+8742d65b-a40d-4268-8501-18b907163a79,37c58256-b9bb-4017-bf26-c5b8ea92a3cd,Studebaker,studebaker,35,true,true,true,true,true,true,true,true,true,true,true,true
+17a12c1a-f2eb-495e-870d-274b34ca16d8,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Bugatti,bugatti,410,false,true,true,true,true,true,true,true,true,true,true,true
+ca5f8db8-9f20-4d0d-95a9-247d10ad82e5,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Acura,acura,520,true,true,true,true,true,true,true,true,true,true,true,true
+a78ead0d-55be-4142-93a4-44f4804b7cd1,61ca73ff-4cde-4fab-a184-e985812ec0c4,Evinrude,evinrude,5,true,true,true,true,true,true,true,true,true,true,true,true
+64c6326a-f155-41bb-9fad-7ebc5ada2f39,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Daihatsu,daihatsu,590,false,true,true,true,true,true,true,true,true,true,true,true
+9c761eaf-5b42-4809-9652-43ab6ef50e6b,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Geely,geely,660,false,true,true,true,true,true,true,true,true,true,true,true
+4517efc5-b3ca-4271-882f-e2644edb7286,6c04ccd8-b81e-4936-afe8-8423878b9169,Renault,renault,260,true,true,true,true,true,true,true,true,true,true,true,true
+dc3d87ee-e4b2-4e3e-a9c0-01077bdee279,6c04ccd8-b81e-4936-afe8-8423878b9169,Skoda,skoda,300,true,true,true,true,true,true,true,true,true,true,true,true
+8ce4939d-5658-4cd2-b887-a18ecc74235f,6c04ccd8-b81e-4936-afe8-8423878b9169,Seat,seat,290,true,true,true,true,true,true,true,true,true,true,true,true
+b860815e-1a1e-4ee5-b5ab-d0b6384bc3fd,6c04ccd8-b81e-4936-afe8-8423878b9169,Peugeot,peugeot,270,true,true,true,true,true,true,true,true,true,true,true,true
+cde55445-d2db-4918-8852-15b37274f935,6c04ccd8-b81e-4936-afe8-8423878b9169,Opel,opel,260,true,true,true,true,true,true,true,true,true,true,true,true
+94773008-a927-403d-aba0-9209dc8dd9a5,6c04ccd8-b81e-4936-afe8-8423878b9169,Mercedes-Benz,mercedes_benz,190,true,true,true,true,true,true,true,true,true,true,true,true
+fc0f6d1d-9670-4a56-8665-c488cf7656a5,6c04ccd8-b81e-4936-afe8-8423878b9169,Nissan,nissan,230,true,true,true,true,true,true,true,true,true,true,true,true
+632bd12b-f52d-418c-85da-c7eb7ea0c8ca,90d20cef-6847-40d7-bd30-0b53bb5d283f,Nissan,nissan,230,true,true,true,true,true,true,true,true,true,true,true,true
+2f6c1582-a022-46c5-8d18-7443d6c8ad94,6c04ccd8-b81e-4936-afe8-8423878b9169,Mitsubishi,mitsubishi,210,true,true,true,true,true,true,true,true,true,true,true,true
+e1f1ed7e-83cf-4780-ad38-c70bc5736698,6c04ccd8-b81e-4936-afe8-8423878b9169,Fiat,fiat,110,true,true,true,true,true,true,true,true,true,true,true,true
+6a278d2d-85cc-4301-958d-e2bf7ad82cdf,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Diğer Markalar,diger_markalar,90,true,true,true,true,true,true,true,true,true,true,true,true
+383a9bd6-376a-42b2-9923-b18fb6069350,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Falcon,falcon,110,true,true,false,true,true,true,true,true,true,true,true,true
+dc59b4b7-ffb0-45fd-a4c0-174181a410cc,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Kuba,kuba,220,true,true,false,true,true,true,true,true,true,true,true,true
+f3b94436-1098-4343-98db-437fed3f8902,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Motolux,motolux,270,true,true,false,true,true,true,true,true,true,true,true,true
+a76483d0-1305-4f32-864c-3c8fcb7cece9,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Musatti,musatti,280,true,true,false,true,true,true,true,true,true,true,true,true
+9eba1541-a274-4c7b-94d0-aa511f75d0ab,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Peugeot,peugeot,310,true,true,true,true,true,true,true,true,true,true,true,true
+7cee5bd2-e24c-4487-a064-a0e0f33132cf,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Skyjet,skyjet,370,true,true,false,true,true,true,true,true,true,true,true,true
+2fff7e12-a2d9-456e-8355-c8c7310f88f5,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Yuki,yuki,460,true,true,false,true,true,true,true,true,true,true,true,true
+f4cf5d9e-50c3-4188-9504-fcbc3d1ca5e2,61ca73ff-4cde-4fab-a184-e985812ec0c4,Ferretti Yachts,ferretti_yachts,14,true,true,true,true,true,true,true,true,true,true,true,true
+8f21fcff-57a8-402d-afc7-d54d947099e7,61ca73ff-4cde-4fab-a184-e985812ec0c4,Jeanneau,jeanneau,16,true,true,true,true,true,true,true,true,true,true,true,true
+03f2a04d-e9d6-47d7-8348-7271778c4108,61ca73ff-4cde-4fab-a184-e985812ec0c4,Lagoon,lagoon,17,true,true,true,true,true,true,true,true,true,true,true,true
+5c3233ad-5737-467d-8124-a241e681cf09,61ca73ff-4cde-4fab-a184-e985812ec0c4,MAN Energy Solutions,man_energy_solutions,8,true,true,true,true,true,true,true,true,true,true,true,true
+b74a447a-05f0-4b11-bd98-2ef1ebbb332b,61ca73ff-4cde-4fab-a184-e985812ec0c4,Mercury Marine,mercury_marine,2,true,true,true,true,true,true,true,true,true,true,true,true
+0e78cf0f-0962-4da3-967e-61c8c15d5c79,61ca73ff-4cde-4fab-a184-e985812ec0c4,Princess Yachts,princess_yachts,13,true,true,true,true,true,true,true,true,true,true,true,true
+de28471d-731e-4a26-a20e-9c5c27da0781,61ca73ff-4cde-4fab-a184-e985812ec0c4,Riva,riva,19,true,true,true,true,true,true,true,true,true,true,true,true
+19ae8e03-4524-4938-8842-e272c5ac544b,61ca73ff-4cde-4fab-a184-e985812ec0c4,Sea Ray,sea_ray,10,true,true,true,true,true,true,true,true,true,true,true,true
+d9e18379-ac4f-437b-b62a-9f37d6947c7d,6c04ccd8-b81e-4936-afe8-8423878b9169,Diğer Markalar,diger_markalar,9999,true,true,true,true,true,true,true,true,true,true,true,true
+86d22c33-46de-4925-bace-5307e459808d,6c04ccd8-b81e-4936-afe8-8423878b9169,Land Rover,land_rover,180,true,true,true,true,true,true,true,true,true,true,true,true
+89cfdc1f-6314-438d-a540-bd328d09cbb2,6c04ccd8-b81e-4936-afe8-8423878b9169,Lexus,lexus,190,true,true,true,true,true,true,true,true,true,true,true,true
+4832a205-d784-4717-92f6-52ef8ed647fe,6c04ccd8-b81e-4936-afe8-8423878b9169,Lincoln,lincoln,450,true,true,true,true,true,true,true,true,true,true,true,true
+7918eadf-9c96-4e88-829b-ba6299864e1f,6c04ccd8-b81e-4936-afe8-8423878b9169,Mazda,mazda,200,true,true,true,true,true,true,true,true,true,true,true,true
+f389548c-098b-4c86-8f4d-d4a08bb4d2ad,6c04ccd8-b81e-4936-afe8-8423878b9169,MINI,mini,230,true,true,true,true,true,true,true,true,true,true,true,true
+36bb4e1e-12ba-4888-ad2d-2053ab407728,6c04ccd8-b81e-4936-afe8-8423878b9169,Porsche,porsche,370,true,true,true,true,true,true,true,true,true,true,true,true
+5d68048b-9723-4043-9e39-4826b8c2efba,6c04ccd8-b81e-4936-afe8-8423878b9169,SsangYong,ssangyong,570,true,true,true,true,true,true,true,true,true,true,true,true
+b1cbb72b-8329-46c2-88a9-c436704cd363,6c04ccd8-b81e-4936-afe8-8423878b9169,Subaru,subaru,310,true,true,true,true,true,true,true,true,true,true,true,true
+5def8a46-1184-4ec1-ab6d-49f301d0398f,6c04ccd8-b81e-4936-afe8-8423878b9169,Dacia,dacia,9982,true,true,true,true,true,true,true,true,true,true,true,true
+8d06d8df-c94d-4282-b652-06a63c1c9a0f,6c04ccd8-b81e-4936-afe8-8423878b9169,MG,mg,9983,true,true,true,true,true,true,true,true,true,true,true,true
+84d3d577-3033-4bc3-8b0b-75466f85ab45,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Cupra,cupra,80,false,true,true,true,true,true,true,true,true,true,true,true
+76998c74-eb84-4d7c-9d85-fc40eca5632b,61ca73ff-4cde-4fab-a184-e985812ec0c4,Sessa Marine,sessa_marine,20,true,true,true,true,true,true,true,true,true,true,true,true
+66df3d68-c122-4afa-946d-b68f936f78aa,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Dacia,dacia,90,false,true,true,true,true,true,true,true,true,true,true,true
+7aa56aa2-02ab-43a4-8f8f-0086a2caddbb,61ca73ff-4cde-4fab-a184-e985812ec0c4,Sunseeker,sunseeker,12,true,true,true,true,true,true,true,true,true,true,true,true
+99fa2b1b-37b9-42bb-b5a1-3cc733a9cdcc,61ca73ff-4cde-4fab-a184-e985812ec0c4,Tohatsu,tohatsu,6,true,true,true,true,true,true,true,true,true,true,true,true
+52f7924f-2359-4b98-9d7e-775bb5037cd4,61ca73ff-4cde-4fab-a184-e985812ec0c4,Volvo Penta,volvo_penta,7,true,true,true,true,true,true,true,true,true,true,true,true
+dc6bcece-9500-4dd0-8eef-4f05b47cf286,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Renault,renault,260,false,true,true,true,true,true,true,true,true,true,true,true
+bece6572-00ab-4158-93f1-7a5801c183bc,90d20cef-6847-40d7-bd30-0b53bb5d283f,Renault,renault,260,true,true,true,true,true,true,true,true,true,true,true,true
+7ce05310-345c-4399-8f40-1b8d5d85ac11,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Skoda,skoda,280,false,true,true,true,true,true,true,true,true,true,true,true
+8c628bd4-6a1f-4124-ac80-7e9c9b61e298,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Seat,seat,270,false,true,true,true,true,true,true,true,true,true,true,true
+7f783cfc-3bd1-43fd-98ae-329a53ae077f,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Peugeot,peugeot,250,false,true,true,true,true,true,true,true,true,true,true,true
+38d23ad2-234c-46db-a9e0-16cda27b4aa1,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Opel,opel,240,false,true,true,true,true,true,true,true,true,true,true,true
+70995dd8-54ef-41da-9fc0-6ba4709c012a,90d20cef-6847-40d7-bd30-0b53bb5d283f,BMW,bmw,30,true,true,true,true,true,true,true,true,true,true,true,true
+d65345b1-6488-4249-92b1-ceed4ef88bdc,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Honda,honda,130,true,true,true,true,true,true,true,true,true,true,true,true
+80b8f36b-6006-44f9-a852-7e0438b17231,6c04ccd8-b81e-4936-afe8-8423878b9169,Honda,honda,130,true,true,true,true,true,true,true,true,true,true,true,true
+dd0ac48e-f0d0-42be-875a-de979ae39d55,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Hyundai,hyundai,140,true,true,true,true,true,true,true,true,true,true,true,true
+c02f5ff8-55f7-43c6-80e2-3120342ff960,6c04ccd8-b81e-4936-afe8-8423878b9169,Hyundai,hyundai,140,true,true,true,true,true,true,true,true,true,true,true,true
+95eca2b9-a0fb-405b-8cc9-090546a2c5b3,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Ducati,ducati,100,true,true,true,true,true,true,true,true,true,true,true,true
+a8e00a8c-fa75-45ce-b37b-2b6ec37857a3,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Fantic,fantic,120,true,true,true,true,true,true,true,true,true,true,true,true
+a73c7513-08ae-4788-8be0-af8a5afb228c,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Honda,honda,160,true,true,true,true,true,true,true,true,true,true,true,true
+a401d9d4-a182-4788-a1b7-55f566bd96af,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Kawasaki,kawasaki,200,true,true,true,true,true,true,true,true,true,true,true,true
+a396bca5-468e-4426-8d8d-0df64c928a96,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Moto Guzzi,moto_guzzi,260,true,true,true,true,true,true,true,true,true,true,true,true
+70f37d2f-28fc-47ec-9c0e-5b089eb96c8a,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,MV Agusta,mv_agusta,290,true,true,true,true,true,true,true,true,true,true,true,true
+077bde39-801e-4063-838c-a447b12af651,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Sherco,sherco,360,true,true,true,true,true,true,true,true,true,true,true,true
+b986c5f6-ef4d-45b1-90be-384c171264c8,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Suzuki,suzuki_motorcycle,380,true,true,true,true,true,true,true,true,true,true,true,true
+47e39afe-059c-4d7b-ae67-33d1160987b0,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Yamaha,yamaha,450,true,true,true,true,true,true,true,true,true,true,true,true
+aa29c20b-369e-46c8-86e9-20a34637ad1d,6c04ccd8-b81e-4936-afe8-8423878b9169,Mahindra,mahindra,9001,true,false,true,true,true,true,true,true,true,true,true,true
+8c5d5f37-2026-4197-b53e-3452812f0121,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Ford,ford,120,true,true,true,true,true,true,true,true,true,true,true,true
+3be88610-182b-40a8-9e88-fa393fe42f2b,6c04ccd8-b81e-4936-afe8-8423878b9169,Range Rover,range_rover,9002,true,false,true,true,true,true,true,true,true,true,true,true
+ce336063-50f6-40be-92f5-d61d8942ab22,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Jaguar,jaguar,150,true,true,true,true,true,true,true,true,true,true,true,true
+ca1c61e2-7623-4dcb-8540-96c1f0e3f62f,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Kia,kia,160,true,true,true,true,true,true,true,true,true,true,true,true
+174531c0-7df1-4432-96f8-7b2da4225da3,6c04ccd8-b81e-4936-afe8-8423878b9169,Alfa Romeo,alfa_romeo,10,true,true,true,true,true,true,true,true,true,true,true,true
+c4342965-43b1-4b23-a3bc-8a9782115f8e,6c04ccd8-b81e-4936-afe8-8423878b9169,Cadillac,cadillac,440,true,true,true,true,true,true,true,true,true,true,true,true
+4e78114a-87f5-495e-8843-1777e087a3ae,6c04ccd8-b81e-4936-afe8-8423878b9169,Cupra,cupra,80,true,true,true,true,true,true,true,true,true,true,true,true
+fec91e2d-98aa-43fd-8241-4c2420c7cda9,6c04ccd8-b81e-4936-afe8-8423878b9169,Dodge,dodge,520,true,true,true,true,true,true,true,true,true,true,true,true
+d6933760-7690-4c2d-a626-644ab649232c,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Suzuki,suzuki,300,false,true,true,true,true,true,true,true,true,true,true,true
+da348664-e704-4709-b047-4f3c5f6be24e,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Ferrari,ferrari,360,true,true,true,true,true,true,true,true,true,true,true,true
+8d8a2d2d-9168-4eaf-922b-9acee6ca18c2,6c04ccd8-b81e-4936-afe8-8423878b9169,Ford,ford,120,true,true,true,true,true,true,true,true,true,true,true,true
+3beef2ec-e33f-48ab-adc0-3b1d99da4d7d,6c04ccd8-b81e-4936-afe8-8423878b9169,GMC,gmc,550,true,true,true,true,true,true,true,true,true,true,true,true
+222b53dc-b99d-43d2-9ff0-304c66ce928f,6c04ccd8-b81e-4936-afe8-8423878b9169,Isuzu,isuzu,560,true,true,true,true,true,true,true,true,true,true,true,true
+e84072d5-7e31-4b88-bacc-f4f89fb4da55,6c04ccd8-b81e-4936-afe8-8423878b9169,Jaguar,jaguar,150,true,true,true,true,true,true,true,true,true,true,true,true
+daa9c8dc-6907-41b6-b9a2-cc208b089648,6c04ccd8-b81e-4936-afe8-8423878b9169,Jeep,jeep,160,true,true,true,true,true,true,true,true,true,true,true,true
+dcbc1cd8-639c-48f9-82a5-48c6e5eab766,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Mclaren,mclaren,380,false,true,true,true,true,true,true,true,true,true,true,true
+d15de4b3-f082-4f6c-a01c-1ccfda45b8d3,6c04ccd8-b81e-4936-afe8-8423878b9169,Kia,kia,170,true,true,true,true,true,true,true,true,true,true,true,true
+a95eaf34-a829-443f-b599-b346bd6211c8,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Koenigsegg,koenigsegg,450,false,true,true,true,true,true,true,true,true,true,true,true
+11340b7c-d43d-497d-adc2-854da17cb8bb,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Dodge,dodge,480,true,true,true,true,true,true,true,true,true,true,true,true
+b97f3498-210a-477b-9c34-2d43a22931db,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Infiniti,infiniti,500,true,true,true,true,true,true,true,true,true,true,true,true
+b0ed6d4c-782c-4d7b-ab6a-825024b31a18,6c04ccd8-b81e-4936-afe8-8423878b9169,Acura,acura,480,true,true,true,true,true,true,true,true,true,true,true,true
+5ea35377-a791-4647-bb98-3f6e2ef5c66c,6c04ccd8-b81e-4936-afe8-8423878b9169,Aston Martin,aston_martin,400,true,true,true,true,true,true,true,true,true,true,true,true
+4afe7cfc-5aa9-4515-8b23-19b61384b838,6c04ccd8-b81e-4936-afe8-8423878b9169,Bentley,bentley,410,true,true,true,true,true,true,true,true,true,true,true,true
+2d95ac26-c3f4-48e0-a76c-b38513f455c3,6c04ccd8-b81e-4936-afe8-8423878b9169,Buick,buick,540,true,true,true,true,true,true,true,true,true,true,true,true
+26a40adf-0ae5-44a1-ab7b-8a224e0f2121,6c04ccd8-b81e-4936-afe8-8423878b9169,Ferrari,ferrari,380,true,true,true,true,true,true,true,true,true,true,true,true
+73a56f0c-31e4-4601-adfb-55bb5484ec41,6c04ccd8-b81e-4936-afe8-8423878b9169,Genesis,genesis,470,true,true,true,true,true,true,true,true,true,true,true,true
+e0cd38c2-29c1-48a3-82cb-6bce0ea31186,6c04ccd8-b81e-4936-afe8-8423878b9169,Lamborghini,lamborghini,390,true,true,true,true,true,true,true,true,true,true,true,true
+38320a2d-4147-41bc-8e31-49ec35836498,6c04ccd8-b81e-4936-afe8-8423878b9169,Lotus,lotus,690,true,true,true,true,true,true,true,true,true,true,true,true
+3958d8e5-c9d0-4e36-9c6a-3a2b1911869b,40cd8039-3d34-4c61-a438-82559a88ddd3,Xiaomi,xiaomi,1,true,true,true,true,true,true,true,true,true,true,true,true
+cb1ebc28-d836-4fca-8c1e-8f5f4c883ab3,40cd8039-3d34-4c61-a438-82559a88ddd3,Segway-Ninebot,segway_ninebot,2,true,true,true,true,true,true,true,true,true,true,true,true
+2d9c8fe2-7a22-4200-ba52-2af4223ae33c,40cd8039-3d34-4c61-a438-82559a88ddd3,Navee,navee,3,true,true,true,true,true,true,true,true,true,true,true,true
+2b3ffe09-a2ef-43cc-af55-bf5370824b3f,40cd8039-3d34-4c61-a438-82559a88ddd3,Pure Electric,pure_electric,4,true,true,true,true,true,true,true,true,true,true,true,true
+8242d6d8-d599-4899-b998-7e0ac8c6a0b1,40cd8039-3d34-4c61-a438-82559a88ddd3,Inokim,inokim,5,true,true,true,true,true,true,true,true,true,true,true,true
+036b79f2-5f49-41dd-a4c3-bcae29b72c4f,40cd8039-3d34-4c61-a438-82559a88ddd3,Dualtron,dualtron,6,true,true,true,true,true,true,true,true,true,true,true,true
+fa911c43-01d5-4094-ae5f-8e1bdc4fc20d,6c04ccd8-b81e-4936-afe8-8423878b9169,Rolls-Royce,rolls_royce,420,true,true,true,true,true,true,true,true,true,true,true,true
+4591f25e-1fba-4810-a122-e6e4bda814b8,90d20cef-6847-40d7-bd30-0b53bb5d283f,Volkswagen,volkswagen,320,true,true,true,true,true,true,true,true,true,true,true,true
+7dfb6a61-3c7b-4972-a416-426709b36e35,90d20cef-6847-40d7-bd30-0b53bb5d283f,Citroën,citroen,70,true,true,true,true,true,true,true,true,true,true,true,true
+04a55b8c-9bb8-4b7e-b4c8-c8da9f77a078,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Arora,arora,20,true,true,false,true,true,true,true,true,true,true,true,true
+ec67bd8d-281b-46e6-a9fc-703c8d862dd6,6c04ccd8-b81e-4936-afe8-8423878b9169,Smart,smart,660,true,true,true,true,true,true,true,true,true,true,true,true
+9cc219b4-3d08-4a5b-97d0-f1325a6aed8c,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Bajaj,bajaj,30,true,true,false,true,true,true,true,true,true,true,true,true
+176e78a5-dfdc-4337-a907-c165c47c5218,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Beta Motor,beta_motor,50,true,true,true,true,true,true,true,true,true,true,true,true
+ff4b1f3c-bd01-4cde-9bf7-1201db2c2a23,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Bimota,bimota,60,true,true,false,true,true,true,true,true,true,true,true,true
+ec81de9d-4696-43e2-bb45-ce844ec7987b,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,CFMoto,cfmoto,80,true,true,true,true,true,true,true,true,true,true,true,true
+da3eaeee-7840-4856-a259-f2eb0ff89779,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,GasGas,gasgas,130,true,true,true,true,true,true,true,true,true,true,true,true
+203464a3-74cb-4d00-9ad5-80165d0da58f,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Harley-Davidson,harley_davidson,140,true,true,true,true,true,true,true,true,true,true,true,true
+81c7e7e8-232d-4a2e-aa78-e8bc2d350c4d,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Hero,hero_motocorp,150,true,true,false,true,true,true,true,true,true,true,true,true
+5de17e19-6c39-4ed6-bfaf-d5c095f5d94a,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Husqvarna,husqvarna,170,true,true,true,true,true,true,true,true,true,true,true,true
+896e6d05-56b0-4b79-a348-4ea016d8c849,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,BYD,byd,40,false,true,true,true,true,true,true,true,true,true,true,true
+dd808a35-d8d3-4fc7-bb9c-9f0843ba81c6,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Daewoo,daewoo,580,false,true,true,true,true,true,true,true,true,true,true,true
+9905c5a4-74c3-451d-97d3-595d28e67bf4,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Lada,lada,600,false,true,true,true,true,true,true,true,true,true,true,true
+3cf1cb80-647d-4753-9319-3971bdd22fc2,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Mercury,mercury,610,false,true,true,true,true,true,true,true,true,true,true,true
+32040022-a3fd-4b74-abd5-f5091fafa63d,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Pontiac,pontiac,620,false,true,true,true,true,true,true,true,true,true,true,true
+897d6906-e63a-4ef7-915b-7835101234d4,af9dd8cc-0a17-4cbb-b060-2e503b8a2497,Saab,saab,630,false,true,true,true,true,true,true,true,true,true,true,true
+b5a9dab6-fb6b-4e70-bc4f-9d074adbaae1,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Indian,indian_motorcycle,180,true,true,true,true,true,true,true,true,true,true,true,true
+f6b314f9-fda7-4e6a-992f-80662f2cc6de,c4eb1633-7cad-44e7-aa7f-25e98da2aaa1,Kanuni,kanuni,190,true,true,false,true,true,true,true,true,true,true,true,true
+256a23a5-b62e-4b1a-8f1d-1fae06c1f088,c6340a9c-5319-47bd-a22d-832db287e4e1,Acura,acura,9802,true,true,true,true,true,true,true,true,true,true,true,true
+0740afac-ffed-4371-a9da-136a64ae54b6,c6340a9c-5319-47bd-a22d-832db287e4e1,Alfa Romeo,alfa_romeo,10,true,true,true,true,true,true,true,true,true,true,true,true
+224317b4-38df-450e-ba2d-086b754a95d4,c6340a9c-5319-47bd-a22d-832db287e4e1,Aston Martin,aston_martin,390,true,true,true,true,true,true,true,true,true,true,true,true
+6e7870cc-a32e-4216-a821-5f1b667a548c,c6340a9c-5319-47bd-a22d-832db287e4e1,Audi,audi,20,true,true,true,true,true,true,true,true,true,true,true,true
+4ee7b734-523b-4890-a6cd-1a9318c071a8,c6340a9c-5319-47bd-a22d-832db287e4e1,Bentley,bentley,400,true,true,true,true,true,true,true,true,true,true,true,true
+c3bbc69f-98e2-4e69-bb76-43f35aad4d7c,c6340a9c-5319-47bd-a22d-832db287e4e1,BMW,bmw,30,true,true,true,true,true,true,true,true,true,true,true,true
+2b5c4c1e-971a-45ab-b8e3-f67c95d410aa,c6340a9c-5319-47bd-a22d-832db287e4e1,Buick,buick,9803,true,true,true,true,true,true,true,true,true,true,true,true
+91a31434-9a6c-4727-8f1d-1e424376aa60,c6340a9c-5319-47bd-a22d-832db287e4e1,Cadillac,cadillac,460,true,true,true,true,true,true,true,true,true,true,true,true
+668472ea-79d3-49e3-ae03-06ff4ad6383a,c6340a9c-5319-47bd-a22d-832db287e4e1,Chevrolet,chevrolet,60,true,true,true,true,true,true,true,true,true,true,true,true
+a4271dbd-3cf5-4a7e-b80c-54a1ca52377e,c6340a9c-5319-47bd-a22d-832db287e4e1,Chrysler,chrysler,9804,true,true,true,true,true,true,true,true,true,true,true,true
+7c54998f-fa85-4de2-8e72-486738d1743c,c6340a9c-5319-47bd-a22d-832db287e4e1,Diğer Markalar,diger_markalar,9999,true,true,true,true,true,true,true,true,true,true,true,true
+11951d36-27b3-43fd-84f6-e66b683bdc89,40cd8039-3d34-4c61-a438-82559a88ddd3,Kugoo,kugoo,7,true,true,true,true,true,true,true,true,true,true,true,true
+bb692859-ac2e-4793-b2c0-dbbf7c59e183,40cd8039-3d34-4c61-a438-82559a88ddd3,Mercane,mercane,8,true,true,true,true,true,true,true,true,true,true,true,true
+8f56ae66-576b-412f-b562-606259fc9015,40cd8039-3d34-4c61-a438-82559a88ddd3,Joyor,joyor,9,true,true,true,true,true,true,true,true,true,true,true,true
+396a4afe-12db-40ea-bbce-d0a50b95dc6f,40cd8039-3d34-4c61-a438-82559a88ddd3,Hiboy,hiboy,10,true,true,true,true,true,true,true,true,true,true,true,true
+c4983cd4-4cd3-42b4-ae80-09dcd0efca4f,40cd8039-3d34-4c61-a438-82559a88ddd3,iScooter,iscooter,11,true,true,true,true,true,true,true,true,true,true,true,true
+95725edb-9969-4523-88de-51a91b85170a,40cd8039-3d34-4c61-a438-82559a88ddd3,Aovo,aovo,12,true,true,true,true,true,true,true,true,true,true,true,true
+8d163656-7be3-400c-89d5-112124e9bf8f,40cd8039-3d34-4c61-a438-82559a88ddd3,Microgo,microgo,13,true,true,true,true,true,true,true,true,true,true,true,true
+d3dbf4b2-977c-4f86-8c9b-2a63c2ecafc8,40cd8039-3d34-4c61-a438-82559a88ddd3,Yadea,yadea,14,true,true,true,true,true,true,true,true,true,true,true,true
+8c0d7ce7-1d2e-44ba-b970-b3af13d14040,40cd8039-3d34-4c61-a438-82559a88ddd3,Volta,volta,15,true,true,true,true,true,true,true,true,true,true,true,true
+4f8a1339-9c60-45e5-ab9c-ed34e0666db9,40cd8039-3d34-4c61-a438-82559a88ddd3,RND,rnd,16,true,true,true,true,true,true,true,true,true,true,true,true
+7e47aa32-50b6-4206-bed9-e3acf6d74670,40cd8039-3d34-4c61-a438-82559a88ddd3,Smartway,smartway,17,true,true,true,true,true,true,true,true,true,true,true,true
+edcd0412-d5f3-43f6-901b-8addac6c9155,40cd8039-3d34-4c61-a438-82559a88ddd3,Magmani,magmani,18,true,true,true,true,true,true,true,true,true,true,true,true
+d487be45-e438-4ca4-b850-7d02d4a64aed,40cd8039-3d34-4c61-a438-82559a88ddd3,Anka,anka,19,true,true,true,true,true,true,true,true,true,true,true,true
+0915f67f-69b6-459b-954a-a66ef1d5359e,c6340a9c-5319-47bd-a22d-832db287e4e1,Dodge,dodge,480,true,true,true,true,true,true,true,true,true,true,true,true
+c6fa1f45-94df-41ec-8f3a-aec4f04cf91d,c6340a9c-5319-47bd-a22d-832db287e4e1,Ferrari,ferrari,360,true,true,true,true,true,true,true,true,true,true,true,true
+24ae68fc-ca03-473f-a497-1c5de22828e5,c6340a9c-5319-47bd-a22d-832db287e4e1,Fiat,fiat,9981,true,true,true,true,true,true,true,true,true,true,true,true
+e890a2ff-15a4-4002-9ab2-3594f028baf6,c6340a9c-5319-47bd-a22d-832db287e4e1,Ford,ford,120,true,true,true,true,true,true,true,true,true,true,true,true
+1f44223b-1d0f-4189-a0db-371113a52012,c6340a9c-5319-47bd-a22d-832db287e4e1,Genesis,genesis,9808,true,true,true,true,true,true,true,true,true,true,true,true
+400b003a-5f01-40d5-9e47-6de2c2a33ccf,c6340a9c-5319-47bd-a22d-832db287e4e1,Honda,honda,130,true,true,true,true,true,true,true,true,true,true,true,true
+5cc7d5e2-e337-4487-a675-330d0ad2c590,c6340a9c-5319-47bd-a22d-832db287e4e1,Hyundai,hyundai,140,true,true,true,true,true,true,true,true,true,true,true,true
+48651b34-eef9-4047-a324-c1324c2902cb,c6340a9c-5319-47bd-a22d-832db287e4e1,Infiniti,infiniti,9809,true,true,true,true,true,true,true,true,true,true,true,true
+f247671b-2f72-4fa7-989c-825e4f9ff141,c6340a9c-5319-47bd-a22d-832db287e4e1,Jaguar,jaguar,150,true,true,true,true,true,true,true,true,true,true,true,true
+74e64a04-4d74-4fe3-b398-18896489d322,c6340a9c-5319-47bd-a22d-832db287e4e1,Kia,kia,160,true,true,true,true,true,true,true,true,true,true,true,true
+dd1ef393-9979-4db0-af59-02c1e2417b8d,c6340a9c-5319-47bd-a22d-832db287e4e1,Lamborghini,lamborghini,370,true,true,true,true,true,true,true,true,true,true,true,true
+9a555d75-9ad8-49f5-9def-4273e78578ae,c6340a9c-5319-47bd-a22d-832db287e4e1,Lexus,lexus,170,true,true,true,true,true,true,true,true,true,true,true,true
+a6bf4b7e-893b-4f7f-a257-891429eed6c3,c6340a9c-5319-47bd-a22d-832db287e4e1,Lincoln,lincoln,470,true,true,true,true,true,true,true,true,true,true,true,true
+6b8289ec-3c67-450a-84d2-a701d46b8e1d,c6340a9c-5319-47bd-a22d-832db287e4e1,Maserati,maserati,430,true,true,true,true,true,true,true,true,true,true,true,true
+f6c563ea-8595-4172-9c40-ff3bf58c4169,c6340a9c-5319-47bd-a22d-832db287e4e1,Mazda,mazda,180,true,true,true,true,true,true,true,true,true,true,true,true
+e03d13d8-f7fb-455f-97af-3bc4a4b0b213,c6340a9c-5319-47bd-a22d-832db287e4e1,Mercedes-Benz,mercedes_benz,190,true,true,true,true,true,true,true,true,true,true,true,true
+7d30e85f-f075-4ac1-ae4b-971765ed3014,c6340a9c-5319-47bd-a22d-832db287e4e1,MINI,mini,200,true,true,true,true,true,true,true,true,true,true,true,true
+d0f2614e-0c09-4c70-859b-8226aa37e267,c6340a9c-5319-47bd-a22d-832db287e4e1,Mitsubishi,mitsubishi,210,true,true,true,true,true,true,true,true,true,true,true,true
+a95a6f4a-f445-4507-afc7-65933fe8865a,c6340a9c-5319-47bd-a22d-832db287e4e1,Nissan,nissan,230,true,true,true,true,true,true,true,true,true,true,true,true
+6c9ce432-bfb7-4fe7-b886-d16f8d3c25cb,c6340a9c-5319-47bd-a22d-832db287e4e1,Porsche,porsche,350,true,true,true,true,true,true,true,true,true,true,true,true
+a2c4daff-d459-4b35-b99c-8064f1fbc28c,c6340a9c-5319-47bd-a22d-832db287e4e1,Rolls-Royce,rolls_royce,420,true,true,true,true,true,true,true,true,true,true,true,true
+dcf2cee8-b4bc-42d6-9a03-6247e8167a4e,c6340a9c-5319-47bd-a22d-832db287e4e1,Subaru,subaru,290,true,true,true,true,true,true,true,true,true,true,true,true
+61eb9c9b-7c01-4892-9a41-00fa564a2960,c6340a9c-5319-47bd-a22d-832db287e4e1,Tesla,tesla,340,true,true,true,true,true,true,true,true,true,true,true,true
+1e922270-b38b-4ff5-8c8f-017fb2a91981,c6340a9c-5319-47bd-a22d-832db287e4e1,Toyota,toyota,310,true,true,true,true,true,true,true,true,true,true,true,true
+c1d1b418-0d15-4152-bd17-8fade12feefa,c6340a9c-5319-47bd-a22d-832db287e4e1,Volkswagen,volkswagen,320,true,true,true,true,true,true,true,true,true,true,true,true
+c32daae1-8a60-425b-85cc-fba3786f384b,c6340a9c-5319-47bd-a22d-832db287e4e1,Volvo,volvo,330,true,true,true,true,true,true,true,true,true,true,true,true
+b8261e18-7102-45d7-9695-0d5afeafa7c9,40cd8039-3d34-4c61-a438-82559a88ddd3,Engwe,engwe,20,true,true,true,true,true,true,true,true,true,true,true,true
+0a2c832a-d77a-4b63-8073-9bd29279d1ec,40cd8039-3d34-4c61-a438-82559a88ddd3,Himiway,himiway,21,true,true,true,true,true,true,true,true,true,true,true,true
+a08f2bfa-fec7-4f2b-8025-d90c218348c1,40cd8039-3d34-4c61-a438-82559a88ddd3,Fiido,fiido,22,true,true,true,true,true,true,true,true,true,true,true,true
+438cffa4-6152-44ac-8acd-2f326d50d5af,40cd8039-3d34-4c61-a438-82559a88ddd3,Ado,ado,23,true,true,true,true,true,true,true,true,true,true,true,true
+7da5f347-7017-4bbc-9c74-45603c76e518,40cd8039-3d34-4c61-a438-82559a88ddd3,Geobike,geobike,24,true,true,true,true,true,true,true,true,true,true,true,true
+84db47d3-24a6-4cd4-a1b3-cacfac7f65b5,40cd8039-3d34-4c61-a438-82559a88ddd3,Doce,doce,25,true,true,true,true,true,true,true,true,true,true,true,true
+8bb94391-f259-4843-82bc-9980a320ba73,0345621c-d8b8-436b-ba8e-7118117e53e9,Adria Mobil,adria_mobil,2,true,true,true,true,true,true,true,true,true,true,true,true
+acedf545-db5d-449f-9a33-7a13583dcfe5,0345621c-d8b8-436b-ba8e-7118117e53e9,Airstream,airstream,18,true,true,true,true,true,true,true,true,true,true,true,true
+dd8d171f-e44d-47c8-9835-ef6f01c04d67,0345621c-d8b8-436b-ba8e-7118117e53e9,Bailey of Bristol,bailey_of_bristol,22,true,true,true,true,true,true,true,true,true,true,true,true
+58b56a40-047f-452b-94a4-76a73324c7a3,0345621c-d8b8-436b-ba8e-7118117e53e9,Bürstner,burstner,6,true,true,true,true,true,true,true,true,true,true,true,true
+d173c157-6011-4de7-8c2f-cef12f21574b,0345621c-d8b8-436b-ba8e-7118117e53e9,Carado,carado,7,true,true,true,true,true,true,true,true,true,true,true,true
+376aadf6-8e9f-402c-b761-213eda86d785,0345621c-d8b8-436b-ba8e-7118117e53e9,Chausson,chausson,10,true,true,true,true,true,true,true,true,true,true,true,true
+2d4b829c-da07-4d2e-839b-87b1dd9b9ebc,0345621c-d8b8-436b-ba8e-7118117e53e9,CI International,ci_international,12,true,true,true,true,true,true,true,true,true,true,true,true
+12fb4242-8d5e-4afc-ae27-32b08a0e151f,0345621c-d8b8-436b-ba8e-7118117e53e9,Concorde Reisemobile,concorde_reisemobile,30,true,true,true,true,true,true,true,true,true,true,true,true
+becb6b24-af4e-4705-b51d-7d55b03277cf,0345621c-d8b8-436b-ba8e-7118117e53e9,Dethleffs,dethleffs,3,true,true,true,true,true,true,true,true,true,true,true,true
+cf5e0270-8bbc-40d4-bd4f-422fd038aed6,0345621c-d8b8-436b-ba8e-7118117e53e9,Diğer Markalar,diger_markalar,1030,true,true,true,true,true,true,true,true,true,true,true,true
+c71b0758-79a4-4bd8-87c3-2afd9c7270df,0345621c-d8b8-436b-ba8e-7118117e53e9,Etrusco,etrusco,15,true,true,true,true,true,true,true,true,true,true,true,true
+28411db1-c08e-4e97-b234-50294e3f0903,0345621c-d8b8-436b-ba8e-7118117e53e9,Fendt Caravan,fendt_caravan,24,true,true,true,true,true,true,true,true,true,true,true,true
+1177d35d-ae5f-471f-bfb7-26aa69b7a362,0345621c-d8b8-436b-ba8e-7118117e53e9,Forest River,forest_river,19,true,true,true,true,true,true,true,true,true,true,true,true
+32606f0f-ef80-42ff-985f-2cb8d0aef9fe,0345621c-d8b8-436b-ba8e-7118117e53e9,Globe-Traveller,globe_traveller,27,true,true,true,true,true,true,true,true,true,true,true,true
+09eb25a5-42f3-44b3-9192-64d452cd65ac,0345621c-d8b8-436b-ba8e-7118117e53e9,Grand Design RV,grand_design_rv,20,true,true,true,true,true,true,true,true,true,true,true,true
+a4531dc9-ae08-4e32-a796-da9e6826d007,0345621c-d8b8-436b-ba8e-7118117e53e9,Hobby,hobby,23,true,true,true,true,true,true,true,true,true,true,true,true
+3da0b3ae-ed98-474b-90e6-f67fdfc2ced9,0345621c-d8b8-436b-ba8e-7118117e53e9,Hymer,hymer,1,true,true,true,true,true,true,true,true,true,true,true,true
+ebd384fa-a2dc-4145-b111-ada4ac72eef4,0345621c-d8b8-436b-ba8e-7118117e53e9,Karmann Mobil,karmann_mobil,26,true,true,true,true,true,true,true,true,true,true,true,true
+4621c2e8-7b0d-407c-8b32-ac926c07134e,0345621c-d8b8-436b-ba8e-7118117e53e9,Knaus,knaus,4,true,true,true,true,true,true,true,true,true,true,true,true
+16f82a36-ce12-4ea9-8829-2abdaf945836,0345621c-d8b8-436b-ba8e-7118117e53e9,Laika,laika,14,true,true,true,true,true,true,true,true,true,true,true,true
+e37b54c2-d924-43b7-b590-6c25c5f9a115,0345621c-d8b8-436b-ba8e-7118117e53e9,Morelo,morelo,28,true,true,true,true,true,true,true,true,true,true,true,true
+f1da185d-3ec5-4d5d-a96d-229ca2a79835,0345621c-d8b8-436b-ba8e-7118117e53e9,Niesmann+Bischoff,niesmann_bischoff,29,true,true,true,true,true,true,true,true,true,true,true,true
+7121c1c7-f939-40c3-8d9b-4c14a0bc5606,0345621c-d8b8-436b-ba8e-7118117e53e9,Pilote,pilote,9,true,true,true,true,true,true,true,true,true,true,true,true
+e694b451-3e9f-492e-98da-9563ec4fca49,0345621c-d8b8-436b-ba8e-7118117e53e9,Rapido,rapido,11,true,true,true,true,true,true,true,true,true,true,true,true
+46dcc049-2cc5-48d5-be61-cd0086d1ad8c,0345621c-d8b8-436b-ba8e-7118117e53e9,Roller Team,roller_team,13,true,true,true,true,true,true,true,true,true,true,true,true
+d5b0f027-6412-4673-ab6e-6eb74cb498a1,40cd8039-3d34-4c61-a438-82559a88ddd3,Bisan,bisan,26,true,true,true,true,true,true,true,true,true,true,true,true
+f5efdd38-81ce-4adc-874b-5cb89b875704,40cd8039-3d34-4c61-a438-82559a88ddd3,Salcano,salcano,27,true,true,true,true,true,true,true,true,true,true,true,true
+d9da9c8d-3d8b-4a85-8e95-ff59208d7c62,40cd8039-3d34-4c61-a438-82559a88ddd3,Kron,kron,28,true,true,true,true,true,true,true,true,true,true,true,true
+12357a20-d8a4-4f21-85be-b86838e13fc0,40cd8039-3d34-4c61-a438-82559a88ddd3,Carraro,carraro,29,true,true,true,true,true,true,true,true,true,true,true,true
+4a245300-a16d-4515-94b2-d80fa7f9310e,40cd8039-3d34-4c61-a438-82559a88ddd3,Mondial,mondial,30,true,true,true,true,true,true,true,true,true,true,true,true
+aa2b7b1b-988a-443e-8ede-3bf876f78f77,40cd8039-3d34-4c61-a438-82559a88ddd3,Kuba,kuba,31,true,true,true,true,true,true,true,true,true,true,true,true
+6c459d5d-99fa-40fa-9508-a21dd719c1d6,40cd8039-3d34-4c61-a438-82559a88ddd3,RKS,rks,32,true,true,true,true,true,true,true,true,true,true,true,true
+e3d5d7d7-1e2b-4e66-87d5-18bf8a1e6fc6,40cd8039-3d34-4c61-a438-82559a88ddd3,Diğer Markalar,diger_markalar,999,true,true,true,true,true,true,true,true,true,true,true,true
+dd523593-aae7-4073-acfa-24cecb3f123c,90d20cef-6847-40d7-bd30-0b53bb5d283f,Skoda,skoda,280,true,true,true,true,true,true,true,true,true,true,true,true
+629cd970-12e2-4c42-8f0b-58ce0c6eeab4,90d20cef-6847-40d7-bd30-0b53bb5d283f,Audi,audi,20,true,true,true,true,true,true,true,true,true,true,true,true
+7e4a8151-6c8f-42a2-b411-f09789b3fc3e,0345621c-d8b8-436b-ba8e-7118117e53e9,Sunlight,sunlight,8,true,true,true,true,true,true,true,true,true,true,true,true
+3ac83cdc-e6d4-4b3d-94f0-12f902b25572,0345621c-d8b8-436b-ba8e-7118117e53e9,Swift Group,swift_group,21,true,true,true,true,true,true,true,true,true,true,true,true
+349bc489-d6ef-4c3e-a4a0-c0987cdc26b7,0345621c-d8b8-436b-ba8e-7118117e53e9,Tabbert,tabbert,5,true,true,true,true,true,true,true,true,true,true,true,true
+18bab3e0-dd89-45e0-a1a2-4168d91d18a8,0345621c-d8b8-436b-ba8e-7118117e53e9,Thor Motor Coach,thor_motor_coach,17,true,true,true,true,true,true,true,true,true,true,true,true
+b417b106-72d1-44e7-b6c9-eec115422ae3,0345621c-d8b8-436b-ba8e-7118117e53e9,Weinsberg,weinsberg,25,true,true,true,true,true,true,true,true,true,true,true,true
+71ebf470-7d43-46ae-b622-d93023c8e3d7,0345621c-d8b8-436b-ba8e-7118117e53e9,Winnebago,winnebago,16,true,true,true,true,true,true,true,true,true,true,true,true
+1a154785-0a50-4fa8-8e4b-78cb6aaf03d9,6d828996-6ae1-4b18-aca3-e3d13f340662,Airbus,airbus,2,true,true,true,true,true,true,true,true,true,true,true,true
+3305811c-e3e2-45a8-9970-f479915ff6f9,6d828996-6ae1-4b18-aca3-e3d13f340662,Beechcraft,beechcraft,9,true,true,true,true,true,true,true,true,true,true,true,true
+36a49ef9-5b59-41b4-ad07-6c01e67edca3,6d828996-6ae1-4b18-aca3-e3d13f340662,Bell Textron,bell_textron,14,true,true,true,true,true,true,true,true,true,true,true,true
+48db9c7d-4cf0-4bf5-b641-6ca4031f6122,6d828996-6ae1-4b18-aca3-e3d13f340662,Boeing,boeing,1,true,true,true,true,true,true,true,true,true,true,true,true
+490538b4-24b9-428a-982a-d912d08c9996,6d828996-6ae1-4b18-aca3-e3d13f340662,Bombardier,bombardier,4,true,true,true,true,true,true,true,true,true,true,true,true
+75f55182-28c4-4cc1-bf8b-fff9460d103f,6d828996-6ae1-4b18-aca3-e3d13f340662,Cessna,cessna,5,true,true,true,true,true,true,true,true,true,true,true,true
+3f0275e5-e702-472c-9cee-1d4434bab6f3,6d828996-6ae1-4b18-aca3-e3d13f340662,Cirrus Aircraft,cirrus_aircraft,12,true,true,true,true,true,true,true,true,true,true,true,true
+b5f27e39-8a6c-458b-966b-d64f5a4796ab,6d828996-6ae1-4b18-aca3-e3d13f340662,Dassault Aviation,dassault_aviation,7,true,true,true,true,true,true,true,true,true,true,true,true
+ce4b7f94-dd61-46b1-a3ba-3cfaf5999f93,6d828996-6ae1-4b18-aca3-e3d13f340662,Diamond Aircraft,diamond_aircraft,10,true,true,true,true,true,true,true,true,true,true,true,true
+0f78e0c9-f611-42a3-a695-17e164d45fec,6d828996-6ae1-4b18-aca3-e3d13f340662,Diğer Markalar,diger_markalar,1015,true,true,true,true,true,true,true,true,true,true,true,true
+d7aef640-5f6f-40bb-abb2-fc2f813ddda6,6d828996-6ae1-4b18-aca3-e3d13f340662,Embraer,embraer,3,true,true,true,true,true,true,true,true,true,true,true,true
+81a4f984-8d23-4957-9028-cc3697a8b081,6d828996-6ae1-4b18-aca3-e3d13f340662,Gulfstream Aerospace,gulfstream_aerospace,6,true,true,true,true,true,true,true,true,true,true,true,true
+872d9da4-87c2-4a04-b5d7-189325fea8f7,6d828996-6ae1-4b18-aca3-e3d13f340662,Leonardo Helicopters,leonardo_helicopters,15,true,true,true,true,true,true,true,true,true,true,true,true
+7c12a572-c6f3-4f6e-8ec6-6d61d839bd22,6d828996-6ae1-4b18-aca3-e3d13f340662,Pilatus Aircraft,pilatus_aircraft,8,true,true,true,true,true,true,true,true,true,true,true,true
+1be9aeb9-a277-436f-8532-8bef0e64c40e,6d828996-6ae1-4b18-aca3-e3d13f340662,Sikorsky,sikorsky,13,true,true,true,true,true,true,true,true,true,true,true,true
+8e6e15e1-a40c-4ca1-8806-3a515a7f175b,6d828996-6ae1-4b18-aca3-e3d13f340662,Textron Aviation,textron_aviation,11,true,true,true,true,true,true,true,true,true,true,true,true
+be8a23ed-8296-4e6b-ba00-b28619b07384,33f2eb24-973d-4234-8727-93a26c4eacf2,Arctic Cat,arctic_cat,107,true,true,true,true,true,true,true,true,true,true,true,true
+2a131884-24d4-4a19-8dbe-51a543d00fca,33f2eb24-973d-4234-8727-93a26c4eacf2,Can-Am,can_am,102,true,true,true,true,true,true,true,true,true,true,true,true
+8f50f90c-0261-4758-bb10-4f46637b8c34,33f2eb24-973d-4234-8727-93a26c4eacf2,Diğer Markalar,diger_markalar,1110,true,true,true,true,true,true,true,true,true,true,true,true
+a57344de-5d28-4aa3-9981-ab1ae26dc7dc,33f2eb24-973d-4234-8727-93a26c4eacf2,Polaris,polaris,101,true,true,true,true,true,true,true,true,true,true,true,true
+86eac5f7-156d-42dd-9b74-d0638ab290f5,33f2eb24-973d-4234-8727-93a26c4eacf2,Segway Powersports,segway_powersports,110,true,true,true,true,true,true,true,true,true,true,true,true
+f10848e9-a24d-457e-8400-6287750b7aca,33f2eb24-973d-4234-8727-93a26c4eacf2,Yamaha Motor Company,yamaha_motor_company,103,true,true,true,true,true,true,true,true,true,true,true,true
+5ac1d1a3-f55b-45eb-b062-b2e1b7f9c6b9,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Başak Traktör,basak_traktor,112,true,true,true,true,true,true,true,true,true,true,false,true
+828e2052-f1e3-43bf-86d5-8efc82ccd8b4,90d20cef-6847-40d7-bd30-0b53bb5d283f,Honda,honda,130,true,true,true,true,true,true,true,true,true,true,true,true
+f3067afd-210b-4c17-a4bf-911eacd95ad1,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Erkunt,erkunt,111,true,true,true,true,true,true,true,true,true,true,false,true
+0041fe0e-0dbb-4219-95a2-fe29df5944fd,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Tümosan,tumosan,110,true,true,true,true,true,true,true,true,true,true,false,true
+1389a8d8-9b01-4116-8870-d303fb00f8ca,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Bobcat,bobcat,11,true,true,true,true,true,true,true,true,true,true,true,true
+dd784508-19b5-4376-9aa8-920b039115dd,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Case Construction Equipment,case_construction,9,true,true,true,true,true,true,true,true,true,true,true,true
+c77ed6d6-ba2b-4995-a7c4-b3fa3a9ec23a,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Case IH,case_ih,102,true,true,true,true,true,true,true,true,true,true,true,true
+83997df4-bb17-4e93-8a18-09a8eda7631c,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Caterpillar,caterpillar,1,true,true,true,true,true,true,true,true,true,true,true,true
+64369a63-257c-4610-b496-0a9fc97f642d,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Claas,claas,104,true,true,true,true,true,true,true,true,true,true,true,true
+58e00b24-5072-406f-9d41-c304649afc4d,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Deutz-Fahr,deutz_fahr,107,true,true,true,true,true,true,true,true,true,true,true,true
+de333947-2c4c-4d63-b9f6-95846dd01848,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Diğer Markalar,diger_markalar,1114,true,true,true,true,true,true,true,true,true,true,true,true
+dac2414d-bce7-4832-ae9f-3880187b8813,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Doosan,doosan,6,true,true,true,true,true,true,true,true,true,true,true,true
+c5292899-a4b1-4195-b1c7-603132b0abcf,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Fendt,fendt,105,true,true,true,true,true,true,true,true,true,true,true,true
+304e2fb2-a6ce-410b-b309-5346524b2cd4,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Hitachi Construction Machinery,hitachi_construction,3,true,true,true,true,true,true,true,true,true,true,true,true
+b2748ef9-59f4-46b0-8d3d-7eae6c44ef86,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Hyundai Construction Equipment,hyundai_construction,7,true,true,true,true,true,true,true,true,true,true,true,true
+c035698c-6776-4d40-bdd7-e0e049bc20e0,0aa5da74-e038-4ea8-aacd-500ced2e20d0,JCB,jcb,5,true,true,true,true,true,true,true,true,true,true,true,true
+a5aaabf5-1bfd-41e6-ab6c-0bd7d0a84db7,0aa5da74-e038-4ea8-aacd-500ced2e20d0,John Deere,john_deere,100,true,true,true,true,true,true,true,true,true,true,true,true
+ed4fae6d-d4ba-4150-934c-2095192faaaf,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Komatsu,komatsu,2,true,true,true,true,true,true,true,true,true,true,true,true
+0c42e1f5-624e-4022-be7d-1809098f1ae4,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Kubota,kubota,106,true,true,true,true,true,true,true,true,true,true,true,true
+ef14f476-f455-4c2c-988b-c83ad278fe3d,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Landini,landini,113,true,true,true,true,true,true,true,true,true,true,true,true
+4683fe8f-21f9-4566-b1d6-a008439085b3,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Liebherr,liebherr,8,true,true,true,true,true,true,true,true,true,true,true,true
+e83c3ccb-5497-4439-9f71-d1e4f8680282,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Massey Ferguson,massey_ferguson,103,true,true,true,true,true,true,true,true,true,true,true,true
+d72c4b48-cab2-48f8-8250-8581f9a04bde,0aa5da74-e038-4ea8-aacd-500ced2e20d0,McCormick Tractors,mccormick_tractors,114,true,true,true,true,true,true,true,true,true,true,true,true
+6066d5a5-ab9c-404c-9ebd-087b2015129d,0aa5da74-e038-4ea8-aacd-500ced2e20d0,New Holland Agriculture,new_holland_agriculture,101,true,true,true,true,true,true,true,true,true,true,true,true
+c849a0c4-2aa9-4598-ba2a-3b817065da34,0aa5da74-e038-4ea8-aacd-500ced2e20d0,New Holland Construction,new_holland_construction,10,true,true,true,true,true,true,true,true,true,true,true,true
+7b71ab31-843f-450f-ad86-e5c05302a0df,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Same Deutz-Fahr,same_deutz_fahr,109,true,true,true,true,true,true,true,true,true,true,true,true
+1d7cf9f3-4733-4bb1-92ee-f7213d2db74c,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Sany,sany,13,true,true,true,true,true,true,true,true,true,true,true,true
+c7364cab-ae06-4668-a0f3-f661c4db931a,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Terex,terex,12,true,true,true,true,true,true,true,true,true,true,true,true
+1ed4db84-e73f-4505-a42e-1d7f77dde8a3,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Valtra,valtra,108,true,true,true,true,true,true,true,true,true,true,true,true
+a7442fdf-fb34-4f1e-b567-d1139148b8b3,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Volvo Construction Equipment,volvo_construction,4,true,true,true,true,true,true,true,true,true,true,true,true
+e351a9d0-8eec-417c-8c00-b46a45a54641,0aa5da74-e038-4ea8-aacd-500ced2e20d0,XCMG,xcmg,14,true,true,true,true,true,true,true,true,true,true,true,true
+a5b36175-99cb-4f7a-b592-2d6cf50836cd,0aa5da74-e038-4ea8-aacd-500ced2e20d0,Zoomlion,zoomlion,15,true,true,true,true,true,true,true,true,true,true,true,true
+9fc7302f-d4e0-4367-b790-d717f8ca7b43,90d20cef-6847-40d7-bd30-0b53bb5d283f,Peugeot,peugeot,250,true,true,true,true,true,true,true,true,true,true,true,true
+84137b3e-358f-4792-8661-4b8d32f92f5b,90d20cef-6847-40d7-bd30-0b53bb5d283f,Hyundai,hyundai,140,true,true,true,true,true,true,true,true,true,true,true,true

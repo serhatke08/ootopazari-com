@@ -1,0 +1,93 @@
+[
+  {
+    "id": "af9dd8cc-0a17-4cbb-b060-2e503b8a2497",
+    "name": "Otomobil",
+    "code": "otomobil",
+    "sort_order": 10,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "6c04ccd8-b81e-4936-afe8-8423878b9169",
+    "name": "SUV & Pickup",
+    "code": "suv_pickup",
+    "sort_order": 11,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "90d20cef-6847-40d7-bd30-0b53bb5d283f",
+    "name": "Elektrikli",
+    "code": "elektrikli",
+    "sort_order": 13,
+    "created_at": "2026-06-04T08:17:21.982052+00:00"
+  },
+  {
+    "id": "c4eb1633-7cad-44e7-aa7f-25e98da2aaa1",
+    "name": "Motosiklet",
+    "code": "motosiklet",
+    "sort_order": 12,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "40cd8039-3d34-4c61-a438-82559a88ddd3",
+    "name": "Elektrikli Scooter ve Bisiklet",
+    "code": "scooter_bisiklet",
+    "sort_order": 16,
+    "created_at": "2026-05-30T16:12:10.6344+00:00"
+  },
+  {
+    "id": "0aa5da74-e038-4ea8-aacd-500ced2e20d0",
+    "name": "İş ve Tarım Makinası",
+    "code": "is_ve_tarim_makinesi",
+    "sort_order": 15,
+    "created_at": "2026-03-04T20:41:18.273003+00:00"
+  },
+  {
+    "id": "38e31f19-1cb0-47a2-a978-4636431f95f4",
+    "name": "Panelvan Ticari Araçlar",
+    "code": "panelvan",
+    "sort_order": 14,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "37c58256-b9bb-4017-bf26-c5b8ea92a3cd",
+    "name": "Klasik Araçlar",
+    "code": "klasik",
+    "sort_order": 20,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "61ca73ff-4cde-4fab-a184-e985812ec0c4",
+    "name": "Deniz Araçları",
+    "code": "deniz",
+    "sort_order": 21,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "c6340a9c-5319-47bd-a22d-832db287e4e1",
+    "name": "Hasarlı Araçlar",
+    "code": "hasarli",
+    "sort_order": 22,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "0345621c-d8b8-436b-ba8e-7118117e53e9",
+    "name": "Karavan",
+    "code": "karavan",
+    "sort_order": 23,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "6d828996-6ae1-4b18-aca3-e3d13f340662",
+    "name": "Hava Araçları",
+    "code": "hava",
+    "sort_order": 24,
+    "created_at": "2026-03-04T00:03:17.490067+00:00"
+  },
+  {
+    "id": "33f2eb24-973d-4234-8727-93a26c4eacf2",
+    "name": "ATV & UTV",
+    "code": "atv_utv",
+    "sort_order": 25,
+    "created_at": "2026-03-04T20:57:10.355815+00:00"
+  }
+]
