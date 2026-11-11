@@ -144,33 +144,48 @@ async function fetchDealersFromApplications(
     offset?: number;
   }
 ): Promise<DealerProfile[]> {
-  let query = supabase
-    .from("bayi_applications")
-    .select(
-      "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, cities(name, country_id)"
-    )
-    .eq("dealer_type", dealerType)
-    .eq("status", "approved");
-  if (options?.cityId) query = query.eq("city_id", options.cityId);
-  if (options?.hasPhone) query = query.not("contact_phone", "is", null);
-  if (options?.searchQuery) {
-    query = query.ilike("dealer_name", `%${options.searchQuery}%`);
+  const selectWithCity =
+    "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, cities(name, country_id)";
+  const selectPlain =
+    "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name";
+
+  const run = (select: string) => {
+    let query = supabase
+      .from("bayi_applications")
+      .select(select)
+      .eq("dealer_type", dealerType)
+      .eq("status", "approved");
+    if (options?.cityId) query = query.eq("city_id", options.cityId);
+    if (options?.hasPhone) query = query.not("contact_phone", "is", null);
+    if (options?.searchQuery) {
+      query = query.ilike("dealer_name", `%${options.searchQuery}%`);
+    }
+    if (options?.sortBy === "name_asc") {
+      query = query.order("dealer_name", { ascending: true });
+    } else if (options?.sortBy === "name_desc") {
+      query = query.order("dealer_name", { ascending: false });
+    } else {
+      query = query.order("approved_at", {
+        ascending: false,
+        nullsFirst: false,
+      });
+    }
+    if (options?.limit) query = query.limit(options.limit);
+    if (options?.offset) {
+      query = query.range(
+        options.offset,
+        options.offset + (options.limit ?? 20) - 1
+      );
+    }
+    return query;
+  };
+
+  let { data, error } = await run(selectWithCity);
+  if (error) {
+    const fallback = await run(selectPlain);
+    data = fallback.data;
+    error = fallback.error;
   }
-  if (options?.sortBy === "name_asc") {
-    query = query.order("dealer_name", { ascending: true });
-  } else if (options?.sortBy === "name_desc") {
-    query = query.order("dealer_name", { ascending: false });
-  } else {
-    query = query.order("approved_at", { ascending: false, nullsFirst: false });
-  }
-  if (options?.limit) query = query.limit(options.limit);
-  if (options?.offset) {
-    query = query.range(
-      options.offset,
-      options.offset + (options.limit ?? 20) - 1
-    );
-  }
-  const { data, error } = await query;
   if (error) {
     console.error("fetchDealersFromApplications error:", error);
     return [];

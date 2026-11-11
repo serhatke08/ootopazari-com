@@ -98,9 +98,13 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
       searchQuery: q || undefined,
       cityId: cityId || undefined,
       sortBy,
-    }),
-    fetchCities(supabase),
-    user ? fetchUserDealerApplication(supabase, user.id, dealerType) : null,
+    }).catch(() => []),
+    fetchCities(supabase).catch(() => []),
+    user
+      ? fetchUserDealerApplication(supabase, user.id, dealerType).catch(
+          () => null
+        )
+      : null,
   ]);
 
   // Application success message

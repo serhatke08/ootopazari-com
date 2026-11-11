@@ -1,8 +1,11 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { homeShortcutFromHref, type HomeShortcutGlyph } from "@/lib/home-shortcuts";
+import {
+  homeShortcutFromHref,
+  type HomeShortcutGlyph,
+} from "@/lib/home-shortcuts";
 import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
 
 type Reveal = {
@@ -18,7 +21,7 @@ type Reveal = {
 };
 
 const EXPAND_MS = 820;
-const FADE_MS = 280;
+const FADE_MS = 220;
 const EVENT = "otopazar-dealer-circle";
 
 function coverRadius(x: number, y: number) {
@@ -75,20 +78,15 @@ export function useDealerCircleNav() {
 
 export function DealerCircleOverlay() {
   const router = useRouter();
-  const pathname = usePathname() || "";
   const [reveal, setReveal] = useState<Reveal | null>(null);
-  const [fading, setFading] = useState(false);
   const layerRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
-  const pushedRef = useRef(false);
-  const revealRef = useRef<Reveal | null>(null);
 
   useEffect(() => {
     const onGo = (event: Event) => {
-      const { href, originEl } = (event as CustomEvent<{
-        href: string;
-        originEl: HTMLElement | null;
-      }>).detail;
+      const { href, originEl } = (
+        event as CustomEvent<{ href: string; originEl: HTMLElement | null }>
+      ).detail;
       if (busyRef.current) return;
       const next = buildReveal(href, originEl);
       if (!next) {
@@ -96,9 +94,6 @@ export function DealerCircleOverlay() {
         return;
       }
       busyRef.current = true;
-      pushedRef.current = false;
-      revealRef.current = next;
-      setFading(false);
       setReveal(next);
     };
     window.addEventListener(EVENT, onGo);
@@ -110,43 +105,34 @@ export function DealerCircleOverlay() {
     const layer = layerRef.current;
     if (!layer) return;
 
-    layer.style.transition = "none";
     layer.style.opacity = "1";
+    layer.style.transition = "none";
     layer.style.clipPath = `circle(${reveal.start}px at ${reveal.x}px ${reveal.y}px)`;
     void layer.offsetWidth;
     layer.style.transition = `clip-path ${EXPAND_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)`;
     layer.style.clipPath = `circle(${reveal.end}px at ${reveal.x}px ${reveal.y}px)`;
 
     const navTimer = window.setTimeout(() => {
-      if (pushedRef.current) return;
-      pushedRef.current = true;
       router.push(reveal.href);
-    }, Math.round(EXPAND_MS * 0.72));
-
-    return () => window.clearTimeout(navTimer);
-  }, [reveal, router]);
-
-  useEffect(() => {
-    if (!reveal || fading) return;
-    const target = reveal.href.split("?")[0];
-    if (pathname !== target && !pathname.startsWith(`${target}/`)) return;
+    }, Math.round(EXPAND_MS * 0.62));
 
     const fadeTimer = window.setTimeout(() => {
-      setFading(true);
-    }, 90);
+      layer.style.transition = `opacity ${FADE_MS}ms ease-out`;
+      layer.style.opacity = "0";
+      layer.style.pointerEvents = "none";
+    }, EXPAND_MS + 60);
+
     const clearTimer = window.setTimeout(() => {
       setReveal(null);
-      setFading(false);
-      revealRef.current = null;
       busyRef.current = false;
-      pushedRef.current = false;
-    }, 90 + FADE_MS);
+    }, EXPAND_MS + 60 + FADE_MS);
 
     return () => {
+      window.clearTimeout(navTimer);
       window.clearTimeout(fadeTimer);
       window.clearTimeout(clearTimer);
     };
-  }, [pathname, reveal, fading]);
+  }, [reveal, router]);
 
   if (!reveal) return null;
 
@@ -154,10 +140,7 @@ export function DealerCircleOverlay() {
     <div
       ref={layerRef}
       className="fixed inset-0 z-[90]"
-      style={{
-        backgroundColor: reveal.color,
-        pointerEvents: fading ? "none" : "auto",
-      }}
+      style={{ backgroundColor: reveal.color }}
       aria-hidden
     >
       <div className="flex h-full w-full flex-col items-center justify-center">
