@@ -1,5 +1,5 @@
-import { BrandPagePlaceholder } from "@/components/BrandPagePlaceholder";
+import { BayiEntranceHold } from "@/components/bayi/BayiEntranceHold";
 
 export default function BayiTypeLoading() {
-  return <BrandPagePlaceholder />;
+  return <BayiEntranceHold />;
 }

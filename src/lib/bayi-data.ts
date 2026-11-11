@@ -11,6 +11,7 @@ import type {
 } from "./bayi-types";
 import { getDealerProfileTable, getDealerListingTable } from "./dealer-listing-tables";
 import { shouldShowInPublicList } from "./bayi-application-status";
+import { enrichDealersWithCoverUrls, firstBayiPhotoPath } from "./bayi-photos";
 
 /**
  * Kullanıcının belirli bir dealer type için başvurusunu getirir
@@ -119,7 +120,7 @@ export async function fetchPublicDealers(
     .map((dealer) => mapDealerRow(dealer))
     .filter((dealer) => shouldShowInPublicList(dealer.application ?? null));
 
-  return filtered;
+  return enrichDealersWithCoverUrls(supabase, filtered);
 }
 
 function mapDealerRow(dealer: Record<string, unknown>): DealerProfile {
@@ -191,7 +192,10 @@ export async function fetchDealerProfile(
     return null;
   }
 
-  return data ? mapDealerRow(data as Record<string, unknown>) : null;
+  if (!data) return null;
+  const mapped = mapDealerRow(data as unknown as Record<string, unknown>);
+  const [enriched] = await enrichDealersWithCoverUrls(supabase, [mapped]);
+  return enriched ?? mapped;
 }
 
 /**
@@ -350,31 +354,13 @@ export async function createDealerApplication(
  */
 export function resolveDealerCoverImageUrl(
   dealer: DealerProfile,
-  supabaseUrl: string
+  supabaseUrl?: string
 ): string | null {
-  const app = dealer.application;
-  if (!app) return null;
-
-  // 1. workplace_photos_json içindeki ilk foto
-  if (app.workplace_photos_json) {
-    try {
-      const photos = JSON.parse(app.workplace_photos_json);
-      if (Array.isArray(photos) && photos.length > 0) {
-        const firstPhoto = photos[0];
-        if (typeof firstPhoto === "string" && firstPhoto.trim()) {
-          return `${supabaseUrl}/storage/v1/object/public/bayi-application-docs/${firstPhoto}`;
-        }
-      }
-    } catch (e) {
-      console.error("Error parsing workplace_photos_json:", e);
-    }
-  }
-
-  // 2. signboard_photo_storage_path
-  if (app.signboard_photo_storage_path) {
-    return `${supabaseUrl}/storage/v1/object/public/bayi-application-docs/${app.signboard_photo_storage_path}`;
-  }
-
-  // 3. İlk ilanın image_url'i (şimdilik null, isteğe göre implement edilebilir)
-  return null;
+  if (dealer.cover_image_url) return dealer.cover_image_url;
+  const path = firstBayiPhotoPath(dealer);
+  if (!path || !supabaseUrl) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = supabaseUrl.replace(/\/$/, "");
+  const cleaned = path.replace(/^\/+/, "").replace(/^bayi-application-docs\//, "");
+  return `${base}/storage/v1/object/public/bayi-application-docs/${cleaned}`;
 }

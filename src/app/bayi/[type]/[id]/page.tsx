@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -104,13 +103,11 @@ export default async function BayiDetailPage({ params }: Props) {
       {/* Cover Image */}
       <div className="relative mb-6 aspect-[21/9] w-full overflow-hidden rounded-2xl bg-zinc-100">
         {coverImageUrl ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={coverImageUrl}
             alt={dealer.dealer_name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1536px) 100vw, 1536px"
-            priority
+            className="h-full w-full object-cover"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-zinc-400">

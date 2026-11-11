@@ -15,6 +15,7 @@ import {
 } from "@/lib/bayi-types";
 import { normalizeDealerState } from "@/lib/bayi-application-status";
 import { getSeoHubByPath } from "@/lib/seo-hubs";
+import { dealerTheme } from "@/lib/dealer-theme";
 
 type Props = {
   params: Promise<{ type: string }>;
@@ -105,30 +106,44 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
       )
     : null;
 
+  const theme = dealerTheme(dealerType);
+
   return (
-    <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-zinc-900">
-              {DEALER_TYPE_LABELS[dealerType]} Bayileri
-            </h1>
-            <p className="mt-2 text-zinc-600">
-              {DEALER_TYPE_DESCRIPTIONS[dealerType]}
-            </p>
+    <div className="flex-1">
+      <div
+        className="px-4 py-8 sm:px-6"
+        style={{
+          background: `linear-gradient(160deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+        }}
+      >
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={theme.logoSrc}
+              alt=""
+              className="h-16 w-16 rounded-full object-cover ring-4 ring-white/25"
+            />
+            <div>
+              <h1 className="text-3xl font-black uppercase tracking-wide text-white">
+                {DEALER_TYPE_LABELS[dealerType]}
+              </h1>
+              <p className="mt-1 max-w-xl text-sm text-white/80">
+                {DEALER_TYPE_DESCRIPTIONS[dealerType]}
+              </p>
+            </div>
           </div>
           {!userApplication ? (
             <Link
               href={`/bayi/basvuru?type=${dealerType}`}
-              className="rounded-lg bg-[#ffc400] px-6 py-3 font-bold text-black transition hover:bg-[#ffd24d]"
+              className="rounded-full bg-white px-6 py-3 font-black text-zinc-900 shadow-sm"
             >
               Bayi Başvurusu Yap
             </Link>
           ) : userDealerState === "active" ? (
             <Link
               href={`/bayi/panel/${dealerType}`}
-              className="rounded-lg bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700"
+              className="rounded-full bg-white px-6 py-3 font-black text-zinc-900 shadow-sm"
             >
               Bayi Panelim
             </Link>
@@ -141,7 +156,7 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
           ) : userDealerState === "approved_awaiting_payment" ? (
             <Link
               href={`/bayi/panel/${dealerType}`}
-              className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white transition hover:bg-blue-700"
+              className="rounded-full bg-white px-6 py-3 font-black text-zinc-900 shadow-sm"
             >
               500 TL öde & paneli aç
             </Link>
@@ -149,6 +164,7 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
         </div>
       </div>
 
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
       {/* Success Message */}
       {showSuccessMessage ? (
         <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
@@ -215,6 +231,7 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
           ) : null}
         </div>
       )}
+      </div>
     </div>
   );
 }

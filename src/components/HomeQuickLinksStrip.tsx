@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
 import { QUICK_ACCESS_LINKS } from "@/lib/quick-access-links";
+import { dealerTypeFromHref } from "@/lib/dealer-theme";
+import { useDealerCircleNav } from "@/components/bayi/DealerCircleReveal";
 
 function dealerBorderColor(label: string): string {
   const key = label.trim().toLocaleLowerCase("tr");
@@ -24,14 +25,14 @@ function QuickLinkItem({
   label,
   image,
   wasDragged,
+  onDealerOpen,
 }: {
   href: string;
   label: string;
   image?: string;
   wasDragged: () => boolean;
+  onDealerOpen: (href: string, origin: HTMLElement) => void;
 }) {
-  const router = useRouter();
-
   return (
     <Link
       href={href}
@@ -45,7 +46,12 @@ function QuickLinkItem({
           return;
         }
         e.preventDefault();
-        router.push(href);
+        const origin = e.currentTarget.querySelector("span");
+        if (dealerTypeFromHref(href)) {
+          onDealerOpen(href, (origin as HTMLElement) ?? e.currentTarget);
+          return;
+        }
+        onDealerOpen(href, e.currentTarget);
       }}
     >
       <span
@@ -85,6 +91,7 @@ const DRAG_THRESHOLD_PX = 10;
 
 /** Bayilik şeridi: elle kaydırılabilir + yavaş otomatik sola kayma. */
 export function HomeQuickLinksStrip() {
+  const { go, overlay } = useDealerCircleNav();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -198,6 +205,7 @@ export function HomeQuickLinksStrip() {
 
   return (
     <div className="border-b border-zinc-200 bg-white">
+      {overlay}
       <div className="mx-auto max-w-[1400px] sm:px-4 md:px-6">
         <div
           ref={scrollerRef}
@@ -213,6 +221,7 @@ export function HomeQuickLinksStrip() {
                 label={d.label}
                 image={d.image}
                 wasDragged={wasDragged}
+                onDealerOpen={go}
               />
             </div>
           ))}

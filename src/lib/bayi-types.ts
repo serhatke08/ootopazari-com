@@ -64,7 +64,7 @@ export interface BayiApplication {
   approved_at: string | null;
   rejected_at: string | null;
   created_at: string;
-  workplace_photos_json: string | null;
+  workplace_photos_json?: unknown;
   signboard_photo_storage_path: string | null;
   working_hours?: string | null;
   authorized_brands?: string | null;
@@ -89,9 +89,10 @@ export interface DealerProfile {
   authorized_brands?: string | null;
   working_hours?: string | null;
   whatsapp_phone?: string | null;
+  cover_image_url?: string | null;
   // Application relation
   application?: {
-    workplace_photos_json: string | null;
+    workplace_photos_json?: unknown;
     signboard_photo_storage_path: string | null;
     status: ApplicationStatus;
     payment_status: PaymentStatus;
