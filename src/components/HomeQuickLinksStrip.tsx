@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef } from "react";
 import { HOME_SHORTCUTS, type HomeShortcut } from "@/lib/home-shortcuts";
@@ -37,19 +36,13 @@ function QuickLinkItem({
         style={item.glyph ? { backgroundColor: item.fillColor } : undefined}
       >
         {item.image ? (
-          item.image.endsWith(".svg") ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.image} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <Image
-              src={item.image}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="44px"
-              draggable={false}
-            />
-          )
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.image}
+            alt=""
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
         ) : item.glyph ? (
           <HomeShortcutGlyphIcon name={item.glyph} className="h-6 w-6 text-white" />
         ) : null}

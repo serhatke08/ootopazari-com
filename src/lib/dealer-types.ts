@@ -27,7 +27,7 @@ export const DEALER_TYPE_META: Record<
       "/menu/kategori%20icon/From%20Concept%20to%20Clicks/kiralamadogrulama.png",
   },
   parcaci: {
-    label: "Parçacı",
+    label: "Yedek Parça",
     iconSrc:
       "/menu/kategori%20icon/From%20Concept%20to%20Clicks/parcac%C4%B1dogrulama.png",
   },
