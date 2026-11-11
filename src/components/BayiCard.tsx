@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { DealerProfile, DealerType, ExpertizPriceItem } from "@/lib/bayi-types";
 import { resolveDealerCoverImageUrl } from "@/lib/bayi-data";
+import { parseAuthorizedBrands } from "@/lib/dealer-theme";
 
 type Props = {
   dealer: DealerProfile;
@@ -13,25 +14,23 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
   const coverImageUrl = resolveDealerCoverImageUrl(dealer, supabaseUrl);
   const cityName = dealer.city_name ?? "Türkiye";
   const hasPhone = dealer.contact_phone != null && dealer.contact_phone.trim() !== "";
+  const brands = parseAuthorizedBrands(dealer.authorized_brands, 3);
+  const href = `/bayi/${dealerType}/${dealer.id}`;
 
-  // Expertiz için ilk 2 fiyat kalemi
   const expertizPrices: ExpertizPriceItem[] = [];
   if (dealerType === "expertiz" && dealer.price_list && Array.isArray(dealer.price_list)) {
     expertizPrices.push(...dealer.price_list.slice(0, 2));
   }
 
-  const href = `/bayi/${dealerType}/${dealer.id}`;
-
   return (
-    <article className="group overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:shadow-md">
-      {/* Cover Image */}
+    <article className="group overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_8px_24px_-16px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_18px_40px_-24px_rgba(15,23,42,0.45)]">
       <Link href={href} className="relative block aspect-[16/9] w-full overflow-hidden bg-zinc-100">
         {coverImageUrl ? (
           <Image
             src={coverImageUrl}
             alt={dealer.dealer_name}
             fill
-            className="object-cover transition duration-300 group-hover:scale-105"
+            className="object-cover transition duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
@@ -49,23 +48,14 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
       </Link>
 
       <div className="p-4">
-        {/* Header */}
         <div className="mb-2 flex items-start justify-between gap-2">
           <Link href={href} className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 text-base font-bold text-zinc-900 transition group-hover:text-[#ffc400]">
+            <h3 className="line-clamp-2 text-base font-bold tracking-tight text-zinc-900">
               {dealer.dealer_name}
             </h3>
           </Link>
-          {/* Doğrulama Rozeti */}
-          <span
-            className="shrink-0 rounded-full bg-blue-100 p-1"
-            title="Doğrulanmış bayi"
-          >
-            <svg
-              className="h-4 w-4 text-blue-600"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
+          <span className="shrink-0 rounded-full bg-blue-100 p-1" title="Doğrulanmış bayi">
+            <svg className="h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -75,76 +65,45 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
           </span>
         </div>
 
-        {/* City */}
-        <div className="mb-2 flex items-center gap-1.5 text-xs text-zinc-500">
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-          <span>{cityName}</span>
-        </div>
-
-        {/* Description */}
-        {dealer.description ? (
-          <p className="mb-3 line-clamp-2 text-sm text-zinc-600">
-            {dealer.description}
-          </p>
-        ) : null}
-
-        {/* Expertiz Price Preview */}
-        {expertizPrices.length > 0 ? (
-          <div className="mb-3 space-y-1.5 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5">
-            {expertizPrices.map((item, i) => (
-              <div key={i} className="flex items-center justify-between text-xs">
-                <span className="text-zinc-600">{item.service}</span>
-                <span className="font-semibold tabular-nums text-zinc-900">
-                  ₺{item.price.toLocaleString("tr-TR")}
-                </span>
-              </div>
-            ))}
-            {dealer.price_list && dealer.price_list.length > 2 ? (
-              <p className="text-center text-[10px] text-zinc-500">
-                +{dealer.price_list.length - 2} hizmet daha
+        {dealerType === "galeri" ? (
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-zinc-600">{cityName}</p>
+            {brands.length > 0 ? (
+              <p className="line-clamp-1 text-xs font-semibold text-zinc-500">
+                {brands.join(" · ")}
               </p>
             ) : null}
           </div>
-        ) : null}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-zinc-100 pt-3">
-          <Link
-            href={href}
-            className="text-sm font-semibold text-[#ffc400] hover:text-[#e6b000]"
-          >
-            Detayları Gör →
-          </Link>
-          {hasPhone ? (
-            <span
-              className="flex items-center gap-1 text-xs text-zinc-500"
-              title="Telefon mevcut"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                />
-              </svg>
-              Telefon
-            </span>
-          ) : null}
-        </div>
+        ) : (
+          <>
+            <div className="mb-2 flex items-center gap-1.5 text-xs text-zinc-500">
+              <span>{cityName}</span>
+            </div>
+            {dealer.description ? (
+              <p className="mb-3 line-clamp-2 text-sm text-zinc-600">{dealer.description}</p>
+            ) : null}
+            {expertizPrices.length > 0 ? (
+              <div className="mb-3 space-y-1.5 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5">
+                {expertizPrices.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-600">{item.service}</span>
+                    <span className="font-semibold tabular-nums text-zinc-900">
+                      ₺{item.price.toLocaleString("tr-TR")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between border-t border-zinc-100 pt-3">
+              <Link href={href} className="text-sm font-semibold text-zinc-900">
+                Detayları gör →
+              </Link>
+              {hasPhone ? (
+                <span className="text-xs text-zinc-500">Telefon</span>
+              ) : null}
+            </div>
+          </>
+        )}
       </div>
     </article>
   );

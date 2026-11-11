@@ -52,10 +52,21 @@ export async function fetchPublicDealers(
 ): Promise<DealerProfile[]> {
   const tableName = getDealerProfileTable(dealerType);
 
-  let query = supabase
-    .from(tableName)
-    .select(
-      `
+  const selectFull = `
+      *,
+      cities(name, country_id),
+      bayi_applications!inner(
+        workplace_photos_json,
+        signboard_photo_storage_path,
+        status,
+        payment_status,
+        membership_expires_at,
+        authorized_brands,
+        working_hours,
+        whatsapp_phone
+      )
+    `;
+  const selectCore = `
       *,
       cities(name, country_id),
       bayi_applications!inner(
@@ -65,58 +76,83 @@ export async function fetchPublicDealers(
         payment_status,
         membership_expires_at
       )
-    `
-    )
-    .eq("is_active", true);
+    `;
 
-  // City filter
-  if (options?.cityId) {
-    query = query.eq("city_id", options.cityId);
-  }
+  const run = (select: string) => {
+    let query = supabase.from(tableName).select(select).eq("is_active", true);
+    if (options?.cityId) query = query.eq("city_id", options.cityId);
+    if (options?.hasPhone) query = query.not("contact_phone", "is", null);
+    if (options?.searchQuery) {
+      query = query.ilike("dealer_name", `%${options.searchQuery}%`);
+    }
+    if (options?.sortBy === "newest") {
+      query = query.order("approved_at", { ascending: false, nullsFirst: false });
+    } else if (options?.sortBy === "name_asc") {
+      query = query.order("dealer_name", { ascending: true });
+    } else if (options?.sortBy === "name_desc") {
+      query = query.order("dealer_name", { ascending: false });
+    }
+    if (options?.limit) query = query.limit(options.limit);
+    if (options?.offset) {
+      query = query.range(
+        options.offset,
+        options.offset + (options.limit ?? 20) - 1
+      );
+    }
+    return query;
+  };
 
-  // Phone filter
-  if (options?.hasPhone) {
-    query = query.not("contact_phone", "is", null);
+  let { data, error } = await run(selectFull);
+  if (error) {
+    const fallback = await run(selectCore);
+    data = fallback.data;
+    error = fallback.error;
   }
-
-  // Search
-  if (options?.searchQuery) {
-    query = query.ilike("dealer_name", `%${options.searchQuery}%`);
-  }
-
-  // Sort
-  if (options?.sortBy === "newest") {
-    query = query.order("approved_at", { ascending: false, nullsFirst: false });
-  } else if (options?.sortBy === "name_asc") {
-    query = query.order("dealer_name", { ascending: true });
-  } else if (options?.sortBy === "name_desc") {
-    query = query.order("dealer_name", { ascending: false });
-  }
-
-  // Pagination
-  if (options?.limit) {
-    query = query.limit(options.limit);
-  }
-  if (options?.offset) {
-    query = query.range(options.offset, options.offset + (options.limit ?? 20) - 1);
-  }
-
-  const { data, error } = await query;
 
   if (error) {
     console.error("fetchPublicDealers error:", error);
     return [];
   }
 
-  // Filter by active membership
-  const filtered = (data ?? []).filter((dealer: any) => {
-    const app = Array.isArray(dealer.bayi_applications)
-      ? dealer.bayi_applications[0]
-      : dealer.bayi_applications;
-    return shouldShowInPublicList(app);
-  });
+  const rows = (data ?? []) as unknown as Record<string, unknown>[];
+  const filtered = rows
+    .map((dealer) => mapDealerRow(dealer))
+    .filter((dealer) => shouldShowInPublicList(dealer.application ?? null));
 
-  return filtered as DealerProfile[];
+  return filtered;
+}
+
+function mapDealerRow(dealer: Record<string, unknown>): DealerProfile {
+  const cities = dealer.cities as
+    | { name?: string; country_id?: string }
+    | { name?: string; country_id?: string }[]
+    | null;
+  const city = Array.isArray(cities) ? cities[0] : cities;
+  const appRaw = dealer.bayi_applications;
+  const app = (Array.isArray(appRaw) ? appRaw[0] : appRaw) as
+    | DealerProfile["application"]
+    | undefined;
+  return {
+    ...(dealer as unknown as DealerProfile),
+    city_name:
+      (dealer.city_name as string | undefined) ??
+      city?.name ??
+      undefined,
+    country_id: city?.country_id,
+    authorized_brands:
+      (dealer.authorized_brands as string | null | undefined) ??
+      app?.authorized_brands ??
+      null,
+    working_hours:
+      (dealer.working_hours as string | null | undefined) ??
+      app?.working_hours ??
+      null,
+    whatsapp_phone:
+      (dealer.whatsapp_phone as string | null | undefined) ??
+      app?.whatsapp_phone ??
+      null,
+    application: app,
+  };
 }
 
 /**
@@ -140,7 +176,10 @@ export async function fetchDealerProfile(
         signboard_photo_storage_path,
         status,
         payment_status,
-        membership_expires_at
+        membership_expires_at,
+        authorized_brands,
+        working_hours,
+        whatsapp_phone
       )
     `
     )
@@ -152,7 +191,7 @@ export async function fetchDealerProfile(
     return null;
   }
 
-  return data as DealerProfile | null;
+  return data ? mapDealerRow(data as Record<string, unknown>) : null;
 }
 
 /**

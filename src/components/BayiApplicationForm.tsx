@@ -73,12 +73,17 @@ export function BayiApplicationForm({ dealerType, cities, onSuccess }: Props) {
           {DEALER_TYPE_LABELS[dealerType]} Bayiliği Başvurusu
         </h2>
         <p className="mt-2 text-sm text-zinc-600">
-          Başvurunuz incelendikten sonra bilgilendirileceksiniz.
+          Ön başvuru ücretsizdir. Onaydan sonra 500 TL tek seferlik açılış ücreti ödenir; mağaza bilgisi ödemeden sonra düzenlenir.
         </p>
         <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
           <p className="text-sm font-semibold text-blue-900">
-            Aylık üyelik ücreti: ₺{monthlyFee.toLocaleString("tr-TR")}
+            Tek seferlik açılış: ₺{monthlyFee.toLocaleString("tr-TR")}
           </p>
+          {dealerType === "galeri" ? (
+            <p className="mt-1 text-xs text-blue-800">
+              Galeri hesabı açılınca yılda 5 ilan ücretsiz; sonrası ilan paketleri.
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -184,8 +189,7 @@ export function BayiApplicationForm({ dealerType, cities, onSuccess }: Props) {
       </button>
 
       <p className="text-center text-xs text-zinc-500">
-        Başvurunuz onaylandıktan sonra ödeme yaparak bayi panelinizi
-        aktifleştirebilirsiniz.
+        Onaydan sonra önce 500 TL ödenir. Ödeme bitince panel ve mağaza açılır.
       </p>
     </form>
   );

@@ -11,12 +11,17 @@ import type {
 import { DEALER_MONTHLY_FEES } from "./bayi-types";
 
 /**
- * Bayi başvuru durumunu normalize eder
+ * Tek seferlik 500 TL açılışta membership_expires_at NULL kalır → aktif.
+ * Eski aylık üyelikte bitiş tarihi geçmişse overdue.
  */
-function membershipIsActive(membershipExpiresAt: string | null): boolean {
-  if (!membershipExpiresAt) return false;
+function membershipIsActive(
+  paymentStatus: PaymentStatus,
+  membershipExpiresAt: string | null
+): boolean {
+  if (paymentStatus !== "paid") return false;
+  if (!membershipExpiresAt) return true;
   const expiresAt = new Date(membershipExpiresAt);
-  if (Number.isNaN(expiresAt.getTime())) return false;
+  if (Number.isNaN(expiresAt.getTime())) return true;
   return expiresAt.getTime() > Date.now();
 }
 
@@ -33,20 +38,14 @@ export function normalizeDealerState(
     return "pending";
   }
 
-  // approved
-  if (membershipIsActive(membershipExpiresAt)) {
+  if (membershipIsActive(paymentStatus, membershipExpiresAt)) {
     return "active";
   }
 
-  if (paymentStatus === "paid") {
+  if (paymentStatus === "paid" || paymentStatus === "overdue") {
     return "overdue";
   }
 
-  if (paymentStatus === "overdue") {
-    return "overdue";
-  }
-
-  // approved ama ödeme yok (unpaid veya awaiting_payment)
   return "approved_awaiting_payment";
 }
 
@@ -107,7 +106,7 @@ export function getDealerStateMessage(state: DealerState): string {
     case "pending":
       return "Başvurunuz inceleniyor. Onaylandığında bilgilendirileceksiniz.";
     case "approved_awaiting_payment":
-      return "Başvurunuz onaylandı! Bayi panelinizi aktif etmek için ödeme yapın.";
+      return `Başvurunuz onaylandı. Önce ${DEALER_MONTHLY_FEES.galeri} TL tek seferlik ücreti ödeyin; mağaza bilgisi ödemeden sonra açılır.`;
     case "active":
       return "Bayi üyeliğiniz aktif.";
     case "overdue":

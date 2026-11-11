@@ -4,10 +4,12 @@ import { normalizeDealerState } from "@/lib/bayi-application-status";
 import type { ApplicationStatus, PaymentStatus } from "@/lib/bayi-types";
 
 export const YEARLY_FREE_LISTING_QUOTA = 1;
+/** Ödenen galeri hesabı: yılda 5 ücretsiz ilan, sonrası paket. */
+export const GALERI_FREE_YEARLY_LISTING_QUOTA = 5;
 export const FREE_LISTING_WINDOW_DAYS = 365;
 export const LISTING_ACTIVE_DAYS = 30;
 /** Ücretsiz hak bitince yeni ilan pasife düşer; aktifleştirme ücreti (TRY). */
-export const PAID_LISTING_ACTIVATION_FEE_TRY = 199.99;
+export const PAID_LISTING_ACTIVATION_FEE_TRY = 200;
 export const ACTIVATION_STATUS_ACTIVE = "active";
 export const ACTIVATION_STATUS_PASSIVE_PAYMENT = "passive_payment_required";
 export const ACTIVATION_STATUS_PASSIVE_EXPIRED = "passive_expired";
@@ -168,6 +170,38 @@ export function isListingExpired(listing: { moderation_status?: unknown }): bool
   return String(listing.moderation_status ?? "").toLowerCase() === "expired";
 }
 
+type GaleriPublishRule = {
+  freeLimit: number;
+  subscriptionCovers: boolean;
+  dealerPaid: boolean;
+};
+
+async function fetchGaleriPublishRule(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<GaleriPublishRule | null> {
+  try {
+    const { data, error } = await supabase.rpc("galeri_listing_publish_rule", {
+      p_user_id: userId,
+    });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || typeof row !== "object") return null;
+    const rec = row as Record<string, unknown>;
+    const freeLimit = Number(rec.free_limit);
+    return {
+      freeLimit:
+        Number.isFinite(freeLimit) && freeLimit > 0
+          ? freeLimit
+          : YEARLY_FREE_LISTING_QUOTA,
+      subscriptionCovers: rec.subscription_covers === true,
+      dealerPaid: rec.dealer_paid === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function userHasUnlimitedListingQuota(
   supabase: SupabaseClient,
   userId: string
@@ -175,19 +209,39 @@ export async function userHasUnlimitedListingQuota(
   const admin = await fetchAdminProfileByUserId(supabase, userId);
   if (admin) return true;
 
-  const { data, error } = await supabase
+  const galeri = await fetchGaleriPublishRule(supabase, userId);
+  if (galeri?.subscriptionCovers) return true;
+
+  let data: Record<string, unknown>[] | null = null;
+  const full = await supabase
     .from("bayi_applications")
-    .select("status,payment_status,membership_expires_at")
+    .select(
+      "dealer_type,status,payment_status,membership_expires_at,listing_subscription_active"
+    )
     .eq("user_id", userId);
-  if (error) {
-    console.warn("listing quota bayi:", error.message);
+  if (full.error && /listing_subscription_active/i.test(full.error.message)) {
+    const fallback = await supabase
+      .from("bayi_applications")
+      .select("dealer_type,status,payment_status,membership_expires_at")
+      .eq("user_id", userId);
+    if (fallback.error) {
+      console.warn("listing quota bayi:", fallback.error.message);
+      return false;
+    }
+    data = (fallback.data ?? []) as Record<string, unknown>[];
+  } else if (full.error) {
+    console.warn("listing quota bayi:", full.error.message);
     return false;
+  } else {
+    data = (full.data ?? []) as Record<string, unknown>[];
   }
   for (const row of data ?? []) {
+    const dealerType = String(
+      (row as { dealer_type?: string }).dealer_type ?? ""
+    ).toLowerCase();
     const payment = String(
       (row as { payment_status?: string }).payment_status ?? ""
     ).toLowerCase();
-    // Süre dolmamış + overdue/unpaid → sınırsız hak YOK (ücretsiz kota geçerli).
     if (payment !== "paid") continue;
     const state = normalizeDealerState(
       String((row as { status?: string }).status ?? "") as ApplicationStatus,
@@ -195,7 +249,14 @@ export async function userHasUnlimitedListingQuota(
       (row as { membership_expires_at?: string | null }).membership_expires_at ??
         null
     );
-    if (state === "active") return true;
+    if (state !== "active") continue;
+    // Galeri 500 TL sınırsız ilan vermez; listing_subscription_active gerekir.
+    if (dealerType === "galeri") {
+      if ((row as { listing_subscription_active?: boolean }).listing_subscription_active)
+        return true;
+      continue;
+    }
+    return true;
   }
   return false;
 }
@@ -240,12 +301,37 @@ export async function fetchListingQuota(
     };
   }
 
+  const galeri = await fetchGaleriPublishRule(supabase, userId);
+  let limit = YEARLY_FREE_LISTING_QUOTA;
+  if (galeri?.dealerPaid && !galeri.subscriptionCovers) {
+    limit = galeri.freeLimit || GALERI_FREE_YEARLY_LISTING_QUOTA;
+  } else if (!galeri || (!galeri.dealerPaid && !galeri.subscriptionCovers)) {
+    const { data: galeriApp } = await supabase
+      .from("bayi_applications")
+      .select("status,payment_status,membership_expires_at")
+      .eq("user_id", userId)
+      .eq("dealer_type", "galeri")
+      .eq("status", "approved")
+      .eq("payment_status", "paid")
+      .order("approved_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    if (galeriApp) {
+      const state = normalizeDealerState(
+        String(galeriApp.status ?? "") as ApplicationStatus,
+        String(galeriApp.payment_status ?? "") as PaymentStatus,
+        (galeriApp.membership_expires_at as string | null) ?? null
+      );
+      if (state === "active") limit = GALERI_FREE_YEARLY_LISTING_QUOTA;
+    }
+  }
+
   const used = await countFreeActivationUses(supabase, userId);
   return {
     year,
-    limit: YEARLY_FREE_LISTING_QUOTA,
+    limit,
     used,
-    remaining: Math.max(0, YEARLY_FREE_LISTING_QUOTA - used),
+    remaining: Math.max(0, limit - used),
     unlimited: false,
   };
 }

@@ -143,7 +143,7 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
               href={`/bayi/panel/${dealerType}`}
               className="rounded-lg bg-blue-600 px-6 py-3 font-bold text-white transition hover:bg-blue-700"
             >
-              Ödeme Yap & Aktifleştir
+              500 TL öde & paneli aç
             </Link>
           ) : null}
         </div>

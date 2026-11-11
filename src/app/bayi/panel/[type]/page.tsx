@@ -4,7 +4,16 @@ import Link from "next/link";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
-import { fetchUserDealerApplication, fetchPublicDealers } from "@/lib/bayi-data";
+import {
+  fetchUserDealerApplication,
+  fetchPublicDealers,
+  fetchDealerAnalytics,
+  fetchDealerListings,
+} from "@/lib/bayi-data";
+import { fetchCities } from "@/lib/listings-data";
+import { fetchListingQuota } from "@/lib/listing-quota";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { getDealerProfileTable } from "@/lib/dealer-listing-tables";
 import { BayiOwnerPanel } from "@/components/BayiOwnerPanel";
 import { BayiCard } from "@/components/BayiCard";
 import {
@@ -178,22 +187,55 @@ export default async function BayiPanelPage({ params }: Props) {
     );
   }
 
-  // Approved or overdue - show panel
-  // Fetch public dealers for home tab (public directory embedded)
-  const dealers = await fetchPublicDealers(supabase, dealerType, {
-    limit: 20,
-  });
+  const quotaClient = createSupabaseServiceClient() ?? supabase;
+  const profileTable = getDealerProfileTable(dealerType);
+  const { data: ownProfile } = await supabase
+    .from(profileTable)
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const [dealers, cities, analytics, listings, quota] = await Promise.all([
+    fetchPublicDealers(supabase, dealerType, { limit: 20 }),
+    fetchCities(supabase),
+    fetchDealerAnalytics(supabase, dealerType, user.id),
+    ownProfile?.id
+      ? fetchDealerListings(supabase, dealerType, String(ownProfile.id), {
+          limit: 40,
+        })
+      : Promise.resolve([]),
+    fetchListingQuota(quotaClient, user.id),
+  ]);
+
+  const cityOptions = cities
+    .filter((city) => city.id && city.name)
+    .map((city) => ({ id: String(city.id), name: String(city.name) }));
 
   return (
-    <BayiOwnerPanel dealerType={dealerType} application={application}>
-      {/* Home Tab Content - Public Directory */}
+    <BayiOwnerPanel
+      dealerType={dealerType}
+      application={application}
+      cities={cityOptions}
+      listings={(listings as Array<Record<string, unknown>>).map((row) => ({
+        id: String(row.id ?? ""),
+        title: (row.title as string | null) ?? null,
+        price: typeof row.price === "number" ? row.price : null,
+        created_at: (row.created_at as string | null) ?? null,
+        image_url: (row.image_url as string | null) ?? null,
+      }))}
+      analytics={analytics}
+      quota={quota}
+    >
       <div>
-        <h2 className="mb-4 text-xl font-bold text-zinc-900">
-          {DEALER_TYPE_LABELS[dealerType]} Bayileri
+        <h2 className="mb-1 text-2xl font-black tracking-tight text-zinc-900">
+          Sektör vitrini
         </h2>
+        <p className="mb-5 text-sm text-zinc-600">
+          Sadece ödemesi tamamlanmış, aktif {DEALER_TYPE_LABELS[dealerType].toLowerCase()} bayileri.
+        </p>
 
         {dealers.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2">
             {dealers.map((dealer) => (
               <BayiCard
                 key={dealer.id}

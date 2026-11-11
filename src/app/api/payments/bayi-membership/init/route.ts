@@ -4,8 +4,6 @@ import {
 } from "@/lib/bayi-application-status";
 import {
   type BayiMembershipPlan,
-  bayiMembershipAmountKurus,
-  bayiMembershipDays,
   buildBayiMembershipMerchantOid,
 } from "@/lib/bayi-paytr-oid";
 import { DEALER_TYPES, DEALER_TYPE_LABELS, type DealerType } from "@/lib/bayi-types";
@@ -84,6 +82,13 @@ export async function POST(req: Request) {
     );
   }
 
+  if (dealerState === "active") {
+    return NextResponse.json(
+      { ok: false, message: "Bayi hesabınız zaten açık." },
+      { status: 400 }
+    );
+  }
+
   const paytr = tryGetPaytrConfig();
   if (!paytr) {
     return NextResponse.json(
@@ -95,16 +100,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const membershipDays = bayiMembershipDays(plan);
-  const paymentAmountKurus = bayiMembershipAmountKurus(dealerType, plan);
+  const membershipDays = 0;
+  const paymentAmountKurus = 50000;
   const merchantOid = buildBayiMembershipMerchantOid(dealerType, plan);
   const origin = getRequestOrigin(req);
   const email = user.email?.trim() || "musteri@otopazari.com";
   const label = DEALER_TYPE_LABELS[dealerType];
-  const basketName =
-    plan === "yearly"
-      ? `${label} bayi yıllık üyelik (${membershipDays} gün, %30 indirim)`
-      : `${label} bayi aylık üyelik (${membershipDays} gün)`;
+  const basketName = `${label} bayi açılış ücreti (500 TL tek seferlik)`;
 
   const admin = createSupabaseServiceClient();
   if (!admin) {

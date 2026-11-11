@@ -96,26 +96,33 @@ export async function fulfillBayiMembershipPayment(
   }
 
   const now = new Date();
-  const membershipDays =
-    Number(paymentRow?.membership_days) || BAYI_MEMBERSHIP_DAYS;
-  const currentExpires = application.membership_expires_at
-    ? new Date(String(application.membership_expires_at))
-    : null;
-  const extendFrom =
-    currentExpires && currentExpires.getTime() > now.getTime()
-      ? currentExpires
-      : now;
-  const newExpires = new Date(
-    extendFrom.getTime() + membershipDays * 24 * 60 * 60 * 1000
-  );
+  const membershipDaysRaw = Number(paymentRow?.membership_days);
+  const membershipDays = Number.isFinite(membershipDaysRaw)
+    ? membershipDaysRaw
+    : 0;
+  const oneTimeSetup = membershipDays <= 0;
   const paidAt = now.toISOString();
   const monthlyFee = getMonthlyFeeForType(dealerType);
+  let membershipExpiresAt: string | null = null;
+  if (!oneTimeSetup) {
+    const currentExpires = application.membership_expires_at
+      ? new Date(String(application.membership_expires_at))
+      : null;
+    const extendFrom =
+      currentExpires && currentExpires.getTime() > now.getTime()
+        ? currentExpires
+        : now;
+    membershipExpiresAt = new Date(
+      extendFrom.getTime() + membershipDays * 24 * 60 * 60 * 1000
+    ).toISOString();
+  }
 
   const fullUpdatePayload = {
     payment_status: "paid",
     payment_paid_at: paidAt,
     membership_starts_at: application.membership_starts_at ?? paidAt,
-    membership_expires_at: newExpires.toISOString(),
+    membership_expires_at: membershipExpiresAt,
+    membership_auto_renew_enabled: false,
     monthly_fee_amount: monthlyFee,
     updated_at: paidAt,
   };
@@ -135,7 +142,7 @@ export async function fulfillBayiMembershipPayment(
       .update({
         payment_status: "paid",
         membership_starts_at: application.membership_starts_at ?? paidAt,
-        membership_expires_at: newExpires.toISOString(),
+        membership_expires_at: membershipExpiresAt,
       })
       .eq("id", applicationId);
     if (fallbackErr) {
@@ -179,7 +186,7 @@ export async function fulfillBayiMembershipPayment(
   return {
     ok: true,
     dealerType,
-    membershipExpiresAt: newExpires.toISOString(),
+    membershipExpiresAt: membershipExpiresAt ?? "",
     alreadyApplied: false,
   };
 }

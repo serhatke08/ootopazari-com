@@ -19,12 +19,15 @@ export const DEALER_TYPE_DESCRIPTIONS: Record<DealerType, string> = {
   expertiz: "Araç ekspertiz hizmeti",
 };
 
-// Aylık ücretler (fallback değerler)
+/** Uygulama ile aynı: tek seferlik bayi açılış ücreti. */
+export const DEALER_SETUP_FEE_TRY = 500;
+
+/** Geriye dönük isim — artık hepsi 500 TL tek seferlik. */
 export const DEALER_MONTHLY_FEES: Record<DealerType, number> = {
-  galeri: 499.99,
-  parcaci: 1499.99,
-  kiralama: 1499.99,
-  expertiz: 399.99,
+  galeri: DEALER_SETUP_FEE_TRY,
+  parcaci: DEALER_SETUP_FEE_TRY,
+  kiralama: DEALER_SETUP_FEE_TRY,
+  expertiz: DEALER_SETUP_FEE_TRY,
 };
 
 // Application status
@@ -63,6 +66,11 @@ export interface BayiApplication {
   created_at: string;
   workplace_photos_json: string | null;
   signboard_photo_storage_path: string | null;
+  working_hours?: string | null;
+  authorized_brands?: string | null;
+  whatsapp_phone?: string | null;
+  full_address?: string | null;
+  listing_subscription_active?: boolean | null;
 }
 
 export interface DealerProfile {
@@ -78,6 +86,9 @@ export interface DealerProfile {
   // Relations
   city_name?: string;
   country_id?: string;
+  authorized_brands?: string | null;
+  working_hours?: string | null;
+  whatsapp_phone?: string | null;
   // Application relation
   application?: {
     workplace_photos_json: string | null;
@@ -85,6 +96,9 @@ export interface DealerProfile {
     status: ApplicationStatus;
     payment_status: PaymentStatus;
     membership_expires_at: string | null;
+    authorized_brands?: string | null;
+    working_hours?: string | null;
+    whatsapp_phone?: string | null;
   };
 }
 
