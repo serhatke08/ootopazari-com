@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { dealerTheme, dealerTypeFromHref } from "@/lib/dealer-theme";
+import { homeShortcutFromHref, type HomeShortcutGlyph } from "@/lib/home-shortcuts";
+import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
 
 type Reveal = {
   href: string;
@@ -11,7 +12,8 @@ type Reveal = {
   start: number;
   end: number;
   color: string;
-  logoSrc: string;
+  logoSrc?: string;
+  glyph?: HomeShortcutGlyph;
   label: string;
 };
 
@@ -31,9 +33,8 @@ function coverRadius(x: number, y: number) {
 }
 
 function buildReveal(href: string, originEl: HTMLElement | null): Reveal | null {
-  const type = dealerTypeFromHref(href);
-  if (!type) return null;
-  const theme = dealerTheme(type);
+  const shortcut = homeShortcutFromHref(href);
+  if (!shortcut) return null;
   const rect = originEl?.getBoundingClientRect();
   const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
   const y = rect ? rect.top + rect.height / 2 : 80;
@@ -44,9 +45,10 @@ function buildReveal(href: string, originEl: HTMLElement | null): Reveal | null 
     y,
     start,
     end: coverRadius(x, y) + 32,
-    color: theme.primary,
-    logoSrc: theme.logoSrc,
-    label: theme.label,
+    color: shortcut.fillColor,
+    logoSrc: shortcut.image,
+    glyph: shortcut.glyph,
+    label: shortcut.label,
   };
 }
 
@@ -60,7 +62,7 @@ export function useDealerCircleNav() {
   const router = useRouter();
   const go = useCallback(
     (href: string, originEl: HTMLElement | null) => {
-      if (!dealerTypeFromHref(href)) {
+      if (!homeShortcutFromHref(href)) {
         router.push(href);
         return;
       }
@@ -159,13 +161,19 @@ export function DealerCircleOverlay() {
       aria-hidden
     >
       <div className="flex h-full w-full flex-col items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={reveal.logoSrc}
-          alt=""
-          className="h-24 w-24 rounded-full object-cover shadow-2xl ring-4 ring-white/25 sm:h-28 sm:w-28"
-        />
-        <p className="mt-5 text-3xl font-black uppercase tracking-[0.18em] text-white">
+        {reveal.logoSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={reveal.logoSrc}
+            alt=""
+            className="h-24 w-24 rounded-full object-cover shadow-2xl ring-4 ring-white/25 sm:h-28 sm:w-28"
+          />
+        ) : reveal.glyph ? (
+          <span className="flex h-24 w-24 items-center justify-center rounded-full bg-white/15 text-white ring-4 ring-white/25 sm:h-28 sm:w-28">
+            <HomeShortcutGlyphIcon name={reveal.glyph} className="h-12 w-12" />
+          </span>
+        ) : null}
+        <p className="mt-5 px-6 text-center text-3xl font-black uppercase tracking-[0.12em] text-white">
           {reveal.label}
         </p>
       </div>

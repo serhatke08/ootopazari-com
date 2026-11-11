@@ -189,11 +189,13 @@ export default async function BayiPanelPage({ params }: Props) {
 
   const quotaClient = createSupabaseServiceClient() ?? supabase;
   const profileTable = getDealerProfileTable(dealerType);
-  const { data: ownProfile } = await supabase
-    .from(profileTable)
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: ownProfile } = profileTable
+    ? await supabase
+        .from(profileTable)
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
 
   const [dealers, cities, analytics, listings, quota] = await Promise.all([
     fetchPublicDealers(supabase, dealerType, { limit: 20 }),

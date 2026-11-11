@@ -7,6 +7,14 @@ const DEALER_OID_CODE: Record<DealerType, string> = {
   parcaci: "2",
   kiralama: "3",
   expertiz: "4",
+  aksesuar: "5",
+  servis: "6",
+  kaporta: "7",
+  lastik: "8",
+  cekici: "9",
+  oto_elektrik: "A",
+  yikama: "B",
+  sigorta: "C",
 };
 
 const OID_CODE_TO_DEALER: Record<string, DealerType> = {
@@ -14,6 +22,14 @@ const OID_CODE_TO_DEALER: Record<string, DealerType> = {
   "2": "parcaci",
   "3": "kiralama",
   "4": "expertiz",
+  "5": "aksesuar",
+  "6": "servis",
+  "7": "kaporta",
+  "8": "lastik",
+  "9": "cekici",
+  A: "oto_elektrik",
+  B: "yikama",
+  C: "sigorta",
 };
 
 export type BayiMembershipPlan = "monthly" | "yearly";

@@ -4,14 +4,14 @@
 
 import type { DealerType } from "./bayi-types";
 
-export const DEALER_LISTING_TABLES: Record<DealerType, string> = {
+export const DEALER_LISTING_TABLES: Partial<Record<DealerType, string>> = {
   kiralama: "kiralik_listings",
   galeri: "galeri_listings",
   expertiz: "expertiz_listings",
   parcaci: "parcaci_listings",
 };
 
-export const DEALER_PROFILE_TABLES: Record<DealerType, string> = {
+export const DEALER_PROFILE_TABLES: Partial<Record<DealerType, string>> = {
   kiralama: "kiralama_dealers",
   galeri: "galeri_dealers",
   expertiz: "expertiz_dealers",
@@ -21,15 +21,15 @@ export const DEALER_PROFILE_TABLES: Record<DealerType, string> = {
 /**
  * Dealer type için listing table ismini döner
  */
-export function getDealerListingTable(dealerType: DealerType): string {
-  return DEALER_LISTING_TABLES[dealerType];
+export function getDealerListingTable(dealerType: DealerType): string | null {
+  return DEALER_LISTING_TABLES[dealerType] ?? null;
 }
 
 /**
  * Dealer type için profile table ismini döner
  */
-export function getDealerProfileTable(dealerType: DealerType): string {
-  return DEALER_PROFILE_TABLES[dealerType];
+export function getDealerProfileTable(dealerType: DealerType): string | null {
+  return DEALER_PROFILE_TABLES[dealerType] ?? null;
 }
 
 /**
@@ -84,5 +84,7 @@ export function getAddProductButtonText(dealerType: DealerType): string {
       return "Ürün Ekle";
     case "expertiz":
       return "Fiyatlarım";
+    default:
+      return "İlan Ekle";
   }
 }

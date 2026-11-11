@@ -3,78 +3,59 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef } from "react";
-import { QUICK_ACCESS_LINKS } from "@/lib/quick-access-links";
-import { dealerTypeFromHref } from "@/lib/dealer-theme";
+import { HOME_SHORTCUTS, type HomeShortcut } from "@/lib/home-shortcuts";
 import { useDealerCircleNav } from "@/components/bayi/DealerCircleReveal";
-
-function dealerBorderColor(label: string): string {
-  const key = label.trim().toLocaleLowerCase("tr");
-  if (key === "acil") return "#dc2626";
-  if (key === "vitrin" || key === "sıfır araçlar" || key === "sifir araclar")
-    return "#059669";
-  return "#111111";
-}
+import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
 
 function QuickLinkItem({
-  href,
-  label,
-  image,
+  item,
   wasDragged,
   onDealerOpen,
 }: {
-  href: string;
-  label: string;
-  image?: string;
+  item: HomeShortcut;
   wasDragged: () => boolean;
   onDealerOpen: (href: string, origin: HTMLElement) => void;
 }) {
   return (
     <Link
-      href={href}
+      href={item.href}
       prefetch={false}
       className="group flex w-[4.25rem] shrink-0 flex-col items-center gap-0.5 sm:w-[4.5rem]"
       draggable={false}
       onClick={(e) => {
-        // Yatay kaydırma sonrası sahte click’i yut; gerçek dokunuşta kesin git
         if (wasDragged()) {
           e.preventDefault();
           return;
         }
         e.preventDefault();
         const origin = e.currentTarget.querySelector("span");
-        if (dealerTypeFromHref(href)) {
-          onDealerOpen(href, (origin as HTMLElement) ?? e.currentTarget);
-          return;
-        }
-        onDealerOpen(href, e.currentTarget);
+        onDealerOpen(item.href, (origin as HTMLElement) ?? e.currentTarget);
       }}
     >
       <span
-        className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-white ring-1 ring-zinc-900/10 transition group-hover:brightness-110"
-        style={{ borderColor: dealerBorderColor(label) }}
+        className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-[2.5px] border-black ring-1 ring-zinc-900/10"
+        style={item.glyph ? { backgroundColor: item.fillColor } : undefined}
       >
-        {image ? (
-          image.endsWith(".svg") ? (
+        {item.image ? (
+          item.image.endsWith(".svg") ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt="" className="h-full w-full object-cover" />
+            <img src={item.image} alt="" className="h-full w-full object-cover" />
           ) : (
             <Image
-              src={image}
+              src={item.image}
               alt=""
               fill
               className="object-cover"
-              sizes="40px"
+              sizes="44px"
               draggable={false}
             />
           )
-        ) : (
-          <span className="text-[10px] font-bold text-zinc-700">
-            {label.slice(0, 1)}
-          </span>
-        )}
+        ) : item.glyph ? (
+          <HomeShortcutGlyphIcon name={item.glyph} className="h-6 w-6 text-white" />
+        ) : null}
       </span>
       <span className="w-full text-center text-[9px] font-medium leading-tight text-zinc-800">
-        {label}
+        {item.label}
       </span>
     </Link>
   );
@@ -208,12 +189,10 @@ export function HomeQuickLinksStrip() {
           aria-label="Bayilik kısayolları"
           onMouseEnter={pauseAuto}
         >
-          {QUICK_ACCESS_LINKS.map((d) => (
+          {HOME_SHORTCUTS.map((d) => (
             <div key={d.href} role="listitem">
               <QuickLinkItem
-                href={d.href}
-                label={d.label}
-                image={d.image}
+                item={d}
                 wasDragged={wasDragged}
                 onDealerOpen={go}
               />

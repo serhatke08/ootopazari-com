@@ -52,11 +52,13 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
               style={{ backgroundColor: `${theme.primary}1F` }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoImageUrl || theme.logoSrc}
-                alt=""
-                className="h-16 w-16 rounded-full object-cover ring-2 ring-white/40"
-              />
+              {(logoImageUrl || theme.logoSrc) ? (
+                <img
+                  src={logoImageUrl || theme.logoSrc}
+                  alt=""
+                  className="h-16 w-16 rounded-full object-cover ring-2 ring-white/40"
+                />
+              ) : null}
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />

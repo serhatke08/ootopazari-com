@@ -2,14 +2,35 @@
  * Bayi (Dealer) sistem tip tanımları
  */
 
-export const DEALER_TYPES = ["galeri", "parcaci", "kiralama", "expertiz"] as const;
+export const DEALER_TYPES = [
+  "galeri",
+  "expertiz",
+  "kiralama",
+  "parcaci",
+  "aksesuar",
+  "servis",
+  "kaporta",
+  "lastik",
+  "cekici",
+  "oto_elektrik",
+  "yikama",
+  "sigorta",
+] as const;
 export type DealerType = (typeof DEALER_TYPES)[number];
 
 export const DEALER_TYPE_LABELS: Record<DealerType, string> = {
   galeri: "Galeri",
-  parcaci: "Parçacı",
+  parcaci: "Yedek Parça",
   kiralama: "Kiralama",
-  expertiz: "Ekspertiz",
+  expertiz: "Expertiz",
+  aksesuar: "Aksesuar",
+  servis: "Servis",
+  kaporta: "Kaporta ve Boya",
+  lastik: "Lastik",
+  cekici: "Çekici",
+  oto_elektrik: "Oto Elektrik",
+  yikama: "Yıkama",
+  sigorta: "Sigorta",
 };
 
 export const DEALER_TYPE_DESCRIPTIONS: Record<DealerType, string> = {
@@ -17,6 +38,14 @@ export const DEALER_TYPE_DESCRIPTIONS: Record<DealerType, string> = {
   parcaci: "Yedek parça satışı ve hizmetleri",
   kiralama: "Araç kiralama hizmeti",
   expertiz: "Araç ekspertiz hizmeti",
+  aksesuar: "Oto aksesuar satış ve montaj",
+  servis: "Oto servis ve bakım",
+  kaporta: "Kaporta ve boya",
+  lastik: "Lastik satış ve değişim",
+  cekici: "Çekici ve yol yardım",
+  oto_elektrik: "Oto elektrik",
+  yikama: "Araç yıkama",
+  sigorta: "Sigorta",
 };
 
 /** Uygulama ile aynı: tek seferlik bayi açılış ücreti. */
@@ -28,6 +57,14 @@ export const DEALER_MONTHLY_FEES: Record<DealerType, number> = {
   parcaci: DEALER_SETUP_FEE_TRY,
   kiralama: DEALER_SETUP_FEE_TRY,
   expertiz: DEALER_SETUP_FEE_TRY,
+  aksesuar: DEALER_SETUP_FEE_TRY,
+  servis: DEALER_SETUP_FEE_TRY,
+  kaporta: DEALER_SETUP_FEE_TRY,
+  lastik: DEALER_SETUP_FEE_TRY,
+  cekici: DEALER_SETUP_FEE_TRY,
+  oto_elektrik: DEALER_SETUP_FEE_TRY,
+  yikama: DEALER_SETUP_FEE_TRY,
+  sigorta: DEALER_SETUP_FEE_TRY,
 };
 
 // Application status

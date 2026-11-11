@@ -127,12 +127,16 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
       >
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={theme.logoSrc}
-              alt=""
-              className="h-16 w-16 rounded-full object-cover ring-4 ring-white/25"
-            />
+            {theme.logoSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={theme.logoSrc}
+                alt=""
+                className="h-16 w-16 rounded-full object-cover ring-4 ring-white/25"
+              />
+            ) : (
+              <span className="h-16 w-16 rounded-full bg-white/15 ring-4 ring-white/25" />
+            )}
             <div>
               <h1 className="text-3xl font-black uppercase tracking-wide text-white">
                 {DEALER_TYPE_LABELS[dealerType]}

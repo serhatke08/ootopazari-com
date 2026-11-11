@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { DEALER_TYPE_VALUES, type DealerType } from "@/lib/dealer-types";
+import { DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
 
 function isDealerType(value: string): value is DealerType {
-  return (DEALER_TYPE_VALUES as readonly string[]).includes(value);
+  return (DEALER_TYPES as readonly string[]).includes(value);
 }
 
 export async function POST(req: Request) {

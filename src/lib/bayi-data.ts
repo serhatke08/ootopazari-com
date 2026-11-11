@@ -56,6 +56,9 @@ export async function fetchPublicDealers(
   }
 ): Promise<DealerProfile[]> {
   const tableName = getDealerProfileTable(dealerType);
+  if (!tableName) {
+    return fetchDealersFromApplications(supabase, dealerType, options);
+  }
 
   const selectFull = `
       *,
@@ -129,6 +132,64 @@ export async function fetchPublicDealers(
   return enrichDealersWithCoverUrls(supabase, filtered);
 }
 
+async function fetchDealersFromApplications(
+  supabase: SupabaseClient,
+  dealerType: DealerType,
+  options?: {
+    cityId?: string;
+    searchQuery?: string;
+    hasPhone?: boolean;
+    sortBy?: "newest" | "name_asc" | "name_desc";
+    limit?: number;
+    offset?: number;
+  }
+): Promise<DealerProfile[]> {
+  let query = supabase
+    .from("bayi_applications")
+    .select(
+      "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, cities(name, country_id)"
+    )
+    .eq("dealer_type", dealerType)
+    .eq("status", "approved");
+  if (options?.cityId) query = query.eq("city_id", options.cityId);
+  if (options?.hasPhone) query = query.not("contact_phone", "is", null);
+  if (options?.searchQuery) {
+    query = query.ilike("dealer_name", `%${options.searchQuery}%`);
+  }
+  if (options?.sortBy === "name_asc") {
+    query = query.order("dealer_name", { ascending: true });
+  } else if (options?.sortBy === "name_desc") {
+    query = query.order("dealer_name", { ascending: false });
+  } else {
+    query = query.order("approved_at", { ascending: false, nullsFirst: false });
+  }
+  if (options?.limit) query = query.limit(options.limit);
+  if (options?.offset) {
+    query = query.range(
+      options.offset,
+      options.offset + (options.limit ?? 20) - 1
+    );
+  }
+  const { data, error } = await query;
+  if (error) {
+    console.error("fetchDealersFromApplications error:", error);
+    return [];
+  }
+  const rows = (data ?? []) as unknown as Record<string, unknown>[];
+  const mapped = rows.map((row) =>
+    mapDealerRow({
+      ...row,
+      is_active: true,
+      application: row,
+      bayi_applications: row,
+    })
+  );
+  const filtered = mapped.filter((dealer) =>
+    shouldShowInPublicList(dealer.application ?? null)
+  );
+  return enrichDealersWithCoverUrls(supabase, filtered);
+}
+
 function mapDealerRow(dealer: Record<string, unknown>): DealerProfile {
   const cities = dealer.cities as
     | { name?: string; country_id?: string }
@@ -180,10 +241,11 @@ export async function fetchDealerProfile(
 ): Promise<DealerProfile | null> {
   const tableName = getDealerProfileTable(dealerType);
 
-  const { data, error } = await supabase
-    .from(tableName)
-    .select(
-      `
+  if (tableName) {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select(
+        `
       *,
       cities(name, country_id),
       bayi_applications(
@@ -199,17 +261,32 @@ export async function fetchDealerProfile(
         last_name
       )
     `
-    )
-    .eq("id", dealerId)
-    .maybeSingle();
+      )
+      .eq("id", dealerId)
+      .maybeSingle();
 
-  if (error) {
-    console.error("fetchDealerProfile error:", error);
-    return null;
+    if (!error && data) {
+      const mapped = mapDealerRow(data as unknown as Record<string, unknown>);
+      const [enriched] = await enrichDealersWithCoverUrls(supabase, [mapped]);
+      return enriched ?? mapped;
+    }
   }
 
-  if (!data) return null;
-  const mapped = mapDealerRow(data as unknown as Record<string, unknown>);
+  const { data: app, error: appError } = await supabase
+    .from("bayi_applications")
+    .select(
+      "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, cities(name, country_id)"
+    )
+    .eq("id", dealerId)
+    .eq("dealer_type", dealerType)
+    .maybeSingle();
+  if (appError || !app) return null;
+  const mapped = mapDealerRow({
+    ...(app as unknown as Record<string, unknown>),
+    is_active: true,
+    application: app,
+    bayi_applications: app,
+  });
   const [enriched] = await enrichDealersWithCoverUrls(supabase, [mapped]);
   return enriched ?? mapped;
 }
@@ -227,6 +304,7 @@ export async function fetchDealerListings(
   }
 ) {
   const tableName = getDealerListingTable(dealerType);
+  if (!tableName) return [];
 
   let query = supabase
     .from(tableName)
@@ -263,12 +341,19 @@ export async function fetchDealerAnalytics(
   // Şimdilik basit bir implementasyon, daha sonra RPC'ye dönüştürülebilir
 
   const tableName = getDealerListingTable(dealerType);
+  const profileTable = getDealerProfileTable(dealerType);
 
   // Toplam bayi sayısı
-  const { count: totalDealers } = await supabase
-    .from(getDealerProfileTable(dealerType))
-    .select("*", { count: "exact", head: true })
-    .eq("is_active", true);
+  const { count: totalDealers } = profileTable
+    ? await supabase
+        .from(profileTable)
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true)
+    : await supabase
+        .from("bayi_applications")
+        .select("*", { count: "exact", head: true })
+        .eq("dealer_type", dealerType)
+        .eq("status", "approved");
 
   // Bekleyen başvurular
   const { count: pendingApps } = await supabase
@@ -277,11 +362,9 @@ export async function fetchDealerAnalytics(
     .eq("dealer_type", dealerType)
     .eq("status", "pending");
 
-  // Owner'ın ilanları
-  const { data: listings } = await supabase
-    .from(tableName)
-    .select("id, price")
-    .eq("user_id", userId);
+  const { data: listings } = tableName
+    ? await supabase.from(tableName).select("id, price").eq("user_id", userId)
+    : { data: [] as { id: string; price: number | null }[] };
 
   const listingIds = (listings ?? []).map((l) => l.id);
 

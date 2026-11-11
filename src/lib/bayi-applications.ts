@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { DEALER_TYPE_VALUES, type DealerType } from "@/lib/dealer-types";
+import { DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
 
 export type BayiApplicationMenuRow = {
   id: string;
@@ -11,7 +11,7 @@ export type BayiApplicationMenuRow = {
 
 function normalizeDealerType(raw: unknown): DealerType | null {
   const v = typeof raw === "string" ? raw.trim().toLocaleLowerCase("tr") : "";
-  return (DEALER_TYPE_VALUES as readonly string[]).includes(v)
+  return (DEALER_TYPES as readonly string[]).includes(v)
     ? (v as DealerType)
     : null;
 }

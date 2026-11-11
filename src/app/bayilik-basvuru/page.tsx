@@ -5,8 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { BayiApplicationForm } from "@/components/BayiApplicationForm";
 import { fetchCities } from "@/lib/listings-data";
-import { DEALER_TYPE_META } from "@/lib/dealer-types";
-import { DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
+import { DEALER_TYPE_LABELS, DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
 
 export const metadata: Metadata = {
   title: "Bayilik Başvurusu",
@@ -103,10 +102,9 @@ export default async function BayilikBasvuruPage({ searchParams }: Props) {
         ) : (
           <ul className="mt-3 space-y-2">
             {rows.map((row) => {
-              const type =
-                row.dealer_type && row.dealer_type in DEALER_TYPE_META
-                  ? DEALER_TYPE_META[row.dealer_type].label
-                  : "Tür belirtilmemiş";
+              const type = row.dealer_type
+                ? DEALER_TYPE_LABELS[row.dealer_type]
+                : "Tür belirtilmemiş";
               return (
                 <li
                   key={row.id}

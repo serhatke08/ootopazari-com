@@ -3,11 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { QUICK_ACCESS_LINKS } from "@/lib/quick-access-links";
+import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
+import type { HomeShortcutGlyph } from "@/lib/home-shortcuts";
 
 type QuickLinkItem = {
   href: string;
   label: string;
   image?: string;
+  glyph?: HomeShortcutGlyph;
+  fillColor?: string;
 };
 
 export function SidebarQuickLinks({
@@ -42,7 +46,14 @@ export function SidebarQuickLinks({
           onClick={() => onNavigate?.()}
           className={linkClass}
         >
-          {item.image ? (
+          {item.glyph ? (
+            <span
+              className={`flex shrink-0 items-center justify-center text-white ${iconBox}`}
+              style={{ backgroundColor: item.fillColor ?? "#111" }}
+            >
+              <HomeShortcutGlyphIcon name={item.glyph} className={compact ? "h-4 w-4" : "h-5 w-5"} />
+            </span>
+          ) : item.image ? (
             <span
               className={`relative shrink-0 overflow-hidden bg-[#ffcc00] ${iconBox}`}
             >
