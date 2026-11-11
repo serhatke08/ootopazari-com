@@ -68,7 +68,9 @@ export async function fetchPublicDealers(
         membership_expires_at,
         authorized_brands,
         working_hours,
-        whatsapp_phone
+        whatsapp_phone,
+        first_name,
+        last_name
       )
     `;
   const selectCore = `
@@ -90,12 +92,12 @@ export async function fetchPublicDealers(
     if (options?.searchQuery) {
       query = query.ilike("dealer_name", `%${options.searchQuery}%`);
     }
-    if (options?.sortBy === "newest") {
-      query = query.order("approved_at", { ascending: false, nullsFirst: false });
-    } else if (options?.sortBy === "name_asc") {
+    if (options?.sortBy === "name_asc") {
       query = query.order("dealer_name", { ascending: true });
     } else if (options?.sortBy === "name_desc") {
       query = query.order("dealer_name", { ascending: false });
+    } else {
+      query = query.order("approved_at", { ascending: false, nullsFirst: false });
     }
     if (options?.limit) query = query.limit(options.limit);
     if (options?.offset) {
@@ -156,6 +158,14 @@ function mapDealerRow(dealer: Record<string, unknown>): DealerProfile {
       (dealer.whatsapp_phone as string | null | undefined) ??
       app?.whatsapp_phone ??
       null,
+    first_name:
+      (dealer.first_name as string | null | undefined) ??
+      app?.first_name ??
+      null,
+    last_name:
+      (dealer.last_name as string | null | undefined) ??
+      app?.last_name ??
+      null,
     application: app,
   };
 }
@@ -184,7 +194,9 @@ export async function fetchDealerProfile(
         membership_expires_at,
         authorized_brands,
         working_hours,
-        whatsapp_phone
+        whatsapp_phone,
+        first_name,
+        last_name
       )
     `
     )

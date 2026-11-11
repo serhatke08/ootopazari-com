@@ -11,6 +11,7 @@ import { SiteHeaderFallback, SiteMainShell } from "@/components/SiteListingChrom
 import { AppNavigationMemory } from "@/components/AppNavigationMemory";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
 import { AppDownloadPromoPopup } from "@/components/AppDownloadPromoPopup";
+import { DealerCircleOverlay } from "@/components/bayi/DealerCircleReveal";
 import { getSiteOrigin } from "@/lib/site-url";
 import {
   SITE_DISPLAY_NAME,
@@ -139,6 +140,7 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <AppDownloadPromoPopup />
           </Suspense>
+          <DealerCircleOverlay />
           </div>
         </SiteSearchProvider>
         <Analytics />

@@ -5,6 +5,7 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import {
+  fetchDealerListings,
   fetchDealerProfile,
   resolveDealerCoverImageUrl,
   resolveDealerLogoImageUrl,
@@ -16,7 +17,7 @@ import {
   type ExpertizPriceItem,
 } from "@/lib/bayi-types";
 import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
-import { dealerTheme } from "@/lib/dealer-theme";
+import { dealerTheme, parseAuthorizedBrands } from "@/lib/dealer-theme";
 
 type Props = {
   params: Promise<{ type: string; id: string }>;
@@ -79,10 +80,23 @@ export default async function BayiDetailPage({ params }: Props) {
     notFound();
   }
 
+  const listings = await fetchDealerListings(supabase, dealerType, dealer.id, {
+    limit: 12,
+  });
   const coverImageUrl = resolveDealerCoverImageUrl(dealer, env.url);
   const logoImageUrl = resolveDealerLogoImageUrl(dealer, env.url);
   const theme = dealerTheme(dealerType);
   const cityName = dealer.city_name ?? "Türkiye";
+  const brands = parseAuthorizedBrands(dealer.authorized_brands, 12);
+  const hours = dealer.working_hours?.trim() ?? "";
+  const whatsapp = dealer.whatsapp_phone?.replace(/\D/g, "") ?? "";
+  const whatsappHref = whatsapp
+    ? `https://wa.me/${whatsapp.startsWith("90") ? whatsapp : whatsapp.replace(/^0/, "90")}`
+    : "";
+  const contactName = [dealer.first_name, dealer.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 
   // Expertiz price list
   const priceList: ExpertizPriceItem[] = [];
@@ -157,27 +171,40 @@ export default async function BayiDetailPage({ params }: Props) {
         <div className="lg:col-span-2 space-y-6">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ffc400] px-3 py-1 text-sm font-semibold text-black">
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold"
+                style={{ backgroundColor: `${theme.primary}18`, color: theme.primaryDark }}
+              >
                 {DEALER_TYPE_LABELS[dealerType]}
               </span>
               <span className="inline-flex items-center gap-1.5 text-sm text-zinc-600">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
                 {cityName}
               </span>
+              {listings.length > 0 ? (
+                <span className="text-sm font-semibold text-zinc-700">
+                  {listings.length}
+                  {dealerType === "kiralama" || dealerType === "galeri"
+                    ? " araç"
+                    : " ilan"}
+                </span>
+              ) : null}
             </div>
+            {dealerType === "galeri" && brands.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {brands.map((brand) => (
+                  <span
+                    key={brand}
+                    className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                    style={{ backgroundColor: `${theme.primary}14`, color: theme.primary }}
+                  >
+                    {brand}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {hours ? (
+              <p className="mt-3 text-sm font-medium text-zinc-700">{hours}</p>
+            ) : null}
           </div>
 
           {/* Description */}
@@ -191,6 +218,56 @@ export default async function BayiDetailPage({ params }: Props) {
           ) : null}
 
           {/* Expertiz Price List */}
+          {listings.length > 0 && dealerType !== "expertiz" ? (
+            <div className="rounded-xl border border-zinc-200 bg-white p-6">
+              <h2 className="mb-4 text-lg font-bold text-zinc-900">
+                {dealerType === "kiralama" || dealerType === "galeri"
+                  ? "Araçlar"
+                  : "İlanlar"}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {listings.map((item) => {
+                  const row = item as {
+                    id?: string;
+                    title?: string;
+                    price?: number | null;
+                    image_url?: string | null;
+                  };
+                  return (
+                    <div
+                      key={String(row.id ?? row.title)}
+                      className="overflow-hidden rounded-xl border border-zinc-200"
+                    >
+                      <div className="h-28 bg-zinc-100">
+                        {row.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={row.image_url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="p-3">
+                        <p className="line-clamp-1 text-sm font-bold text-zinc-900">
+                          {row.title || "İlan"}
+                        </p>
+                        {row.price != null ? (
+                          <p
+                            className="mt-1 text-sm font-extrabold"
+                            style={{ color: theme.primary }}
+                          >
+                            ₺{Number(row.price).toLocaleString("tr-TR")}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           {priceList.length > 0 ? (
             <div className="rounded-xl border border-zinc-200 bg-white p-6">
               <h2 className="mb-4 text-lg font-bold text-zinc-900">Fiyat Listesi</h2>
@@ -222,31 +299,33 @@ export default async function BayiDetailPage({ params }: Props) {
           <div className="rounded-xl border border-zinc-200 bg-white p-6">
             <h3 className="mb-4 text-lg font-bold text-zinc-900">İletişim</h3>
             <div className="space-y-3">
+              {contactName ? (
+                <p className="text-sm font-semibold text-zinc-900">{contactName}</p>
+              ) : null}
               {dealer.contact_phone ? (
                 <a
                   href={`tel:${dealer.contact_phone}`}
-                  className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 transition hover:border-[#ffc400] hover:bg-[#fffbf0]"
+                  className="flex items-center justify-center gap-2 rounded-lg border px-3 py-3 text-sm font-bold"
+                  style={{
+                    borderColor: `${theme.primary}59`,
+                    color: theme.primaryDark,
+                  }}
                 >
-                  <svg
-                    className="h-5 w-5 shrink-0 text-[#ffc400]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  <span className="font-semibold text-zinc-900">
-                    {dealer.contact_phone}
-                  </span>
+                  {dealer.contact_phone}
                 </a>
               ) : (
                 <p className="text-sm text-zinc-500">Telefon bilgisi yok</p>
               )}
+              {whatsappHref ? (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center rounded-lg bg-[#128C7E] px-3 py-3 text-sm font-bold text-white"
+                >
+                  WhatsApp
+                </a>
+              ) : null}
             </div>
           </div>
         </div>

@@ -1,5 +1,3 @@
-import { BayiEntranceHold } from "@/components/bayi/BayiEntranceHold";
-
 export default function BayiTypeLoading() {
-  return <BayiEntranceHold />;
+  return <div className="min-h-[40vh] bg-zinc-50" />;
 }

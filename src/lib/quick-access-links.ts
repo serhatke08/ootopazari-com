@@ -1,4 +1,4 @@
-/** Sol menü + üst şerit ortak liste */
+/** Sol menü + üst şerit — sıra uygulamadaki bayi şeridiyle aynı. */
 export const QUICK_ACCESS_LINKS: {
   href: string;
   label: string;
@@ -9,18 +9,18 @@ export const QUICK_ACCESS_LINKS: {
     label: "Pazar",
     image: "/menu/pazar.png",
   },
-  {
-    href: "/kiralik-arac",
-    label: "Kiralama",
-    image: "/menu/kiralama.png",
-  },
-  { href: "/parca", label: "Parça", image: "/menu/parca.png" },
   { href: "/bayi/galeri", label: "Galeri", image: "/menu/galeri.png" },
   {
     href: "/bayi/expertiz",
     label: "Ekspertiz",
     image: "/menu/expertiz.png",
   },
+  {
+    href: "/bayi/kiralama",
+    label: "Kiralama",
+    image: "/menu/kiralama.png",
+  },
+  { href: "/bayi/parcaci", label: "Yedek Parça", image: "/menu/parca.png" },
   {
     href: "/acil",
     label: "Acil",

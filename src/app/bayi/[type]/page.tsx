@@ -85,10 +85,19 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Fetch data
+  const q = typeof sp.q === "string" ? sp.q.trim() : "";
+  const cityId = typeof sp.city === "string" ? sp.city : "";
+  const sortBy =
+    sp.sort === "name_asc" || sp.sort === "name_desc" || sp.sort === "newest"
+      ? sp.sort
+      : "newest";
+
   const [dealers, cities, userApplication] = await Promise.all([
     fetchPublicDealers(supabase, dealerType, {
-      limit: 50,
+      limit: 80,
+      searchQuery: q || undefined,
+      cityId: cityId || undefined,
+      sortBy,
     }),
     fetchCities(supabase),
     user ? fetchUserDealerApplication(supabase, user.id, dealerType) : null,
@@ -177,17 +186,25 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
         </div>
       ) : null}
 
-      {/* Filters */}
-      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1">
+      <form
+        className="mb-6 rounded-xl border border-zinc-200 bg-white p-4"
+        method="get"
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="min-w-[180px] flex-1">
             <input
-              type="text"
+              type="search"
+              name="q"
+              defaultValue={q}
               placeholder="Bayi ara..."
               className="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm focus:border-[#ffc400] focus:outline-none focus:ring-2 focus:ring-[#ffc400]/20"
             />
           </div>
-          <select className="rounded-lg border border-zinc-300 px-4 py-2 text-sm focus:border-[#ffc400] focus:outline-none focus:ring-2 focus:ring-[#ffc400]/20">
+          <select
+            name="city"
+            defaultValue={cityId}
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm focus:border-[#ffc400] focus:outline-none focus:ring-2 focus:ring-[#ffc400]/20"
+          >
             <option value="">Tüm şehirler</option>
             {cities.map((city) => (
               <option key={city.id} value={city.id}>
@@ -195,18 +212,27 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
               </option>
             ))}
           </select>
-          <select className="rounded-lg border border-zinc-300 px-4 py-2 text-sm focus:border-[#ffc400] focus:outline-none focus:ring-2 focus:ring-[#ffc400]/20">
-            <option value="">Sıralama</option>
+          <select
+            name="sort"
+            defaultValue={sortBy}
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm focus:border-[#ffc400] focus:outline-none focus:ring-2 focus:ring-[#ffc400]/20"
+          >
             <option value="newest">En yeni</option>
             <option value="name_asc">İsim (A-Z)</option>
             <option value="name_desc">İsim (Z-A)</option>
           </select>
+          <button
+            type="submit"
+            className="rounded-lg px-4 py-2 text-sm font-bold text-white"
+            style={{ backgroundColor: theme.primary }}
+          >
+            Filtrele
+          </button>
         </div>
-      </div>
+      </form>
 
-      {/* Dealers Grid */}
       {dealers.length > 0 ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {dealers.map((dealer) => (
             <BayiCard
               key={dealer.id}

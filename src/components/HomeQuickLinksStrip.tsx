@@ -9,15 +9,10 @@ import { useDealerCircleNav } from "@/components/bayi/DealerCircleReveal";
 
 function dealerBorderColor(label: string): string {
   const key = label.trim().toLocaleLowerCase("tr");
-  if (key === "ekspertiz") return "#a91414";
-  if (key === "galeri") return "#5e17eb";
-  if (key === "parça") return "#2e6417";
-  if (key === "kiralama") return "#0081cc";
-  if (key === "pazar") return "#111111";
   if (key === "acil") return "#dc2626";
   if (key === "vitrin" || key === "sıfır araçlar" || key === "sifir araclar")
     return "#059669";
-  return "#f59e0b";
+  return "#111111";
 }
 
 function QuickLinkItem({
@@ -91,7 +86,7 @@ const DRAG_THRESHOLD_PX = 10;
 
 /** Bayilik şeridi: elle kaydırılabilir + yavaş otomatik sola kayma. */
 export function HomeQuickLinksStrip() {
-  const { go, overlay } = useDealerCircleNav();
+  const { go } = useDealerCircleNav();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -205,7 +200,6 @@ export function HomeQuickLinksStrip() {
 
   return (
     <div className="border-b border-zinc-200 bg-white">
-      {overlay}
       <div className="mx-auto max-w-[1400px] sm:px-4 md:px-6">
         <div
           ref={scrollerRef}

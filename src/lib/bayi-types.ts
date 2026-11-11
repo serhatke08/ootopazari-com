@@ -89,6 +89,8 @@ export interface DealerProfile {
   authorized_brands?: string | null;
   working_hours?: string | null;
   whatsapp_phone?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   cover_image_url?: string | null;
   logo_image_url?: string | null;
   // Application relation
@@ -101,6 +103,8 @@ export interface DealerProfile {
     authorized_brands?: string | null;
     working_hours?: string | null;
     whatsapp_phone?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
   };
 }
 
