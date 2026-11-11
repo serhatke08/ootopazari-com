@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { DealerProfile, DealerType, ExpertizPriceItem } from "@/lib/bayi-types";
 import { resolveDealerCoverImageUrl } from "@/lib/bayi-data";
 import { dealerTheme, parseAuthorizedBrands } from "@/lib/dealer-theme";
+import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
 
 type Props = {
   dealer: DealerProfile;
@@ -41,21 +42,10 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-        <span
-          className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-blue-600 shadow"
-          title="Doğrulanmış bayi"
-        >
-          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </span>
         <div className="absolute inset-x-0 bottom-0 p-3.5 text-white">
-          <h3 className="line-clamp-2 text-[15px] font-extrabold leading-snug tracking-tight">
-            {dealer.dealer_name}
+          <h3 className="flex items-start gap-1 text-[15px] font-extrabold leading-snug tracking-tight">
+            <span className="line-clamp-2">{dealer.dealer_name}</span>
+            <DealerVerifiedTick size={14} className="mt-0.5 text-white" />
           </h3>
           {dealerType === "galeri" ? (
             <>

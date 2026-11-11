@@ -90,6 +90,7 @@ export interface DealerProfile {
   working_hours?: string | null;
   whatsapp_phone?: string | null;
   cover_image_url?: string | null;
+  logo_image_url?: string | null;
   // Application relation
   application?: {
     workplace_photos_json?: unknown;

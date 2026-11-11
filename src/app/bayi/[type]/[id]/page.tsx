@@ -4,13 +4,19 @@ import Link from "next/link";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
-import { fetchDealerProfile, resolveDealerCoverImageUrl } from "@/lib/bayi-data";
+import {
+  fetchDealerProfile,
+  resolveDealerCoverImageUrl,
+  resolveDealerLogoImageUrl,
+} from "@/lib/bayi-data";
 import {
   DEALER_TYPES,
   DEALER_TYPE_LABELS,
   type DealerType,
   type ExpertizPriceItem,
 } from "@/lib/bayi-types";
+import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
+import { dealerTheme } from "@/lib/dealer-theme";
 
 type Props = {
   params: Promise<{ type: string; id: string }>;
@@ -74,6 +80,8 @@ export default async function BayiDetailPage({ params }: Props) {
   }
 
   const coverImageUrl = resolveDealerCoverImageUrl(dealer, env.url);
+  const logoImageUrl = resolveDealerLogoImageUrl(dealer, env.url);
+  const theme = dealerTheme(dealerType);
   const cityName = dealer.city_name ?? "Türkiye";
 
   // Expertiz price list
@@ -100,57 +108,54 @@ export default async function BayiDetailPage({ params }: Props) {
         {DEALER_TYPE_LABELS[dealerType]} Bayilerine Dön
       </Link>
 
-      {/* Cover Image */}
-      <div className="relative mb-6 aspect-[21/9] w-full overflow-hidden rounded-2xl bg-zinc-100">
-        {coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      <div className="relative mb-2 overflow-hidden rounded-2xl bg-zinc-100 lg:rounded-3xl">
+        <div className="relative h-[200px] w-full sm:h-[260px] lg:h-[360px] xl:h-[400px]">
+          {coverImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverImageUrl}
+              alt={dealer.dealer_name}
+              className="h-full w-full object-cover object-center"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-zinc-400">
+              <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            </div>
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+        </div>
+      </div>
+
+      <div className="relative z-10 -mt-10 mb-6 flex items-end gap-4 px-1 sm:-mt-12 lg:-mt-14">
+        <div
+          className="relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-full bg-white shadow-lg ring-[3px] ring-white sm:h-[88px] sm:w-[88px] lg:h-[96px] lg:w-[96px]"
+          title="Tabela"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={coverImageUrl}
-            alt={dealer.dealer_name}
+            src={logoImageUrl || theme.logoSrc}
+            alt={`${dealer.dealer_name} tabela`}
             className="h-full w-full object-cover"
           />
-        ) : (
-          <div className="flex h-full items-center justify-center text-zinc-400">
-            <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
-          </div>
-        )}
+        </div>
+        <div className="min-w-0 pb-0.5 pt-10 sm:pt-12">
+          <h1 className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+            <span>{dealer.dealer_name}</span>
+            <DealerVerifiedTick size={18} className="translate-y-[1px]" />
+          </h1>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Header */}
           <div>
-            <div className="mb-3 flex items-start justify-between gap-4">
-              <h1 className="text-3xl font-bold text-zinc-900">
-                {dealer.dealer_name}
-              </h1>
-              {/* Doğrulama Rozeti */}
-              <span
-                className="shrink-0 rounded-full bg-blue-100 p-2"
-                title="Doğrulanmış bayi"
-              >
-                <svg
-                  className="h-6 w-6 text-blue-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </div>
-
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ffc400] px-3 py-1 text-sm font-semibold text-black">
                 {DEALER_TYPE_LABELS[dealerType]}

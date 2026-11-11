@@ -35,6 +35,11 @@ export function firstBayiPhotoPath(dealer: DealerProfile): string | null {
   return sign || null;
 }
 
+export function dealerSignboardPath(dealer: DealerProfile): string | null {
+  const sign = dealer.application?.signboard_photo_storage_path?.trim();
+  return sign || null;
+}
+
 function storagePathFromRaw(raw: string): string {
   const trimmed = raw.trim();
   const fromUrl = trimmed.match(
@@ -69,10 +74,20 @@ export async function enrichDealersWithCoverUrls(
   const signer = createSupabaseServiceClient() ?? supabase;
   return Promise.all(
     dealers.map(async (dealer) => {
-      const path = firstBayiPhotoPath(dealer);
-      if (!path) return { ...dealer, cover_image_url: null };
-      const url = await signBayiPhotoUrl(signer, path);
-      return { ...dealer, cover_image_url: url };
+      const workplace = parseBayiPhotoPaths(
+        dealer.application?.workplace_photos_json
+      )[0];
+      const sign = dealerSignboardPath(dealer);
+      const coverPath = workplace || sign;
+      const [coverUrl, logoUrl] = await Promise.all([
+        coverPath ? signBayiPhotoUrl(signer, coverPath) : Promise.resolve(null),
+        sign ? signBayiPhotoUrl(signer, sign) : Promise.resolve(null),
+      ]);
+      return {
+        ...dealer,
+        cover_image_url: coverUrl,
+        logo_image_url: logoUrl,
+      };
     })
   );
 }

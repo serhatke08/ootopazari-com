@@ -11,7 +11,11 @@ import type {
 } from "./bayi-types";
 import { getDealerProfileTable, getDealerListingTable } from "./dealer-listing-tables";
 import { shouldShowInPublicList } from "./bayi-application-status";
-import { enrichDealersWithCoverUrls, firstBayiPhotoPath } from "./bayi-photos";
+import {
+  dealerSignboardPath,
+  enrichDealersWithCoverUrls,
+  firstBayiPhotoPath,
+} from "./bayi-photos";
 
 /**
  * Kullanıcının belirli bir dealer type için başvurusunu getirir
@@ -358,6 +362,19 @@ export function resolveDealerCoverImageUrl(
 ): string | null {
   if (dealer.cover_image_url) return dealer.cover_image_url;
   const path = firstBayiPhotoPath(dealer);
+  if (!path || !supabaseUrl) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = supabaseUrl.replace(/\/$/, "");
+  const cleaned = path.replace(/^\/+/, "").replace(/^bayi-application-docs\//, "");
+  return `${base}/storage/v1/object/public/bayi-application-docs/${cleaned}`;
+}
+
+export function resolveDealerLogoImageUrl(
+  dealer: DealerProfile,
+  supabaseUrl?: string
+): string | null {
+  if (dealer.logo_image_url) return dealer.logo_image_url;
+  const path = dealerSignboardPath(dealer);
   if (!path || !supabaseUrl) return null;
   if (/^https?:\/\//i.test(path)) return path;
   const base = supabaseUrl.replace(/\/$/, "");
