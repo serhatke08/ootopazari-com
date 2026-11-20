@@ -21,6 +21,7 @@ import {
   type CategoryRow,
 } from "@/lib/listings-data";
 import { categoryIdIsMotorcycle } from "@/lib/vehicle-category-slots";
+import { showsVehicleCatalogWithoutListings } from "@/lib/vehicle-category-sort";
 import type { IdNameRow } from "@/lib/vehicle-hierarchy";
 import {
   fetchBrandsByCategory,
@@ -153,6 +154,7 @@ function VehicleCascadeSidebarInner({
       )
       .map((c, i) => ({
         id: c.id,
+        code: (c.code ?? "").trim().toLowerCase(),
         label: (c.name ?? c.code ?? "Kategori").trim(),
         icon: categoryIconUrlForCategory(c.code, i + 1),
       }));
@@ -214,7 +216,9 @@ function VehicleCascadeSidebarInner({
     }
     return categorySlots.filter(
       (slot) =>
-        slot.id === categoryId || (categoryCounts.get(slot.id) ?? 0) > 0
+        slot.id === categoryId ||
+        (categoryCounts.get(slot.id) ?? 0) > 0 ||
+        showsVehicleCatalogWithoutListings(slot.code)
     );
   }, [categorySlots, categoryCounts, categoryCountsReady, categoryId]);
 
@@ -956,6 +960,7 @@ function VehicleCascadeSidebarInner({
                 {brands
                   .filter(
                     (b) =>
+                      showsVehicleCatalogWithoutListings(selectedCategory?.code) ||
                       !brandCountsReady ||
                       b.id === brandId ||
                       (brandCounts.get(b.id) ?? 0) > 0
@@ -1051,7 +1056,14 @@ function VehicleCascadeSidebarInner({
                           0;
                         return { m, mCnt };
                       })
-                      .filter(({ m, mCnt }) => m.id === modelId || mCnt > 0)
+                      .filter(
+                        ({ m, mCnt }) =>
+                          showsVehicleCatalogWithoutListings(
+                            selectedCategory?.code
+                          ) ||
+                          m.id === modelId ||
+                          mCnt > 0
+                      )
                       .map(({ m, mCnt }) => (
                         <li key={m.id} className="min-w-0">
                           <button

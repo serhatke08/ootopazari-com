@@ -5,10 +5,12 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import {
+  companyAgeLabel,
   fetchDealerListings,
   fetchDealerProfile,
   resolveDealerCoverImageUrl,
   resolveDealerLogoImageUrl,
+  turkishPersonName,
 } from "@/lib/bayi-data";
 import {
   DEALER_TYPES,
@@ -93,10 +95,8 @@ export default async function BayiDetailPage({ params }: Props) {
   const whatsappHref = whatsapp
     ? `https://wa.me/${whatsapp.startsWith("90") ? whatsapp : whatsapp.replace(/^0/, "90")}`
     : "";
-  const contactName = [dealer.first_name, dealer.last_name]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const contactName = turkishPersonName(dealer.first_name, dealer.last_name);
+  const ageLabel = companyAgeLabel(dealer.company_founded_year);
 
   // Expertiz price list
   const priceList: ExpertizPriceItem[] = [];
@@ -164,30 +164,34 @@ export default async function BayiDetailPage({ params }: Props) {
             <span>{dealer.dealer_name}</span>
             <DealerVerifiedTick size={18} className="translate-y-[1px]" />
           </h1>
+          {dealerType === "galeri" && contactName ? (
+            <p className="mt-1 text-sm font-extrabold text-zinc-800">
+              {contactName}
+            </p>
+          ) : null}
         </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-semibold text-zinc-700">
               <span
                 className="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold"
                 style={{ backgroundColor: `${theme.primary}18`, color: theme.primaryDark }}
               >
                 {DEALER_TYPE_LABELS[dealerType]}
               </span>
-              <span className="inline-flex items-center gap-1.5 text-sm text-zinc-600">
-                {cityName}
-              </span>
-              {listings.length > 0 ? (
-                <span className="text-sm font-semibold text-zinc-700">
-                  {listings.length}
-                  {dealerType === "kiralama" || dealerType === "galeri"
-                    ? " araç"
-                    : " ilan"}
-                </span>
+              {cityName && cityName !== "Türkiye" ? (
+                <span>{cityName}</span>
               ) : null}
+              <span>
+                {dealer.listing_count ?? listings.length}
+                {dealerType === "kiralama" || dealerType === "galeri"
+                  ? " araç ilanı"
+                  : " ilan"}
+              </span>
+              {ageLabel ? <span>{ageLabel}</span> : null}
             </div>
             {dealerType === "galeri" && brands.length > 0 ? (
               <div className="mt-3 flex flex-wrap gap-2">

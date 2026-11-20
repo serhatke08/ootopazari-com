@@ -73,7 +73,8 @@ export async function fetchPublicDealers(
         working_hours,
         whatsapp_phone,
         first_name,
-        last_name
+        last_name,
+        company_founded_year
       )
     `;
   const selectCore = `
@@ -129,7 +130,8 @@ export async function fetchPublicDealers(
     .map((dealer) => mapDealerRow(dealer))
     .filter((dealer) => shouldShowInPublicList(dealer.application ?? null));
 
-  return enrichDealersWithCoverUrls(supabase, filtered);
+  const withCovers = await enrichDealersWithCoverUrls(supabase, filtered);
+  return attachListingCounts(supabase, dealerType, withCovers);
 }
 
 async function fetchDealersFromApplications(
@@ -145,9 +147,9 @@ async function fetchDealersFromApplications(
   }
 ): Promise<DealerProfile[]> {
   const selectWithCity =
-    "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, cities(name, country_id)";
+    "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, company_founded_year, cities(name, country_id)";
   const selectPlain =
-    "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name";
+    "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, company_founded_year";
 
   const run = (select: string) => {
     let query = supabase
@@ -202,7 +204,8 @@ async function fetchDealersFromApplications(
   const filtered = mapped.filter((dealer) =>
     shouldShowInPublicList(dealer.application ?? null)
   );
-  return enrichDealersWithCoverUrls(supabase, filtered);
+  const withCovers = await enrichDealersWithCoverUrls(supabase, filtered);
+  return attachListingCounts(supabase, dealerType, withCovers);
 }
 
 function mapDealerRow(dealer: Record<string, unknown>): DealerProfile {
@@ -242,8 +245,62 @@ function mapDealerRow(dealer: Record<string, unknown>): DealerProfile {
       (dealer.last_name as string | null | undefined) ??
       app?.last_name ??
       null,
+    company_founded_year:
+      (dealer.company_founded_year as number | null | undefined) ??
+      app?.company_founded_year ??
+      null,
     application: app,
   };
+}
+
+export function turkishPersonName(first?: string | null, last?: string | null) {
+  return [first, last]
+    .map((part) => (part ?? "").trim())
+    .filter(Boolean)
+    .map((part) => {
+      const lower = part.toLocaleLowerCase("tr-TR");
+      return lower.charAt(0).toLocaleUpperCase("tr-TR") + lower.slice(1);
+    })
+    .join(" ");
+}
+
+export function companyAgeLabel(year?: number | null) {
+  if (year == null || year < 1900) return "";
+  const now = new Date().getFullYear();
+  if (year > now) return "";
+  return `${Math.max(1, now - year)} yıllık`;
+}
+
+async function attachListingCounts(
+  supabase: SupabaseClient,
+  dealerType: DealerType,
+  dealers: DealerProfile[]
+): Promise<DealerProfile[]> {
+  const tableName = getDealerListingTable(dealerType);
+  if (!tableName || dealers.length === 0) return dealers;
+  const userIds = [
+    ...new Set(
+      dealers
+        .map((dealer) => dealer.user_id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+  if (userIds.length === 0) return dealers;
+  const { data } = await supabase
+    .from(tableName)
+    .select("user_id")
+    .in("user_id", userIds)
+    .eq("activation_status", "active");
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    const uid = (row as { user_id?: string }).user_id;
+    if (!uid) continue;
+    counts[uid] = (counts[uid] ?? 0) + 1;
+  }
+  return dealers.map((dealer) => ({
+    ...dealer,
+    listing_count: counts[dealer.user_id ?? ""] ?? 0,
+  }));
 }
 
 /**
@@ -273,7 +330,8 @@ export async function fetchDealerProfile(
         working_hours,
         whatsapp_phone,
         first_name,
-        last_name
+        last_name,
+        company_founded_year
       )
     `
       )
@@ -283,14 +341,17 @@ export async function fetchDealerProfile(
     if (!error && data) {
       const mapped = mapDealerRow(data as unknown as Record<string, unknown>);
       const [enriched] = await enrichDealersWithCoverUrls(supabase, [mapped]);
-      return enriched ?? mapped;
+      const withCounts = await attachListingCounts(supabase, dealerType, [
+        enriched ?? mapped,
+      ]);
+      return withCounts[0] ?? enriched ?? mapped;
     }
   }
 
   const { data: app, error: appError } = await supabase
     .from("bayi_applications")
     .select(
-      "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, cities(name, country_id)"
+      "id, user_id, dealer_name, contact_phone, description, city_id, created_at, workplace_photos_json, signboard_photo_storage_path, status, payment_status, membership_expires_at, approved_at, working_hours, authorized_brands, whatsapp_phone, first_name, last_name, company_founded_year, cities(name, country_id)"
     )
     .eq("id", dealerId)
     .eq("dealer_type", dealerType)
@@ -303,7 +364,10 @@ export async function fetchDealerProfile(
     bayi_applications: app,
   });
   const [enriched] = await enrichDealersWithCoverUrls(supabase, [mapped]);
-  return enriched ?? mapped;
+  const withCounts = await attachListingCounts(supabase, dealerType, [
+    enriched ?? mapped,
+  ]);
+  return withCounts[0] ?? enriched ?? mapped;
 }
 
 /**
@@ -436,6 +500,7 @@ export async function createDealerApplication(
     dealer_name: string;
     city_id: string;
     monthly_fee_amount: number;
+    company_founded_year: number;
   }
 ) {
   const { data: result, error } = await supabase
@@ -448,6 +513,7 @@ export async function createDealerApplication(
       contact_phone: data.contact_phone,
       dealer_name: data.dealer_name,
       city_id: data.city_id,
+      company_founded_year: data.company_founded_year,
       monthly_fee_amount: data.monthly_fee_amount,
       status: "pending",
       payment_status: "unpaid",

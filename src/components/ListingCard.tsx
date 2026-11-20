@@ -204,9 +204,8 @@ export function ListingCard({
 
   /** Ana sayfa / filtre sonuçları grid’i: daha yüksek görsel + fiyat görsel üzerinde */
   const isHomeGrid = hideCategoryAndYear && cityOnStatsRow;
-  /** Acil + öne çıkar: yazı yok, sadece altın border (acil satırında kalır). */
   const showBoostLabel = isHomeGrid && boostActive && !showAcilBadge;
-  const showBoostGoldBorder = Boolean(showAcilBadge && boostActive);
+  const showBoostGoldBorder = Boolean(boostActive);
   const maskedMileage = formatMaskedMileage(listing.vehicle_mileage);
   const displayTitle = listingDisplayTitle({
     title: typeof listing.title === "string" ? listing.title : null,
@@ -284,7 +283,7 @@ export function ListingCard({
         highlightPassive || passivePayment
           ? "border-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
           : showBoostGoldBorder
-            ? "border-[#ffc400] shadow-[0_0_0_1px_rgba(255,196,0,0.55)] hover:border-[#ffc400]"
+            ? "border-[#ffc400] shadow-[0_0_0_3px_rgba(255,196,0,0.85)] hover:border-[#ffb300]"
             : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
       } ${inactive && !activationPassive && !expired ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
     >

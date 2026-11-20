@@ -6,6 +6,7 @@ import { LegalPageLinks } from "@/components/LegalPageLinks";
 
 const quickLinks = (hasListings: boolean) =>
   [
+    { label: "Harita", href: "/harita" },
     { label: "+ İlan Ekle", href: "/ilan-ver" },
     ...(hasListings
       ? [{ label: "İlan Öne Çıkar", href: "/ilan-one-cikar" } as const]
@@ -23,7 +24,7 @@ export function SiteFooter({
 }) {
   const pathname = usePathname() || "";
   // Sohbet ekranı tam yükseklik kullansın — footer scroll tuzağı olmasın
-  if (pathname.startsWith("/mesajlar")) {
+  if (pathname.startsWith("/mesajlar") || pathname.startsWith("/harita")) {
     return null;
   }
 
@@ -133,6 +134,9 @@ export function SiteFooter({
               <Link href="/rehber" className="site-footer-tag">
                 Rehber
               </Link>
+              <Link href="/harita" className="site-footer-tag">
+                Harita
+              </Link>
               <Link href="/ilan-ver" className="site-footer-tag">
                 Ücretsiz ilan ver
               </Link>
@@ -142,6 +146,7 @@ export function SiteFooter({
           <div className="site-footer-links">
             <div className="site-footer-col">
               <p className="site-footer-col-title">Hızlı İşlemler</p>
+              <Link href="/harita">Harita</Link>
               <Link href="/ilan-ver">+ İlan Ekle</Link>
               <Link href="/favoriler">Favoriler</Link>
               <Link href="/mesajlar">Mesajlar</Link>
@@ -149,6 +154,7 @@ export function SiteFooter({
             <div className="site-footer-col">
               <p className="site-footer-col-title">Keşfet</p>
               <Link href="/">Ana Sayfa</Link>
+              <Link href="/harita">Harita</Link>
               <Link href="/ikinci-el-arac">İkinci El Araç</Link>
               <Link href="/sifir-araclar">Sıfır Araçlar</Link>
               <Link href="/kiralik-arac">Kiralık Araç</Link>

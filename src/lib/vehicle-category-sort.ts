@@ -1,11 +1,22 @@
+/** Tır / tarım: ilan olmasa da marka ve seri katalogda durur. */
+export function showsVehicleCatalogWithoutListings(
+  code?: string | null
+): boolean {
+  const c = (code ?? "").trim().toLowerCase();
+  return c === "tir" || c === "tarim";
+}
+
 /** Uygulama ile aynı kategori sırası (ilan ver). */
 export const PRIMARY_VEHICLE_CATEGORY_ORDER = [
   "otomobil",
   "suv_pickup",
+  "pickup",
   "motosiklet",
   "elektrikli",
   "panelvan",
+  "tir",
   "is_ve_tarim_makinesi",
+  "tarim",
   "scooter_bisiklet",
 ] as const;
 

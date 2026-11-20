@@ -28,6 +28,9 @@ export function BayiStoreSettingsForm({ dealerType, application, cities }: Props
     working_hours: application.working_hours ?? "",
     authorized_brands: application.authorized_brands ?? "",
     full_address: application.full_address ?? "",
+    company_founded_year: application.company_founded_year
+      ? String(application.company_founded_year)
+      : "",
   });
 
   function set<K extends keyof typeof form>(key: K, value: string) {
@@ -73,7 +76,7 @@ export function BayiStoreSettingsForm({ dealerType, application, cities }: Props
           Vitrin bilgileri
         </h2>
         <p className="mt-1 text-sm text-zinc-600">
-          Logo, kapak ve adres ödemeden sonra buradan yönetilir. Galeri kartında şehir ve en fazla 3 marka görünür.
+          Logo, kapak ve adres ödemeden sonra buradan yönetilir. Galeri kartında yetkili adı, şehir, ilan sayısı ve şirket yaşı görünür.
         </p>
       </div>
 
@@ -132,6 +135,21 @@ export function BayiStoreSettingsForm({ dealerType, application, cities }: Props
         />
         <span className="mt-1 block text-xs text-zinc-500">
           Virgülle ayır. Kartta ilk 3 marka görünür.
+        </span>
+      </label>
+
+      <label className="block text-sm font-medium text-zinc-700">
+        Şirket kuruluş yılı
+        <input
+          className={`mt-1.5 ${fieldClass}`}
+          inputMode="numeric"
+          maxLength={4}
+          placeholder="Örn. 2015"
+          value={form.company_founded_year}
+          onChange={(e) => set("company_founded_year", e.target.value)}
+        />
+        <span className="mt-1 block text-xs text-zinc-500">
+          Galeri kartında kaç yıllık olduğu bu yıldan hesaplanır.
         </span>
       </label>
 

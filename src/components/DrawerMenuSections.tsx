@@ -46,6 +46,20 @@ function IconMessageBlue({ className }: { className?: string }) {
   );
 }
 
+function IconMapPin({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ${className ?? ""}`}
+      aria-hidden
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10Z" />
+        <circle cx="12" cy="11" r="2.5" />
+      </svg>
+    </span>
+  );
+}
+
 function IconBoostAmber({ className }: { className?: string }) {
   return (
     <span
@@ -204,7 +218,7 @@ export function DrawerMenuSections({
       : "");
 
   const showHeader = mode === "all" || mode === "header";
-  const showLinks = (mode === "all" || mode === "links") && loggedIn;
+  const showLinks = mode === "all" || mode === "links";
 
   return (
     <>
@@ -220,41 +234,50 @@ export function DrawerMenuSections({
 
       {showLinks ? (
         <div className="space-y-1.5 px-1.5 pt-2">
-          <Link href="/ilan-ver" onClick={() => onNavigate?.()} className={rowClass}>
-            <IconPlusGreen />
-            <span>İlan ver</span>
+          <Link href="/harita" onClick={() => onNavigate?.()} className={rowClass}>
+            <IconMapPin />
+            <span>Harita</span>
           </Link>
 
-          {hasListings ? (
-            <Link
-              href="/ilan-one-cikar"
-              onClick={() => onNavigate?.()}
-              className={rowClass}
-            >
-              <IconBoostAmber />
-              <span>İlan öne çıkar</span>
-            </Link>
+          {loggedIn ? (
+            <>
+              <Link href="/ilan-ver" onClick={() => onNavigate?.()} className={rowClass}>
+                <IconPlusGreen />
+                <span>İlan ver</span>
+              </Link>
+
+              {hasListings ? (
+                <Link
+                  href="/ilan-one-cikar"
+                  onClick={() => onNavigate?.()}
+                  className={rowClass}
+                >
+                  <IconBoostAmber />
+                  <span>İlan öne çıkar</span>
+                </Link>
+              ) : null}
+
+              <Link href="/favoriler" onClick={() => onNavigate?.()} className={rowClass}>
+                <IconHeartRed />
+                <span>Favoriler</span>
+              </Link>
+
+              <Link
+                href="/mesajlar"
+                onClick={() => onNavigate?.()}
+                className={`${rowClass} relative`}
+              >
+                <IconMessageBlue />
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  Mesajlarım
+                  <MessageUnreadBadge
+                    count={unreadMessageCount}
+                    className="min-h-[1.1rem] min-w-[1.1rem] text-[10px]"
+                  />
+                </span>
+              </Link>
+            </>
           ) : null}
-
-          <Link href="/favoriler" onClick={() => onNavigate?.()} className={rowClass}>
-            <IconHeartRed />
-            <span>Favoriler</span>
-          </Link>
-
-          <Link
-            href="/mesajlar"
-            onClick={() => onNavigate?.()}
-            className={`${rowClass} relative`}
-          >
-            <IconMessageBlue />
-            <span className="flex min-w-0 flex-1 items-center gap-2">
-              Mesajlarım
-              <MessageUnreadBadge
-                count={unreadMessageCount}
-                className="min-h-[1.1rem] min-w-[1.1rem] text-[10px]"
-              />
-            </span>
-          </Link>
         </div>
       ) : null}
     </>

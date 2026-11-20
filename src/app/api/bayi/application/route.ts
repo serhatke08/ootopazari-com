@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       dealer_name,
       city_id,
       monthly_fee_amount,
+      company_founded_year,
     } = body;
 
     // Validation
@@ -42,6 +43,19 @@ export async function POST(request: Request) {
     if (!first_name || !last_name || !contact_phone || !dealer_name || !city_id) {
       return NextResponse.json(
         { error: "Tüm alanları doldurun" },
+        { status: 400 }
+      );
+    }
+
+    const foundedYear = Number(company_founded_year);
+    const yearNow = new Date().getFullYear();
+    if (
+      !Number.isInteger(foundedYear) ||
+      foundedYear < 1900 ||
+      foundedYear > yearNow
+    ) {
+      return NextResponse.json(
+        { error: "Geçerli bir kuruluş yılı girin" },
         { status: 400 }
       );
     }
@@ -70,6 +84,7 @@ export async function POST(request: Request) {
       dealer_name: dealer_name.trim(),
       city_id: city_id.trim(),
       monthly_fee_amount: Number(monthly_fee_amount) || DEALER_SETUP_FEE_TRY,
+      company_founded_year: foundedYear,
     });
 
     return NextResponse.json({ success: true, application });
@@ -150,6 +165,13 @@ export async function PATCH(request: Request) {
       authorized_brands: str("authorized_brands"),
       whatsapp_phone: str("whatsapp_phone"),
       full_address: str("full_address"),
+      company_founded_year: (() => {
+        const year = Number(body.company_founded_year);
+        const now = new Date().getFullYear();
+        return Number.isInteger(year) && year >= 1900 && year <= now
+          ? year
+          : null;
+      })(),
     };
 
     const fullUpd = await supabase
@@ -172,6 +194,7 @@ export async function PATCH(request: Request) {
         p_working_hours: extras.working_hours,
         p_authorized_brands: extras.authorized_brands,
         p_whatsapp_phone: extras.whatsapp_phone,
+        p_company_founded_year: extras.company_founded_year,
       });
       if (extrasRpc.error) {
         return NextResponse.json(

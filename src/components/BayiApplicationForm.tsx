@@ -160,6 +160,29 @@ export function BayiApplicationForm({ dealerType, cities, onSuccess }: Props) {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-zinc-700">
+          Şirket kuruluş yılı *
+        </label>
+        <input
+          type="number"
+          required
+          min={1900}
+          max={new Date().getFullYear()}
+          placeholder="Örn. 2015"
+          value={formData.company_founded_year ?? ""}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              company_founded_year: e.target.value
+                ? Number(e.target.value)
+                : undefined,
+            })
+          }
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-[#ffc400] focus:outline-none focus:ring-2 focus:ring-[#ffc400]/20"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-zinc-700">
           Şehir *
         </label>
         <select

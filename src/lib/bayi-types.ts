@@ -108,6 +108,7 @@ export interface BayiApplication {
   whatsapp_phone?: string | null;
   full_address?: string | null;
   listing_subscription_active?: boolean | null;
+  company_founded_year?: number | null;
 }
 
 export interface DealerProfile {
@@ -128,6 +129,8 @@ export interface DealerProfile {
   whatsapp_phone?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  company_founded_year?: number | null;
+  listing_count?: number;
   cover_image_url?: string | null;
   logo_image_url?: string | null;
   // Application relation
@@ -142,6 +145,7 @@ export interface DealerProfile {
     whatsapp_phone?: string | null;
     first_name?: string | null;
     last_name?: string | null;
+    company_founded_year?: number | null;
   };
 }
 
@@ -183,4 +187,5 @@ export interface BayiApplicationFormData {
   contact_phone: string;
   dealer_name: string;
   city_id: string;
+  company_founded_year?: number;
 }

@@ -18,6 +18,7 @@ import { buildListingSeoPath, isListingDetailPath } from "@/lib/listing-seo";
 import { useSiteSearch } from "@/components/SiteSearchProvider";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 import { initialFromName } from "@/lib/user-display-name";
+import { dedupeMessageNotifications } from "@/lib/user-notifications";
 
 const linkClass =
   "text-zinc-900 hover:underline decoration-zinc-900/40 font-semibold";
@@ -28,6 +29,26 @@ const navSearchInputClass =
   "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25";
 const navSearchBtnClass =
   "shrink-0 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-extrabold text-[#ffcc00] shadow-sm hover:bg-zinc-800 active:bg-zinc-950";
+
+function MapIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10Z" />
+      <circle cx="12" cy="11" r="2.5" />
+    </svg>
+  );
+}
 
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -361,7 +382,9 @@ export function SiteHeaderClient({
         .or(`user_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
         .limit(8);
-      const rows = (data ?? []) as HeaderNotification[];
+      const rows = dedupeMessageNotifications(
+        (data ?? []) as HeaderNotification[]
+      );
 
       const listingIds = [
         ...new Set(
@@ -508,8 +531,21 @@ export function SiteHeaderClient({
             >
               {mobileSearchOpen ? <CloseIcon /> : <SearchIcon />}
             </button>
+            <Link
+              href="/harita"
+              className="inline-flex items-center justify-center rounded-md p-2 text-zinc-900 hover:bg-black/10 md:hidden"
+              aria-label="Harita"
+            >
+              <MapIcon />
+            </Link>
             {hasEnv ? (
               <>
+                <Link
+                  href="/harita"
+                  className={`${linkClass} hidden whitespace-nowrap md:inline-flex`}
+                >
+                  Harita
+                </Link>
                 <Link
                   href="/ilan-ver"
                   className="hidden whitespace-nowrap rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-extrabold text-[#ffcc00] hover:bg-zinc-800 md:inline-flex lg:px-3 lg:py-2 lg:text-sm"

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import type { DealerProfile, DealerType, ExpertizPriceItem } from "@/lib/bayi-types";
 import {
+  companyAgeLabel,
   resolveDealerCoverImageUrl,
   resolveDealerLogoImageUrl,
+  turkishPersonName,
 } from "@/lib/bayi-data";
-import { dealerTheme, parseAuthorizedBrands } from "@/lib/dealer-theme";
+import { dealerTheme } from "@/lib/dealer-theme";
 import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
 
 type Props = {
@@ -22,7 +24,6 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
   const coverImageUrl = resolveDealerCoverImageUrl(dealer, supabaseUrl);
   const logoImageUrl = resolveDealerLogoImageUrl(dealer, supabaseUrl);
   const cityName = dealer.city_name ?? "";
-  const brands = parseAuthorizedBrands(dealer.authorized_brands, 3);
   const href = `/bayi/${dealerType}/${dealer.id}`;
   const phone = dealer.contact_phone?.trim() ?? "";
   const desc = dealer.description?.trim() ?? "";
@@ -74,19 +75,35 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
           {dealerType === "galeri" ? (
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
-                {cityName ? (
-                  <p className="truncate text-[13px] font-bold text-zinc-800">
-                    {cityName}
-                  </p>
-                ) : null}
-                {brands.length > 0 ? (
-                  <p
-                    className="mt-0.5 truncate text-xs font-semibold"
-                    style={{ color: theme.primary }}
-                  >
-                    {brands.join(" · ")}
-                  </p>
-                ) : null}
+                {(() => {
+                  const person = turkishPersonName(
+                    dealer.first_name,
+                    dealer.last_name
+                  );
+                  const age = companyAgeLabel(dealer.company_founded_year);
+                  const listingCount = dealer.listing_count ?? 0;
+                  const meta = [
+                    cityName,
+                    `${listingCount} araç ilanı`,
+                    age,
+                  ].filter(Boolean);
+                  return (
+                    <>
+                      {person ? (
+                        <p className="truncate text-[14px] font-extrabold text-zinc-900">
+                          {person}
+                        </p>
+                      ) : null}
+                      {meta.length > 0 ? (
+                        <p
+                          className={`truncate text-[12.5px] font-semibold text-zinc-600 ${person ? "mt-1" : ""}`}
+                        >
+                          {meta.join("     ")}
+                        </p>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </div>
               <span className="text-zinc-400">›</span>
             </div>

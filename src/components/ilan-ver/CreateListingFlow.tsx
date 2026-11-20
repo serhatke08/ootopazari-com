@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   fetchBodyStylesForModel,
+  fetchBrandModels,
   fetchBrandModelsHierarchy,
   fetchBrandsByCategory,
   fetchChildBrandModels,
@@ -85,7 +86,10 @@ import {
   uploadListingDraftImages,
   type ListingDraftPayload,
 } from "@/lib/listing-draft";
-import { sortByCreateListingCategoryOrder } from "@/lib/vehicle-category-sort";
+import {
+  showsVehicleCatalogWithoutListings,
+  sortByCreateListingCategoryOrder,
+} from "@/lib/vehicle-category-sort";
 import { FlowSelectTile } from "@/components/ilan-ver/FlowSelectTile";
 import {
   PublishSuccessOverlay,
@@ -99,6 +103,7 @@ import {
 
 type FlowPage =
   | "category"
+  | "electricType"
   | "year"
   | "brand"
   | "model"
@@ -311,6 +316,7 @@ export function CreateListingFlow({
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [categoryCode, setCategoryCode] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState<string | null>(null);
+  const [electricBodyScope, setElectricBodyScope] = useState<string | null>(null);
   const isVehicle = isVehicleCategoryCode(categoryCode);
 
   const [vehicleYear, setVehicleYear] = useState<number | null>(null);
@@ -482,6 +488,7 @@ export function CreateListingFlow({
       categoryId,
       categoryCode,
       categoryName,
+      electricBodyScope,
       vehicleYear,
       brandId,
       brandName,
@@ -533,6 +540,7 @@ export function CreateListingFlow({
     categoryId,
     categoryCode,
     categoryName,
+    electricBodyScope,
     vehicleYear,
     brandId,
     brandName,
@@ -951,20 +959,47 @@ export function CreateListingFlow({
     await persistDraft();
   };
 
-  const loadBrands = async (catId: string) => {
-    const rows = await fetchBrandsByCategory(supabase, catId);
+  const loadBrands = async (catId: string, scope?: string | null) => {
+    let rows = await fetchBrandsByCategory(supabase, catId);
+    const electricScope = (scope ?? electricBodyScope)?.trim().toLowerCase();
+    if (categoryCode === "elektrikli" && electricScope) {
+      const ids = rows.map((r) => r.id);
+      if (ids.length) {
+        const { data } = await supabase
+          .from("vehicle_brand_models")
+          .select("brand_id")
+          .in("brand_id", ids)
+          .eq("body_type", electricScope);
+        const allowed = new Set(
+          (data ?? []).map((r: { brand_id?: string }) => String(r.brand_id ?? ""))
+        );
+        rows = rows.filter((r) => allowed.has(r.id));
+      }
+    }
     setBrands(rows);
   };
 
   const loadModels = async (bId: string) => {
-    const hier = await fetchBrandModelsHierarchy(supabase, bId);
+    const hier = showsVehicleCatalogWithoutListings(categoryCode)
+      ? {
+          hierarchical: false as const,
+          parents: await fetchBrandModels(supabase, bId),
+        }
+      : await fetchBrandModelsHierarchy(supabase, bId);
+    const electricScope = electricBodyScope?.trim().toLowerCase();
+    const filterRows = (list: IdNameRow[]) => {
+      if (categoryCode !== "elektrikli" || !electricScope) return list;
+      return list.filter(
+        (m) => String((m as IdNameRow & { body_type?: string }).body_type ?? "").toLowerCase() === electricScope
+      );
+    };
     setHierarchical(hier.hierarchical);
     if (hier.hierarchical) {
-      setParents(hier.parents);
+      setParents(filterRows(hier.parents));
       setChildren([]);
       setFlatModels([]);
     } else {
-      setFlatModels(hier.parents);
+      setFlatModels(filterRows(hier.parents));
       setParents([]);
       setChildren([]);
     }
@@ -1229,10 +1264,15 @@ export function CreateListingFlow({
     await withNavBusy(async () => {
       const code = String(c.code ?? "");
       const vehicle = isVehicleCategoryCode(code);
-      const nextPages = vehicle ? vehiclePages : otherPages;
+      const nextPages = !vehicle
+        ? otherPages
+        : code === "elektrikli"
+          ? (["category", "electricType", ...vehiclePages.filter((p) => p !== "category")] as FlowPage[])
+          : vehiclePages;
       setCategoryId(c.id);
       setCategoryCode(code);
       setCategoryName(c.name ?? code);
+      setElectricBodyScope(null);
       setBrandId(null);
       setModelId(null);
       setParentId(null);
@@ -1242,7 +1282,7 @@ export function CreateListingFlow({
       setPackageId(null);
       setPages(nextPages);
       setDraftBanner(null);
-      if (vehicle) await loadBrands(c.id);
+      if (vehicle && code !== "elektrikli") await loadBrands(c.id);
       setPageIndex(1);
       void persistDraft();
     }, c.id);
@@ -1254,7 +1294,11 @@ export function CreateListingFlow({
   ) {
     draftSkip.current = true;
     const vehicle = isVehicleCategoryCode(d.categoryCode);
-    const list = vehicle ? VEHICLE_PAGES : OTHER_PAGES;
+    const list = !vehicle
+      ? OTHER_PAGES
+      : d.categoryCode === "elektrikli"
+        ? (["category", "electricType", ...VEHICLE_PAGES.filter((p) => p !== "category")] as FlowPage[])
+        : VEHICLE_PAGES;
     // Sayfa + index'i await ÖNCESİ set et — kategori flaşını önler
     setPages(list);
     let idx = Math.min(Math.max(d.pageIndex ?? 0, 0), list.length - 1);
@@ -1268,7 +1312,8 @@ export function CreateListingFlow({
       setCategoryId(d.categoryId);
       setCategoryCode(d.categoryCode ?? null);
       setCategoryName(d.categoryName ?? null);
-      await loadBrands(d.categoryId);
+      setElectricBodyScope(d.electricBodyScope ?? null);
+      await loadBrands(d.categoryId, d.electricBodyScope ?? null);
     }
     if (d.vehicleYear) setVehicleYear(d.vehicleYear);
     if (d.brandId) {
@@ -2650,6 +2695,41 @@ export function CreateListingFlow({
         >
           {err}
         </p>
+      ) : null}
+
+      {page === "electricType" ? (
+        <div>
+          {[
+            { id: "otomobil", label: "Otomobil", icon: "otomobil" },
+            { id: "suv", label: "SUV", icon: "suv_pickup" },
+            { id: "panelvan", label: "Panelvan", icon: "panelvan" },
+          ].map((opt) => (
+            <FlowSelectTile
+              key={opt.id}
+              compact
+              title={opt.label}
+              selected={electricBodyScope === opt.id}
+              loading={tileLoading(opt.id, electricBodyScope === opt.id)}
+              disabled={navBusy}
+              leading={
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={categoryIconSrc(opt.icon)}
+                  alt=""
+                  className="h-7 w-7 object-contain"
+                />
+              }
+              onClick={() => {
+                void withNavBusy(async () => {
+                  setElectricBodyScope(opt.id);
+                  setFuelType("Elektrik");
+                  if (categoryId) await loadBrands(categoryId, opt.id);
+                  await goNext();
+                }, opt.id);
+              }}
+            />
+          ))}
+        </div>
       ) : null}
 
       {page === "category" ? (

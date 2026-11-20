@@ -35,16 +35,22 @@ export function categoryIconSrc(code: string | null | undefined): string {
     case "suv_pickup":
     case "elektrikli":
       return "/categories/suv_pickup.png";
+    case "pickup":
+      return "/categories/pickup.png";
     case "motosiklet":
       return "/categories/motosiklet.png";
     case "scooter_bisiklet":
       return "/categories/scooter_bisiklet.png";
     case "is_ve_tarim_makinesi":
       return "/categories/is_makinesi.png";
+    case "tarim":
+      return "/categories/tarim.png";
     case "atv_utv":
       return "/categories/atv_utv.png";
     case "panelvan":
       return "/categories/panelvan.png";
+    case "tir":
+      return "/categories/tir.png";
     case "klasik":
       return "/categories/klasik.png";
     case "deniz":

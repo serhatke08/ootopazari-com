@@ -198,10 +198,11 @@ export async function fetchBrandModels(
     () =>
       supabase
         .from("vehicle_brand_models")
-        .select("id,name,code,sort_order")
+        .select("id,name,code,sort_order,body_type")
         .eq("brand_id", brandId)
         .order("sort_order", { ascending: true, nullsFirst: false })
-        .order("id", { ascending: true }),
+        .order("id", { ascending: true })
+        .limit(2000),
     () =>
       supabase
         .from("vehicle_brand_models")
@@ -252,7 +253,7 @@ export async function fetchBrandModelsHierarchy(
     () =>
       supabase
         .from("vehicle_brand_models")
-        .select("id,name,code,sort_order")
+        .select("id,name,code,sort_order,body_type")
         .eq("brand_id", brandId)
         .is("parent_model_id", null)
         .order("sort_order", { ascending: true, nullsFirst: false })

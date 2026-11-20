@@ -19,7 +19,7 @@ type Props = {
 export function ListingBoostChrome({ className = "" }: Props) {
   return (
     <div
-      className={`pointer-events-none absolute left-1 top-1 z-[8] flex max-w-[calc(100%-0.5rem)] items-center gap-0.5 truncate rounded-full bg-[#ffc400] px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wide text-black shadow-sm sm:left-2 sm:top-2 sm:gap-1 sm:px-2 sm:text-[10px] ${className}`}
+      className={`pointer-events-none absolute left-1 top-1 z-[8] flex max-w-[calc(100%-0.5rem)] items-center gap-0.5 truncate rounded-md bg-[#ffc400] px-1.5 py-0.5 text-[8px] font-extrabold tracking-wide text-black shadow-md sm:left-2 sm:top-2 sm:gap-1 sm:px-2 sm:py-1 sm:text-[10px] ${className}`}
     >
       <BoostLightningIcon className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
       <span className="truncate">Öne çıkan</span>

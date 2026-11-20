@@ -4,6 +4,7 @@ export type ListingDraftPayload = {
   categoryId?: string | null;
   categoryCode?: string | null;
   categoryName?: string | null;
+  electricBodyScope?: string | null;
   vehicleYear?: number | null;
   brandId?: string | null;
   brandName?: string | null;

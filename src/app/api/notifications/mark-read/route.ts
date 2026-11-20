@@ -71,5 +71,29 @@ export async function POST(req: Request) {
       { status: 404 }
     );
   }
+
+  const { data: marked } = await supabase
+    .from("user_notifications")
+    .select("type,conversation_id,body,created_at")
+    .eq("id", notificationId)
+    .maybeSingle();
+  const createdAt = marked?.created_at ? Date.parse(String(marked.created_at)) : NaN;
+  if (
+    marked?.type === "message" &&
+    typeof marked.conversation_id === "string" &&
+    marked.conversation_id &&
+    !Number.isNaN(createdAt)
+  ) {
+    await supabase
+      .from("user_notifications")
+      .update(patch)
+      .or(mine)
+      .eq("type", "message")
+      .eq("conversation_id", marked.conversation_id)
+      .eq("body", marked.body ?? "")
+      .gte("created_at", new Date(createdAt - 30_000).toISOString())
+      .lte("created_at", new Date(createdAt + 30_000).toISOString());
+  }
+
   return NextResponse.json({ ok: true });
 }

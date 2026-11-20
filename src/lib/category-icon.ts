@@ -2,10 +2,13 @@
 const CATEGORY_ICON_BY_CODE: Record<string, number> = {
   otomobil: 1,
   suv_pickup: 2,
+  pickup: 2,
   motosiklet: 3,
   scooter_bisiklet: 4,
   is_ve_tarim_makinesi: 5,
+  tarim: 5,
   panelvan: 6,
+  tir: 6,
   klasik: 7,
   deniz: 8,
   hasarli: 9,

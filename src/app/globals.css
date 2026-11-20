@@ -412,6 +412,81 @@ html {
   animation: brand-letter-in 0.28s ease-out forwards;
 }
 
+.dealer-map-root {
+  min-height: calc(100dvh - 4.6rem);
+  height: calc(100dvh - 4.6rem);
+}
+
+body:has([data-dealer-map="true"]) main {
+  min-height: 0;
+}
+
+@media (max-width: 47.99rem) {
+  body:has([data-dealer-map="true"]) .mobile-shell-scroll {
+    overflow: hidden;
+  }
+
+  .dealer-map-root {
+    height: calc(
+      100dvh - 7.6rem - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
+    min-height: calc(
+      100dvh - 7.6rem - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+.dealer-map-root .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #e8e4dc;
+  font: inherit;
+}
+
+.dealer-map-root .dm-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.dealer-map-root .dm-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0;
+}
+
+.dealer-map-root .dm-pin-dot {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border-style: solid;
+  border-width: 2px;
+  background: #fff;
+}
+
+.dealer-map-root .dm-pin-caret {
+  margin-top: -3px;
+  font-size: 14px;
+  line-height: 1;
+  text-shadow: 0 1px 0 #fff;
+}
+
+.dealer-map-root .dm-poi {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  filter: drop-shadow(0 0 4px #fff);
+}
+
+.dealer-map-root .dm-poi.is-on svg {
+  width: 28px;
+  height: 28px;
+}
+
 @keyframes app-promo-in {
   from {
     opacity: 0;

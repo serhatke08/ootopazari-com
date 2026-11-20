@@ -5,10 +5,13 @@ import { PANEL_KEYS, type PanelKey } from "@/lib/expertiz";
 export const VEHICLE_CATEGORY_CODES = new Set([
   "otomobil",
   "suv_pickup",
+  "pickup",
   "motosiklet",
   "elektrikli",
   "panelvan",
+  "tir",
   "is_ve_tarim_makinesi",
+  "tarim",
   "scooter_bisiklet",
   "klasik",
   "deniz",
@@ -32,12 +35,13 @@ const BODY_EXPERTIZ_CODES = new Set([
   "binek",
   "suv",
   "suv_pickup",
+  "pickup",
   "panelvan",
   "panel_van",
 ]);
 
 const BODY_EXPERTIZ_NAME_RE =
-  /otomobil|\baraba\b|binek|\bsuv\b|panel\s*van|panelvan|hafif\s*ticari/;
+  /otomobil|\baraba\b|binek|\bsuv\b|pickup|pick-up|panel\s*van|panelvan|hafif\s*ticari/;
 
 const BODY_EXPERTIZ_BLOCK_RE =
   /motosiklet|motorcycle|\bmoto\b|scooter|deniz|gemi|yat|tekne|hava|u[cç]ak|helikopter|atv|utv|karavan|tar[iı]m/;
