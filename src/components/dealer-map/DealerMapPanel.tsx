@@ -116,7 +116,7 @@ function LogoDot({
     >
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        <img src={imageUrl} alt="" className="h-[78%] w-[78%] object-contain bg-white" />
       ) : asset ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={asset} alt="" className="h-[70%] w-[70%] object-contain" />

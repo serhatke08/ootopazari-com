@@ -447,19 +447,20 @@ export function DealerMap() {
     for (const dealer of visibleDealers) {
       const selected = selectedDealer?.id === dealer.id;
       const color = dealerPinColor(dealer.dealer_type, selected);
-      const size = selected ? 44 : 38;
+      const size = selected ? 48 : 42;
       const logo = logoUrls[dealer.id];
       const asset = dealerLayerAsset(dealer.dealer_type);
+      const fallbackSrc = asset ? escapeHtml(asset) : "";
       const inner = logo
-        ? `<img src="${escapeHtml(logo)}" alt="" style="width:100%;height:100%;object-fit:cover"/>`
+        ? `<img src="${escapeHtml(logo)}" alt=""${fallbackSrc ? ` onerror="this.onerror=null;this.src='${fallbackSrc}'"` : ""}/>`
         : asset
-          ? `<img src="${escapeHtml(asset)}" alt="" style="width:70%;height:70%;object-fit:contain"/>`
-          : `<span style="display:block;width:10px;height:10px;border-radius:99px;background:${color}"></span>`;
+          ? `<img src="${escapeHtml(asset)}" alt=""/>`
+          : `<span style="display:block;width:12px;height:12px;border-radius:99px;background:${color}"></span>`;
       const icon = L.divIcon({
         className: "dm-div-icon",
-        html: `<div class="dm-pin"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${color}">${inner}</div><div class="dm-pin-caret" style="color:${color}">▼</div></div>`,
-        iconSize: [52, 62],
-        iconAnchor: [26, 62],
+        html: `<div class="dm-pin"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${color}">${inner}</div><div class="dm-pin-pointer" style="border-top-color:${color}"></div></div>`,
+        iconSize: [52, 64],
+        iconAnchor: [26, 64],
       });
       const marker = L.marker([dealer.latitude, dealer.longitude], {
         icon,
