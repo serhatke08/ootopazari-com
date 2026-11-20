@@ -22,14 +22,16 @@ function LayerGlyph({
   const fg = active ? "#fff" : "#757575";
   if (layer.asset) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={layer.asset}
-        alt=""
-        width={16}
-        height={16}
-        className={`h-4 w-4 object-contain ${active ? "opacity-100" : "opacity-45"}`}
-      />
+      <span className="flex h-[22px] w-[22px] items-center justify-center overflow-hidden rounded-full bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={layer.asset}
+          alt=""
+          width={18}
+          height={18}
+          className="h-[80%] w-[80%] object-contain"
+        />
+      </span>
     );
   }
   if (layer.id === "petrol") {

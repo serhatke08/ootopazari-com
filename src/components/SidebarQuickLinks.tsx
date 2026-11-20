@@ -54,7 +54,7 @@ export function SidebarQuickLinks({
             </span>
           ) : item.image ? (
             <span
-              className={`relative shrink-0 overflow-hidden bg-[#ffcc00] ${iconBox}`}
+              className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-white ${iconBox}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -62,7 +62,7 @@ export function SidebarQuickLinks({
                 alt=""
                 width={iconSize}
                 height={iconSize}
-                className={compact ? "h-7 w-7 object-cover" : "h-9 w-9 object-cover"}
+                className={compact ? "h-6 w-6 object-contain" : "h-8 w-8 object-contain"}
               />
             </span>
           ) : (

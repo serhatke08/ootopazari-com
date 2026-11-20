@@ -32,7 +32,7 @@ function QuickLinkItem({
       }}
     >
       <span
-        className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-[2.5px] border-black ring-1 ring-zinc-900/10"
+        className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-[2.5px] border-black bg-white ring-1 ring-zinc-900/10"
         style={item.glyph ? { backgroundColor: item.fillColor } : undefined}
       >
         {item.image ? (
@@ -40,7 +40,7 @@ function QuickLinkItem({
           <img
             src={item.image}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-[78%] w-[78%] object-contain"
             draggable={false}
           />
         ) : item.glyph ? (

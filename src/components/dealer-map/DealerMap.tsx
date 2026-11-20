@@ -11,10 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
-import {
-  fetchDealerMapPins,
-  resolveDealerMapLogos,
-} from "@/lib/dealer-map-pins";
+import { fetchDealerMapPins } from "@/lib/dealer-map-pins";
 import {
   ESRI_STREET_TILES,
   MAP_ENABLED_LAYERS_KEY,
@@ -202,7 +199,7 @@ export function DealerMap() {
   const [filtersReady, setFiltersReady] = useState(false);
   const [dealers, setDealers] = useState<DealerMapPin[]>([]);
   const [pois, setPois] = useState<MapPoi[]>([]);
-  const [logoUrls, setLogoUrls] = useState<Record<string, string | null>>({});
+  const logoUrls: Record<string, string | null> = {};
   const [selectedDealer, setSelectedDealer] = useState<DealerMapPin | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<MapPoi | null>(null);
   const [loading, setLoading] = useState(true);
@@ -334,8 +331,6 @@ export function DealerMap() {
         if (cancelled) return;
         setDealers(rows);
         setLoading(false);
-        const logos = await resolveDealerMapLogos(rows);
-        if (!cancelled) setLogoUrls(logos);
       } catch {
         if (!cancelled) {
           setLoading(false);

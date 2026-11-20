@@ -149,7 +149,7 @@ export function DealerCircleOverlay() {
           <img
             src={reveal.logoSrc}
             alt=""
-            className="h-24 w-24 rounded-full object-cover shadow-2xl ring-4 ring-white/25 sm:h-28 sm:w-28"
+            className="h-24 w-24 rounded-full bg-white object-contain p-3 shadow-2xl ring-4 ring-white/25 sm:h-28 sm:w-28"
           />
         ) : reveal.glyph ? (
           <span className="flex h-24 w-24 items-center justify-center rounded-full bg-white/15 text-white ring-4 ring-white/25 sm:h-28 sm:w-28">
