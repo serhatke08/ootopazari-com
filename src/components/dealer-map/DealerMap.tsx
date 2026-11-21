@@ -10,6 +10,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { formatDealerMapAddress } from "@/lib/dealer-map-address";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
 import { fetchDealerMapPins } from "@/lib/dealer-map-pins";
 import {
@@ -130,7 +131,7 @@ function DealerPreviewCard({
   onDirections: () => void;
 }) {
   const theme = dealerPopupTheme(dealer.dealer_type);
-  const line = [dealer.full_address, dealer.city_name].filter(Boolean).join(" · ");
+  const loc = formatDealerMapAddress(dealer.full_address, dealer.city_name);
   const person =
     dealer.dealer_type === "galeri"
       ? turkishPersonName(dealer.first_name, dealer.last_name)
@@ -187,23 +188,30 @@ function DealerPreviewCard({
             </div>
           </div>
         </div>
-        <span
-          className="mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold"
-          style={{
-            backgroundColor: `${theme.primary}14`,
-            color: theme.primaryDark,
-          }}
-        >
-          {dealerTypeShortLabel(dealer.dealer_type)}
-        </span>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <span
+            className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold"
+            style={{
+              backgroundColor: `${theme.primary}14`,
+              color: theme.primaryDark,
+            }}
+          >
+            {dealerTypeShortLabel(dealer.dealer_type)}
+          </span>
+          {loc.city ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[11px] font-extrabold text-zinc-900">
+              {loc.city}
+            </span>
+          ) : null}
+        </div>
         {person ? (
           <p className="mt-2 truncate text-[13.5px] font-extrabold text-zinc-900">
             {person}
           </p>
         ) : null}
-        {line ? (
+        {loc.line ? (
           <p className="mt-1.5 line-clamp-2 text-[12.5px] font-semibold text-zinc-600">
-            {line}
+            {loc.line}
           </p>
         ) : null}
         <div className="mt-2.5 flex gap-2">
