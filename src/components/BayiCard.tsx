@@ -67,7 +67,11 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
             <h3 className="min-w-0 flex-1 text-center text-[17px] font-bold tracking-wide text-white drop-shadow">
               {turkishUpper(dealer.dealer_name)}
             </h3>
-            <DealerVerifiedTick size={18} className="mb-0.5 shrink-0 text-white" />
+            <DealerVerifiedTick
+              size={18}
+              dealerType={dealerType}
+              className="mb-0.5 shrink-0"
+            />
           </div>
         </div>
 

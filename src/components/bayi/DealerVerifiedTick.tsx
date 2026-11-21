@@ -1,10 +1,28 @@
+import { dealerBadgeSrc } from "@/lib/dealer-logos";
+
 export function DealerVerifiedTick({
   className = "",
   size = 16,
+  dealerType,
 }: {
   className?: string;
   size?: number;
+  dealerType?: string | null;
 }) {
+  const badge = dealerType ? dealerBadgeSrc(dealerType) : undefined;
+  if (badge) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={badge}
+        alt="Doğrulanmış bayi"
+        width={size}
+        height={size}
+        className={`inline-block shrink-0 object-contain ${className}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
     <svg
       className={`inline-block shrink-0 text-blue-600 ${className}`}

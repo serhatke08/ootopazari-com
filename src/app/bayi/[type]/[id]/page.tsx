@@ -162,7 +162,11 @@ export default async function BayiDetailPage({ params }: Props) {
         <div className="min-w-0 pb-0.5 pt-10 sm:pt-12">
           <h1 className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
             <span>{dealer.dealer_name}</span>
-            <DealerVerifiedTick size={18} className="translate-y-[1px]" />
+            <DealerVerifiedTick
+              size={18}
+              dealerType={dealerType}
+              className="translate-y-[1px]"
+            />
           </h1>
           {dealerType === "galeri" && contactName ? (
             <p className="mt-1 text-sm font-extrabold text-zinc-800">

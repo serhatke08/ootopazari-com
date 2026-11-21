@@ -165,7 +165,11 @@ function DealerPreviewCard({
           <p className="min-w-0 flex-1 text-[17px] font-bold tracking-wide text-white drop-shadow">
             {turkishUpper(dealer.dealer_name)}
           </p>
-          <DealerVerifiedTick size={18} className="mb-0.5 shrink-0 text-white" />
+          <DealerVerifiedTick
+            size={18}
+            dealerType={dealer.dealer_type}
+            className="mb-0.5 shrink-0"
+          />
         </div>
       </div>
       <div className="px-3 py-2.5">
