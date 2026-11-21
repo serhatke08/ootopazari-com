@@ -1,5 +1,5 @@
 /** Uygulamadaki bayi PNG’leri — `otopazar/images` ile birebir. */
-export const DEALER_LOGO_VER = "20261121h";
+export const DEALER_LOGO_VER = "20261121i";
 
 const TYPE_LOGOS: Record<string, string> = {
   galeri: `/menu/galeri.png?v=${DEALER_LOGO_VER}`,
