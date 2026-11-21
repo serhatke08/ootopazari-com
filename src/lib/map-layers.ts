@@ -95,7 +95,8 @@ export const MAP_POI_MIN_ZOOM = 11;
 export const MAP_SHEET_MIN = 0.2;
 export const MAP_SHEET_MAX = 0.72;
 export const MAP_FIT_MAX_ZOOM = 6.8;
-export const MAP_ENABLED_LAYERS_KEY = "dealer_map_enabled_layers_v2";
+export const MAP_ENABLED_LAYERS_KEY = "dealer_map_enabled_layers_v3";
+export const MAP_ENABLED_LAYERS_KEY_V2 = "dealer_map_enabled_layers_v2";
 export const MAP_ENABLED_TYPES_LEGACY_KEY = "dealer_map_enabled_types";
 export const ESRI_STREET_TILES =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";

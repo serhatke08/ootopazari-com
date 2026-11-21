@@ -15,7 +15,9 @@ import { fetchDealerMapPins } from "@/lib/dealer-map-pins";
 import {
   ESRI_STREET_TILES,
   MAP_ENABLED_LAYERS_KEY,
+  MAP_ENABLED_LAYERS_KEY_V2,
   MAP_ENABLED_TYPES_LEGACY_KEY,
+  MAP_SERVICE_LAYERS,
   MAP_FIT_MAX_ZOOM,
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
@@ -388,19 +390,27 @@ export function DealerMap() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(MAP_ENABLED_LAYERS_KEY);
+      const v2 = localStorage.getItem(MAP_ENABLED_LAYERS_KEY_V2);
       const legacy = localStorage.getItem(MAP_ENABLED_TYPES_LEGACY_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
         if (Array.isArray(parsed)) {
           setEnabled(parseEnabledLayers(parsed.map(String)));
         }
+      } else if (v2) {
+        const parsed = JSON.parse(v2) as unknown;
+        const next = parseEnabledLayers(
+          Array.isArray(parsed) ? parsed.map(String) : null
+        );
+        for (const layer of MAP_SERVICE_LAYERS) next.add(layer.id);
+        persistFilters(next);
+        setEnabled(next);
       } else if (legacy) {
         const parsed = JSON.parse(legacy) as unknown;
         const next = parseEnabledLayers(
           Array.isArray(parsed) ? parsed.map(String) : null
         );
         for (const poi of POI_LAYER_IDS) next.add(poi);
-        next.add("servis");
         setEnabled(next);
       }
     } catch {
