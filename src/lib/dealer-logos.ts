@@ -1,11 +1,19 @@
 /** Uygulamadaki bayi PNG’leri — `otopazar/images` ile birebir. */
-export const DEALER_LOGO_VER = "20261121c";
+export const DEALER_LOGO_VER = "20261121d";
 
 const TYPE_LOGOS: Record<string, string> = {
   galeri: `/menu/galeri.png?v=${DEALER_LOGO_VER}`,
   expertiz: `/menu/expertiz.png?v=${DEALER_LOGO_VER}`,
   kiralama: `/menu/kiralama_oto.png?v=${DEALER_LOGO_VER}`,
   parcaci: `/menu/parca.png?v=${DEALER_LOGO_VER}`,
+  servis: `/menu/servis.png?v=${DEALER_LOGO_VER}`,
+  kaporta: `/menu/kaporta.png?v=${DEALER_LOGO_VER}`,
+  lastik: `/menu/lastik.png?v=${DEALER_LOGO_VER}`,
+  cekici: `/menu/cekici.png?v=${DEALER_LOGO_VER}`,
+  oto_elektrik: `/menu/oto_elektrik.png?v=${DEALER_LOGO_VER}`,
+  aksesuar: `/menu/aksesuar.png?v=${DEALER_LOGO_VER}`,
+  yikama: `/menu/yikama.png?v=${DEALER_LOGO_VER}`,
+  sigorta: `/menu/sigorta.png?v=${DEALER_LOGO_VER}`,
 };
 
 const BADGES: Record<string, string> = {

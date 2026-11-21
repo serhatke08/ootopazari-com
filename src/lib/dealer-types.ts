@@ -1,3 +1,5 @@
+import { dealerTypeLogoSrc } from "@/lib/dealer-logos";
+
 export const DEALER_TYPE_VALUES = [
   "galeri",
   "expertiz",
@@ -13,18 +15,18 @@ export const DEALER_TYPE_META: Record<
 > = {
   galeri: {
     label: "Galeri",
-    iconSrc: "/menu/galeri.png?v=20261121c",
+    iconSrc: dealerTypeLogoSrc("galeri") ?? "",
   },
   expertiz: {
     label: "Expertiz",
-    iconSrc: "/menu/expertiz.png?v=20261121c",
+    iconSrc: dealerTypeLogoSrc("expertiz") ?? "",
   },
   kiralama: {
     label: "Kiralama",
-    iconSrc: "/menu/kiralama_oto.png?v=20261121c",
+    iconSrc: dealerTypeLogoSrc("kiralama") ?? "",
   },
   parcaci: {
     label: "Yedek Parça",
-    iconSrc: "/menu/parca.png?v=20261121c",
+    iconSrc: dealerTypeLogoSrc("parcaci") ?? "",
   },
 };

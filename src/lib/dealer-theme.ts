@@ -1,4 +1,5 @@
 import { DEALER_TYPES, DEALER_TYPE_LABELS, type DealerType } from "@/lib/bayi-types";
+import { dealerTypeLogoSrc } from "@/lib/dealer-logos";
 import { homeShortcutFromHref } from "@/lib/home-shortcuts";
 
 export type DealerTheme = {
@@ -16,7 +17,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#3F0FA8",
     soft: "#F3ECFF",
     ink: "#1A0B3D",
-    logoSrc: "/menu/galeri.png?v=20261121c",
+    logoSrc: dealerTypeLogoSrc("galeri") ?? "",
     label: DEALER_TYPE_LABELS.galeri,
   },
   expertiz: {
@@ -24,7 +25,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#7A0E0E",
     soft: "#FDECEC",
     ink: "#3B0A0A",
-    logoSrc: "/menu/expertiz.png?v=20261121c",
+    logoSrc: dealerTypeLogoSrc("expertiz") ?? "",
     label: DEALER_TYPE_LABELS.expertiz,
   },
   kiralama: {
@@ -32,7 +33,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#005F96",
     soft: "#E8F5FC",
     ink: "#06283D",
-    logoSrc: "/menu/kiralama_oto.png?v=20261121c",
+    logoSrc: dealerTypeLogoSrc("kiralama") ?? "",
     label: DEALER_TYPE_LABELS.kiralama,
   },
   parcaci: {
@@ -40,7 +41,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#1F4610",
     soft: "#EDF6E8",
     ink: "#102508",
-    logoSrc: "/menu/parca.png?v=20261121c",
+    logoSrc: dealerTypeLogoSrc("parcaci") ?? "",
     label: DEALER_TYPE_LABELS.parcaci,
   },
   aksesuar: {
@@ -48,7 +49,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#5E560F",
     soft: "#F4F6E8",
     ink: "#2A2808",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("aksesuar") ?? "",
     label: DEALER_TYPE_LABELS.aksesuar,
   },
   servis: {
@@ -56,7 +57,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#093270",
     soft: "#E8F0FA",
     ink: "#051A3A",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("servis") ?? "",
     label: DEALER_TYPE_LABELS.servis,
   },
   kaporta: {
@@ -64,7 +65,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#4E352D",
     soft: "#F3EEEB",
     ink: "#2A1C18",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("kaporta") ?? "",
     label: DEALER_TYPE_LABELS.kaporta,
   },
   lastik: {
@@ -72,7 +73,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#3B4D56",
     soft: "#EEF2F4",
     ink: "#1C262A",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("lastik") ?? "",
     label: DEALER_TYPE_LABELS.lastik,
   },
   cekici: {
@@ -80,7 +81,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#C66E00",
     soft: "#FFF4E0",
     ink: "#4A2A00",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("cekici") ?? "",
     label: DEALER_TYPE_LABELS.cekici,
   },
   oto_elektrik: {
@@ -88,7 +89,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#8C1142",
     soft: "#FCE8F0",
     ink: "#3A071B",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("oto_elektrik") ?? "",
     label: DEALER_TYPE_LABELS.oto_elektrik,
   },
   yikama: {
@@ -96,7 +97,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#0277B0",
     soft: "#E6F6FD",
     ink: "#01364F",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("yikama") ?? "",
     label: DEALER_TYPE_LABELS.yikama,
   },
   sigorta: {
@@ -104,7 +105,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#123F16",
     soft: "#E8F5E9",
     ink: "#08240A",
-    logoSrc: "",
+    logoSrc: dealerTypeLogoSrc("sigorta") ?? "",
     label: DEALER_TYPE_LABELS.sigorta,
   },
 };

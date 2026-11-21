@@ -2,8 +2,6 @@
 
 import { Children, type ReactNode } from "react";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
-import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
-import type { HomeShortcutGlyph } from "@/lib/home-shortcuts";
 import {
   MAP_PRIMARY_LAYERS,
   MAP_SERVICE_LAYERS,
@@ -61,12 +59,7 @@ function LayerGlyph({
       </svg>
     );
   }
-  const glyph = layer.id as HomeShortcutGlyph;
-  return (
-    <span style={{ color: fg }}>
-      <HomeShortcutGlyphIcon name={glyph} className="h-3.5 w-3.5" />
-    </span>
-  );
+  return <span className="block h-2.5 w-2.5 rounded-full" style={{ background: fg }} />;
 }
 
 function MiniLayerButton({

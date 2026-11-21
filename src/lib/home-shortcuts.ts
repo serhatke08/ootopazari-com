@@ -1,13 +1,6 @@
-export type HomeShortcutGlyph =
-  | "widgets"
-  | "aksesuar"
-  | "servis"
-  | "kaporta"
-  | "lastik"
-  | "cekici"
-  | "oto_elektrik"
-  | "yikama"
-  | "sigorta";
+import { dealerTypeLogoSrc } from "@/lib/dealer-logos";
+
+export type HomeShortcutGlyph = "widgets";
 
 export type HomeShortcut = {
   href: string;
@@ -29,73 +22,73 @@ export const HOME_SHORTCUTS: HomeShortcut[] = [
     href: "/bayi/galeri",
     label: "Galeri",
     fillColor: "#5D17EB",
-    image: "/menu/galeri.png?v=20261121c",
+    image: dealerTypeLogoSrc("galeri"),
   },
   {
     href: "/bayi/expertiz",
     label: "Expertiz",
     fillColor: "#A91414",
-    image: "/menu/expertiz.png?v=20261121c",
+    image: dealerTypeLogoSrc("expertiz"),
   },
   {
     href: "/bayi/kiralama",
     label: "Kiralama",
     fillColor: "#0097B2",
-    image: "/menu/kiralama_oto.png?v=20261121c",
+    image: dealerTypeLogoSrc("kiralama"),
   },
   {
     href: "/bayi/parcaci",
     label: "Yedek Parça",
     fillColor: "#2E6417",
-    image: "/menu/parca.png?v=20261121c",
+    image: dealerTypeLogoSrc("parcaci"),
   },
   {
     href: "/bayi/aksesuar",
     label: "Aksesuar",
     fillColor: "#827717",
-    glyph: "aksesuar",
+    image: dealerTypeLogoSrc("aksesuar"),
   },
   {
     href: "/bayi/servis",
     label: "Servis",
     fillColor: "#0D47A1",
-    glyph: "servis",
+    image: dealerTypeLogoSrc("servis"),
   },
   {
     href: "/bayi/kaporta",
     label: "Kaporta ve Boya",
     fillColor: "#6D4C41",
-    glyph: "kaporta",
+    image: dealerTypeLogoSrc("kaporta"),
   },
   {
     href: "/bayi/lastik",
     label: "Lastik",
     fillColor: "#546E7A",
-    glyph: "lastik",
+    image: dealerTypeLogoSrc("lastik"),
   },
   {
     href: "/bayi/cekici",
     label: "Çekici",
     fillColor: "#FF8F00",
-    glyph: "cekici",
+    image: dealerTypeLogoSrc("cekici"),
   },
   {
     href: "/bayi/oto_elektrik",
     label: "Oto Elektrik",
     fillColor: "#C2185B",
-    glyph: "oto_elektrik",
+    image: dealerTypeLogoSrc("oto_elektrik"),
   },
   {
     href: "/bayi/yikama",
     label: "Yıkama",
     fillColor: "#039BE5",
-    glyph: "yikama",
+    image: dealerTypeLogoSrc("yikama"),
   },
   {
     href: "/bayi/sigorta",
     label: "Sigorta",
     fillColor: "#1B5E20",
-    glyph: "sigorta",
+    image: dealerTypeLogoSrc("sigorta"),
   },
 ];
 

@@ -1,4 +1,5 @@
 import { DEALER_THEMES } from "@/lib/dealer-theme";
+import { dealerTypeLogoSrc } from "@/lib/dealer-logos";
 import { DEALER_TYPE_LABELS, DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
 
 export const MAP_LAYER_IDS = [
@@ -44,37 +45,37 @@ export const MAP_PRIMARY_LAYERS: MapLayer[] = [
     id: "galeri",
     labelTr: "Galeri",
     color: "#5D17EB",
-    asset: "/menu/galeri.png?v=20261121c",
+    asset: dealerTypeLogoSrc("galeri"),
   },
   {
     id: "kiralama",
     labelTr: "Kiralama",
     color: "#0097B2",
-    asset: "/menu/kiralama_oto.png?v=20261121c",
+    asset: dealerTypeLogoSrc("kiralama"),
   },
   {
     id: "expertiz",
     labelTr: "Expertiz",
     color: "#A91414",
-    asset: "/menu/expertiz.png?v=20261121c",
+    asset: dealerTypeLogoSrc("expertiz"),
   },
   {
     id: "parcaci",
     labelTr: "Parça",
     color: "#E65100",
-    asset: "/menu/parca.png?v=20261121c",
+    asset: dealerTypeLogoSrc("parcaci"),
   },
 ];
 
 export const MAP_SERVICE_LAYERS: MapLayer[] = [
-  { id: "servis", labelTr: "Servis", color: "#0D47A1" },
-  { id: "kaporta", labelTr: "Kaporta", color: "#6D4C41" },
-  { id: "lastik", labelTr: "Lastik", color: "#546E7A" },
-  { id: "cekici", labelTr: "Çekici", color: "#FF8F00" },
-  { id: "oto_elektrik", labelTr: "Elektrik", color: "#C2185B" },
-  { id: "aksesuar", labelTr: "Aksesuar", color: "#827717" },
-  { id: "yikama", labelTr: "Yıkama", color: "#039BE5" },
-  { id: "sigorta", labelTr: "Sigorta", color: "#1B5E20" },
+  { id: "servis", labelTr: "Servis", color: "#0D47A1", asset: dealerTypeLogoSrc("servis") },
+  { id: "kaporta", labelTr: "Kaporta", color: "#6D4C41", asset: dealerTypeLogoSrc("kaporta") },
+  { id: "lastik", labelTr: "Lastik", color: "#546E7A", asset: dealerTypeLogoSrc("lastik") },
+  { id: "cekici", labelTr: "Çekici", color: "#FF8F00", asset: dealerTypeLogoSrc("cekici") },
+  { id: "oto_elektrik", labelTr: "Elektrik", color: "#C2185B", asset: dealerTypeLogoSrc("oto_elektrik") },
+  { id: "aksesuar", labelTr: "Aksesuar", color: "#827717", asset: dealerTypeLogoSrc("aksesuar") },
+  { id: "yikama", labelTr: "Yıkama", color: "#039BE5", asset: dealerTypeLogoSrc("yikama") },
+  { id: "sigorta", labelTr: "Sigorta", color: "#1B5E20", asset: dealerTypeLogoSrc("sigorta") },
 ];
 
 export const MAP_LAYERS: MapLayer[] = [
@@ -102,18 +103,7 @@ export const ESRI_STREET_TILES =
 export const ALL_DEALER_TYPE_CODES = new Set<string>(DEALER_TYPES);
 
 export function dealerLayerAsset(type: string): string | undefined {
-  switch (type) {
-    case "galeri":
-      return "/menu/galeri.png?v=20261121c";
-    case "kiralama":
-      return "/menu/kiralama_oto.png?v=20261121c";
-    case "expertiz":
-      return "/menu/expertiz.png?v=20261121c";
-    case "parcaci":
-      return "/menu/parca.png?v=20261121c";
-    default:
-      return undefined;
-  }
+  return dealerTypeLogoSrc(type);
 }
 
 export function dealerMatchesLayer(type: string, enabled: Set<string>): boolean {
