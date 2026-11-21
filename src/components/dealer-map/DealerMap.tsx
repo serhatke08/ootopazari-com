@@ -11,7 +11,10 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
-import { fetchDealerMapPins } from "@/lib/dealer-map-pins";
+import {
+  fetchDealerMapPins,
+  resolveDealerMapLogos,
+} from "@/lib/dealer-map-pins";
 import {
   ESRI_STREET_TILES,
   MAP_ENABLED_LAYERS_KEY,
@@ -201,7 +204,7 @@ export function DealerMap() {
   const [filtersReady, setFiltersReady] = useState(false);
   const [dealers, setDealers] = useState<DealerMapPin[]>([]);
   const [pois, setPois] = useState<MapPoi[]>([]);
-  const logoUrls: Record<string, string | null> = {};
+  const [logoUrls, setLogoUrls] = useState<Record<string, string | null>>({});
   const [selectedDealer, setSelectedDealer] = useState<DealerMapPin | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<MapPoi | null>(null);
   const [loading, setLoading] = useState(true);
@@ -333,6 +336,8 @@ export function DealerMap() {
         if (cancelled) return;
         setDealers(rows);
         setLoading(false);
+        const logos = await resolveDealerMapLogos(rows);
+        if (!cancelled) setLogoUrls(logos);
       } catch {
         if (!cancelled) {
           setLoading(false);
@@ -446,11 +451,14 @@ export function DealerMap() {
       const ring = dealerPinColor(dealer.dealer_type, selected);
       const tagColor = dealerPinTagColor(dealer.dealer_type);
       const size = selected ? 44 : 38;
+      const logo = logoUrls[dealer.id];
       const asset = dealerLayerAsset(dealer.dealer_type);
       const tag = escapeHtml(dealerPinRimLabel(dealer.dealer_type));
-      const inner = asset
-        ? `<img src="${escapeHtml(asset)}" alt="" style="width:calc(100% - 10px);height:calc(100% - 10px);object-fit:contain"/>`
-        : `<span style="display:block;width:10px;height:10px;border-radius:99px;background:${tagColor}"></span>`;
+      const inner = logo
+        ? `<img src="${escapeHtml(logo)}" alt="" style="width:100%;height:100%;object-fit:cover"/>`
+        : asset
+          ? `<img src="${escapeHtml(asset)}" alt="" style="width:calc(100% - 10px);height:calc(100% - 10px);object-fit:contain"/>`
+          : `<span style="display:block;width:10px;height:10px;border-radius:99px;background:${tagColor}"></span>`;
       const icon = L.divIcon({
         className: "dm-div-icon",
         html: `<div class="dm-pin"><div class="dm-pin-wrap"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${ring}">${inner}</div><span class="dm-pin-tag" style="background:${tagColor}">${tag}</span></div><div class="dm-pin-caret" style="color:${tagColor}">▼</div></div>`,

@@ -1,4 +1,4 @@
-import { parseBayiPhotoPaths, signBayiPhotoUrl } from "@/lib/bayi-photos";
+import { signBayiPhotoUrl } from "@/lib/bayi-photos";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export type DealerMapPin = {
@@ -21,9 +21,8 @@ export type DealerMapPin = {
   last_name: string | null;
 };
 
+/** Pin içi: yalnız tabela. */
 export function firstMapPinPhotoPath(pin: DealerMapPin): string | null {
-  const workplace = parseBayiPhotoPaths(pin.workplace_photos_json);
-  if (workplace[0]) return workplace[0];
   const sign = pin.signboard_photo_storage_path?.trim();
   return sign || null;
 }
