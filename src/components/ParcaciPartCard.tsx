@@ -16,7 +16,7 @@ function conditionClass(condition: ParcaciListingCardItem["condition"]) {
 
 export function ParcaciPartCard({ item }: { item: ParcaciListingCardItem }) {
   return (
-    <article className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article className="overflow-hidden rounded-none border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <Link href={`/parca/${item.id}`} className="block">
         <div className="relative aspect-[4/3] w-full bg-zinc-100">
           {item.imageUrl ? (

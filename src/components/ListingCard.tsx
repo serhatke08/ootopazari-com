@@ -279,7 +279,7 @@ export function ListingCard({
 
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-[10px] border bg-white shadow-sm transition ${
+      className={`group relative flex flex-col overflow-hidden rounded-none border bg-white shadow-sm transition ${
         highlightPassive || passivePayment
           ? "border-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
           : showBoostGoldBorder
