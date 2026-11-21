@@ -1,4 +1,4 @@
-import { signBayiPhotoUrl } from "@/lib/bayi-photos";
+import { parseBayiPhotoPaths, signBayiPhotoUrl } from "@/lib/bayi-photos";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export type DealerMapPin = {
@@ -25,6 +25,11 @@ export type DealerMapPin = {
 export function firstMapPinPhotoPath(pin: DealerMapPin): string | null {
   const sign = pin.signboard_photo_storage_path?.trim();
   return sign || null;
+}
+
+/** Popup kapak: yalnız yatay dükkan fotoğrafı. */
+export function firstMapPinCoverPath(pin: DealerMapPin): string | null {
+  return parseBayiPhotoPaths(pin.workplace_photos_json)[0] || null;
 }
 
 function toPin(row: Record<string, unknown>): DealerMapPin | null {
@@ -80,6 +85,21 @@ export async function resolveDealerMapLogos(
   const entries = await Promise.all(
     pins.map(async (pin) => {
       const path = firstMapPinPhotoPath(pin);
+      if (!path) return [pin.id, null] as const;
+      const url = await signBayiPhotoUrl(supabase, path);
+      return [pin.id, url] as const;
+    })
+  );
+  return Object.fromEntries(entries);
+}
+
+export async function resolveDealerMapCovers(
+  pins: DealerMapPin[]
+): Promise<Record<string, string | null>> {
+  const supabase = createSupabaseBrowserClient();
+  const entries = await Promise.all(
+    pins.map(async (pin) => {
+      const path = firstMapPinCoverPath(pin);
       if (!path) return [pin.id, null] as const;
       const url = await signBayiPhotoUrl(supabase, path);
       return [pin.id, url] as const;

@@ -13,6 +13,7 @@ import {
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
 import {
   fetchDealerMapPins,
+  resolveDealerMapCovers,
   resolveDealerMapLogos,
 } from "@/lib/dealer-map-pins";
 import {
@@ -118,12 +119,14 @@ function dealerPopupTheme(type: string) {
 function DealerPreviewCard({
   dealer,
   coverUrl,
+  logoUrl,
   onClose,
   onOpen,
   onDirections,
 }: {
   dealer: DealerMapPin;
   coverUrl?: string | null;
+  logoUrl?: string | null;
   onClose: () => void;
   onOpen: () => void;
   onDirections: () => void;
@@ -134,16 +137,17 @@ function DealerPreviewCard({
     dealer.dealer_type === "galeri"
       ? turkishPersonName(dealer.first_name, dealer.last_name)
       : "";
-  const tabela = coverUrl?.trim() || "";
+  const yatay = coverUrl?.trim() || "";
+  const tabela = logoUrl?.trim() || "";
   return (
     <div
       className="overflow-hidden rounded-[18px] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
       style={{ border: `1.4px solid ${theme.primary}8C` }}
     >
-      <div className="relative h-[168px] w-full overflow-hidden bg-white">
-        {tabela ? (
+      <div className="relative h-[148px] w-full overflow-hidden rounded-t-[18px] bg-zinc-100">
+        {yatay ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={tabela} alt="" className="h-full w-full object-contain" />
+          <img src={yatay} alt="" className="h-full w-full object-contain" />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"
@@ -161,16 +165,29 @@ function DealerPreviewCard({
           ×
         </button>
       </div>
-      <div className="px-3 py-2.5">
-        <div className="flex items-start gap-2">
-          <p className="min-w-0 flex-1 text-[17px] font-bold tracking-wide text-zinc-900">
-            {turkishUpper(dealer.dealer_name)}
-          </p>
-          <DealerVerifiedTick
-            size={18}
-            dealerType={dealer.dealer_type}
-            className="mt-0.5 shrink-0"
-          />
+      <div className="px-3 pb-2.5 pt-0">
+        <div className={`flex items-end gap-2.5 ${tabela ? "-mt-[22px]" : "mt-2.5"}`}>
+          {tabela ? (
+            <div
+              className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-white shadow-md ring-[3px] ring-white"
+              title="Tabela"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={tabela} alt="" className="h-full w-full object-cover" />
+            </div>
+          ) : null}
+          <div className="min-w-0 flex-1 pb-0.5">
+            <div className="flex items-start gap-1.5">
+              <p className="min-w-0 flex-1 text-[17px] font-bold tracking-wide text-zinc-900">
+                {turkishUpper(dealer.dealer_name)}
+              </p>
+              <DealerVerifiedTick
+                size={18}
+                dealerType={dealer.dealer_type}
+                className="mt-0.5 shrink-0"
+              />
+            </div>
+          </div>
         </div>
         <span
           className="mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold"
@@ -274,6 +291,7 @@ export function DealerMap() {
   const [dealers, setDealers] = useState<DealerMapPin[]>([]);
   const [pois, setPois] = useState<MapPoi[]>([]);
   const [logoUrls, setLogoUrls] = useState<Record<string, string | null>>({});
+  const [coverUrls, setCoverUrls] = useState<Record<string, string | null>>({});
   const [selectedDealer, setSelectedDealer] = useState<DealerMapPin | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<MapPoi | null>(null);
   const [loading, setLoading] = useState(true);
@@ -405,8 +423,14 @@ export function DealerMap() {
         if (cancelled) return;
         setDealers(rows);
         setLoading(false);
-        const logos = await resolveDealerMapLogos(rows);
-        if (!cancelled) setLogoUrls(logos);
+        const [logos, covers] = await Promise.all([
+          resolveDealerMapLogos(rows),
+          resolveDealerMapCovers(rows),
+        ]);
+        if (!cancelled) {
+          setLogoUrls(logos);
+          setCoverUrls(covers);
+        }
       } catch {
         if (!cancelled) {
           setLoading(false);
@@ -670,7 +694,8 @@ export function DealerMap() {
           <div className="absolute inset-x-3 z-[520] lg:bottom-4 lg:left-4 lg:right-auto lg:w-[22rem] max-lg:hidden">
             <DealerPreviewCard
               dealer={selectedDealer}
-              coverUrl={logoUrls[selectedDealer.id]}
+              coverUrl={coverUrls[selectedDealer.id]}
+              logoUrl={logoUrls[selectedDealer.id]}
               onClose={() => setSelectedDealer(null)}
               onOpen={() => openDealer(selectedDealer)}
               onDirections={() =>
@@ -696,7 +721,8 @@ export function DealerMap() {
           >
             <DealerPreviewCard
               dealer={selectedDealer}
-              coverUrl={logoUrls[selectedDealer.id]}
+              coverUrl={coverUrls[selectedDealer.id]}
+              logoUrl={logoUrls[selectedDealer.id]}
               onClose={() => setSelectedDealer(null)}
               onOpen={() => openDealer(selectedDealer)}
               onDirections={() =>
