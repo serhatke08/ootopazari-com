@@ -2,8 +2,11 @@
 
 import { Children, type ReactNode } from "react";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
+import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
+import type { HomeShortcutGlyph } from "@/lib/home-shortcuts";
 import {
-  MAP_LAYERS,
+  MAP_PRIMARY_LAYERS,
+  MAP_SERVICE_LAYERS,
   dealerLayerAsset,
   dealerThemePrimary,
   dealerTypeShortLabel,
@@ -58,10 +61,11 @@ function LayerGlyph({
       </svg>
     );
   }
+  const glyph = layer.id as HomeShortcutGlyph;
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2" aria-hidden>
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-    </svg>
+    <span style={{ color: fg }}>
+      <HomeShortcutGlyphIcon name={glyph} className="h-3.5 w-3.5" />
+    </span>
   );
 }
 
@@ -207,21 +211,37 @@ export function DealerMapLayerBar({
   enabled,
   filtersReady,
   onToggle,
+  showServiceRow = false,
 }: {
   enabled: Set<string>;
   filtersReady: boolean;
   onToggle: (id: MapLayerId) => void;
+  showServiceRow?: boolean;
 }) {
   return (
-    <div className="flex gap-1 px-1.5 pb-1.5 pt-2">
-      {MAP_LAYERS.map((layer) => (
-        <MiniLayerButton
-          key={layer.id}
-          layer={layer}
-          active={filtersReady && enabled.has(layer.id)}
-          onToggle={onToggle}
-        />
-      ))}
+    <div className="shrink-0">
+      <div className="flex gap-1 px-1.5 pb-1.5 pt-2">
+        {MAP_PRIMARY_LAYERS.map((layer) => (
+          <MiniLayerButton
+            key={layer.id}
+            layer={layer}
+            active={filtersReady && enabled.has(layer.id)}
+            onToggle={onToggle}
+          />
+        ))}
+      </div>
+      {showServiceRow ? (
+        <div className="flex gap-1 px-1.5 pb-1.5">
+          {MAP_SERVICE_LAYERS.map((layer) => (
+            <MiniLayerButton
+              key={layer.id}
+              layer={layer}
+              active={filtersReady && enabled.has(layer.id)}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

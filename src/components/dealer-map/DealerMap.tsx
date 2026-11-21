@@ -11,10 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
-import {
-  fetchDealerMapPins,
-  resolveDealerMapLogos,
-} from "@/lib/dealer-map-pins";
+import { fetchDealerMapPins } from "@/lib/dealer-map-pins";
 import {
   ESRI_STREET_TILES,
   MAP_ENABLED_LAYERS_KEY,
@@ -202,7 +199,7 @@ export function DealerMap() {
   const [filtersReady, setFiltersReady] = useState(false);
   const [dealers, setDealers] = useState<DealerMapPin[]>([]);
   const [pois, setPois] = useState<MapPoi[]>([]);
-  const [logoUrls, setLogoUrls] = useState<Record<string, string | null>>({});
+  const logoUrls: Record<string, string | null> = {};
   const [selectedDealer, setSelectedDealer] = useState<DealerMapPin | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<MapPoi | null>(null);
   const [loading, setLoading] = useState(true);
@@ -334,8 +331,6 @@ export function DealerMap() {
         if (cancelled) return;
         setDealers(rows);
         setLoading(false);
-        const logos = await resolveDealerMapLogos(rows);
-        if (!cancelled) setLogoUrls(logos);
       } catch {
         if (!cancelled) {
           setLoading(false);
@@ -514,6 +509,7 @@ export function DealerMap() {
   };
 
   const onSheetPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement | null)?.closest("button")) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     dragRef.current = { startY: e.clientY, startSize: sheetSize };
   };
@@ -647,19 +643,22 @@ export function DealerMap() {
           style={{ height: `${sheetSize * 100}%` }}
         >
           <div
-            className="flex shrink-0 cursor-grab touch-none flex-col items-center pb-0 pt-2 active:cursor-grabbing"
+            className="shrink-0 cursor-grab touch-none active:cursor-grabbing"
             onPointerDown={onSheetPointerDown}
             onPointerMove={onSheetPointerMove}
             onPointerUp={onSheetPointerUp}
             onPointerCancel={onSheetPointerUp}
           >
-            <div className="h-1 w-[42px] rounded-full bg-zinc-400" />
+            <div className="flex flex-col items-center pb-1 pt-2.5">
+              <div className="h-1.5 w-12 rounded-full bg-zinc-400" />
+            </div>
+            <DealerMapLayerBar
+              enabled={enabled}
+              filtersReady={filtersReady}
+              onToggle={toggleType}
+              showServiceRow={sheetExpanded}
+            />
           </div>
-          <DealerMapLayerBar
-            enabled={enabled}
-            filtersReady={filtersReady}
-            onToggle={toggleType}
-          />
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <DealerMapLists {...listProps} />
           </div>
@@ -677,6 +676,7 @@ export function DealerMap() {
           enabled={enabled}
           filtersReady={filtersReady}
           onToggle={toggleType}
+          showServiceRow
         />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <DealerMapLists {...listProps} />

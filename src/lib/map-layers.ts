@@ -10,6 +10,13 @@ export const MAP_LAYER_IDS = [
   "expertiz",
   "parcaci",
   "servis",
+  "kaporta",
+  "lastik",
+  "cekici",
+  "oto_elektrik",
+  "aksesuar",
+  "yikama",
+  "sigorta",
 ] as const;
 
 export type MapLayerId = (typeof MAP_LAYER_IDS)[number];
@@ -29,7 +36,7 @@ export type MapLayer = {
   asset?: string;
 };
 
-export const MAP_LAYERS: MapLayer[] = [
+export const MAP_PRIMARY_LAYERS: MapLayer[] = [
   { id: "petrol", labelTr: "Petrol", color: "#2E7D32" },
   { id: "food", labelTr: "Yemek", color: "#E65100" },
   { id: "hotel", labelTr: "Otel", color: "#1565C0" },
@@ -57,7 +64,22 @@ export const MAP_LAYERS: MapLayer[] = [
     color: "#E65100",
     asset: "/menu/parca.png?v=20261112",
   },
+];
+
+export const MAP_SERVICE_LAYERS: MapLayer[] = [
   { id: "servis", labelTr: "Servis", color: "#0D47A1" },
+  { id: "kaporta", labelTr: "Kaporta", color: "#6D4C41" },
+  { id: "lastik", labelTr: "Lastik", color: "#546E7A" },
+  { id: "cekici", labelTr: "Çekici", color: "#FF8F00" },
+  { id: "oto_elektrik", labelTr: "Elektrik", color: "#C2185B" },
+  { id: "aksesuar", labelTr: "Aksesuar", color: "#827717" },
+  { id: "yikama", labelTr: "Yıkama", color: "#039BE5" },
+  { id: "sigorta", labelTr: "Sigorta", color: "#1B5E20" },
+];
+
+export const MAP_LAYERS: MapLayer[] = [
+  ...MAP_PRIMARY_LAYERS,
+  ...MAP_SERVICE_LAYERS,
 ];
 
 export const MAP_LAYER_BY_ID = Object.fromEntries(
@@ -69,8 +91,8 @@ export const MAP_MIN_ZOOM = 5;
 export const MAP_MAX_ZOOM = 18;
 export const MAP_START_ZOOM = 5.6;
 export const MAP_POI_MIN_ZOOM = 11;
-export const MAP_SHEET_MIN = 0.17;
-export const MAP_SHEET_MAX = 0.62;
+export const MAP_SHEET_MIN = 0.2;
+export const MAP_SHEET_MAX = 0.72;
 export const MAP_FIT_MAX_ZOOM = 6.8;
 export const MAP_ENABLED_LAYERS_KEY = "dealer_map_enabled_layers_v2";
 export const MAP_ENABLED_TYPES_LEGACY_KEY = "dealer_map_enabled_types";
@@ -95,19 +117,7 @@ export function dealerLayerAsset(type: string): string | undefined {
 }
 
 export function dealerMatchesLayer(type: string, enabled: Set<string>): boolean {
-  if (CORE_DEALER_LAYER_IDS.has(type as MapLayerId) && enabled.has(type)) {
-    return true;
-  }
-  if (enabled.has("servis")) {
-    return (
-      type !== "galeri" &&
-      type !== "kiralama" &&
-      type !== "expertiz" &&
-      type !== "parcaci" &&
-      ALL_DEALER_TYPE_CODES.has(type)
-    );
-  }
-  return false;
+  return enabled.has(type);
 }
 
 export function dealerTypeShortLabel(code: string): string {
@@ -143,7 +153,14 @@ export function parseEnabledLayers(raw: string[] | null): Set<MapLayerId> {
   for (const id of raw) {
     if (allowed.has(id)) next.add(id as MapLayerId);
   }
-  return next;
+  const serviceIds = MAP_SERVICE_LAYERS.map((l) => l.id);
+  const hasSplitServices = serviceIds.some(
+    (id) => id !== "servis" && next.has(id)
+  );
+  if (next.has("servis") && !hasSplitServices) {
+    for (const id of serviceIds) next.add(id);
+  }
+  return next.size > 0 ? next : defaultEnabledLayers();
 }
 
 export function googleMapsDirectionsUrl(lat: number, lng: number): string {
