@@ -1,4 +1,4 @@
-/** Uygulamadaki bayi chip’i: siyah 2.5px daire, logo cover. */
+/** Uygulamadaki bayi chip’i: logo daireyi doldurur, siyah çerçeve üstüne biner. */
 export function DealerTypeLogo({
   src,
   size = 44,
@@ -10,18 +10,21 @@ export function DealerTypeLogo({
 }) {
   return (
     <span
-      className={`relative inline-flex shrink-0 overflow-hidden rounded-full border-[2.5px] border-black bg-white ${className}`}
+      className={`relative inline-flex shrink-0 ${className}`}
       style={{ width: size, height: size }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        width={size}
-        height={size}
-        className="h-full w-full object-cover"
-        draggable={false}
-      />
+      <span className="absolute inset-0 overflow-hidden rounded-full bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt=""
+          width={size}
+          height={size}
+          className="h-full w-full object-cover"
+          draggable={false}
+        />
+      </span>
+      <span className="pointer-events-none absolute inset-0 rounded-full border-[2.5px] border-black" />
     </span>
   );
 }

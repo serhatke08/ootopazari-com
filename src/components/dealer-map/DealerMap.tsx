@@ -11,11 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
-import {
-  fetchDealerMapPins,
-  resolveDealerMapCovers,
-  resolveDealerMapLogos,
-} from "@/lib/dealer-map-pins";
+import { fetchDealerMapPins } from "@/lib/dealer-map-pins";
 import {
   ESRI_STREET_TILES,
   MAP_ENABLED_LAYERS_KEY,
@@ -422,15 +418,13 @@ export function DealerMap() {
         const rows = await fetchDealerMapPins();
         if (cancelled) return;
         setDealers(rows);
+        setLogoUrls(
+          Object.fromEntries(rows.map((p) => [p.id, p.logoUrl ?? null]))
+        );
+        setCoverUrls(
+          Object.fromEntries(rows.map((p) => [p.id, p.coverUrl ?? null]))
+        );
         setLoading(false);
-        const [logos, covers] = await Promise.all([
-          resolveDealerMapLogos(rows),
-          resolveDealerMapCovers(rows),
-        ]);
-        if (!cancelled) {
-          setLogoUrls(logos);
-          setCoverUrls(covers);
-        }
       } catch {
         if (!cancelled) {
           setLoading(false);

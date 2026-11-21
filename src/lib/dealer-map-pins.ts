@@ -1,5 +1,25 @@
-import { parseBayiPhotoPaths, signBayiPhotoUrl } from "@/lib/bayi-photos";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+function workplacePaths(raw: unknown): string[] {
+  if (raw == null || raw === "") return [];
+  let value: unknown = raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+      try {
+        value = JSON.parse(trimmed);
+      } catch {
+        return [trimmed];
+      }
+    } else {
+      return [trimmed];
+    }
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => workplacePaths(item));
+  }
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [];
+}
 
 export type DealerMapPin = {
   id: string;
@@ -19,6 +39,8 @@ export type DealerMapPin = {
   signboard_photo_storage_path: string | null;
   first_name: string | null;
   last_name: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
 };
 
 /** Pin içi: yalnız tabela. */
@@ -29,10 +51,10 @@ export function firstMapPinPhotoPath(pin: DealerMapPin): string | null {
 
 /** Popup kapak: yalnız yatay dükkan fotoğrafı. */
 export function firstMapPinCoverPath(pin: DealerMapPin): string | null {
-  return parseBayiPhotoPaths(pin.workplace_photos_json)[0] || null;
+  return workplacePaths(pin.workplace_photos_json)[0] || null;
 }
 
-function toPin(row: Record<string, unknown>): DealerMapPin | null {
+export function toDealerMapPin(row: Record<string, unknown>): DealerMapPin | null {
   const lat = typeof row.latitude === "number" ? row.latitude : Number(row.latitude);
   const lng =
     typeof row.longitude === "number" ? row.longitude : Number(row.longitude);
@@ -65,45 +87,19 @@ function toPin(row: Record<string, unknown>): DealerMapPin | null {
 }
 
 export async function fetchDealerMapPins(): Promise<DealerMapPin[]> {
-  const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase.rpc("list_dealer_map_pins");
-  if (error) throw error;
+  const res = await fetch("/api/dealer-map-pins", { cache: "no-store" });
+  if (!res.ok) throw new Error("dealer map pins");
+  const data = (await res.json()) as unknown;
   if (!Array.isArray(data)) return [];
   const out: DealerMapPin[] = [];
   for (const row of data) {
     if (!row || typeof row !== "object") continue;
-    const pin = toPin(row as Record<string, unknown>);
-    if (pin) out.push(pin);
+    const pin = toDealerMapPin(row as Record<string, unknown>);
+    if (!pin) continue;
+    const rec = row as Record<string, unknown>;
+    pin.logoUrl = rec.logoUrl ? String(rec.logoUrl) : null;
+    pin.coverUrl = rec.coverUrl ? String(rec.coverUrl) : null;
+    out.push(pin);
   }
   return out;
-}
-
-export async function resolveDealerMapLogos(
-  pins: DealerMapPin[]
-): Promise<Record<string, string | null>> {
-  const supabase = createSupabaseBrowserClient();
-  const entries = await Promise.all(
-    pins.map(async (pin) => {
-      const path = firstMapPinPhotoPath(pin);
-      if (!path) return [pin.id, null] as const;
-      const url = await signBayiPhotoUrl(supabase, path);
-      return [pin.id, url] as const;
-    })
-  );
-  return Object.fromEntries(entries);
-}
-
-export async function resolveDealerMapCovers(
-  pins: DealerMapPin[]
-): Promise<Record<string, string | null>> {
-  const supabase = createSupabaseBrowserClient();
-  const entries = await Promise.all(
-    pins.map(async (pin) => {
-      const path = firstMapPinCoverPath(pin);
-      if (!path) return [pin.id, null] as const;
-      const url = await signBayiPhotoUrl(supabase, path);
-      return [pin.id, url] as const;
-    })
-  );
-  return Object.fromEntries(entries);
 }

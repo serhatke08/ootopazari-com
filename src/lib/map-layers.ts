@@ -44,25 +44,25 @@ export const MAP_PRIMARY_LAYERS: MapLayer[] = [
     id: "galeri",
     labelTr: "Galeri",
     color: "#5D17EB",
-    asset: "/menu/galeri.png?v=20261121b",
+    asset: "/menu/galeri.png?v=20261121c",
   },
   {
     id: "kiralama",
     labelTr: "Kiralama",
     color: "#0097B2",
-    asset: "/menu/kiralama_oto.png?v=20261121b",
+    asset: "/menu/kiralama_oto.png?v=20261121c",
   },
   {
     id: "expertiz",
     labelTr: "Expertiz",
     color: "#A91414",
-    asset: "/menu/expertiz.png?v=20261121b",
+    asset: "/menu/expertiz.png?v=20261121c",
   },
   {
     id: "parcaci",
     labelTr: "Parça",
     color: "#E65100",
-    asset: "/menu/parca.png?v=20261121b",
+    asset: "/menu/parca.png?v=20261121c",
   },
 ];
 
@@ -104,13 +104,13 @@ export const ALL_DEALER_TYPE_CODES = new Set<string>(DEALER_TYPES);
 export function dealerLayerAsset(type: string): string | undefined {
   switch (type) {
     case "galeri":
-      return "/menu/galeri.png?v=20261121b";
+      return "/menu/galeri.png?v=20261121c";
     case "kiralama":
-      return "/menu/kiralama_oto.png?v=20261121b";
+      return "/menu/kiralama_oto.png?v=20261121c";
     case "expertiz":
-      return "/menu/expertiz.png?v=20261121b";
+      return "/menu/expertiz.png?v=20261121c";
     case "parcaci":
-      return "/menu/parca.png?v=20261121b";
+      return "/menu/parca.png?v=20261121c";
     default:
       return undefined;
   }

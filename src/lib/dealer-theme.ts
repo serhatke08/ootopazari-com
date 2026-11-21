@@ -16,7 +16,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#3F0FA8",
     soft: "#F3ECFF",
     ink: "#1A0B3D",
-    logoSrc: "/menu/galeri.png?v=20261121b",
+    logoSrc: "/menu/galeri.png?v=20261121c",
     label: DEALER_TYPE_LABELS.galeri,
   },
   expertiz: {
@@ -24,7 +24,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#7A0E0E",
     soft: "#FDECEC",
     ink: "#3B0A0A",
-    logoSrc: "/menu/expertiz.png?v=20261121b",
+    logoSrc: "/menu/expertiz.png?v=20261121c",
     label: DEALER_TYPE_LABELS.expertiz,
   },
   kiralama: {
@@ -32,7 +32,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#005F96",
     soft: "#E8F5FC",
     ink: "#06283D",
-    logoSrc: "/menu/kiralama_oto.png?v=20261121b",
+    logoSrc: "/menu/kiralama_oto.png?v=20261121c",
     label: DEALER_TYPE_LABELS.kiralama,
   },
   parcaci: {
@@ -40,7 +40,7 @@ export const DEALER_THEMES: Record<DealerType, DealerTheme> = {
     primaryDark: "#1F4610",
     soft: "#EDF6E8",
     ink: "#102508",
-    logoSrc: "/menu/parca.png?v=20261121b",
+    logoSrc: "/menu/parca.png?v=20261121c",
     label: DEALER_TYPE_LABELS.parcaci,
   },
   aksesuar: {
