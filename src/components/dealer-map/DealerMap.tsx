@@ -140,10 +140,10 @@ function DealerPreviewCard({
       className="overflow-hidden rounded-[18px] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
       style={{ border: `1.4px solid ${theme.primary}8C` }}
     >
-      <div className="relative h-[132px] w-full overflow-hidden">
+      <div className="relative h-[168px] w-full overflow-hidden bg-white">
         {tabela ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={tabela} alt="" className="h-full w-full object-cover" />
+          <img src={tabela} alt="" className="h-full w-full object-contain" />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"
@@ -152,7 +152,6 @@ function DealerPreviewCard({
             }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/20" />
         <button
           type="button"
           onClick={onClose}
@@ -161,20 +160,20 @@ function DealerPreviewCard({
         >
           ×
         </button>
-        <div className="absolute inset-x-3 bottom-2.5 flex items-end gap-2">
-          <p className="min-w-0 flex-1 text-[17px] font-bold tracking-wide text-white drop-shadow">
+      </div>
+      <div className="px-3 py-2.5">
+        <div className="flex items-start gap-2">
+          <p className="min-w-0 flex-1 text-[17px] font-bold tracking-wide text-zinc-900">
             {turkishUpper(dealer.dealer_name)}
           </p>
           <DealerVerifiedTick
             size={18}
             dealerType={dealer.dealer_type}
-            className="mb-0.5 shrink-0"
+            className="mt-0.5 shrink-0"
           />
         </div>
-      </div>
-      <div className="px-3 py-2.5">
         <span
-          className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold"
+          className="mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold"
           style={{
             backgroundColor: `${theme.primary}14`,
             color: theme.primaryDark,

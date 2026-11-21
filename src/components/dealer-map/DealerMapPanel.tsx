@@ -22,7 +22,7 @@ function LayerGlyph({
   layer: MapLayer;
   active: boolean;
 }) {
-  const fg = active ? "#fff" : "#757575";
+  const fg = active ? layer.color : "#9E9E9E";
   if (layer.asset) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -82,15 +82,17 @@ function MiniLayerButton({
     <button
       type="button"
       onClick={() => onToggle(layer.id)}
-      className="flex h-12 min-w-0 flex-1 flex-col items-center justify-center rounded-[10px] px-0.5 transition"
-      style={{ background: active ? layer.color : "#E9E9E9" }}
+      className="flex h-12 min-w-0 flex-1 flex-col items-center justify-center rounded-[10px] bg-white px-0.5 transition"
+      style={{
+        border: `${active ? 1.6 : 1}px solid ${active ? layer.color : "#D8D8D8"}`,
+      }}
       aria-pressed={active}
       title={layer.labelTr}
     >
       <LayerGlyph layer={layer} active={active} />
       <span
         className="mt-[3px] max-w-full truncate text-[8px] font-extrabold leading-none"
-        style={{ color: active ? "#fff" : "#757575" }}
+        style={{ color: active ? layer.color : "#9E9E9E" }}
       >
         {layer.labelTr}
       </span>
