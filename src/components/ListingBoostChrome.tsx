@@ -15,22 +15,24 @@ type Props = {
   className?: string;
 };
 
-/** Ana sayfa kartı — pulse aktifken şimşek rozeti. */
+/** Uygulama kartı — sağ üst, 8.5px altın rozet. */
 export function ListingBoostChrome({ className = "" }: Props) {
   return (
     <div
-      className={`pointer-events-none absolute left-1 top-1 z-[8] flex max-w-[calc(100%-0.5rem)] items-center gap-0.5 truncate rounded-md bg-[#ffc400] px-1.5 py-0.5 text-[8px] font-extrabold tracking-wide text-black shadow-md sm:left-2 sm:top-2 sm:gap-1 sm:px-2 sm:py-1 sm:text-[10px] ${className}`}
+      className={`pointer-events-none absolute right-[5px] top-[5px] z-[8] flex items-center gap-[3px] rounded-[7px] bg-[#FFC400] px-[5px] py-[3px] pr-1.5 shadow-[0_1px_5px_rgba(0,0,0,0.28)] ${className}`}
     >
-      <BoostLightningIcon className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
-      <span className="truncate">Öne çıkan</span>
+      <BoostLightningIcon className="h-[13px] w-[13px] shrink-0 text-black/90" />
+      <span className="text-[8.5px] font-black leading-[1.05] tracking-[0.15px] text-black/90">
+        Öne çıkan
+      </span>
     </div>
   );
 }
 
 export function ListingBoostBadgeCompact() {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-[#ffc400] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-black">
-      <BoostLightningIcon className="h-2.5 w-2.5" />
+    <span className="inline-flex items-center gap-[3px] rounded-[7px] bg-[#FFC400] px-[5px] py-[3px] text-[8.5px] font-black leading-[1.05] text-black/90">
+      <BoostLightningIcon className="h-[13px] w-[13px]" />
       Öne çıkan
     </span>
   );

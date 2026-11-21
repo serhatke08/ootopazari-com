@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { HOME_SHORTCUTS, type HomeShortcut } from "@/lib/home-shortcuts";
 import { useDealerCircleNav } from "@/components/bayi/DealerCircleReveal";
 import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
+import { DealerTypeLogo } from "@/components/DealerTypeLogo";
 
 function QuickLinkItem({
   item,
@@ -31,22 +32,18 @@ function QuickLinkItem({
         onDealerOpen(item.href, (origin as HTMLElement) ?? e.currentTarget);
       }}
     >
-      <span
-        className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-[2.5px] border-black ring-1 ring-zinc-900/10"
-        style={item.glyph ? { backgroundColor: item.fillColor } : undefined}
-      >
-        {item.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.image}
-            alt=""
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
-        ) : item.glyph ? (
-          <HomeShortcutGlyphIcon name={item.glyph} className="h-6 w-6 text-white" />
-        ) : null}
-      </span>
+      {item.image ? (
+        <DealerTypeLogo src={item.image} size={44} />
+      ) : (
+        <span
+          className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-[2.5px] border-black"
+          style={{ backgroundColor: item.fillColor }}
+        >
+          {item.glyph ? (
+            <HomeShortcutGlyphIcon name={item.glyph} className="h-6 w-6 text-white" />
+          ) : null}
+        </span>
+      )}
       <span className="w-full text-center text-[9px] font-medium leading-tight text-zinc-800">
         {item.label}
       </span>

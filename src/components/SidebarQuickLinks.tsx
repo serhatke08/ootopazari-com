@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { QUICK_ACCESS_LINKS } from "@/lib/quick-access-links";
 import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
+import { DealerTypeLogo } from "@/components/DealerTypeLogo";
 import type { HomeShortcutGlyph } from "@/lib/home-shortcuts";
 
 type QuickLinkItem = {
@@ -53,18 +54,7 @@ export function SidebarQuickLinks({
               <HomeShortcutGlyphIcon name={item.glyph} className={compact ? "h-4 w-4" : "h-5 w-5"} />
             </span>
           ) : item.image ? (
-            <span
-              className={`relative shrink-0 overflow-hidden bg-[#ffcc00] ${iconBox}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.image}
-                alt=""
-                width={iconSize}
-                height={iconSize}
-                className={compact ? "h-7 w-7 object-cover" : "h-9 w-9 object-cover"}
-              />
-            </span>
+            <DealerTypeLogo src={item.image} size={iconSize} />
           ) : (
             <span
               className={`flex shrink-0 items-center justify-center bg-[#ffcc00] text-[10px] font-bold text-zinc-900 ${iconBox}`}

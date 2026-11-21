@@ -266,7 +266,11 @@ export function ListingCard({
         imageFrame
       )}
       {showFavorite && listingId ? (
-        <div className="absolute right-2 top-2 z-20">
+        <div
+          className={`absolute right-[5px] z-20 ${
+            showBoostLabel || (showAcilBadge && !inactive) ? "top-8" : "top-[5px]"
+          }`}
+        >
           <FavoriteHeart
             listingId={listingId}
             initialFavorited={favorited}
@@ -283,7 +287,7 @@ export function ListingCard({
         highlightPassive || passivePayment
           ? "border-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
           : showBoostGoldBorder
-            ? "border-2 border-zinc-900"
+            ? "border-2 border-[#111111] shadow-[0_2px_8px_rgba(0,0,0,0.28)]"
             : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
       } ${inactive && !activationPassive && !expired ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
     >

@@ -13,18 +13,18 @@ export const DEALER_TYPE_META: Record<
 > = {
   galeri: {
     label: "Galeri",
-    iconSrc: "/menu/galeri.png?v=20261121",
+    iconSrc: "/menu/galeri.png?v=20261121b",
   },
   expertiz: {
     label: "Expertiz",
-    iconSrc: "/menu/expertiz.png?v=20261121",
+    iconSrc: "/menu/expertiz.png?v=20261121b",
   },
   kiralama: {
     label: "Kiralama",
-    iconSrc: "/menu/kiralama_oto.png?v=20261121",
+    iconSrc: "/menu/kiralama_oto.png?v=20261121b",
   },
   parcaci: {
     label: "Yedek Parça",
-    iconSrc: "/menu/parca.png?v=20261121",
+    iconSrc: "/menu/parca.png?v=20261121b",
   },
 };

@@ -7,6 +7,7 @@ import {
   type HomeShortcutGlyph,
 } from "@/lib/home-shortcuts";
 import { HomeShortcutGlyphIcon } from "@/components/home/HomeShortcutGlyph";
+import { DealerTypeLogo } from "@/components/DealerTypeLogo";
 
 type Reveal = {
   href: string;
@@ -145,11 +146,10 @@ export function DealerCircleOverlay() {
     >
       <div className="flex h-full w-full flex-col items-center justify-center">
         {reveal.logoSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <DealerTypeLogo
             src={reveal.logoSrc}
-            alt=""
-            className="h-24 w-24 rounded-full object-cover shadow-2xl ring-4 ring-white/25 sm:h-28 sm:w-28"
+            size={112}
+            className="shadow-2xl"
           />
         ) : reveal.glyph ? (
           <span className="flex h-24 w-24 items-center justify-center rounded-full bg-white/15 text-white ring-4 ring-white/25 sm:h-28 sm:w-28">
