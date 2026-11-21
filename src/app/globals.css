@@ -445,9 +445,8 @@ body:has([data-dealer-map="true"]) main {
   font: inherit;
 }
 
-.dealer-map-root .leaflet-div-icon,
 .dealer-map-root .dm-div-icon {
-  background: none;
+  background: transparent;
   border: none;
 }
 
@@ -456,7 +455,6 @@ body:has([data-dealer-map="true"]) main {
   flex-direction: column;
   align-items: center;
   line-height: 0;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
 }
 
 .dealer-map-root .dm-pin-dot {
@@ -466,26 +464,15 @@ body:has([data-dealer-map="true"]) main {
   justify-content: center;
   border-radius: 999px;
   border-style: solid;
-  border-width: 2.5px;
-  background: #fff;
-  box-sizing: border-box;
-}
-
-.dealer-map-root .dm-pin-dot img {
-  width: 78%;
-  height: 78%;
-  object-fit: contain;
+  border-width: 2px;
   background: #fff;
 }
 
-.dealer-map-root .dm-pin-pointer {
-  width: 0;
-  height: 0;
-  margin-top: -1px;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top-width: 9px;
-  border-top-style: solid;
+.dealer-map-root .dm-pin-caret {
+  margin-top: -3px;
+  font-size: 14px;
+  line-height: 1;
+  text-shadow: 0 1px 0 #fff;
 }
 
 .dealer-map-root .dm-poi {

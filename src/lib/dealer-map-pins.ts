@@ -21,8 +21,9 @@ export type DealerMapPin = {
   last_name: string | null;
 };
 
-/** Pin’de yalnız tabela; dükkan fotoğrafı dairede kırpılmasın. */
 export function firstMapPinPhotoPath(pin: DealerMapPin): string | null {
+  const workplace = parseBayiPhotoPaths(pin.workplace_photos_json);
+  if (workplace[0]) return workplace[0];
   const sign = pin.signboard_photo_storage_path?.trim();
   return sign || null;
 }

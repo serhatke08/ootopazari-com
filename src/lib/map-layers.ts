@@ -117,11 +117,12 @@ export function dealerTypeShortLabel(code: string): string {
   return code;
 }
 
-export function dealerPinColor(type: string, _selected = false): string {
+export function dealerPinColor(type: string, selected: boolean): string {
   if (DEALER_TYPES.includes(type as DealerType)) {
-    return DEALER_THEMES[type as DealerType].primary;
+    const theme = DEALER_THEMES[type as DealerType];
+    return selected ? theme.primary : theme.primaryDark;
   }
-  return "#0D47A1";
+  return selected ? "#0D47A1" : "#093270";
 }
 
 export function dealerThemePrimary(type: string): string {

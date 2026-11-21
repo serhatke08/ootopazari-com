@@ -21,7 +21,7 @@ export function BayiEntranceHold() {
       <img
         src={theme.logoSrc}
         alt=""
-        className="h-28 w-28 rounded-full bg-white object-contain p-3 shadow-2xl ring-4 ring-white/25"
+        className="h-28 w-28 rounded-full object-cover shadow-2xl ring-4 ring-white/25"
       />
       <p className="mt-5 text-center text-3xl font-black uppercase tracking-[0.18em] text-white">
         {theme.label}

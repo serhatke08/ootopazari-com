@@ -11,7 +11,10 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { DealerMapPin } from "@/lib/dealer-map-pins";
-import { fetchDealerMapPins } from "@/lib/dealer-map-pins";
+import {
+  fetchDealerMapPins,
+  resolveDealerMapLogos,
+} from "@/lib/dealer-map-pins";
 import {
   ESRI_STREET_TILES,
   MAP_ENABLED_LAYERS_KEY,
@@ -199,7 +202,7 @@ export function DealerMap() {
   const [filtersReady, setFiltersReady] = useState(false);
   const [dealers, setDealers] = useState<DealerMapPin[]>([]);
   const [pois, setPois] = useState<MapPoi[]>([]);
-  const logoUrls: Record<string, string | null> = {};
+  const [logoUrls, setLogoUrls] = useState<Record<string, string | null>>({});
   const [selectedDealer, setSelectedDealer] = useState<DealerMapPin | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<MapPoi | null>(null);
   const [loading, setLoading] = useState(true);
@@ -331,6 +334,8 @@ export function DealerMap() {
         if (cancelled) return;
         setDealers(rows);
         setLoading(false);
+        const logos = await resolveDealerMapLogos(rows);
+        if (!cancelled) setLogoUrls(logos);
       } catch {
         if (!cancelled) {
           setLoading(false);
@@ -442,20 +447,19 @@ export function DealerMap() {
     for (const dealer of visibleDealers) {
       const selected = selectedDealer?.id === dealer.id;
       const color = dealerPinColor(dealer.dealer_type, selected);
-      const size = selected ? 48 : 42;
+      const size = selected ? 44 : 38;
       const logo = logoUrls[dealer.id];
       const asset = dealerLayerAsset(dealer.dealer_type);
-      const fallbackSrc = asset ? escapeHtml(asset) : "";
       const inner = logo
-        ? `<img src="${escapeHtml(logo)}" alt=""${fallbackSrc ? ` onerror="this.onerror=null;this.src='${fallbackSrc}'"` : ""}/>`
+        ? `<img src="${escapeHtml(logo)}" alt="" style="width:100%;height:100%;object-fit:cover"/>`
         : asset
-          ? `<img src="${escapeHtml(asset)}" alt=""/>`
-          : `<span style="display:block;width:12px;height:12px;border-radius:99px;background:${color}"></span>`;
+          ? `<img src="${escapeHtml(asset)}" alt="" style="width:70%;height:70%;object-fit:contain"/>`
+          : `<span style="display:block;width:10px;height:10px;border-radius:99px;background:${color}"></span>`;
       const icon = L.divIcon({
         className: "dm-div-icon",
-        html: `<div class="dm-pin"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${color}">${inner}</div><div class="dm-pin-pointer" style="border-top-color:${color}"></div></div>`,
-        iconSize: [52, 64],
-        iconAnchor: [26, 64],
+        html: `<div class="dm-pin"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${color}">${inner}</div><div class="dm-pin-caret" style="color:${color}">▼</div></div>`,
+        iconSize: [52, 62],
+        iconAnchor: [26, 62],
       });
       const marker = L.marker([dealer.latitude, dealer.longitude], {
         icon,

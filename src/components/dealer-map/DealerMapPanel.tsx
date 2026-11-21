@@ -22,16 +22,14 @@ function LayerGlyph({
   const fg = active ? "#fff" : "#757575";
   if (layer.asset) {
     return (
-      <span className="flex h-[22px] w-[22px] items-center justify-center overflow-hidden rounded-full bg-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={layer.asset}
-          alt=""
-          width={18}
-          height={18}
-          className="h-[80%] w-[80%] object-contain"
-        />
-      </span>
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={layer.asset}
+        alt=""
+        width={16}
+        height={16}
+        className={`h-4 w-4 object-contain ${active ? "opacity-100" : "opacity-45"}`}
+      />
     );
   }
   if (layer.id === "petrol") {
@@ -118,7 +116,7 @@ function LogoDot({
     >
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="h-[78%] w-[78%] object-contain bg-white" />
+        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
       ) : asset ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={asset} alt="" className="h-[70%] w-[70%] object-contain" />
