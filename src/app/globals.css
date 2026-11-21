@@ -467,6 +467,7 @@ body:has([data-dealer-map="true"]) main {
 }
 
 .dealer-map-root .dm-pin-dot {
+  box-sizing: border-box;
   overflow: hidden;
   display: flex;
   align-items: center;

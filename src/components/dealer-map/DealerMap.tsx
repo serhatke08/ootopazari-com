@@ -29,6 +29,7 @@ import {
   dealerMatchesLayer,
   dealerPinColor,
   dealerPinRimLabel,
+  dealerPinTagColor,
   dealerStoreHref,
   dealerTypeShortLabel,
   googleMapsDirectionsUrl,
@@ -442,19 +443,17 @@ export function DealerMap() {
 
     for (const dealer of visibleDealers) {
       const selected = selectedDealer?.id === dealer.id;
-      const color = dealerPinColor(dealer.dealer_type, selected);
+      const ring = dealerPinColor(dealer.dealer_type, selected);
+      const tagColor = dealerPinTagColor(dealer.dealer_type);
       const size = selected ? 44 : 38;
-      const logo = logoUrls[dealer.id];
       const asset = dealerLayerAsset(dealer.dealer_type);
       const tag = escapeHtml(dealerPinRimLabel(dealer.dealer_type));
-      const inner = logo
-        ? `<img src="${escapeHtml(logo)}" alt="" style="width:100%;height:100%;object-fit:cover"/>`
-        : asset
-          ? `<img src="${escapeHtml(asset)}" alt="" style="width:70%;height:70%;object-fit:contain"/>`
-          : `<span style="display:block;width:10px;height:10px;border-radius:99px;background:${color}"></span>`;
+      const inner = asset
+        ? `<img src="${escapeHtml(asset)}" alt="" style="width:calc(100% - 10px);height:calc(100% - 10px);object-fit:contain"/>`
+        : `<span style="display:block;width:10px;height:10px;border-radius:99px;background:${tagColor}"></span>`;
       const icon = L.divIcon({
         className: "dm-div-icon",
-        html: `<div class="dm-pin"><div class="dm-pin-wrap"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${color}">${inner}</div><span class="dm-pin-tag" style="background:${color}">${tag}</span></div><div class="dm-pin-caret" style="color:${color}">▼</div></div>`,
+        html: `<div class="dm-pin"><div class="dm-pin-wrap"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${ring}">${inner}</div><span class="dm-pin-tag" style="background:${tagColor}">${tag}</span></div><div class="dm-pin-caret" style="color:${tagColor}">▼</div></div>`,
         iconSize: [84, 70],
         iconAnchor: [42, 70],
       });

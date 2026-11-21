@@ -159,12 +159,29 @@ export function dealerPinRimLabel(type: string): string {
   }
 }
 
+/** Uygulama harita pini — DealerStorefrontTheme primary / accent. */
+const PIN_COLORS: Record<string, { primary: string; accent: string }> = {
+  galeri: { primary: "#5D17EB", accent: "#8B5CF6" },
+  kiralama: { primary: "#0097B2", accent: "#4DD0E1" },
+  expertiz: { primary: "#A91414", accent: "#E57373" },
+  parcaci: { primary: "#E65100", accent: "#FF9800" },
+  servis: { primary: "#0D47A1", accent: "#0D47A1" },
+  kaporta: { primary: "#6D4C41", accent: "#6D4C41" },
+  lastik: { primary: "#546E7A", accent: "#546E7A" },
+  cekici: { primary: "#FF8F00", accent: "#FF8F00" },
+  oto_elektrik: { primary: "#C2185B", accent: "#C2185B" },
+  aksesuar: { primary: "#827717", accent: "#827717" },
+  yikama: { primary: "#039BE5", accent: "#039BE5" },
+  sigorta: { primary: "#1B5E20", accent: "#1B5E20" },
+};
+
 export function dealerPinColor(type: string, selected: boolean): string {
-  if (DEALER_TYPES.includes(type as DealerType)) {
-    const theme = DEALER_THEMES[type as DealerType];
-    return selected ? theme.primary : theme.primaryDark;
-  }
-  return selected ? "#0D47A1" : "#093270";
+  const c = PIN_COLORS[type] ?? { primary: "#0D47A1", accent: "#1565C0" };
+  return selected ? c.primary : c.accent;
+}
+
+export function dealerPinTagColor(type: string): string {
+  return PIN_COLORS[type]?.primary ?? "#0D47A1";
 }
 
 export function dealerThemePrimary(type: string): string {
