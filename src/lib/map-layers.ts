@@ -127,6 +127,38 @@ export function dealerTypeShortLabel(code: string): string {
   return code;
 }
 
+/** Harita pini kenarı — kısa tür yazısı. */
+export function dealerPinRimLabel(type: string): string {
+  switch (type) {
+    case "galeri":
+      return "GALERİ";
+    case "kiralama":
+      return "KİRALAMA";
+    case "expertiz":
+      return "EXPERTİZ";
+    case "parcaci":
+      return "PARÇA";
+    case "servis":
+      return "SERVİS";
+    case "kaporta":
+      return "KAPORTA";
+    case "lastik":
+      return "LASTİK";
+    case "cekici":
+      return "ÇEKİCİ";
+    case "oto_elektrik":
+      return "ELEKTRİK";
+    case "aksesuar":
+      return "AKSESUAR";
+    case "yikama":
+      return "YIKAMA";
+    case "sigorta":
+      return "SİGORTA";
+    default:
+      return type.toLocaleUpperCase("tr-TR");
+  }
+}
+
 export function dealerPinColor(type: string, selected: boolean): string {
   if (DEALER_TYPES.includes(type as DealerType)) {
     const theme = DEALER_THEMES[type as DealerType];

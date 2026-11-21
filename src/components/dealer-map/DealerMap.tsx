@@ -28,6 +28,7 @@ import {
   dealerLayerAsset,
   dealerMatchesLayer,
   dealerPinColor,
+  dealerPinRimLabel,
   dealerStoreHref,
   dealerTypeShortLabel,
   googleMapsDirectionsUrl,
@@ -445,6 +446,7 @@ export function DealerMap() {
       const size = selected ? 44 : 38;
       const logo = logoUrls[dealer.id];
       const asset = dealerLayerAsset(dealer.dealer_type);
+      const tag = escapeHtml(dealerPinRimLabel(dealer.dealer_type));
       const inner = logo
         ? `<img src="${escapeHtml(logo)}" alt="" style="width:100%;height:100%;object-fit:cover"/>`
         : asset
@@ -452,9 +454,9 @@ export function DealerMap() {
           : `<span style="display:block;width:10px;height:10px;border-radius:99px;background:${color}"></span>`;
       const icon = L.divIcon({
         className: "dm-div-icon",
-        html: `<div class="dm-pin"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${color}">${inner}</div><div class="dm-pin-caret" style="color:${color}">▼</div></div>`,
-        iconSize: [52, 62],
-        iconAnchor: [26, 62],
+        html: `<div class="dm-pin"><div class="dm-pin-wrap"><div class="dm-pin-dot" style="width:${size}px;height:${size}px;border-color:${color}">${inner}</div><span class="dm-pin-tag" style="background:${color}">${tag}</span></div><div class="dm-pin-caret" style="color:${color}">▼</div></div>`,
+        iconSize: [84, 70],
+        iconAnchor: [42, 70],
       });
       const marker = L.marker([dealer.latitude, dealer.longitude], {
         icon,
