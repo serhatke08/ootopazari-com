@@ -44,6 +44,10 @@ import {
   DealerMapLayerBar,
   DealerMapLists,
 } from "@/components/dealer-map/DealerMapPanel";
+import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
+import { turkishPersonName } from "@/lib/bayi-data";
+import { DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
+import { dealerTheme } from "@/lib/dealer-theme";
 
 type LeafletNS = typeof import("leaflet");
 type LeafletMap = import("leaflet").Map;
@@ -95,54 +99,116 @@ function ZoomButton({
   );
 }
 
+function turkishUpper(value: string) {
+  return value.replaceAll("i", "İ").replaceAll("ı", "I").toLocaleUpperCase("tr-TR");
+}
+
+function dealerPopupTheme(type: string) {
+  if (DEALER_TYPES.includes(type as DealerType)) return dealerTheme(type as DealerType);
+  return {
+    primary: dealerPinTagColor(type),
+    primaryDark: dealerPinTagColor(type),
+    label: dealerTypeShortLabel(type),
+    logoSrc: "",
+    soft: "#F4F4F5",
+    ink: "#18181B",
+  };
+}
+
 function DealerPreviewCard({
   dealer,
+  coverUrl,
   onClose,
   onOpen,
   onDirections,
 }: {
   dealer: DealerMapPin;
+  coverUrl?: string | null;
   onClose: () => void;
   onOpen: () => void;
   onDirections: () => void;
 }) {
+  const theme = dealerPopupTheme(dealer.dealer_type);
   const line = [dealer.full_address, dealer.city_name].filter(Boolean).join(" · ");
+  const person =
+    dealer.dealer_type === "galeri"
+      ? turkishPersonName(dealer.first_name, dealer.last_name)
+      : "";
+  const tabela = coverUrl?.trim() || "";
   return (
-    <div className="rounded-2xl bg-white p-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-extrabold text-zinc-900">
-            {dealer.dealer_name}
-          </p>
-          <p className="text-sm font-semibold text-zinc-600">
-            {dealerTypeShortLabel(dealer.dealer_type)}
-          </p>
-          {line ? <p className="mt-1 text-sm text-zinc-700">{line}</p> : null}
-        </div>
+    <div
+      className="overflow-hidden rounded-[18px] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+      style={{ border: `1.4px solid ${theme.primary}8C` }}
+    >
+      <div className="relative h-[132px] w-full overflow-hidden">
+        {tabela ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={tabela} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{
+              background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})`,
+            }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/20" />
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md p-1 text-zinc-500 hover:bg-zinc-100"
+          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-base leading-none text-white"
           aria-label="Kapat"
         >
           ×
         </button>
+        <div className="absolute inset-x-3 bottom-2.5 flex items-end gap-2">
+          <p className="min-w-0 flex-1 text-[17px] font-bold tracking-wide text-white drop-shadow">
+            {turkishUpper(dealer.dealer_name)}
+          </p>
+          <DealerVerifiedTick size={18} className="mb-0.5 shrink-0 text-white" />
+        </div>
       </div>
-      <div className="mt-2.5 flex gap-2">
-        <button
-          type="button"
-          onClick={onDirections}
-          className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800"
+      <div className="px-3 py-2.5">
+        <span
+          className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold"
+          style={{
+            backgroundColor: `${theme.primary}14`,
+            color: theme.primaryDark,
+          }}
         >
-          Yol tarifi
-        </button>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="flex-1 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white"
-        >
-          Mağazayı aç
-        </button>
+          {dealerTypeShortLabel(dealer.dealer_type)}
+        </span>
+        {person ? (
+          <p className="mt-2 truncate text-[13.5px] font-extrabold text-zinc-900">
+            {person}
+          </p>
+        ) : null}
+        {line ? (
+          <p className="mt-1.5 line-clamp-2 text-[12.5px] font-semibold text-zinc-600">
+            {line}
+          </p>
+        ) : null}
+        <div className="mt-2.5 flex gap-2">
+          <button
+            type="button"
+            onClick={onDirections}
+            className="flex-1 rounded-xl border px-3 py-2 text-sm font-semibold"
+            style={{
+              borderColor: `${theme.primary}66`,
+              color: theme.primaryDark,
+            }}
+          >
+            Yol tarifi
+          </button>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-white"
+            style={{ backgroundColor: theme.primary }}
+          >
+            Mağazayı aç
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -601,6 +667,7 @@ export function DealerMap() {
           <div className="absolute inset-x-3 z-[520] lg:bottom-4 lg:left-4 lg:right-auto lg:w-[22rem] max-lg:hidden">
             <DealerPreviewCard
               dealer={selectedDealer}
+              coverUrl={logoUrls[selectedDealer.id]}
               onClose={() => setSelectedDealer(null)}
               onOpen={() => openDealer(selectedDealer)}
               onDirections={() =>
@@ -626,6 +693,7 @@ export function DealerMap() {
           >
             <DealerPreviewCard
               dealer={selectedDealer}
+              coverUrl={logoUrls[selectedDealer.id]}
               onClose={() => setSelectedDealer(null)}
               onOpen={() => openDealer(selectedDealer)}
               onDirections={() =>
