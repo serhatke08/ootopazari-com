@@ -4,9 +4,9 @@ export const dynamic = "force-dynamic";
 
 /**
  * Universal-link hedefi.
- * iOS Associated Domains doğruysa bu sayfa hiç açılmaz — app doğrudan açılır.
- * Açılırsa: Android’de intent:// dene; iOS’ta custom scheme otomatik
- * çalıştırma (Safari “Oto Pazarı’nda açılsın mı?” sorar) — kullanıcı dokunuşu.
+ * iOS’ta e-Devlet Safari’de açıldığı için Universal Link çoğu zaman
+ * uygulamayı açmaz (aynı tarayıcı oturumu). Bu sayfa custom scheme
+ * `otopazari://` ile uygulamaya döner — Safari “Aç?” derse onay yeterli.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -68,25 +68,47 @@ export async function GET(req: Request) {
 (function(){
   var ua = navigator.userAgent || "";
   var isAndroid = /Android/i.test(ua);
-  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   var deep = ${JSON.stringify(deepHref)};
   var intent = ${JSON.stringify(intentHref)};
-  // Android: intent:// otomatik (chooser daha az sorar / app açılır)
-  if (isAndroid) {
-    setTimeout(function(){ location.replace(intent); }, 200);
-    return;
+  var tries = 0;
+  function openApp() {
+    if (isAndroid) {
+      location.replace(intent);
+      return;
+    }
+    tries += 1;
+    try { location.href = deep; } catch (e) {}
   }
-  // iOS: custom scheme otomatik ÇALIŞTIRMA — Safari onay diyaloğu çıkarır.
-  // Universal Link zaten app’i açmalıydı; açmadıysa kullanıcı butona bassın.
-  if (!isIOS) {
-    setTimeout(function(){ location.replace(deep); }, 250);
+  function boot() {
+    openApp();
+    if (isIOS || !isAndroid) {
+      setTimeout(openApp, 400);
+      setTimeout(function(){ if (tries < 3) openApp(); }, 1200);
+    }
   }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+  document.addEventListener("click", function(ev){
+    var n = ev.target;
+    if (n && n.nodeType === 3) n = n.parentElement;
+    var el = n && n.closest ? n.closest("#openApp") : null;
+    if (el) {
+      ev.preventDefault();
+      tries = 0;
+      openApp();
+    }
+  }, true);
 })();
   </script>
 </head>
 <body>
   <h1>${title}</h1>
   <p>${message}</p>
+  <p>Safari “Oto Pazarı’nda açılsın mı?” derse <strong>Aç</strong>’a bas. Açılmazsa sarı butona bas. Sol üstteki Oto Pazarı yazısı da uygulamaya döner.</p>
   <p><a class="btn" id="openApp" href="${deepHref.replace(/"/g, "&quot;")}">Oto Pazarı’nı aç</a></p>
   <p><a class="secondary" href="/">Web ana sayfa</a></p>
 </body>

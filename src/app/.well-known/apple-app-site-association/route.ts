@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
 
-/** iOS Universal Links — custom scheme “şurada açılsın mı?” sormasın diye. */
+/** iOS Universal Links (e-Devlet dönüşü + ilan). */
 const BODY = {
   applinks: {
     apps: [] as string[],
@@ -10,6 +10,11 @@ const BODY = {
       {
         appID: "549DLY8TB7.com.partridge.otomobile",
         paths: ["/app/eids", "/app/eids/*", "/ilan/*"],
+        components: [
+          { "/": "/app/eids" },
+          { "/": "/app/eids/*" },
+          { "/": "/ilan/*" },
+        ],
       },
     ],
   },
