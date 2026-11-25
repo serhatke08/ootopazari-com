@@ -45,7 +45,7 @@ import {
   DealerMapLists,
 } from "@/components/dealer-map/DealerMapPanel";
 import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
-import { turkishPersonName } from "@/lib/bayi-data";
+import { turkishPersonName } from "@/lib/turkish-person-name";
 import { DEALER_TYPES, type DealerType } from "@/lib/bayi-types";
 import { dealerTheme } from "@/lib/dealer-theme";
 
@@ -176,16 +176,14 @@ function DealerPreviewCard({
             </div>
           ) : null}
           <div className="min-w-0 flex-1 pb-0.5">
-            <div className="flex items-start gap-1.5">
-              <p className="min-w-0 flex-1 text-[17px] font-bold tracking-wide text-zinc-900">
-                {turkishUpper(dealer.dealer_name)}
-              </p>
+            <p className="text-[17px] font-bold tracking-wide text-zinc-900">
+              {turkishUpper(dealer.dealer_name)}
               <DealerVerifiedTick
                 size={18}
                 dealerType={dealer.dealer_type}
-                className="mt-0.5 shrink-0"
+                className="ml-0.5 inline-block align-middle"
               />
-            </div>
+            </p>
           </div>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">

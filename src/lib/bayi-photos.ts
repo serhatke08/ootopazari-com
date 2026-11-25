@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DealerProfile } from "@/lib/bayi-types";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 const BUCKET = "bayi-application-docs";
 
@@ -69,9 +68,9 @@ export async function signBayiPhotoUrl(
 
 export async function enrichDealersWithCoverUrls(
   supabase: SupabaseClient,
-  dealers: DealerProfile[]
+  dealers: DealerProfile[],
+  signer: SupabaseClient = supabase
 ): Promise<DealerProfile[]> {
-  const signer = createSupabaseServiceClient() ?? supabase;
   return Promise.all(
     dealers.map(async (dealer) => {
       const workplace = parseBayiPhotoPaths(

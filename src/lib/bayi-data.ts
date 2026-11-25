@@ -16,6 +16,18 @@ import {
   enrichDealersWithCoverUrls,
   firstBayiPhotoPath,
 } from "./bayi-photos";
+import { createSupabaseServiceClient } from "./supabase/service";
+
+function withSignedDealerPhotos(
+  supabase: SupabaseClient,
+  dealers: DealerProfile[]
+) {
+  return enrichDealersWithCoverUrls(
+    supabase,
+    dealers,
+    createSupabaseServiceClient() ?? supabase
+  );
+}
 
 /**
  * Kullanıcının belirli bir dealer type için başvurusunu getirir
@@ -63,7 +75,7 @@ export async function fetchPublicDealers(
   const selectFull = `
       *,
       cities(name, country_id),
-      bayi_applications!inner(
+      bayi_applications(
         workplace_photos_json,
         signboard_photo_storage_path,
         status,
@@ -80,7 +92,7 @@ export async function fetchPublicDealers(
   const selectCore = `
       *,
       cities(name, country_id),
-      bayi_applications!inner(
+      bayi_applications(
         workplace_photos_json,
         signboard_photo_storage_path,
         status,
@@ -88,6 +100,7 @@ export async function fetchPublicDealers(
         membership_expires_at
       )
     `;
+  const selectPlain = `*`;
 
   const run = (select: string) => {
     let query = supabase.from(tableName).select(select).eq("is_active", true);
@@ -119,18 +132,31 @@ export async function fetchPublicDealers(
     data = fallback.data;
     error = fallback.error;
   }
+  if (error) {
+    const plain = await run(selectPlain);
+    data = plain.data;
+    error = plain.error;
+  }
 
   if (error) {
     console.error("fetchPublicDealers error:", error);
-    return [];
+    return fetchDealersFromApplications(supabase, dealerType, options);
   }
 
   const rows = (data ?? []) as unknown as Record<string, unknown>[];
+  if (rows.length === 0) {
+    return fetchDealersFromApplications(supabase, dealerType, options);
+  }
+
   const filtered = rows
     .map((dealer) => mapDealerRow(dealer))
-    .filter((dealer) => shouldShowInPublicList(dealer.application ?? null));
+    .filter((dealer) =>
+      dealer.application
+        ? shouldShowInPublicList(dealer.application)
+        : true
+    );
 
-  const withCovers = await enrichDealersWithCoverUrls(supabase, filtered);
+  const withCovers = await withSignedDealerPhotos(supabase, filtered);
   return attachListingCounts(supabase, dealerType, withCovers);
 }
 
@@ -204,7 +230,7 @@ async function fetchDealersFromApplications(
   const filtered = mapped.filter((dealer) =>
     shouldShowInPublicList(dealer.application ?? null)
   );
-  const withCovers = await enrichDealersWithCoverUrls(supabase, filtered);
+  const withCovers = await withSignedDealerPhotos(supabase, filtered);
   return attachListingCounts(supabase, dealerType, withCovers);
 }
 
@@ -253,16 +279,7 @@ function mapDealerRow(dealer: Record<string, unknown>): DealerProfile {
   };
 }
 
-export function turkishPersonName(first?: string | null, last?: string | null) {
-  return [first, last]
-    .map((part) => (part ?? "").trim())
-    .filter(Boolean)
-    .map((part) => {
-      const lower = part.toLocaleLowerCase("tr-TR");
-      return lower.charAt(0).toLocaleUpperCase("tr-TR") + lower.slice(1);
-    })
-    .join(" ");
-}
+export { turkishPersonName } from "./turkish-person-name";
 
 export function companyAgeLabel(year?: number | null) {
   if (year == null || year < 1900) return "";
@@ -340,7 +357,7 @@ export async function fetchDealerProfile(
 
     if (!error && data) {
       const mapped = mapDealerRow(data as unknown as Record<string, unknown>);
-      const [enriched] = await enrichDealersWithCoverUrls(supabase, [mapped]);
+      const [enriched] = await withSignedDealerPhotos(supabase, [mapped]);
       const withCounts = await attachListingCounts(supabase, dealerType, [
         enriched ?? mapped,
       ]);
@@ -363,11 +380,42 @@ export async function fetchDealerProfile(
     application: app,
     bayi_applications: app,
   });
-  const [enriched] = await enrichDealersWithCoverUrls(supabase, [mapped]);
+  const [enriched] = await withSignedDealerPhotos(supabase, [mapped]);
   const withCounts = await attachListingCounts(supabase, dealerType, [
     enriched ?? mapped,
   ]);
   return withCounts[0] ?? enriched ?? mapped;
+}
+
+/** Aktif bayi satırı — kullanıcı id ile (ilan detay galeri profili). */
+export async function fetchActiveDealerByUserId(
+  supabase: SupabaseClient,
+  dealerType: DealerType,
+  userId: string
+): Promise<DealerProfile | null> {
+  const tableName = getDealerProfileTable(dealerType);
+  const id = userId.trim();
+  if (!tableName || !id) return null;
+  const { data, error } = await supabase
+    .from(tableName)
+    .select(
+      `
+      *,
+      cities(name, country_id),
+      bayi_applications(
+        workplace_photos_json,
+        signboard_photo_storage_path,
+        first_name,
+        last_name,
+        company_founded_year
+      )
+    `
+    )
+    .eq("user_id", id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapDealerRow(data as unknown as Record<string, unknown>);
 }
 
 /**
@@ -380,32 +428,69 @@ export async function fetchDealerListings(
   options?: {
     limit?: number;
     offset?: number;
+    userId?: string;
   }
 ) {
   const tableName = getDealerListingTable(dealerType);
-  if (!tableName) return [];
+  const limit = options?.limit ?? 20;
+  const offset = options?.offset ?? 0;
+  const ownerId = options?.userId?.trim();
+  const byId = new Map<string, Record<string, unknown>>();
 
-  let query = supabase
-    .from(tableName)
-    .select("*")
-    .eq("dealer_id", dealerId)
-    .order("created_at", { ascending: false });
+  const ingest = (rows: Record<string, unknown>[] | null | undefined, table: string) => {
+    for (const row of rows ?? []) {
+      const id = String(row.id ?? "");
+      if (!id || byId.has(id)) continue;
+      byId.set(id, {
+        ...row,
+        _storage_table: table,
+        dealer_type_scope:
+          row.dealer_type_scope ?? (dealerType === "galeri" ? "galeri" : row.dealer_type_scope),
+      });
+    }
+  };
 
-  if (options?.limit) {
-    query = query.limit(options.limit);
+  const load = async (table: string, filter: { column: string; value: string }) => {
+    let query = supabase
+      .from(table)
+      .select("*")
+      .eq(filter.column, filter.value)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    const { data, error } = await query;
+    if (error) {
+      console.error("fetchDealerListings error:", table, error.message);
+      return;
+    }
+    ingest(data as Record<string, unknown>[] | null, table);
+  };
+
+  const loads: Promise<void>[] = [];
+  if (tableName && ownerId) {
+    loads.push(load(tableName, { column: "user_id", value: ownerId }));
+  } else if (tableName) {
+    loads.push(load(tableName, { column: "dealer_id", value: dealerId }));
   }
-  if (options?.offset) {
-    query = query.range(options.offset, options.offset + (options.limit ?? 20) - 1);
+  if (ownerId && dealerType === "galeri") {
+    loads.push(load("listings", { column: "user_id", value: ownerId }));
   }
+  await Promise.all(loads);
 
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("fetchDealerListings error:", error);
-    return [];
+  const rows = [...byId.values()];
+  if (dealerType === "galeri") {
+    return rows.filter((row) => {
+      const table = String(row._storage_table ?? "");
+      const scope = String(row.dealer_type_scope ?? "");
+      return table === "galeri_listings" || scope === "galeri";
+    });
   }
-
-  return data ?? [];
+  if (dealerType === "kiralama") {
+    return rows.filter((row) => {
+      const table = String(row._storage_table ?? "");
+      return table === "kiralik_listings" || row.rental_only === true;
+    });
+  }
+  return rows;
 }
 
 /**
