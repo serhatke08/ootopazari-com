@@ -39,10 +39,18 @@ export async function GET(req: Request) {
   // Android App Link / intent fallback
   const intentHref = `intent://eids/result?${qs}#Intent;scheme=otopazari;package=com.partridge.otomobile;end`;
 
-  const title = ok ? "Doğrulama tamamlandı" : "Doğrulama sonucu";
+  const alreadyLinked =
+    durum === "eids_already_linked" || apiHata === "eids_already_linked";
+  const title = ok
+    ? "Doğrulama tamamlandı"
+    : alreadyLinked
+      ? "e-Devlet başka hesapta"
+      : "Doğrulama sonucu";
   const message = ok
     ? "E-Devlet doğrulaması alındı. Uygulamaya dönülüyor…"
-    : "Doğrulama tamamlanamadı veya iptal edildi. Uygulamadan tekrar deneyebilirsiniz.";
+    : alreadyLinked
+      ? "Bu e-Devlet başka bir Oto Pazarı hesabına tanımlı. Uygulamayı açıp bu hesaba taşıyabilir veya eski hesaba girebilirsin."
+      : "Doğrulama tamamlanamadı veya iptal edildi. Uygulamadan tekrar deneyebilirsiniz.";
 
   const html = `<!DOCTYPE html>
 <html lang="tr">

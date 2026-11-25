@@ -5,6 +5,13 @@ export type BindEidsResult =
   | { ok: true; alreadyBound: boolean }
   | { ok: false; error: "eids_already_linked" | "bind_failed"; message: string };
 
+const EIDS_CLEAR = {
+  eids_kullanici_kodu: null,
+  eids_ad: null,
+  eids_soyad: null,
+  eids_verified_at: null,
+} as const;
+
 /**
  * Bir e-Devlet kullanıcı kodu yalnızca bir uygulama hesabına bağlanır.
  * Aynı hesap tekrar doğrularsa idempotent OK.
@@ -86,4 +93,54 @@ export async function bindEidsKullaniciToProfile(
   }
 
   return { ok: true, alreadyBound: false };
+}
+
+/**
+ * e-Devlet oturumu bu kullanıcıda kanıtlandı ama kod başka profildedir.
+ * Eski profilden koparıp bu hesaba taşır.
+ */
+export async function transferEidsKullaniciToProfile(
+  admin: SupabaseClient,
+  params: {
+    userId: string;
+    kullaniciKodu: string;
+    ad?: string | null;
+    soyad?: string | null;
+  }
+): Promise<BindEidsResult> {
+  const kod = params.kullaniciKodu.trim();
+  if (!kod) {
+    return { ok: false, error: "bind_failed", message: "kullanici_kodu_empty" };
+  }
+
+  const { error: clearErr } = await admin
+    .from("profiles")
+    .update({ ...EIDS_CLEAR })
+    .eq("eids_kullanici_kodu", kod)
+    .neq("id", params.userId);
+
+  if (clearErr) {
+    return {
+      ok: false,
+      error: "bind_failed",
+      message: clearErr.message || "unbind_failed",
+    };
+  }
+
+  return bindEidsKullaniciToProfile(admin, params);
+}
+
+/** Bu hesabın e-Devlet bağını koparır (taşıma yok). */
+export async function unbindEidsFromCurrentProfile(
+  admin: SupabaseClient,
+  userId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error } = await admin
+    .from("profiles")
+    .update({ ...EIDS_CLEAR })
+    .eq("id", userId);
+  if (error) {
+    return { ok: false, error: error.message || "unbind_failed" };
+  }
+  return { ok: true };
 }

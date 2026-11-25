@@ -25,9 +25,9 @@ export function humanizeEidsFailMessage(
 ): string {
   if (durum === "eids_already_linked") {
     return (
-      "Bu e-Devlet hesabı başka bir Oto Pazarı hesabına tanımlı. " +
-      "O hesaba giriş yapın veya farklı bir e-Devlet kullanın. " +
-      "Bir e-Devlet yalnızca bir hesaba bağlanır."
+      "Bu e-Devlet başka bir Oto Pazarı hesabına tanımlı. " +
+      "Eski hesaba girebiliyorsan oradan devam et. " +
+      "Hesabı kaybettiysen bu hesaba taşıyabilirsin."
     );
   }
   if (isEidsMinistryGateError(durum)) {

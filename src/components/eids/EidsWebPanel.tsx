@@ -52,21 +52,26 @@ export function EidsWebPanel({
   const [err, setErr] = useState<string | null>(null);
   const [plaka, setPlaka] = useState("");
   const [plateResult, setPlateResult] = useState<string | null>(null);
+  const [transferState, setTransferState] = useState<string | null>(null);
   const locked = eidsVerified;
 
   const banner = useMemo(() => {
     const eids = sp.get("eids");
     const durum = sp.get("durum");
+    const state = sp.get("state");
     if (eids === "ok") {
       return {
         ok: true,
         text: "e-Devlet doğrulaması tamamlandı.",
+        transferState: null as string | null,
       };
     }
     if (eids === "fail") {
       return {
         ok: false,
         text: humanizeEidsFailMessage(durum),
+        transferState:
+          durum === "eids_already_linked" && state ? state : null,
       };
     }
     return null;
@@ -76,6 +81,7 @@ export function EidsWebPanel({
     if (banner) {
       setMsg(banner.ok ? banner.text : null);
       setErr(banner.ok ? null : banner.text);
+      setTransferState(banner.transferState);
     }
   }, [banner]);
 
@@ -111,6 +117,76 @@ export function EidsWebPanel({
     setBusy(false);
     router.refresh();
   }, [locked, phone, router, userId]);
+
+  const transferEids = useCallback(async () => {
+    if (!transferState) return;
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/eids/transfer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ state: transferState }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok || !body.ok) {
+        setErr(body.message || body.error || `transfer_${res.status}`);
+        setBusy(false);
+        return;
+      }
+      setTransferState(null);
+      setErr(null);
+      setMsg("e-Devlet bu hesaba taşındı.");
+      setBusy(false);
+      router.replace("/profil/eids");
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "transfer_failed");
+      setBusy(false);
+    }
+  }, [router, transferState]);
+
+  const unbindEids = useCallback(async () => {
+    if (!locked) return;
+    const ok = window.confirm(
+      "e-Devlet bağı bu hesaptan kalkacak. İlan vermek için tekrar doğrulaman gerekir."
+    );
+    if (!ok) return;
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/eids/unbind", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        credentials: "include",
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+      };
+      if (!res.ok || !body.ok) {
+        setErr(body.error || `unbind_${res.status}`);
+        setBusy(false);
+        return;
+      }
+      setMsg("e-Devlet bağı kaldırıldı.");
+      setBusy(false);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "unbind_failed");
+      setBusy(false);
+    }
+  }, [locked, router]);
 
   const startEids = useCallback(async () => {
     if (locked) return;
@@ -222,7 +298,17 @@ export function EidsWebPanel({
       ) : null}
       {err ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-          {err}
+          <p>{err}</p>
+          {transferState ? (
+            <button
+              type="button"
+              onClick={() => void transferEids()}
+              disabled={busy}
+              className="mt-3 inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+            >
+              Bu hesaba taşı
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -276,14 +362,24 @@ export function EidsWebPanel({
           )}
         </p>
         {locked ? (
-          <div className="mt-4 space-y-1 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-            {displayName ? <p className="font-semibold">{displayName}</p> : null}
-            <p>{phone || "—"}</p>
-            {eidsVerifiedAt ? (
-              <p className="text-xs text-emerald-800">
-                {new Date(eidsVerifiedAt).toLocaleString("tr-TR")}
-              </p>
-            ) : null}
+          <div className="mt-4 space-y-3">
+            <div className="space-y-1 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+              {displayName ? <p className="font-semibold">{displayName}</p> : null}
+              <p>{phone || "—"}</p>
+              {eidsVerifiedAt ? (
+                <p className="text-xs text-emerald-800">
+                  {new Date(eidsVerifiedAt).toLocaleString("tr-TR")}
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => void unbindEids()}
+              disabled={busy}
+              className="text-sm font-semibold text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 disabled:opacity-50"
+            >
+              e-Devlet bağını kaldır
+            </button>
           </div>
         ) : (
           <>

@@ -147,6 +147,19 @@ export async function POST(req: Request) {
           } else {
             kullaniciHata = bound.error;
             kullaniciKodu = null;
+            if (bound.error === "eids_already_linked") {
+              await admin
+                .from("eids_verification_sessions")
+                .update({
+                  kullanici_kodu: kk.kullaniciKodu,
+                  kullanici_ad: kk.ad ?? null,
+                  kullanici_soyad: kk.soyad ?? null,
+                  kullanici_hata: "eids_already_linked",
+                  durum: "eids_already_linked",
+                  status: "failed",
+                })
+                .eq("id", session.id);
+            }
           }
         } else {
           kullaniciHata =

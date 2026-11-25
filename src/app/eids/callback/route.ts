@@ -152,6 +152,7 @@ async function completeMinistryApis(
   let kullaniciHata: string | null = null;
   let kullaniciAd: string | null = null;
   let kullaniciSoyad: string | null = null;
+  let pendingTransferKodu: string | null = null;
 
   if (!kullaniciKodu) {
     if (!gsmNo) {
@@ -186,8 +187,13 @@ async function completeMinistryApis(
             kullaniciHata = null;
           } else {
             kullaniciOk = false;
-            kullaniciKodu = null;
             kullaniciHata = bound.error;
+            kullaniciAd = kk.ad ?? null;
+            kullaniciSoyad = kk.soyad ?? null;
+            if (bound.error === "eids_already_linked") {
+              pendingTransferKodu = kk.kullaniciKodu;
+            }
+            kullaniciKodu = null;
           }
         }
       } catch (e) {
@@ -275,7 +281,7 @@ async function completeMinistryApis(
   await admin
     .from("eids_verification_sessions")
     .update({
-      kullanici_kodu: kullaniciKodu,
+      kullanici_kodu: kullaniciKodu || pendingTransferKodu,
       kullanici_ad: kullaniciAd,
       kullanici_soyad: kullaniciSoyad,
       kullanici_hata: kullaniciHata,
@@ -513,9 +519,6 @@ export async function GET(req: Request) {
     });
     try {
       const u = new URL(appUrl);
-      if (ministry.kullaniciKodu) {
-        u.searchParams.set("kullaniciKodu", ministry.kullaniciKodu);
-      }
       if (ministry.aracOk) u.searchParams.set("arac", "1");
       if (ministry.kullaniciHata) {
         u.searchParams.set("apiHata", ministry.kullaniciHata.slice(0, 120));
