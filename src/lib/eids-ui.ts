@@ -30,6 +30,16 @@ export function humanizeEidsFailMessage(
       "Hesabı kaybettiysen bu hesaba taşıyabilirsin."
     );
   }
+  if (
+    durum === "gsm_missing" ||
+    durum === "phone_missing" ||
+    /kullanici bilgilerini/i.test(durum || "")
+  ) {
+    return (
+      "e-Devlet cep numarası profildekiyle uyuşmadı. " +
+      "Yukarıya e-Devlet’teki 5xxxxxxxxx numaranı yaz, kaydet, sonra tekrar doğrula."
+    );
+  }
   if (isEidsMinistryGateError(durum)) {
     return (
       "e-Devlet girişi tamamlandı; Ticaret Bakanlığı API şu an kullanıcı kodunu vermiyor (03_). " +

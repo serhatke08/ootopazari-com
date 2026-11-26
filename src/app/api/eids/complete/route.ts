@@ -144,6 +144,18 @@ export async function POST(req: Request) {
           });
           if (bound.ok) {
             kullaniciKodu = kk.kullaniciKodu;
+            const currentGsm = normalizeGsmNo(
+              (profile as { phone?: string | null } | null)?.phone
+            );
+            if (currentGsm !== gsmNo) {
+              const { error: phoneErr } = await admin
+                .from("profiles")
+                .update({ phone: gsmNo })
+                .eq("id", user.id);
+              if (phoneErr) {
+                console.warn("eids persist gsm", phoneErr.message);
+              }
+            }
           } else {
             kullaniciHata = bound.error;
             kullaniciKodu = null;
@@ -211,14 +223,28 @@ export async function POST(req: Request) {
 
   const ok = edevletOk && Boolean(kullaniciKodu);
   const err = ok ? null : kullaniciHata || "kullanici_failed";
+  if (!ok && kullaniciHata) {
+    await admin
+      .from("eids_verification_sessions")
+      .update({ kullanici_hata: kullaniciHata })
+      .eq("id", session.id);
+  }
+  const needsGsm =
+    !ok &&
+    err !== "eids_already_linked" &&
+    Boolean(err) &&
+    (err === "gsm_missing" ||
+      err === "phone_missing" ||
+      /kullanici bilgilerini/i.test(err) ||
+      /gsm/i.test(err));
   return NextResponse.json({
     ok,
     listingId: session.listing_id,
     kullaniciKodu,
     error: err,
-    gsmHint:
-      ok || err === "eids_already_linked"
-        ? null
-        : "Telefon numarası uyuşmazlığı. Profildeki numara, e-Devlet’teki telefon numarasıyla aynı olmalı (5xxxxxxxxx).",
+    needsGsm,
+    gsmHint: needsGsm
+      ? "e-Devlet’te kayıtlı cep numaranı yaz (5xxxxxxxxx)."
+      : null,
   });
 }
