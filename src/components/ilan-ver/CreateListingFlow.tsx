@@ -24,6 +24,7 @@ import {
   isVehicleCategoryCode,
   moderationPayload,
   normalizePhoneDigits,
+  toTrMobile10,
   parseMileageTry,
   parsePriceTry,
   formatPriceThousandsTr,
@@ -71,6 +72,7 @@ import {
   recordActivationUse,
   type ListingQuotaSnapshot,
 } from "@/lib/listing-quota";
+import { getDealerListingTable } from "@/lib/dealer-listing-tables";
 import {
   DUPLICATE_LIVE_LISTING_MESSAGE,
   findLiveDuplicateListingId,
@@ -242,6 +244,7 @@ type Props = {
   editListingNumber?: string | null;
   initialGalleryUrls?: string[];
   initialListingPayload?: Record<string, unknown> | null;
+  dealerType?: "galeri" | null;
 };
 
 export function CreateListingFlow({
@@ -252,6 +255,7 @@ export function CreateListingFlow({
   editListingNumber = null,
   initialGalleryUrls = [],
   initialListingPayload = null,
+  dealerType = null,
 }: Props) {
   const isEditMode = Boolean(editListingId);
   const vehiclePages = isEditMode ? EDIT_VEHICLE_PAGES : VEHICLE_PAGES;
@@ -374,6 +378,9 @@ export function CreateListingFlow({
     modelYili: string | null;
   } | null>(null);
   const [eidsMismatches, setEidsMismatches] = useState<EidsMismatch[]>([]);
+  const [eidsTransferState, setEidsTransferState] = useState<string | null>(
+    null
+  );
 
   const [files, setFiles] = useState<File[]>([]);
   /** Storage path listesi — taslak JSON’a yazılır */
@@ -392,6 +399,8 @@ export function CreateListingFlow({
   const [cityId, setCityId] = useState<string | null>(null);
   const [district, setDistrict] = useState("");
   const [phone, setPhone] = useState("");
+  /** İlanda telefon görünsün. false = yalnızca mesaj. */
+  const [contactViaPhone, setContactViaPhone] = useState(true);
   /** 'none' | 'acil' | 'boost' | 'both' — app ile aynı */
   const [packageIntent, setPackageIntent] = useState<
     "none" | "acil" | "boost" | "both"
@@ -524,6 +533,7 @@ export function CreateListingFlow({
       cityId,
       district,
       phone,
+      contactViaPhone,
       imagePaths: draftImagePaths,
       coverPhotoIndex: coverIndex,
       packageIntent,
@@ -578,6 +588,7 @@ export function CreateListingFlow({
     cityId,
     district,
     phone,
+    contactViaPhone,
     draftImagePaths,
     coverIndex,
     packageIntent,
@@ -625,6 +636,7 @@ export function CreateListingFlow({
       const sp = new URLSearchParams(window.location.search);
       const eidsStatus = sp.get("eids"); // ok | fail
       const eidsDurum = sp.get("durum")?.trim() || "";
+      const eidsState = sp.get("state")?.trim() || "";
       const step = sp.get("step");
       const fromEids =
         step === "eids" || eidsStatus === "ok" || eidsStatus === "fail";
@@ -675,6 +687,9 @@ export function CreateListingFlow({
         }
       } else if (eidsStatus === "fail") {
         setEidsMsg(humanizeEidsFailMessage(eidsDurum));
+        if (eidsDurum === "eids_already_linked" && eidsState) {
+          setEidsTransferState(eidsState);
+        }
       }
 
       try {
@@ -874,11 +889,17 @@ export function CreateListingFlow({
       if (!district.trim()) {
         return { message: "İlçe / semt yazın.", fieldId: "ilan-ver-district" };
       }
-      if (!isValidTrMobile10(normalizePhoneDigits(phone).slice(-10))) {
-        return {
-          message: "Geçerli cep telefonu girin.",
-          fieldId: "ilan-ver-phone",
-        };
+      {
+        const digits = normalizePhoneDigits(phone);
+        const empty = digits.length === 0;
+        if (contactViaPhone || !empty) {
+          if (!isValidTrMobile10(digits.slice(-10))) {
+            return {
+              message: "Geçerli cep telefonu girin.",
+              fieldId: "ilan-ver-phone",
+            };
+          }
+        }
       }
     }
     if (page === "boosts") {
@@ -1086,6 +1107,7 @@ export function CreateListingFlow({
           : phoneRaw.slice(-10);
       setPhone(digits);
     }
+    setContactViaPhone(row.contact_via_phone !== false);
 
     if (vehicle) {
       if (row.vehicle_year != null) {
@@ -1374,6 +1396,9 @@ export function CreateListingFlow({
     if (d.cityId) setCityId(d.cityId);
     if (d.district) setDistrict(d.district);
     if (d.phone) setPhone(d.phone);
+    if (typeof d.contactViaPhone === "boolean") {
+      setContactViaPhone(d.contactViaPhone);
+    }
     if (
       d.packageIntent === "acil" ||
       d.packageIntent === "boost" ||
@@ -1422,10 +1447,63 @@ export function CreateListingFlow({
     }, 800);
   }
 
+  const transferEidsToThisAccount = async () => {
+    if (!eidsTransferState) return;
+    setEidsBusy(true);
+    try {
+      const res = await fetch("/api/eids/transfer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ state: eidsTransferState }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok || !body.ok) {
+        setEidsMsg(body.message || body.error || "Taşıma başarısız.");
+        return;
+      }
+      setEidsTransferState(null);
+      setEidsAccountOk(true);
+      setEidsMsg("e-Devlet bu hesaba taşındı. Plakayı yazıp sorgula.");
+    } catch (e) {
+      setEidsMsg(e instanceof Error ? e.message : "Taşıma başarısız.");
+    } finally {
+      setEidsBusy(false);
+    }
+  };
+
   const startEids = async () => {
     setEidsBusy(true);
     setEidsMsg(null);
     try {
+      const ten = toTrMobile10(phone);
+      if (!ten) {
+        setEidsMsg("e-Devlet’teki cep numaranı yaz (5xxxxxxxxx).");
+        return;
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.id) {
+        const { error: phoneErr } = await supabase
+          .from("profiles")
+          .update({ phone: ten })
+          .eq("id", user.id);
+        if (phoneErr) {
+          setEidsMsg(
+            "Numara kaydedilemedi. Başka bir hesapta kayıtlı olabilir."
+          );
+          return;
+        }
+        if (!phone) setPhone(ten);
+      }
       await persistDraft();
       const {
         data: { session },
@@ -1974,9 +2052,15 @@ export function CreateListingFlow({
         setErr("Şehir seçin.");
         return;
       }
-      if (!isValidTrMobile10(normalizePhoneDigits(phone).slice(-10))) {
-        setErr("Geçerli cep telefonu girin.");
-        return;
+      {
+        const digits = normalizePhoneDigits(phone);
+        const empty = digits.length === 0;
+        if (contactViaPhone || !empty) {
+          if (!isValidTrMobile10(digits.slice(-10))) {
+            setErr("Geçerli cep telefonu girin.");
+            return;
+          }
+        }
       }
       {
         const photoCount =
@@ -2037,7 +2121,9 @@ export function CreateListingFlow({
       const ten =
         digits.length === 11 && digits.startsWith("0")
           ? digits.slice(1)
-          : digits.slice(-10);
+          : digits.length === 0
+            ? ""
+            : digits.slice(-10);
 
       const desc = composeListingDescription({
         userDescription: description,
@@ -2130,7 +2216,9 @@ export function CreateListingFlow({
         is_negotiable: false,
         city_id: cityId,
         district: district.trim() || null,
-        contact_phone: formatContactPhone(ten),
+        contact_phone: ten ? formatContactPhone(ten) : null,
+        contact_via_phone: contactViaPhone,
+        contact_via_message: true,
       };
       if (!isEditMode) {
         base.user_id = user.id;
@@ -2140,6 +2228,10 @@ export function CreateListingFlow({
         base.activation_fee_amount = PAID_LISTING_ACTIVATION_FEE_TRY;
         if (!publishAsPassive) {
           base.activated_at = new Date().toISOString();
+        }
+        if (dealerType === "galeri") {
+          base.dealer_type_scope = "galeri";
+          base.rental_only = false;
         }
         Object.assign(base, moderationPayload(), listingCreatedClientField());
       } else {
@@ -2303,11 +2395,34 @@ export function CreateListingFlow({
         return;
       }
 
-      const { data: inserted, error: insErr } = await supabase
-        .from("listings")
-        .insert(sanitizeListingClientWrite(base, "insert"))
-        .select("id, listing_number")
-        .single();
+      const payload = sanitizeListingClientWrite(base, "insert");
+      const preferredTable =
+        dealerType === "galeri"
+          ? getDealerListingTable("galeri") ?? "listings"
+          : "listings";
+      let insertTable = preferredTable;
+      let inserted: { id?: string; listing_number?: number | string } | null =
+        null;
+      let insErr: { message?: string } | null = null;
+      {
+        const first = await supabase
+          .from(insertTable)
+          .insert(payload)
+          .select("id, listing_number")
+          .single();
+        inserted = first.data;
+        insErr = first.error;
+        if ((insErr || !inserted?.id) && insertTable !== "listings") {
+          insertTable = "listings";
+          const fallback = await supabase
+            .from("listings")
+            .insert(payload)
+            .select("id, listing_number")
+            .single();
+          inserted = fallback.data;
+          insErr = fallback.error;
+        }
+      }
 
       if (insErr || !inserted?.id) {
         const msg = insErr?.message ?? "Kayıt başarısız.";
@@ -2353,11 +2468,11 @@ export function CreateListingFlow({
         galleryUrls[Math.min(coverIndex, galleryUrls.length - 1)] ??
         galleryUrls[0];
       await supabase
-        .from("listings")
+        .from(insertTable)
         .update({ image_url: coverUrl, images: galleryUrls })
         .eq("id", listingId);
 
-      await evaluateListingQualityAfterSave(supabase, listingId, "listings");
+      await evaluateListingQualityAfterSave(supabase, listingId, insertTable);
       await deleteListingDraft();
       const listingRef = String(
         (inserted as { listing_number?: number | string }).listing_number ??
@@ -3337,21 +3452,48 @@ export function CreateListingFlow({
       {page === "eids" ? (
         <div id="ilan-ver-eids" className="space-y-4">
           {!eidsAccountOk ? (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                disabled={eidsBusy}
-                onClick={() => void startEids()}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/branding/edevlet_icon.png"
-                  alt=""
-                  className="h-5 w-5 object-contain"
-                />
-                e-Devlet ile doğrula
-              </button>
+            <div className="mx-auto w-full max-w-sm space-y-3">
+              {toTrMobile10(phone) &&
+              !(eidsMsg && /uyuşmadı|gsm_missing|phone_missing/i.test(eidsMsg)) ? (
+                <p className="text-xs text-zinc-600">
+                  Profilindeki cep kullanılacak. e-Devlet ile uyuşmazsa o zaman
+                  sorulur.
+                </p>
+              ) : (
+                <>
+                  <label className="block text-sm font-medium text-zinc-800">
+                    e-Devlet cep telefonu
+                    <input
+                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2.5"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="5xxxxxxxxx"
+                      inputMode="tel"
+                      autoComplete="tel"
+                    />
+                  </label>
+                  <p className="text-xs text-zinc-600">
+                    e-Devlet hesabındaki numarayla aynı olmalı. 90… veya 0… ile
+                    başlasa da aynı numaradır.
+                  </p>
+                </>
+              )}
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  disabled={eidsBusy}
+                  onClick={() => void startEids()}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/branding/edevlet_icon.png"
+                    alt=""
+                    className="h-5 w-5 object-contain"
+                  />
+                  e-Devlet ile doğrula
+                </button>
+              </div>
             </div>
           ) : (
             <div className="mx-auto w-full max-w-[280px] space-y-2 text-center">
@@ -3385,18 +3527,28 @@ export function CreateListingFlow({
                     : "Plakayı sorgula"}
               </button>
               <p className="text-left text-[11px] leading-snug text-zinc-500">
-                Not: Sadece kendi adına kayıtlı veya e-Devlet’te yetkili
-                göründüğün araçları sorgulayabilirsin (ör. malik, eş, anne/baba,
-                çocuk — yetki tanımlıysa). Başkasının (yetkin olmayan) plakasını
-                sorgulayamazsın; yetkin yoksa Ticaret Bakanlığı sorguyu reddeder.
+                Not: Kendi aracın; eş, 1. derece (anne, baba, çocuk) ve 2. derece
+                (kardeş, dede, nine, torun); e-Devlet’te seni yetkilendirenler;
+                galeri için araç sahibi yetki belgesi numarasıyla izin verdiyse.
+                Yetkin yoksa Ticaret Bakanlığı sorguyu reddeder.
               </p>
             </div>
           )}
 
           {eidsMsg && !eidsVehicleOk ? (
-            <p className="text-center text-sm font-medium text-amber-800">
-              {eidsMsg}
-            </p>
+            <div className="space-y-2 text-center">
+              <p className="text-sm font-medium text-amber-800">{eidsMsg}</p>
+              {eidsTransferState ? (
+                <button
+                  type="button"
+                  onClick={() => void transferEidsToThisAccount()}
+                  disabled={eidsBusy}
+                  className="inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  Bu hesaba taşı
+                </button>
+              ) : null}
+            </div>
           ) : null}
 
           {eidsOfficial && eidsVehicleOk ? (
@@ -3764,7 +3916,7 @@ export function CreateListingFlow({
             />
           </label>
           <label className="block text-sm font-medium">
-            Telefon <span className="text-red-600">*</span>
+            Telefon{contactViaPhone ? <span className="text-red-600"> *</span> : null}
             <input
               id="ilan-ver-phone"
               className={`mt-1 w-full rounded-lg border px-3 py-2 ${fieldRing("ilan-ver-phone")}`}
@@ -3775,6 +3927,26 @@ export function CreateListingFlow({
               }}
               inputMode="tel"
             />
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-zinc-300 text-blue-600"
+              checked={!contactViaPhone}
+              onChange={(e) => {
+                const next = !e.target.checked;
+                setContactViaPhone(next);
+                void persistDraft({ contactViaPhone: next });
+              }}
+            />
+            <span>
+              <span className="block text-sm font-semibold text-zinc-900">
+                Aranmak istemiyorum
+              </span>
+              <span className="mt-0.5 block text-xs text-zinc-600">
+                Telefon ilanda görünmez. Alıcılar yalnızca mesaj atar.
+              </span>
+            </span>
           </label>
         </div>
       ) : null}

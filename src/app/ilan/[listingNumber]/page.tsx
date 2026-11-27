@@ -776,6 +776,11 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
   const vehiclePlate = strCell(
     pick(row, ["vehicle_plate", "plate_number", "plaka", "license_plate"])
   );
+  const showPlate =
+    isOwner ||
+    !!viewerAdminProfile ||
+    String(row._storage_table ?? "").trim() === "galeri_listings" ||
+    String(row.dealer_type_scope ?? "").trim() === "galeri";
   const engineCapacityDisplay = fmtEngineCapacity(
     pick(row, [
       "vehicle_engine_cc",
@@ -820,7 +825,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     specRow("Servis Garantisi", warrantyFromDesc),
     specRow("Ağır Hasar Kayıtlı", heavyDamageFromDesc),
     specRow("Plaka / Uyruk", plateNationalityFromDesc),
-    specRow("Plaka", vehiclePlate),
+    specRow("Plaka", showPlate ? vehiclePlate : null),
     showExpertiz
       ? specRow(
           "Ekspertiz raporu",
@@ -1297,6 +1302,11 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                       initialFavorites={stats.favorites}
                     />
                   </div>
+                ) : null}
+                {showMessageButton && !showPhone ? (
+                  <p className="mt-3 hidden text-xs font-medium text-black/60 md:block">
+                    Satıcı yalnızca mesaj kabul ediyor.
+                  </p>
                 ) : null}
                 {showMessageButton && id ? (
                   <div className="mt-3 hidden gap-2 md:flex">

@@ -133,6 +133,19 @@ export function normalizePhoneDigits(input: string): string {
   return input.replace(/\D/g, "");
 }
 
+/** 5xxxxxxxxx veya null. 0 / 90 önekini atar. */
+export function toTrMobile10(input: string): string | null {
+  const digits = normalizePhoneDigits(input);
+  if (!digits) return null;
+  const ten =
+    digits.length === 11 && digits.startsWith("0")
+      ? digits.slice(1)
+      : digits.length === 12 && digits.startsWith("90")
+        ? digits.slice(2)
+        : digits.slice(-10);
+  return isValidTrMobile10(ten) ? ten : null;
+}
+
 export function formatContactPhone(digits10: string): string {
   return `0${digits10}`;
 }
@@ -261,6 +274,8 @@ const LISTING_CLIENT_INSERT_ONLY_KEYS = new Set([
   "moderation_status",
   "moderation_reason",
   "created_client",
+  "dealer_type_scope",
+  "rental_only",
 ]);
 
 /** Türkiye mağaza — ilan satırında ülke her zaman TR. */

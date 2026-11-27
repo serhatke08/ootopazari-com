@@ -417,9 +417,10 @@ export function EidsWebPanel({
             : "Önce adım 2 yeşil olmalı."}
         </p>
         <p className="mt-2 text-xs leading-snug text-zinc-500">
-          Not: Sadece kendi adına kayıtlı veya e-Devlet’te yetkili göründüğün
-          araçları sorgulayabilirsin (ör. malik, eş, anne/baba, çocuk — yetki
-          tanımlıysa). Başkasının plakasını sorgulayamazsın.
+          Not: Kendi aracın; eş, 1. derece (anne, baba, çocuk) ve 2. derece
+          (kardeş, dede, nine, torun); e-Devlet’te seni yetkilendirenler;
+          galeri için araç sahibi yetki belgesi numarasıyla izin verdiyse.
+          Yetkin yoksa Ticaret Bakanlığı sorguyu reddeder.
         </p>
         <label className="mt-4 block text-sm font-medium text-zinc-800">
           Plaka

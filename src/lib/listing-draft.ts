@@ -46,6 +46,8 @@ export type ListingDraftPayload = {
   cityId?: string | null;
   district?: string | null;
   phone?: string | null;
+  /** İlanda telefon görünsün. false = yalnızca mesaj. */
+  contactViaPhone?: boolean;
   /** Storage path veya imzalı/public URL listesi */
   imagePaths?: string[];
   coverPhotoIndex?: number;

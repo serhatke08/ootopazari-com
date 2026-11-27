@@ -59,6 +59,11 @@ export function ListingDetailContactDock({
           </span>
           {verified ? <AdminVerifiedBadge size={14} /> : null}
         </Link>
+        {showMessage && !showPhone ? (
+          <p className="text-[11px] font-medium text-zinc-600">
+            Satıcı yalnızca mesaj kabul ediyor.
+          </p>
+        ) : null}
         {showMessage || showPhone ? (
           <div className="flex gap-1.5">
             {showMessage && listingId ? (
