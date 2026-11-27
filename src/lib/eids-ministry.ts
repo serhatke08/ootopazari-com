@@ -127,25 +127,31 @@ async function proxyPost(
   return { status: res.status, json };
 }
 
-/** Faz 1 sonrası — yetkiKodu 2 dk geçerli. */
+/** Faz 1 sonrası — yetkiKodu 2 dk geçerli. GSM zorunlu değil. */
 export async function callGetKullaniciKodu(params: {
   yetkiKodu: string;
-  gsmNo: string;
+  gsmNo?: string | null;
   vergiNo?: string | null;
 }): Promise<GetKullaniciKoduResult> {
-  // e-Devlet 905… gösterebilir; app 5… tutar — üçünü de dene.
   const gsmCandidates = gsmNoCandidates(params.gsmNo);
-  if (gsmCandidates.length === 0) {
-    const digits = params.gsmNo.replace(/\D/g, "");
-    if (digits.length >= 10) gsmCandidates.push(digits);
+  // Önce yalnız yetki; profil telefonu e-Devlet hattıyla uymayınca
+  // doğrulama bitmişken “telefon yaz” hatası çıkıyordu.
+  const attempts: Array<string | null> = [null, ...gsmCandidates];
+  const seen = new Set<string>();
+  const unique: Array<string | null> = [];
+  for (const g of attempts) {
+    const key = g ?? "";
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(g);
   }
 
   let last: GetKullaniciKoduResult | null = null;
-  for (const gsmNo of gsmCandidates) {
+  for (const gsmNo of unique) {
     const body: Record<string, unknown> = {
       yetkiKodu: params.yetkiKodu,
-      gsmNo,
     };
+    if (gsmNo) body.gsmNo = gsmNo;
     if (params.vergiNo?.trim()) body.vergiNo = params.vergiNo.trim();
 
     const { status, json } = await proxyPost("/eids/kullanici-kodu", body);

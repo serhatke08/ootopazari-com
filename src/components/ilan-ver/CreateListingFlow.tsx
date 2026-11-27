@@ -1484,25 +1484,23 @@ export function CreateListingFlow({
     setEidsMsg(null);
     try {
       const ten = toTrMobile10(phone);
-      if (!ten) {
-        setEidsMsg("e-Devlet’teki cep numaranı yaz (5xxxxxxxxx).");
-        return;
-      }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user?.id) {
-        const { error: phoneErr } = await supabase
-          .from("profiles")
-          .update({ phone: ten })
-          .eq("id", user.id);
-        if (phoneErr) {
-          setEidsMsg(
-            "Numara kaydedilemedi. Başka bir hesapta kayıtlı olabilir."
-          );
-          return;
+      if (ten) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.id) {
+          const { error: phoneErr } = await supabase
+            .from("profiles")
+            .update({ phone: ten })
+            .eq("id", user.id);
+          if (phoneErr) {
+            setEidsMsg(
+              "Numara kaydedilemedi. Başka bir hesapta kayıtlı olabilir."
+            );
+            return;
+          }
+          if (!phone) setPhone(ten);
         }
-        if (!phone) setPhone(ten);
       }
       await persistDraft();
       const {
@@ -3453,31 +3451,12 @@ export function CreateListingFlow({
         <div id="ilan-ver-eids" className="space-y-4">
           {!eidsAccountOk ? (
             <div className="mx-auto w-full max-w-sm space-y-3">
-              {toTrMobile10(phone) &&
-              !(eidsMsg && /uyuşmadı|gsm_missing|phone_missing/i.test(eidsMsg)) ? (
+              {toTrMobile10(phone) ? (
                 <p className="text-xs text-zinc-600">
-                  Profilindeki cep kullanılacak. e-Devlet ile uyuşmazsa o zaman
-                  sorulur.
+                  Telefon şart değil. Profilde varsa bakanlık sorgusunda
+                  kullanılır.
                 </p>
-              ) : (
-                <>
-                  <label className="block text-sm font-medium text-zinc-800">
-                    e-Devlet cep telefonu
-                    <input
-                      className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2.5"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="5xxxxxxxxx"
-                      inputMode="tel"
-                      autoComplete="tel"
-                    />
-                  </label>
-                  <p className="text-xs text-zinc-600">
-                    e-Devlet hesabındaki numarayla aynı olmalı. 90… veya 0… ile
-                    başlasa da aynı numaradır.
-                  </p>
-                </>
-              )}
+              ) : null}
               <div className="flex justify-center">
                 <button
                   type="button"

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import {
   callEidsAracYetki,
   callGetKullaniciKodu,
-  normalizeGsmNo,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
 import { eidsDurumIsSuccess, type EidsSessionRow } from "@/lib/eids";
@@ -26,7 +25,6 @@ export async function POST(req: Request) {
     state?: unknown;
     yetkiKodu?: unknown;
     durum?: unknown;
-    gsmNo?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -38,8 +36,6 @@ export async function POST(req: Request) {
   const yetkiKodu =
     typeof body.yetkiKodu === "string" ? body.yetkiKodu.trim() : "";
   const durum = typeof body.durum === "string" ? body.durum.trim() : "ok";
-  const gsmOverride =
-    typeof body.gsmNo === "string" ? body.gsmNo.trim() : "";
 
   if (!state || !yetkiKodu) {
     return NextResponse.json(
@@ -125,62 +121,45 @@ export async function POST(req: Request) {
   let kullaniciHata: string | null = null;
 
   if (!kullaniciKodu && edevletOk) {
-    const gsmNo =
-      normalizeGsmNo(gsmOverride) ||
-      normalizeGsmNo(
-        (profile as { phone?: string | null } | null)?.phone
-      );
-    if (!gsmNo) {
-      kullaniciHata = "gsm_missing";
-    } else {
-      try {
-        const kk = await callGetKullaniciKodu({ yetkiKodu, gsmNo });
-        if (kk.ok && kk.kullaniciKodu) {
-          const bound = await bindEidsKullaniciToProfile(admin, {
-            userId: user.id,
-            kullaniciKodu: kk.kullaniciKodu,
-            ad: kk.ad ?? null,
-            soyad: kk.soyad ?? null,
-          });
-          if (bound.ok) {
-            kullaniciKodu = kk.kullaniciKodu;
-            const currentGsm = normalizeGsmNo(
-              (profile as { phone?: string | null } | null)?.phone
-            );
-            if (currentGsm !== gsmNo) {
-              const { error: phoneErr } = await admin
-                .from("profiles")
-                .update({ phone: gsmNo })
-                .eq("id", user.id);
-              if (phoneErr) {
-                console.warn("eids persist gsm", phoneErr.message);
-              }
-            }
-          } else {
-            kullaniciHata = bound.error;
-            kullaniciKodu = null;
-            if (bound.error === "eids_already_linked") {
-              await admin
-                .from("eids_verification_sessions")
-                .update({
-                  kullanici_kodu: kk.kullaniciKodu,
-                  kullanici_ad: kk.ad ?? null,
-                  kullanici_soyad: kk.soyad ?? null,
-                  kullanici_hata: "eids_already_linked",
-                  durum: "eids_already_linked",
-                  status: "failed",
-                })
-                .eq("id", session.id);
-            }
-          }
+    try {
+      const kk = await callGetKullaniciKodu({
+        yetkiKodu,
+        gsmNo:
+          (profile as { phone?: string | null } | null)?.phone ?? null,
+      });
+      if (kk.ok && kk.kullaniciKodu) {
+        const bound = await bindEidsKullaniciToProfile(admin, {
+          userId: user.id,
+          kullaniciKodu: kk.kullaniciKodu,
+          ad: kk.ad ?? null,
+          soyad: kk.soyad ?? null,
+        });
+        if (bound.ok) {
+          kullaniciKodu = kk.kullaniciKodu;
         } else {
-          kullaniciHata =
-            kk.hataMesaji || kk.hataKodu || `http_${kk.httpStatus}`;
+          kullaniciHata = bound.error;
+          kullaniciKodu = null;
+          if (bound.error === "eids_already_linked") {
+            await admin
+              .from("eids_verification_sessions")
+              .update({
+                kullanici_kodu: kk.kullaniciKodu,
+                kullanici_ad: kk.ad ?? null,
+                kullanici_soyad: kk.soyad ?? null,
+                kullanici_hata: "eids_already_linked",
+                durum: "eids_already_linked",
+                status: "failed",
+              })
+              .eq("id", session.id);
+          }
         }
-      } catch (e) {
+      } else {
         kullaniciHata =
-          e instanceof Error ? e.message : "kullanici_kodu_failed";
+          kk.hataMesaji || kk.hataKodu || `http_${kk.httpStatus}`;
       }
+    } catch (e) {
+      kullaniciHata =
+        e instanceof Error ? e.message : "kullanici_kodu_failed";
     }
   }
 
@@ -229,22 +208,12 @@ export async function POST(req: Request) {
       .update({ kullanici_hata: kullaniciHata })
       .eq("id", session.id);
   }
-  const needsGsm =
-    !ok &&
-    err !== "eids_already_linked" &&
-    Boolean(err) &&
-    (err === "gsm_missing" ||
-      err === "phone_missing" ||
-      /kullanici bilgilerini/i.test(err) ||
-      /gsm/i.test(err));
   return NextResponse.json({
     ok,
     listingId: session.listing_id,
     kullaniciKodu,
     error: err,
-    needsGsm,
-    gsmHint: needsGsm
-      ? "e-Devlet’te kayıtlı cep numaranı yaz (5xxxxxxxxx)."
-      : null,
+    needsGsm: false,
+    gsmHint: null,
   });
 }

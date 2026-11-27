@@ -36,8 +36,7 @@ export function humanizeEidsFailMessage(
     /kullanici bilgilerini/i.test(durum || "")
   ) {
     return (
-      "e-Devlet cep numarası profildekiyle uyuşmadı. " +
-      "Yukarıya e-Devlet’teki 5xxxxxxxxx numaranı yaz, kaydet, sonra tekrar doğrula."
+      "e-Devlet bitti; bakanlık kullanıcı kodunu vermedi. Telefon yazmana gerek yok — tekrar dene."
     );
   }
   if (isEidsMinistryGateError(durum)) {

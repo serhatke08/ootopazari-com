@@ -194,13 +194,10 @@ export function EidsWebPanel({
     setErr(null);
     setMsg(null);
     const norm = normalizeTrMobile(phone);
-    if (!norm) {
-      setErr("Önce geçerli cep kaydet.");
-      setBusy(false);
-      return;
+    if (norm) {
+      const supabase = createSupabaseBrowserClient();
+      await supabase.from("profiles").update({ phone: norm }).eq("id", userId);
     }
-    const supabase = createSupabaseBrowserClient();
-    await supabase.from("profiles").update({ phone: norm }).eq("id", userId);
 
     try {
       const res = await fetch("/api/eids/start", {
@@ -320,9 +317,7 @@ export function EidsWebPanel({
           </p>
         ) : (
           <p className="mt-1 text-sm text-zinc-600">
-            e-Devlet’te <strong>905334…</strong> yazsa da uygulamada{" "}
-            <strong>5334…</strong> yeterli — aynı hat. Profildeki numara
-            e-Devlet hesabındakiyle birebir aynı olmalı.
+            İsteğe bağlı. e-Devlet doğrulaması için telefon şart değil.
           </p>
         )}
         <label className="mt-4 block text-sm font-medium text-zinc-800">

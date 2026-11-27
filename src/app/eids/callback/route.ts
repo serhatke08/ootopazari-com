@@ -9,7 +9,6 @@ import {
 import {
   callEidsAracYetki,
   callGetKullaniciKodu,
-  normalizeGsmNo,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
 import { bindEidsKullaniciToProfile } from "@/lib/eids-bind";
@@ -141,10 +140,6 @@ async function completeMinistryApis(
     .eq("id", session.user_id)
     .maybeSingle();
 
-  const gsmNo = normalizeGsmNo(
-    (profile as { phone?: string | null } | null)?.phone
-  );
-
   let kullaniciKodu =
     (profile as { eids_kullanici_kodu?: string | null } | null)
       ?.eids_kullanici_kodu ?? null;
@@ -155,51 +150,48 @@ async function completeMinistryApis(
   let pendingTransferKodu: string | null = null;
 
   if (!kullaniciKodu) {
-    if (!gsmNo) {
-      kullaniciHata = "gsm_missing";
-    } else {
-      try {
-        const kk = await callGetKullaniciKodu({
-          yetkiKodu,
-          gsmNo,
-        });
-        kullaniciOk = kk.ok;
-        kullaniciKodu = kk.kullaniciKodu ?? null;
-        kullaniciAd = kk.ad ?? null;
-        kullaniciSoyad = kk.soyad ?? null;
-        kullaniciHata =
-          kk.hataMesaji ||
-          kk.hataKodu ||
-          (kk.ok ? null : `http_${kk.httpStatus}`);
+    try {
+      const kk = await callGetKullaniciKodu({
+        yetkiKodu,
+        gsmNo:
+          (profile as { phone?: string | null } | null)?.phone ?? null,
+      });
+      kullaniciOk = kk.ok;
+      kullaniciKodu = kk.kullaniciKodu ?? null;
+      kullaniciAd = kk.ad ?? null;
+      kullaniciSoyad = kk.soyad ?? null;
+      kullaniciHata =
+        kk.hataMesaji ||
+        kk.hataKodu ||
+        (kk.ok ? null : `http_${kk.httpStatus}`);
 
-        if (kk.ok && kk.kullaniciKodu) {
-          const bound = await bindEidsKullaniciToProfile(admin, {
-            userId: session.user_id,
-            kullaniciKodu: kk.kullaniciKodu,
-            ad: kk.ad ?? null,
-            soyad: kk.soyad ?? null,
-          });
-          if (bound.ok) {
-            kullaniciOk = true;
-            kullaniciKodu = kk.kullaniciKodu;
-            kullaniciAd = kk.ad ?? null;
-            kullaniciSoyad = kk.soyad ?? null;
-            kullaniciHata = null;
-          } else {
-            kullaniciOk = false;
-            kullaniciHata = bound.error;
-            kullaniciAd = kk.ad ?? null;
-            kullaniciSoyad = kk.soyad ?? null;
-            if (bound.error === "eids_already_linked") {
-              pendingTransferKodu = kk.kullaniciKodu;
-            }
-            kullaniciKodu = null;
+      if (kk.ok && kk.kullaniciKodu) {
+        const bound = await bindEidsKullaniciToProfile(admin, {
+          userId: session.user_id,
+          kullaniciKodu: kk.kullaniciKodu,
+          ad: kk.ad ?? null,
+          soyad: kk.soyad ?? null,
+        });
+        if (bound.ok) {
+          kullaniciOk = true;
+          kullaniciKodu = kk.kullaniciKodu;
+          kullaniciAd = kk.ad ?? null;
+          kullaniciSoyad = kk.soyad ?? null;
+          kullaniciHata = null;
+        } else {
+          kullaniciOk = false;
+          kullaniciHata = bound.error;
+          kullaniciAd = kk.ad ?? null;
+          kullaniciSoyad = kk.soyad ?? null;
+          if (bound.error === "eids_already_linked") {
+            pendingTransferKodu = kk.kullaniciKodu;
           }
+          kullaniciKodu = null;
         }
-      } catch (e) {
-        kullaniciHata =
-          e instanceof Error ? e.message : "kullanici_kodu_failed";
       }
+    } catch (e) {
+      kullaniciHata =
+        e instanceof Error ? e.message : "kullanici_kodu_failed";
     }
   }
 
