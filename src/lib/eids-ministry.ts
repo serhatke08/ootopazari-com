@@ -127,31 +127,53 @@ async function proxyPost(
   return { status: res.status, json };
 }
 
-/** Faz 1 sonrası — yetkiKodu 2 dk geçerli. GSM zorunlu değil. */
+/** Auth / profil / metadata içinden ilk geçerli TR GSM. */
+export function firstGsmNo(
+  ...raws: Array<string | null | undefined>
+): string | null {
+  for (const raw of raws) {
+    const n = normalizeGsmNo(raw);
+    if (n) return n;
+  }
+  return null;
+}
+
+export function gsmFromAuthMetadata(meta: unknown): string | null {
+  if (!meta || typeof meta !== "object") return null;
+  const m = meta as Record<string, unknown>;
+  return firstGsmNo(
+    typeof m.phone === "string" ? m.phone : null,
+    typeof m.phone_number === "string" ? m.phone_number : null,
+    typeof m.gsm === "string" ? m.gsm : null,
+    typeof m.gsmNo === "string" ? m.gsmNo : null
+  );
+}
+
+/**
+ * Faz 1 sonrası — yetkiKodu 2 dk geçerli.
+ * gsmNo şart: telefonsuz çağrı bakanlıkta 05_ timeout.
+ */
 export async function callGetKullaniciKodu(params: {
   yetkiKodu: string;
   gsmNo?: string | null;
   vergiNo?: string | null;
 }): Promise<GetKullaniciKoduResult> {
   const gsmCandidates = gsmNoCandidates(params.gsmNo);
-  // Önce yalnız yetki; profil telefonu e-Devlet hattıyla uymayınca
-  // doğrulama bitmişken “telefon yaz” hatası çıkıyordu.
-  const attempts: Array<string | null> = [null, ...gsmCandidates];
-  const seen = new Set<string>();
-  const unique: Array<string | null> = [];
-  for (const g of attempts) {
-    const key = g ?? "";
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push(g);
+  if (gsmCandidates.length === 0) {
+    return {
+      ok: false,
+      httpStatus: 400,
+      hataKodu: "gsm_missing",
+      hataMesaji: "gsm_missing",
+    };
   }
 
   let last: GetKullaniciKoduResult | null = null;
-  for (const gsmNo of unique) {
+  for (const gsmNo of gsmCandidates) {
     const body: Record<string, unknown> = {
       yetkiKodu: params.yetkiKodu,
+      gsmNo,
     };
-    if (gsmNo) body.gsmNo = gsmNo;
     if (params.vergiNo?.trim()) body.vergiNo = params.vergiNo.trim();
 
     const { status, json } = await proxyPost("/eids/kullanici-kodu", body);

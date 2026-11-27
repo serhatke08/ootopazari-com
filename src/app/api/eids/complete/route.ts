@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   callEidsAracYetki,
   callGetKullaniciKodu,
+  firstGsmNo,
+  gsmFromAuthMetadata,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
 import { eidsDurumIsSuccess, type EidsSessionRow } from "@/lib/eids";
@@ -25,6 +27,7 @@ export async function POST(req: Request) {
     state?: unknown;
     yetkiKodu?: unknown;
     durum?: unknown;
+    gsmNo?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -36,6 +39,8 @@ export async function POST(req: Request) {
   const yetkiKodu =
     typeof body.yetkiKodu === "string" ? body.yetkiKodu.trim() : "";
   const durum = typeof body.durum === "string" ? body.durum.trim() : "ok";
+  const gsmOverride =
+    typeof body.gsmNo === "string" ? body.gsmNo.trim() : "";
 
   if (!state || !yetkiKodu) {
     return NextResponse.json(
@@ -121,11 +126,25 @@ export async function POST(req: Request) {
   let kullaniciHata: string | null = null;
 
   if (!kullaniciKodu && edevletOk) {
+    let gsmNo = firstGsmNo(
+      gsmOverride,
+      (profile as { phone?: string | null } | null)?.phone
+    );
+    if (!gsmNo) {
+      try {
+        const { data: authData } = await admin.auth.admin.getUserById(user.id);
+        gsmNo = firstGsmNo(
+          authData.user?.phone,
+          gsmFromAuthMetadata(authData.user?.user_metadata)
+        );
+      } catch {
+        /* metadata yoksa devam */
+      }
+    }
     try {
       const kk = await callGetKullaniciKodu({
         yetkiKodu,
-        gsmNo:
-          (profile as { phone?: string | null } | null)?.phone ?? null,
+        gsmNo,
       });
       if (kk.ok && kk.kullaniciKodu) {
         const bound = await bindEidsKullaniciToProfile(admin, {

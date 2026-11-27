@@ -9,6 +9,8 @@ import {
 import {
   callEidsAracYetki,
   callGetKullaniciKodu,
+  firstGsmNo,
+  gsmFromAuthMetadata,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
 import { bindEidsKullaniciToProfile } from "@/lib/eids-bind";
@@ -150,11 +152,26 @@ async function completeMinistryApis(
   let pendingTransferKodu: string | null = null;
 
   if (!kullaniciKodu) {
+    let gsmNo = firstGsmNo(
+      (profile as { phone?: string | null } | null)?.phone
+    );
+    if (!gsmNo) {
+      try {
+        const { data: authData } = await admin.auth.admin.getUserById(
+          session.user_id
+        );
+        gsmNo = firstGsmNo(
+          authData.user?.phone,
+          gsmFromAuthMetadata(authData.user?.user_metadata)
+        );
+      } catch {
+        /* metadata yoksa devam */
+      }
+    }
     try {
       const kk = await callGetKullaniciKodu({
         yetkiKodu,
-        gsmNo:
-          (profile as { phone?: string | null } | null)?.phone ?? null,
+        gsmNo,
       });
       kullaniciOk = kk.ok;
       kullaniciKodu = kk.kullaniciKodu ?? null;
