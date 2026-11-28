@@ -1489,13 +1489,9 @@ export function CreateListingFlow({
           .from("profiles")
           .update({ phone: ten })
           .eq("id", user.id);
-        if (phoneErr) {
-          setEidsMsg(
-            "Numara kaydedilemedi. Başka bir hesapta kayıtlı olabilir."
-          );
-          return;
+        if (!phoneErr) {
+          setPhone(ten);
         }
-        setPhone(ten);
       }
       await persistDraft();
       const {
@@ -1516,6 +1512,7 @@ export function CreateListingFlow({
         body: JSON.stringify({
           source: "web",
           webReturnPath: "/ilan-ver?step=eids",
+          gsmNo: ten,
         }),
       });
       const body = (await res.json()) as {

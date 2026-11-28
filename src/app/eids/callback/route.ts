@@ -11,9 +11,13 @@ import {
   callGetKullaniciKodu,
   firstGsmNo,
   gsmFromAuthMetadata,
+  gsmFromCallbackQuery,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
-import { bindEidsKullaniciToProfile } from "@/lib/eids-bind";
+import {
+  bindEidsKullaniciToProfile,
+  persistProfileGsm,
+} from "@/lib/eids-bind";
 import { getSiteOrigin } from "@/lib/site-url";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -212,9 +216,22 @@ async function completeMinistryApis(
   let kullaniciSoyad: string | null = null;
   let pendingTransferKodu: string | null = null;
 
+  if (kullaniciKodu) {
+    const alreadyGsm = firstGsmNo(
+      (profile as { phone?: string | null } | null)?.phone,
+      gsmFromCallbackQuery(session.callback_query)
+    );
+    if (alreadyGsm) {
+      await persistProfileGsm(admin, session.user_id, alreadyGsm, {
+        stealIfTaken: true,
+      });
+    }
+  }
+
   if (!kullaniciKodu) {
     let gsmNo = firstGsmNo(
-      (profile as { phone?: string | null } | null)?.phone
+      (profile as { phone?: string | null } | null)?.phone,
+      gsmFromCallbackQuery(session.callback_query)
     );
     if (!gsmNo) {
       try {
@@ -228,6 +245,9 @@ async function completeMinistryApis(
       } catch {
         /* metadata yoksa devam */
       }
+    }
+    if (gsmNo) {
+      await persistProfileGsm(admin, session.user_id, gsmNo);
     }
     try {
       const kk = await callGetKullaniciKodu({
@@ -256,6 +276,11 @@ async function completeMinistryApis(
           kullaniciAd = kk.ad ?? null;
           kullaniciSoyad = kk.soyad ?? null;
           kullaniciHata = null;
+          if (gsmNo) {
+            await persistProfileGsm(admin, session.user_id, gsmNo, {
+              stealIfTaken: true,
+            });
+          }
         } else {
           kullaniciOk = false;
           kullaniciHata = bound.error;
@@ -432,7 +457,7 @@ export async function GET(req: Request) {
     const { data, error } = await admin
       .from("eids_verification_sessions")
       .select(
-        "id,state,user_id,listing_id,source,web_return_path,yetki_kodu,durum,status,created_at,expires_at,consumed_at"
+        "id,state,user_id,listing_id,source,web_return_path,yetki_kodu,durum,status,created_at,expires_at,consumed_at,callback_query"
       )
       .eq("state", state)
       .maybeSingle();
@@ -517,6 +542,10 @@ export async function GET(req: Request) {
   for (const [k, v] of sp.entries()) {
     if (v != null && v !== "") queryPayload[k] = v;
   }
+  const sessionGsm = gsmFromCallbackQuery(session.callback_query);
+  if (sessionGsm && !queryPayload.gsmNo) {
+    queryPayload.gsmNo = sessionGsm;
+  }
 
   const { data: updated, error: updateErr } = await admin
     .from("eids_verification_sessions")
@@ -531,7 +560,7 @@ export async function GET(req: Request) {
     .eq("id", session.id)
     .eq("status", "pending")
     .select(
-      "id,state,user_id,listing_id,source,web_return_path,yetki_kodu,durum,status,created_at,expires_at,consumed_at"
+      "id,state,user_id,listing_id,source,web_return_path,yetki_kodu,durum,status,created_at,expires_at,consumed_at,callback_query"
     )
     .maybeSingle();
 

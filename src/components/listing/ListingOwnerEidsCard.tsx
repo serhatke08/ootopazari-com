@@ -136,6 +136,7 @@ export function ListingOwnerEidsCard({
             source: "web",
             listingId,
             webReturnPath: returnPath,
+            gsmNo: gsm,
           }),
         });
         const body = (await res.json().catch(() => ({}))) as {

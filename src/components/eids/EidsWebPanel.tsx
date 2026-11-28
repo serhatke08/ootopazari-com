@@ -210,6 +210,7 @@ export function EidsWebPanel({
         body: JSON.stringify({
           source: "web",
           webReturnPath: "/profil/eids",
+          ...(norm ? { gsmNo: norm } : {}),
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {

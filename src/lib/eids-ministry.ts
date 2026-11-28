@@ -138,6 +138,17 @@ export function firstGsmNo(
   return null;
 }
 
+/** eids_verification_sessions.callback_query içinden GSM. */
+export function gsmFromCallbackQuery(query: unknown): string | null {
+  if (!query || typeof query !== "object") return null;
+  const rec = query as Record<string, unknown>;
+  return firstGsmNo(
+    typeof rec.gsmNo === "string" ? rec.gsmNo : null,
+    typeof rec.gsm === "string" ? rec.gsm : null,
+    typeof rec.phone === "string" ? rec.phone : null
+  );
+}
+
 export function gsmFromAuthMetadata(meta: unknown): string | null {
   if (!meta || typeof meta !== "object") return null;
   const m = meta as Record<string, unknown>;

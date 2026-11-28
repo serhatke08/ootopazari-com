@@ -6,7 +6,6 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { HomeQuickLinksStrip } from "@/components/HomeQuickLinksStrip";
-import { HomePublisherIntro } from "@/components/HomePublisherIntro";
 import {
   type CategoryRow,
   type CityRow,
@@ -129,7 +128,6 @@ export default async function AnaSayfa({
         }}
       />
       <HomeQuickLinksStrip />
-      <HomePublisherIntro />
       <Suspense fallback={<HomeListingsFallback />}>
         <HomeListingsLoader env={env} get={get} siteOrigin={siteOrigin} />
       </Suspense>

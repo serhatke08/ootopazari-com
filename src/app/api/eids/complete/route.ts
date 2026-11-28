@@ -4,10 +4,14 @@ import {
   callGetKullaniciKodu,
   firstGsmNo,
   gsmFromAuthMetadata,
+  gsmFromCallbackQuery,
   normalizePlakaNo,
 } from "@/lib/eids-ministry";
 import { eidsDurumIsSuccess, type EidsSessionRow } from "@/lib/eids";
-import { bindEidsKullaniciToProfile } from "@/lib/eids-bind";
+import {
+  bindEidsKullaniciToProfile,
+  persistProfileGsm,
+} from "@/lib/eids-bind";
 import { resolveRequestUser } from "@/lib/supabase/request-user";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
   const { data: sessionRow, error } = await admin
     .from("eids_verification_sessions")
     .select(
-      "id,state,user_id,listing_id,source,web_return_path,yetki_kodu,durum,status,created_at,expires_at,consumed_at"
+      "id,state,user_id,listing_id,source,web_return_path,yetki_kodu,durum,status,created_at,expires_at,consumed_at,callback_query"
     )
     .eq("state", state)
     .maybeSingle();
@@ -83,6 +87,14 @@ export async function POST(req: Request) {
 
   // Zaten kullanici kodu varsa idempotent OK
   if (session.status === "completed" && session.yetki_kodu && kullaniciKodu) {
+    const gsm = firstGsmNo(
+      gsmOverride,
+      (profile as { phone?: string | null } | null)?.phone,
+      gsmFromCallbackQuery(session.callback_query)
+    );
+    if (gsm) {
+      await persistProfileGsm(admin, user.id, gsm, { stealIfTaken: true });
+    }
     return NextResponse.json({
       ok: true,
       listingId: session.listing_id,
@@ -117,7 +129,14 @@ export async function POST(req: Request) {
         status: edevletOk ? "completed" : "failed",
         consumed_at: callbackAt,
         callback_at: callbackAt,
-        callback_query: { yetkiKodu, durum, via: "app_complete" },
+        callback_query: {
+          yetkiKodu,
+          durum,
+          via: "app_complete",
+          ...(gsmFromCallbackQuery(session.callback_query)
+            ? { gsmNo: gsmFromCallbackQuery(session.callback_query) }
+            : {}),
+        },
       })
       .eq("id", session.id)
       .eq("status", "pending");
@@ -128,7 +147,8 @@ export async function POST(req: Request) {
   if (!kullaniciKodu && edevletOk) {
     let gsmNo = firstGsmNo(
       gsmOverride,
-      (profile as { phone?: string | null } | null)?.phone
+      (profile as { phone?: string | null } | null)?.phone,
+      gsmFromCallbackQuery(session.callback_query)
     );
     if (!gsmNo) {
       try {
@@ -140,6 +160,9 @@ export async function POST(req: Request) {
       } catch {
         /* metadata yoksa devam */
       }
+    }
+    if (gsmNo) {
+      await persistProfileGsm(admin, user.id, gsmNo);
     }
     try {
       const kk = await callGetKullaniciKodu({
@@ -155,6 +178,11 @@ export async function POST(req: Request) {
         });
         if (bound.ok) {
           kullaniciKodu = kk.kullaniciKodu;
+          if (gsmNo) {
+            await persistProfileGsm(admin, user.id, gsmNo, {
+              stealIfTaken: true,
+            });
+          }
         } else {
           kullaniciHata = bound.error;
           kullaniciKodu = null;

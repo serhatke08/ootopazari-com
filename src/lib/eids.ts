@@ -19,6 +19,7 @@ export type EidsSessionRow = {
   created_at: string;
   expires_at: string;
   consumed_at: string | null;
+  callback_query?: unknown;
 };
 
 /** Bakanlığa bildirilecek sabit Return URL (query eklenmez). */

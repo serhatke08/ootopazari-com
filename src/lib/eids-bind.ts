@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { normalizeGsmNo } from "@/lib/eids-ministry";
 
 export type BindEidsResult =
   | { ok: true; alreadyBound: boolean }
@@ -143,4 +144,59 @@ export async function unbindEidsFromCurrentProfile(
     return { ok: false, error: error.message || "unbind_failed" };
   }
   return { ok: true };
+}
+
+const PHONE_UNIQUE =
+  /phone|duplicate|unique|already exists/i;
+
+/**
+ * e-Devlet öncesi girilen GSM’i `profiles.phone`’a yazar.
+ * `stealIfTaken`: bakanlık bu numarayı doğruladıysa aynı numarayı başka
+ * profilden çekip bu hesaba verir (sarı telefon rozeti kalmasın).
+ */
+export async function persistProfileGsm(
+  admin: SupabaseClient,
+  userId: string,
+  raw: string | null | undefined,
+  opts?: { stealIfTaken?: boolean }
+): Promise<{ ok: boolean; taken: boolean }> {
+  const gsm = normalizeGsmNo(raw);
+  if (!gsm) return { ok: false, taken: false };
+
+  const { data: self } = await admin
+    .from("profiles")
+    .select("phone")
+    .eq("id", userId)
+    .maybeSingle();
+  const current = normalizeGsmNo(
+    (self as { phone?: string | null } | null)?.phone
+  );
+  if (current === gsm) return { ok: true, taken: false };
+
+  const write = () =>
+    admin
+      .from("profiles")
+      .update({
+        phone: gsm,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+  let { error } = await write();
+  if (!error) return { ok: true, taken: false };
+
+  const unique =
+    error.code === "23505" || PHONE_UNIQUE.test(error.message ?? "");
+  if (!unique) return { ok: false, taken: false };
+  if (!opts?.stealIfTaken) return { ok: false, taken: true };
+
+  const variants = [gsm, `0${gsm}`, `90${gsm}`, `+90${gsm}`];
+  await admin
+    .from("profiles")
+    .update({ phone: null, updated_at: new Date().toISOString() })
+    .in("phone", variants)
+    .neq("id", userId);
+
+  ({ error } = await write());
+  return { ok: !error, taken: Boolean(error) };
 }

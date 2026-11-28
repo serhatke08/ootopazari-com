@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { persistProfileGsm } from "@/lib/eids-bind";
 import {
   createEidsState,
   EIDS_SESSION_TTL_MS,
@@ -6,6 +7,7 @@ import {
   isEidsSource,
   sanitizeEidsWebReturnPath,
 } from "@/lib/eids";
+import { normalizeGsmNo } from "@/lib/eids-ministry";
 import { resolveRequestUser } from "@/lib/supabase/request-user";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -26,6 +28,7 @@ export async function POST(req: Request) {
     listingId?: unknown;
     source?: unknown;
     webReturnPath?: unknown;
+    gsmNo?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -51,9 +54,17 @@ export async function POST(req: Request) {
         )
       : null;
 
+  const gsmNo = normalizeGsmNo(
+    typeof body.gsmNo === "string" ? body.gsmNo : null
+  );
+
   const admin = createSupabaseServiceClient();
   if (!admin) {
     return NextResponse.json({ error: "server_config" }, { status: 500 });
+  }
+
+  if (gsmNo) {
+    await persistProfileGsm(admin, user.id, gsmNo);
   }
 
   if (listingId) {
@@ -93,6 +104,7 @@ export async function POST(req: Request) {
       web_return_path: webReturnPath,
       status: "pending",
       expires_at: expiresAt,
+      ...(gsmNo ? { callback_query: { gsmNo } } : {}),
     })
     .select("id,state,expires_at")
     .single();
