@@ -20,6 +20,8 @@ import {
 } from "@/lib/bayi-types";
 import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
 import { dealerTheme, parseAuthorizedBrands } from "@/lib/dealer-theme";
+import { ListingCard } from "@/components/ListingCard";
+import type { ListingRow } from "@/lib/listings-data";
 
 type Props = {
   params: Promise<{ type: string; id: string }>;
@@ -83,7 +85,8 @@ export default async function BayiDetailPage({ params }: Props) {
   }
 
   const listings = await fetchDealerListings(supabase, dealerType, dealer.id, {
-    limit: 12,
+    limit: 24,
+    userId: dealer.user_id,
   });
   const coverImageUrl = resolveDealerCoverImageUrl(dealer, env.url);
   const logoImageUrl = resolveDealerLogoImageUrl(dealer, env.url);
@@ -160,12 +163,12 @@ export default async function BayiDetailPage({ params }: Props) {
           />
         </div>
         <div className="min-w-0 pb-0.5 pt-10 sm:pt-12">
-          <h1 className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-            <span>{dealer.dealer_name}</span>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+            {dealer.dealer_name}
             <DealerVerifiedTick
               size={18}
               dealerType={dealerType}
-              className="translate-y-[1px]"
+              className="ml-0.5 inline-block align-middle"
             />
           </h1>
           {dealerType === "galeri" && contactName ? (
@@ -233,46 +236,64 @@ export default async function BayiDetailPage({ params }: Props) {
                   ? "Araçlar"
                   : "İlanlar"}
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {listings.map((item) => {
-                  const row = item as {
-                    id?: string;
-                    title?: string;
-                    price?: number | null;
-                    image_url?: string | null;
-                  };
-                  return (
-                    <div
-                      key={String(row.id ?? row.title)}
-                      className="overflow-hidden rounded-xl border border-zinc-200"
-                    >
-                      <div className="h-28 bg-zinc-100">
-                        {row.image_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={row.image_url}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        ) : null}
-                      </div>
-                      <div className="p-3">
-                        <p className="line-clamp-1 text-sm font-bold text-zinc-900">
-                          {row.title || "İlan"}
-                        </p>
-                        {row.price != null ? (
-                          <p
-                            className="mt-1 text-sm font-extrabold"
-                            style={{ color: theme.primary }}
-                          >
-                            ₺{Number(row.price).toLocaleString("tr-TR")}
+              {dealerType === "galeri" ? (
+                <div className="home-listings-grid">
+                  {listings.map((item) => {
+                    const listing = item as ListingRow;
+                    return (
+                      <ListingCard
+                        key={String(listing.id ?? listing.listing_number)}
+                        listing={listing}
+                        env={env}
+                        hideCategoryAndYear
+                        cityOnStatsRow
+                        showFavorite={false}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {listings.map((item) => {
+                    const row = item as {
+                      id?: string;
+                      title?: string;
+                      price?: number | null;
+                      image_url?: string | null;
+                    };
+                    return (
+                      <div
+                        key={String(row.id ?? row.title)}
+                        className="overflow-hidden rounded-xl border border-zinc-200"
+                      >
+                        <div className="h-28 bg-zinc-100">
+                          {row.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={row.image_url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="p-3">
+                          <p className="line-clamp-1 text-sm font-bold text-zinc-900">
+                            {row.title || "İlan"}
                           </p>
-                        ) : null}
+                          {row.price != null ? (
+                            <p
+                              className="mt-1 text-sm font-extrabold"
+                              style={{ color: theme.primary }}
+                            >
+                              ₺{Number(row.price).toLocaleString("tr-TR")}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : null}
 

@@ -4,9 +4,12 @@ import Link from "next/link";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
-import { fetchCities } from "@/lib/listings-data";
+import { fetchCategories, fetchCities } from "@/lib/listings-data";
 import { fetchPublicDealers, fetchUserDealerApplication } from "@/lib/bayi-data";
 import { BayiCard } from "@/components/BayiCard";
+import { BayiGaleriMarket } from "@/components/BayiGaleriMarket";
+import { fetchGaleriMarketFeed } from "@/lib/home-listings-feed";
+import { resolveHomeListingsFeedFilters } from "@/lib/home-listings-feed-filters";
 import {
   DEALER_TYPES,
   DEALER_TYPE_LABELS,
@@ -87,26 +90,75 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
   } = await supabase.auth.getUser();
 
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const cityId = typeof sp.city === "string" ? sp.city : "";
+  const cityId =
+    typeof sp.city_id === "string"
+      ? sp.city_id
+      : typeof sp.city === "string"
+        ? sp.city
+        : "";
   const sortBy =
-    sp.sort === "name_asc" || sp.sort === "name_desc" || sp.sort === "newest"
-      ? sp.sort
-      : "newest";
+    sp.dealer_sort === "name_asc" ||
+    sp.dealer_sort === "name_desc" ||
+    sp.dealer_sort === "newest"
+      ? sp.dealer_sort
+      : sp.sort === "name_asc" || sp.sort === "name_desc" || sp.sort === "newest"
+        ? sp.sort
+        : "newest";
+  const tab =
+    dealerType === "galeri" && sp.tab === "bayiler" ? "bayiler" : "ilanlar";
+  const getSp = (key: string) =>
+    typeof sp[key] === "string" ? (sp[key] as string) : undefined;
 
-  const [dealers, cities, userApplication] = await Promise.all([
-    fetchPublicDealers(supabase, dealerType, {
-      limit: 80,
-      searchQuery: q || undefined,
-      cityId: cityId || undefined,
-      sortBy,
-    }).catch(() => []),
-    fetchCities(supabase).catch(() => []),
-    user
-      ? fetchUserDealerApplication(supabase, user.id, dealerType).catch(
-          () => null
-        )
-      : null,
-  ]);
+  const listingFiltersPromise =
+    dealerType === "galeri"
+      ? resolveHomeListingsFeedFilters(supabase, getSp)
+      : Promise.resolve(null);
+
+  const [dealers, cities, categories, listingFilters, userApplication] =
+    await Promise.all([
+      fetchPublicDealers(supabase, dealerType, {
+        limit: 80,
+        searchQuery: q || undefined,
+        cityId: cityId || undefined,
+        sortBy,
+      }).catch((err) => {
+        console.error("fetchPublicDealers", dealerType, err);
+        return [];
+      }),
+      fetchCities(supabase).catch(() => []),
+      dealerType === "galeri"
+        ? fetchCategories(supabase).catch(() => [])
+        : Promise.resolve([]),
+      listingFiltersPromise,
+      user
+        ? fetchUserDealerApplication(supabase, user.id, dealerType).catch(
+            () => null
+          )
+        : null,
+    ]);
+
+  const galeriFeed =
+    dealerType === "galeri"
+      ? await fetchGaleriMarketFeed(
+          supabase,
+          env,
+          {
+            ...(listingFilters ?? {}),
+            q: (listingFilters?.q ?? q) || undefined,
+            cityId: (listingFilters?.cityId ?? cityId) || undefined,
+          },
+          dealers
+            .map((d) => d.user_id)
+            .filter((id): id is string => Boolean(id))
+        ).catch((err) => {
+          console.error("fetchGaleriMarketFeed", err);
+          return {
+            items: [],
+            total: 0,
+            loggedIn: false,
+          };
+        })
+      : { items: [], total: 0, loggedIn: false };
 
   // Application success message
   const showSuccessMessage = sp.application_success === "1";
@@ -121,63 +173,114 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
     : null;
 
   const theme = dealerTheme(dealerType);
+  const applyHref = !userApplication
+    ? `/bayi/basvuru?type=${dealerType}`
+    : userDealerState === "active"
+      ? `/bayi/panel/${dealerType}`
+      : userDealerState === "approved_awaiting_payment"
+        ? `/bayi/panel/${dealerType}`
+        : null;
 
   return (
     <div className="flex-1">
+      {dealerType === "galeri" ? null : (
       <div
-        className="px-4 py-8 sm:px-6"
+        className="px-4 py-3 sm:px-6 md:py-8"
         style={{
           background: `linear-gradient(160deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
         }}
       >
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3 md:gap-4">
             {theme.logoSrc ? (
               <DealerTypeLogo src={theme.logoSrc} size={64} />
             ) : (
               <span className="h-16 w-16 rounded-full border-[2.5px] border-black bg-white/15" />
             )}
-            <div>
-              <h1 className="text-3xl font-black uppercase tracking-wide text-white">
+            <div className="min-w-0">
+              <h1 className="text-lg font-black uppercase tracking-wide text-white md:text-3xl">
                 {DEALER_TYPE_LABELS[dealerType]}
               </h1>
-              <p className="mt-1 max-w-xl text-sm text-white/80">
+              <p className="mt-1 hidden max-w-xl text-sm text-white/80 md:block">
                 {DEALER_TYPE_DESCRIPTIONS[dealerType]}
               </p>
             </div>
           </div>
-          {!userApplication ? (
+          {applyHref ? (
             <Link
-              href={`/bayi/basvuru?type=${dealerType}`}
-              className="rounded-full bg-white px-6 py-3 font-black text-zinc-900 shadow-sm"
+              href={applyHref}
+              className="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-black text-zinc-900 shadow-sm md:px-6 md:py-3 md:text-base"
             >
-              Bayi Başvurusu Yap
-            </Link>
-          ) : userDealerState === "active" ? (
-            <Link
-              href={`/bayi/panel/${dealerType}`}
-              className="rounded-full bg-white px-6 py-3 font-black text-zinc-900 shadow-sm"
-            >
-              Bayi Panelim
+              {!userApplication
+                ? "Başvur"
+                : userDealerState === "active"
+                  ? "Panelim"
+                  : "500 TL öde"}
             </Link>
           ) : userDealerState === "pending" ? (
-            <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-6 py-3 text-center">
-              <p className="text-sm font-semibold text-amber-900">
-                Başvurunuz inceleniyor
+            <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-2 text-center md:px-6 md:py-3">
+              <p className="text-xs font-semibold text-amber-900 md:text-sm">
+                İnceleniyor
               </p>
             </div>
-          ) : userDealerState === "approved_awaiting_payment" ? (
-            <Link
-              href={`/bayi/panel/${dealerType}`}
-              className="rounded-full bg-white px-6 py-3 font-black text-zinc-900 shadow-sm"
-            >
-              500 TL öde & paneli aç
-            </Link>
           ) : null}
         </div>
       </div>
+      )}
+      {dealerType === "galeri" ? (
+        <div className="hidden md:block">
+          <div
+            className="px-4 py-8 sm:px-6"
+            style={{
+              background: `linear-gradient(160deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+            }}
+          >
+            <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-4">
+                {theme.logoSrc ? (
+                  <DealerTypeLogo src={theme.logoSrc} size={64} />
+                ) : (
+                  <span className="h-16 w-16 rounded-full border-[2.5px] border-black bg-white/15" />
+                )}
+                <div className="min-w-0">
+                  <h1 className="text-3xl font-black uppercase tracking-wide text-white">
+                    {DEALER_TYPE_LABELS[dealerType]}
+                  </h1>
+                  <p className="mt-1 max-w-xl text-sm text-white/80">
+                    {DEALER_TYPE_DESCRIPTIONS[dealerType]}
+                  </p>
+                </div>
+              </div>
+              {applyHref ? (
+                <Link
+                  href={applyHref}
+                  className="shrink-0 rounded-full bg-white px-6 py-3 font-black text-zinc-900 shadow-sm"
+                >
+                  {!userApplication
+                    ? "Bayi Başvurusu Yap"
+                    : userDealerState === "active"
+                      ? "Bayi Panelim"
+                      : "500 TL öde & paneli aç"}
+                </Link>
+              ) : userDealerState === "pending" ? (
+                <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-6 py-3 text-center">
+                  <p className="text-sm font-semibold text-amber-900">
+                    Başvurunuz inceleniyor
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+      <div
+        className={`mx-auto w-full max-w-7xl ${
+          dealerType === "galeri"
+            ? "px-0 py-0 md:px-6 md:py-6"
+            : "px-4 py-8 sm:px-6"
+        }`}
+      >
       {/* Success Message */}
       {showSuccessMessage ? (
         <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
@@ -190,6 +293,24 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
         </div>
       ) : null}
 
+      {dealerType === "galeri" ? (
+        <BayiGaleriMarket
+          env={env}
+          dealers={dealers}
+          cities={cities}
+          categories={categories}
+          items={galeriFeed.items}
+          listingTotal={galeriFeed.total}
+          loggedIn={galeriFeed.loggedIn}
+          filters={listingFilters ?? {}}
+          tab={tab}
+          q={q}
+          cityId={cityId}
+          dealerSort={sortBy}
+          applyHref={!userApplication ? applyHref : null}
+        />
+      ) : (
+        <>
       <form
         className="mb-6 rounded-xl border border-zinc-200 bg-white p-4"
         method="get"
@@ -260,6 +381,8 @@ export default async function BayiTypePage({ params, searchParams }: Props) {
             </Link>
           ) : null}
         </div>
+      )}
+        </>
       )}
       </div>
     </div>

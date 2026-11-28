@@ -25,6 +25,15 @@ export function getDealerListingTable(dealerType: DealerType): string | null {
   return DEALER_LISTING_TABLES[dealerType] ?? null;
 }
 
+export function listingIsGaleriDealer(
+  listing: Record<string, unknown> | null | undefined
+): boolean {
+  if (!listing) return false;
+  const table = String(listing._storage_table ?? "").trim();
+  if (table === "galeri_listings") return true;
+  return String(listing.dealer_type_scope ?? "").trim() === "galeri";
+}
+
 /**
  * Dealer type için profile table ismini döner
  */

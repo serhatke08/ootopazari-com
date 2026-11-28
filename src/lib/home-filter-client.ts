@@ -34,6 +34,15 @@ const HIDDEN_CATEGORY_CODES = new Set([
   "kuş",
   "balik",
   "balık",
+  "big_cattle",
+  "small_cattle",
+  "chicken",
+  "sheep_goat",
+  "tavuk",
+  "buyukbas",
+  "büyükbaş",
+  "kucukbas",
+  "küçükbaş",
 ]);
 
 function norm(s: unknown): string {

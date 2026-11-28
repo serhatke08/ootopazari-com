@@ -5,7 +5,7 @@ import { getPublicContactInfo } from "@/lib/merchant-legal";
 export const metadata: Metadata = {
   title: "İletişim",
   description: "Oto Pazarı destek e-posta iletişimi.",
-  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+  robots: { index: true, follow: true },
   alternates: { canonical: "/iletisim" },
 };
 

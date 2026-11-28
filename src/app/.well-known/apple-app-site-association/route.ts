@@ -9,11 +9,19 @@ const BODY = {
     details: [
       {
         appID: "549DLY8TB7.com.partridge.otomobile",
-        paths: ["/app/eids", "/app/eids/*", "/ilan/*"],
+        paths: [
+          "/app/eids",
+          "/app/eids/*",
+          "/ilan/*",
+          "/sifre-sifirla",
+          "/sifre-sifirla/*",
+        ],
         components: [
           { "/": "/app/eids" },
           { "/": "/app/eids/*" },
           { "/": "/ilan/*" },
+          { "/": "/sifre-sifirla" },
+          { "/": "/sifre-sifirla/*" },
         ],
       },
     ],

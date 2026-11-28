@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ConversationsPane } from "@/components/messages/ConversationsPane";
+import { MessagesInboxTitle } from "@/components/messages/MessagesInboxTitle";
 import { fetchAdminProfilesByUserIds } from "@/lib/admin-profile";
 import { tryGetSupabaseEnv } from "@/lib/env";
 import { MissingEnv } from "@/components/MissingEnv";
@@ -12,6 +13,7 @@ import {
   fetchProfilesByIds,
   fetchUnreadCountsByConversation,
   otherParticipantId,
+  sortConversationsByLastMessage,
 } from "@/lib/messages";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -57,14 +59,11 @@ export default async function MesajlarPage() {
     fetchAdminProfilesByUserIds(supabase, otherIds),
   ]);
 
+  rows = sortConversationsByLastMessage(rows, lastMap);
+
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-2 py-6 sm:px-4 md:px-6 md:py-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-        Mesajlar
-      </h1>
-      <p className="mt-1 text-sm text-zinc-600">
-        Soldan bir konuşma seçerek sağ tarafta sohbeti açabilirsiniz.
-      </p>
+      <MessagesInboxTitle />
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-[300px_minmax(0,1fr)]">
         <ConversationsPane
           env={env}

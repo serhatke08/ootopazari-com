@@ -55,12 +55,18 @@ export type ListingRow = Record<string, unknown> & {
   acil_until?: string | null;
   acil_started_at?: string | null;
   acil_pack_days?: number | null;
+  dealer_type_scope?: string | null;
+  rental_only?: boolean | null;
+  _storage_table?: string | null;
   /** Sıfır araçlar vitrini — acil / featured ile karıştırma. */
   sifir_until?: string | null;
   sifir_started_at?: string | null;
   sifir_pack_days?: number | null;
   activated_at?: string | null;
   expired_at?: string | null;
+  eids_status?: string | null;
+  eids_verified_at?: string | null;
+  vehicle_plate?: string | null;
 };
 
 export type CategoryRow = {
@@ -123,10 +129,15 @@ const LISTING_SELECT = [
   "acil_until",
   "acil_started_at",
   "acil_pack_days",
+  "dealer_type_scope",
+  "rental_only",
   "sifir_until",
   "sifir_started_at",
   "sifir_pack_days",
   "activated_at",
+  "eids_status",
+  "eids_verified_at",
+  "vehicle_plate",
 ].join(", ");
 
 /** Vitrin sıralaması — tam satır çekmeden id sırası. */
@@ -673,6 +684,220 @@ function applyListingOrder(q: any, sort: HomeListingsSort | undefined): any {
   }
 }
 
+function mergeListingRowsById(
+  primary: ListingRow[],
+  extra: ListingRow[]
+): ListingRow[] {
+  const seen = new Set(
+    primary.map((r) => String(r.id ?? r.listing_number ?? "")).filter(Boolean)
+  );
+  const out = [...primary];
+  for (const row of extra) {
+    const id = String(row.id ?? row.listing_number ?? "");
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(row);
+  }
+  return out;
+}
+
+async function fetchGaleriListingsForHome(
+  supabase: SupabaseClient,
+  filterParams: Omit<ListingListParams, "page" | "pageSize">,
+  range: { start: number; end: number }
+): Promise<ListingRow[]> {
+  try {
+    let q = applyApprovedLiveFilter(
+      supabase.from("galeri_listings").select(LISTING_SELECT)
+    );
+    q = applyListingListFilters(q, filterParams);
+    q = applyListingOrder(q, filterParams.sort);
+    const { data, error } = await q.range(range.start, range.end);
+    if (error) {
+      const retry = await applyListingOrder(
+        applyListingListFilters(
+          applyApprovedLiveFilter(supabase.from("galeri_listings").select("*")),
+          filterParams
+        ),
+        filterParams.sort
+      ).range(range.start, range.end);
+      if (retry.error) return [];
+      return ((retry.data ?? []) as ListingRow[]).map((row) => ({
+        ...row,
+        dealer_type_scope: row.dealer_type_scope ?? "galeri",
+        _storage_table: "galeri_listings",
+      }));
+    }
+    return ((data ?? []) as ListingRow[]).map((row) => ({
+      ...row,
+      dealer_type_scope: row.dealer_type_scope ?? "galeri",
+      _storage_table: "galeri_listings",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Uygulama galeri vitrini: onaylı/null + aktif. 30 günlük ana vitrin kesimi yok. */
+function applyGaleriMarketVisibility(
+  q: any,
+  table: "galeri_listings" | "listings",
+  opts: {
+    activation: boolean;
+    marketplace: boolean;
+    dealerUserIds?: string[];
+  }
+): any {
+  let query = q.or("moderation_status.is.null,moderation_status.eq.approved");
+  if (opts.activation) {
+    query = query.eq("activation_status", "active");
+  }
+  if (table === "listings") {
+    const dealerIds = (opts.dealerUserIds ?? []).filter(Boolean);
+    if (dealerIds.length > 0) {
+      const ids = dealerIds.join(",");
+      query = query.or(`dealer_type_scope.eq.galeri,user_id.in.(${ids})`);
+    } else {
+      query = query.eq("dealer_type_scope", "galeri");
+    }
+    if (opts.marketplace) {
+      query = query.eq("exclude_from_marketplace", false);
+    }
+  }
+  return query;
+}
+
+const GALERI_TABLE_SELECT = [
+  "id",
+  "listing_number",
+  "title",
+  "description",
+  "price",
+  "image_url",
+  "city_name",
+  "city_id",
+  "country_name",
+  "category_id",
+  "vehicle_brand_id",
+  "vehicle_model",
+  "body_type",
+  "vehicle_year",
+  "fuel_type",
+  "transmission_type",
+  "vehicle_mileage",
+  "created_at",
+  "updated_at",
+  "user_id",
+  "moderation_status",
+  "suspension_reason",
+  "suspended_at",
+  "featured_until",
+  "featured_started_at",
+  "feature_boost_campaign_start_at",
+  "feature_boost_pack_days",
+  "activation_status",
+  "activated_at",
+].join(", ");
+
+async function fetchGaleriMarketTableRows(
+  supabase: SupabaseClient,
+  table: "galeri_listings" | "listings",
+  filterParams: Omit<ListingListParams, "page" | "pageSize">,
+  range: { start: number; end: number },
+  extra?: { dealerUserIds?: string[] }
+): Promise<ListingRow[]> {
+  const attempts: Array<{
+    select: string;
+    activation: boolean;
+    marketplace: boolean;
+  }> = [
+    {
+      select: table === "galeri_listings" ? GALERI_TABLE_SELECT : LISTING_SELECT,
+      activation: true,
+      marketplace: true,
+    },
+    { select: "*", activation: true, marketplace: true },
+    { select: "*", activation: true, marketplace: false },
+    { select: "*", activation: false, marketplace: false },
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      let q = applyGaleriMarketVisibility(
+        supabase.from(table).select(attempt.select),
+        table,
+        { ...attempt, dealerUserIds: extra?.dealerUserIds }
+      );
+      q = applyListingListFilters(q, filterParams);
+      q = applyListingOrder(q, filterParams.sort);
+      const { data, error } = await q.range(range.start, range.end);
+      if (error) {
+        console.warn(
+          "fetchGaleriMarketTableRows",
+          table,
+          attempt.select === "*" ? "*" : "cols",
+          error.message
+        );
+        continue;
+      }
+      return ((data ?? []) as ListingRow[]).map((row) => ({
+        ...row,
+        dealer_type_scope: row.dealer_type_scope ?? "galeri",
+        _storage_table: table,
+      }));
+    } catch (err) {
+      console.warn("fetchGaleriMarketTableRows", table, err);
+    }
+  }
+  return [];
+}
+
+/** Galeri Araçlar vitrini — `galeri_listings` + `listings.dealer_type_scope=galeri`. */
+export async function fetchGaleriMarketListings(
+  supabase: SupabaseClient,
+  params: Omit<ListingListParams, "page" | "pageSize"> & {
+    page?: number;
+    pageSize?: number;
+    dealerUserIds?: string[];
+  }
+): Promise<{ rows: ListingRow[]; total: number }> {
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 48;
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+  const { dealerUserIds, ...filterParams } = params;
+  const range = { start, end };
+  const extra = { dealerUserIds };
+
+  const [galeriRows, listingRows] = await Promise.all([
+    fetchGaleriMarketTableRows(
+      supabase,
+      "galeri_listings",
+      filterParams,
+      range
+    ),
+    fetchGaleriMarketTableRows(
+      supabase,
+      "listings",
+      filterParams,
+      range,
+      extra
+    ),
+  ]);
+  const merged = mergeListingRowsById(galeriRows, listingRows);
+  const customSort = Boolean(
+    filterParams.sort && filterParams.sort !== "newest"
+  );
+  const rows = customSort
+    ? merged
+    : [...merged].sort((a, b) => {
+        const da = Date.parse(String(a.created_at ?? "")) || 0;
+        const db = Date.parse(String(b.created_at ?? "")) || 0;
+        return db - da;
+      });
+  return { rows, total: merged.length };
+}
+
 /** Filtreli arama — SQL sayfalama (tüm tabloyu belleğe almaz). */
 async function fetchListingsPageFast(
   supabase: SupabaseClient,
@@ -718,12 +943,19 @@ async function fetchListingsPageFast(
   }
   if (dataErr) {
     console.warn("fetchListingsPageFast:", dataErr.message);
-    return { rows: [], total: count ?? 0 };
   }
 
-  const raw = (data ?? []) as unknown as ListingRow[];
-  const rows = customSort ? raw : sortListingFeedRows(raw, params);
-  return { rows, total: count ?? rows.length };
+  const raw = (dataErr ? [] : (data ?? [])) as unknown as ListingRow[];
+  const galeriRows = await fetchGaleriListingsForHome(supabase, filterParams, {
+    start,
+    end,
+  });
+  const merged = mergeListingRowsById(raw, galeriRows);
+  const rows = customSort ? merged : sortListingFeedRows(merged, params);
+  return {
+    rows,
+    total: Math.max(count ?? 0, merged.length),
+  };
 }
 
 /** Onaylı ilanlar — pulse + created_at birleşik sıralama için (ince kolon). */
@@ -1046,19 +1278,37 @@ export async function fetchListingForDetailPage(
   const n = Number(listingNumber);
   if (!Number.isFinite(n)) return null;
 
-  const { data, error } = await supabase
+  const fromListings = await supabase
     .from("listings")
     .select("*")
     .eq("listing_number", n)
     .maybeSingle();
 
-  if (error) {
-    console.warn("fetchListingForDetailPage:", error.message);
-    return null;
+  let data = fromListings.data;
+  let storageTable = "listings";
+  if (fromListings.error) {
+    console.warn("fetchListingForDetailPage:", fromListings.error.message);
+  }
+  if (!data || typeof data !== "object") {
+    const fromGaleri = await supabase
+      .from("galeri_listings")
+      .select("*")
+      .eq("listing_number", n)
+      .maybeSingle();
+    if (fromGaleri.data && typeof fromGaleri.data === "object") {
+      data = fromGaleri.data;
+      storageTable = "galeri_listings";
+    }
   }
   if (!data || typeof data !== "object") return null;
 
-  const row = data as ListingRow;
+  const row = {
+    ...(data as ListingRow),
+    _storage_table: storageTable,
+    dealer_type_scope:
+      (data as ListingRow).dealer_type_scope ??
+      (storageTable === "galeri_listings" ? "galeri" : null),
+  } as ListingRow;
   const status = String(row.moderation_status ?? "").toLowerCase();
   const ownerId = row.user_id != null ? String(row.user_id) : "";
   const viewer = viewerUserId?.trim() ?? "";

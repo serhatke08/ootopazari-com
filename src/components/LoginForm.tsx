@@ -19,9 +19,11 @@ export function LoginForm() {
     oauthErrorRaw && oauthErrorRaw.trim()
       ? friendlyAuthError(decodeURIComponent(oauthErrorRaw))
       : null;
+  const resetOk = searchParams.get("reset") === "ok";
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [usePhone, setUsePhone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
@@ -76,12 +78,43 @@ export function LoginForm() {
     setLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: err } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (err) {
-        setError(friendlyAuthError(err.message));
+      const raw = identifier.trim();
+      let emails: string[] = [];
+      if (usePhone) {
+        const { data } = await supabase.rpc("resolve_login_emails", {
+          p_identifier: raw,
+        });
+        if (Array.isArray(data)) {
+          emails = data
+            .map((e) => String(e ?? "").trim().toLowerCase())
+            .filter((e) => e.includes("@"));
+        } else if (typeof data === "string" && data.includes("@")) {
+          emails = [data.trim().toLowerCase()];
+        }
+      } else {
+        emails = [raw];
+      }
+      emails = [...new Set(emails)];
+      if (emails.length === 0) {
+        setError(friendlyAuthError("Invalid login credentials"));
+        return;
+      }
+      let lastErr: { message: string } | null = null;
+      let ok = false;
+      for (const email of emails) {
+        const { error: err } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (!err) {
+          ok = true;
+          lastErr = null;
+          break;
+        }
+        lastErr = err;
+      }
+      if (!ok) {
+        setError(friendlyAuthError(lastErr?.message ?? "Invalid login credentials"));
         return;
       }
       router.refresh();
@@ -99,15 +132,55 @@ export function LoginForm() {
         googleBusy={oauthLoading}
         googleDisabled={loading}
       />
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      {resetOk ? (
+        <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Şifren güncellendi. Yeni şifrenle giriş yap.
+        </p>
+      ) : null}
+      <form onSubmit={onSubmit} className="flex flex-col gap-4" autoComplete="on">
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-zinc-100 p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setUsePhone(false);
+              setIdentifier("");
+            }}
+            className={`rounded-md px-3 py-2 text-sm font-semibold ${
+              !usePhone
+                ? "bg-white text-zinc-900 shadow-sm"
+                : "text-zinc-600"
+            }`}
+          >
+            E-posta
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setUsePhone(true);
+              setIdentifier("");
+            }}
+            className={`rounded-md px-3 py-2 text-sm font-semibold ${
+              usePhone
+                ? "bg-white text-zinc-900 shadow-sm"
+                : "text-zinc-600"
+            }`}
+          >
+            Telefon
+          </button>
+        </div>
         <label className="flex flex-col gap-1 text-sm text-zinc-800">
-          E-posta
+          {usePhone ? "Telefon" : "E-posta"}
           <input
-            type="email"
-            autoComplete="email"
+            key={usePhone ? "login-phone" : "login-email"}
+            type={usePhone ? "tel" : "email"}
+            autoComplete={usePhone ? "tel" : "email"}
+            inputMode={usePhone ? "tel" : "email"}
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder={
+              usePhone ? "05xx xxx xx xx" : "name@example.com"
+            }
             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder:text-zinc-400 shadow-sm transition-colors hover:border-zinc-400 hover:bg-white focus:border-[#ffcc00] focus:outline-none focus:ring-2 focus:ring-amber-300/80"
           />
         </label>

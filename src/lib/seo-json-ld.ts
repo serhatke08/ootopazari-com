@@ -39,7 +39,7 @@ export function buildHomeSeoJsonLd(opts: {
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: `${homeUrl}?q={search_term_string}`,
+          urlTemplate: `${homeUrl}ara?q={search_term_string}`,
         },
         "query-input": "required name=search_term_string",
       },

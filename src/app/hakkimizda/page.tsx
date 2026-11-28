@@ -6,7 +6,7 @@ import { getPublicContactInfo } from "@/lib/merchant-legal";
 export const metadata: Metadata = {
   title: "Hakkımızda",
   description: "Oto Pazarı hakkında kısa bilgi.",
-  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+  robots: { index: true, follow: true },
   alternates: { canonical: "/hakkimizda" },
 };
 
@@ -30,6 +30,13 @@ export default function HakkimizdaPage() {
           bulunur. Ücretli dijital hizmetler; ilan görünürlüğünü artıran öne
           çıkarma paketleri ve bayi üyelik aboneliklerinden oluşur. Fiziksel
           ürün satışı veya kargo hizmeti sunulmaz.
+        </p>
+        <p className="mt-4">
+          İlanlar onay ve yayın süresi kurallarına göre vitrinde görünür. Alıcı
+          ilan detayında araç bilgilerini, fiyatı, konumu ve satıcı iletişim
+          seçeneklerini görür; sorularını platform üzerindeki mesajlaşma ile
+          iletebilir. Satıcılar ilanını düzenleyebilir, süresini yenileyebilir
+          veya görünürlük paketleriyle öne çıkarabilir.
         </p>
 
         <p className="mt-6">

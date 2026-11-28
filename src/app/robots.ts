@@ -18,8 +18,6 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
           // taramayı engellemek Google'ın bu etiketi görmesini de engelliyordu.
           "/ilan-duzenle",
           "/bayilik-basvuru",
-          "/iletisim",
-          "/hakkimizda",
           "/api/",
         ],
       },

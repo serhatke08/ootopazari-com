@@ -59,10 +59,14 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  const isPasswordReset = next === "/sifre-sifirla";
+
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     return redirectWithAuthCookies(
-      `${origin}/giris?error=${encodeURIComponent(error.message)}`
+      isPasswordReset
+        ? `${origin}/sifre-sifirla?error=expired`
+        : `${origin}/giris?error=${encodeURIComponent(error.message)}`
     );
   }
 
@@ -102,7 +106,10 @@ export async function GET(request: NextRequest) {
     const hasPhone = Boolean(profilePhone);
     const hasCountry = Boolean(profileCountry);
 
-    if (!hasProfile || !hasName || !hasUsername || !hasPhone || !hasCountry) {
+    if (
+      !isPasswordReset &&
+      (!hasProfile || !hasName || !hasUsername || !hasPhone || !hasCountry)
+    ) {
       return redirectWithAuthCookies(
         `${origin}/hesap-tamamla?next=${encodeURIComponent(next)}`
       );

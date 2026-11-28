@@ -18,5 +18,8 @@ export default async function IlanlarLegacyRedirect({
     if (val != null && val !== "") p.set(k, val);
   }
   const qs = p.toString();
+  if (p.get("q")?.trim()) {
+    redirect(`/ara?${qs}`);
+  }
   redirect(qs ? `/?${qs}` : "/");
 }

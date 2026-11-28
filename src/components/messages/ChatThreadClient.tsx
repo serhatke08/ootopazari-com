@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminVerifiedBadge } from "@/components/AdminVerifiedBadge";
 import {
+  deleteOwnMessage,
   discardEmptyConversationIfAbandoned,
+  editOwnMessage,
   type MessageRow,
 } from "@/lib/messages";
 import { dispatchUnreadMessagesRefresh } from "@/lib/unread-messages-events";
@@ -51,9 +53,25 @@ export function ChatThreadClient({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const pressTimer = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const hasMessagesRef = useRef(initialMessages.length > 0);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+
+  const startHold = (id: string) => {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = window.setTimeout(() => setMenuId(id), 420);
+  };
+  const cancelHold = () => {
+    if (pressTimer.current) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
 
   /** Sayfa/footer’a kaymadan yalnızca mesaj kutusunu alta kaydır. */
   const scrollToBottom = useCallback((smooth = false) => {
@@ -175,6 +193,35 @@ export function ChatThreadClient({
           }
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const row = payload.new as MessageRow;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === row.id ? { ...m, ...row } : m))
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const oldRow = payload.old as { id?: string };
+          if (!oldRow?.id) return;
+          setMessages((prev) => prev.filter((m) => m.id !== oldRow.id));
+        }
+      )
       .subscribe();
 
     return () => {
@@ -191,7 +238,7 @@ export function ChatThreadClient({
     try {
       const clientMessageId = `${currentUserId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const selectCols =
-        "id,conversation_id,sender_id,content,is_read,created_at,client_message_id";
+        "id,conversation_id,sender_id,content,is_read,created_at,client_message_id,edited_at";
       let { data, error } = await supabase
         .from("messages")
         .insert({
@@ -258,6 +305,51 @@ export function ChatThreadClient({
     } finally {
       setSending(false);
     }
+  }
+
+  async function removeMessage(messageId: string) {
+    if (actionBusy) return;
+    if (!window.confirm("Bu mesaj herkesten silinsin mi?")) return;
+    setActionBusy(messageId);
+    const ok = await deleteOwnMessage(supabase, messageId);
+    setActionBusy(null);
+    if (!ok) {
+      window.alert("Mesaj silinemedi.");
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+  }
+
+  async function saveEdit(messageId: string) {
+    const next = editText.trim();
+    if (!next || actionBusy) return;
+    setActionBusy(messageId);
+    const ok = await editOwnMessage(supabase, messageId, next);
+    setActionBusy(null);
+    if (!ok) {
+      window.alert("Mesaj düzenlenemedi.");
+      return;
+    }
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? { ...m, content: next, edited_at: new Date().toISOString() }
+          : m
+      )
+    );
+    setEditingId(null);
+    setEditText("");
+  }
+
+  function formatStamp(iso: string | null | undefined, edited?: boolean) {
+    if (!iso) return null;
+    const stamp = new Date(iso).toLocaleString("tr-TR", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return edited ? `${stamp} · düzenlendi` : stamp;
   }
 
   if (blocked) {
@@ -373,22 +465,90 @@ export function ChatThreadClient({
           messages.map((m, idx) => {
             const mine = m.sender_id === currentUserId;
             if (mine) {
+              const editing = editingId === m.id;
               return (
                 <div
                   key={m.id}
                   className="w-fit max-w-[92%] self-end rounded-2xl rounded-br-md bg-[#ffcc00] px-2.5 py-1.5 text-xs text-zinc-900 shadow-sm md:max-w-[88%]"
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setMenuId(m.id);
+                  }}
+                  onPointerDown={() => startHold(m.id)}
+                  onPointerUp={cancelHold}
+                  onPointerCancel={cancelHold}
                 >
-                  <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                  {m.created_at ? (
-                    <p className="mt-1 text-[9px] text-zinc-700/80">
-                      {new Date(m.created_at).toLocaleString("tr-TR", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  ) : null}
+                  {editing ? (
+                    <div className="space-y-1.5">
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        rows={3}
+                        className="w-full min-w-[12rem] resize-none rounded-md border border-zinc-400/70 bg-white px-2 py-1 text-xs text-zinc-900"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          className="text-[10px] font-medium text-zinc-700"
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditText("");
+                          }}
+                        >
+                          Vazgeç
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[10px] font-semibold text-zinc-900"
+                          disabled={actionBusy === m.id || !editText.trim()}
+                          onClick={() => void saveEdit(m.id)}
+                        >
+                          Kaydet
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="whitespace-pre-wrap break-words">
+                        {m.content}
+                      </p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        {m.created_at ? (
+                          <p className="text-[9px] text-zinc-700/80">
+                            {formatStamp(m.created_at, Boolean(m.edited_at))}
+                          </p>
+                        ) : (
+                          <span />
+                        )}
+                        {menuId === m.id ? (
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            className="text-[10px] font-medium text-zinc-800/80 hover:text-zinc-900"
+                            onClick={() => {
+                              setEditingId(m.id);
+                              setEditText(m.content);
+                              setMenuId(null);
+                            }}
+                          >
+                            Düzenle
+                          </button>
+                          <button
+                            type="button"
+                            className="text-[10px] font-medium text-red-700/80 hover:text-red-800 disabled:opacity-50"
+                            disabled={actionBusy === m.id}
+                            onClick={() => {
+                              setMenuId(null);
+                              void removeMessage(m.id);
+                            }}
+                          >
+                            Sil
+                          </button>
+                        </div>
+                        ) : null}
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             }
@@ -430,12 +590,7 @@ export function ChatThreadClient({
                   <p className="whitespace-pre-wrap break-words">{m.content}</p>
                   {m.created_at ? (
                     <p className="mt-1 text-[9px] text-zinc-500">
-                      {new Date(m.created_at).toLocaleString("tr-TR", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatStamp(m.created_at, Boolean(m.edited_at))}
                     </p>
                   ) : null}
                 </div>

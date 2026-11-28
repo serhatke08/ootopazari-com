@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -9,6 +10,7 @@ import { NavSkeletonGate } from "@/components/NavSkeletonGate";
 import { MobileBottomNavRoot } from "@/components/MobileBottomNavRoot";
 import { SiteHeaderFallback, SiteMainShell } from "@/components/SiteListingChrome";
 import { AppNavigationMemory } from "@/components/AppNavigationMemory";
+import { AuthHashCatcher } from "@/components/AuthHashCatcher";
 import { SiteSearchProvider } from "@/components/SiteSearchProvider";
 import { AppDownloadPromoPopup } from "@/components/AppDownloadPromoPopup";
 import { DealerCircleOverlay } from "@/components/bayi/DealerCircleReveal";
@@ -113,19 +115,21 @@ export default function RootLayout({
           rel="apple-touch-icon"
           href="/menu/pazar.png?v=20260413"
         />
+        <meta name="google-adsense-account" content={ADSENSE_CLIENT_ID} />
       </head>
       <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900">
-        <div
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>`,
-          }}
+        <Script
+          id="adsense-loader"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
         />
         <SiteSearchProvider>
           <div className="site-app-shell flex min-h-full flex-1 flex-col">
           <Suspense fallback={null}>
             <AppNavigationMemory />
           </Suspense>
+          <AuthHashCatcher />
           <Suspense fallback={<SiteHeaderFallback />}>
             <SiteHeader />
           </Suspense>

@@ -37,7 +37,7 @@ export function SiteFooter({
       ];
 
   return (
-    <footer className="site-footer relative mt-auto hidden w-full overflow-hidden border-t border-white/10 py-8 sm:py-12 md:block">
+    <footer className="site-footer relative mt-auto w-full overflow-hidden border-t border-white/10 py-8 sm:py-12">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[#0a0a0a] bg-[url('/promo/footer-bg.png')] bg-repeat bg-[length:420px_420px] sm:bg-[length:520px_520px]"

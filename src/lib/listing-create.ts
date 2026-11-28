@@ -259,6 +259,7 @@ const LISTING_CLIENT_WRITE_KEYS = new Set([
   "has_expertise",
   "is_damaged",
   "is_tradeable",
+  "vehicle_plate",
   "expertiz_panels",
   "image_url",
   "images",
@@ -276,6 +277,11 @@ const LISTING_CLIENT_INSERT_ONLY_KEYS = new Set([
   "created_client",
   "dealer_type_scope",
   "rental_only",
+  "eids_status",
+  "eids_verified_at",
+  "eids_marka_adi",
+  "eids_ticari_adi",
+  "eids_model_yili",
 ]);
 
 /** Türkiye mağaza — ilan satırında ülke her zaman TR. */

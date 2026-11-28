@@ -216,9 +216,7 @@ function VehicleCascadeSidebarInner({
     }
     return categorySlots.filter(
       (slot) =>
-        slot.id === categoryId ||
-        (categoryCounts.get(slot.id) ?? 0) > 0 ||
-        showsVehicleCatalogWithoutListings(slot.code)
+        slot.id === categoryId || (categoryCounts.get(slot.id) ?? 0) > 0
     );
   }, [categorySlots, categoryCounts, categoryCountsReady, categoryId]);
 

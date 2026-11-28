@@ -25,7 +25,38 @@ export type MessageRow = {
   is_read: boolean | null;
   created_at: string | null;
   client_message_id?: string | null;
+  edited_at?: string | null;
 };
+
+export async function deleteOwnMessage(
+  supabase: SupabaseClient,
+  messageId: string
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("delete_own_message", {
+    p_id: messageId,
+  });
+  if (error) {
+    console.warn("delete_own_message:", error.message);
+    return false;
+  }
+  return data === true;
+}
+
+export async function editOwnMessage(
+  supabase: SupabaseClient,
+  messageId: string,
+  content: string
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("edit_own_message", {
+    p_id: messageId,
+    p_content: content,
+  });
+  if (error) {
+    console.warn("edit_own_message:", error.message);
+    return false;
+  }
+  return data === true;
+}
 
 /** Engellenen kullanıcı id’leri (iki yön). */
 export async function fetchBlockedPeerIds(
@@ -181,7 +212,20 @@ async function fetchConversationIdsHavingMessages(
 }
 
 /** Liste / sidebar için makul üst sınır — eski sohbetler sonsuz büyütmesin. */
-export const MAX_CONVERSATIONS_LIST = 40;
+export const MAX_CONVERSATIONS_LIST = 80;
+
+export function sortConversationsByLastMessage(
+  rows: ConversationRow[],
+  lastMap: Map<string, { created_at?: string | null }>
+): ConversationRow[] {
+  return [...rows].sort((a, b) => {
+    const ta =
+      lastMap.get(a.id)?.created_at || a.updated_at || a.created_at || "";
+    const tb =
+      lastMap.get(b.id)?.created_at || b.updated_at || b.created_at || "";
+    return tb.localeCompare(ta);
+  });
+}
 
 /** Sohbet açılışında ilk yüklenen mesaj (yeniden eskiye; sonra ters çevrilir). */
 export const MAX_THREAD_MESSAGES_INITIAL = 100;
@@ -244,7 +288,7 @@ export async function fetchMessagesForConversation(
 ): Promise<MessageRow[]> {
   const { data, error } = await supabase
     .from("messages")
-    .select("id,conversation_id,sender_id,content,is_read,created_at")
+    .select("id,conversation_id,sender_id,content,is_read,created_at,edited_at")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
     .limit(MAX_THREAD_MESSAGES_INITIAL);

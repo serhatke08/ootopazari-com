@@ -20,6 +20,7 @@ import {
   listingSummaryForConversation,
   otherParticipantId,
   profileDisplayName,
+  sortConversationsByLastMessage,
 } from "@/lib/messages";
 import { resolveListingChatBreadcrumb } from "@/lib/listing-seo-label";
 import { sanitizeUserAvatarUrl } from "@/lib/oauth-avatar";
@@ -132,6 +133,8 @@ export default async function MesajConversationPage({ params }: Props) {
             )
         : Promise.resolve(null),
     ]);
+
+  rows = sortConversationsByLastMessage(rows, lastMap);
 
   const listing = listingSummaryForConversation(listingMap, conv.listing_id);
   const listingTitle = supportChat

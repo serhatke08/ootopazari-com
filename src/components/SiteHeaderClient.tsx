@@ -15,7 +15,6 @@ import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
 import { useUserHasListings } from "@/hooks/useUserHasListings";
 import { listingNumberFromSearchQuery } from "@/lib/listing-number-search";
 import { buildListingSeoPath, isListingDetailPath } from "@/lib/listing-seo";
-import { useSiteSearch } from "@/components/SiteSearchProvider";
 import type { BayiApplicationMenuRow } from "@/lib/bayi-applications";
 import { initialFromName } from "@/lib/user-display-name";
 import { dedupeMessageNotifications } from "@/lib/user-notifications";
@@ -29,26 +28,6 @@ const navSearchInputClass =
   "w-full min-w-0 rounded-md border border-zinc-500/50 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/25";
 const navSearchBtnClass =
   "shrink-0 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-extrabold text-[#ffcc00] shadow-sm hover:bg-zinc-800 active:bg-zinc-950";
-
-function MapIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10Z" />
-      <circle cx="12" cy="11" r="2.5" />
-    </svg>
-  );
-}
 
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -66,24 +45,6 @@ function SearchIcon({ className }: { className?: string }) {
     >
       <circle cx="11" cy="11" r="8" />
       <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}
-
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden
-    >
-      <path d="M6 6l12 12M18 6L6 18" />
     </svg>
   );
 }
@@ -152,14 +113,9 @@ function NavSearchForm({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const siteSearch = useSiteSearch();
-  const onHome = pathname === "/";
-  const urlQ = onHome ? (searchParams.get("q") ?? "") : "";
-  const externalQ = onHome
-    ? siteSearch?.homeTextQuery !== undefined
-      ? siteSearch.homeTextQuery
-      : urlQ
-    : "";
+  const onSearchPage = pathname === "/ara";
+  const urlQ = onSearchPage ? (searchParams.get("q") ?? "") : "";
+  const externalQ = urlQ;
   const [draft, setDraft] = useState<string | null>(null);
   const [baseline, setBaseline] = useState(externalQ);
   const [focused, setFocused] = useState(false);
@@ -186,12 +142,8 @@ function NavSearchForm({
       onSubmitted?.();
       return;
     }
-    if (onHome && siteSearch) {
-      siteSearch.setHomeTextQuery(raw);
-      onSubmitted?.();
-      return;
-    }
-    router.push(raw ? `/?q=${encodeURIComponent(raw)}` : "/");
+    const href = raw ? `/ara?q=${encodeURIComponent(raw)}` : "/ara";
+    router.push(href);
     onSubmitted?.();
   }
 
@@ -296,7 +248,6 @@ export function SiteHeaderClient({
   isParcaciDealerActive: boolean;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
@@ -344,17 +295,7 @@ export function SiteHeaderClient({
   useEffect(() => {
     setDrawerOpen(false);
     setNotifOpen(false);
-    setMobileSearchOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!mobileSearchOpen) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setMobileSearchOpen(false);
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [mobileSearchOpen]);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -490,7 +431,7 @@ export function SiteHeaderClient({
         />
         <div className="border-b border-amber-400/80 bg-[#ffcc00]">
         <div className="mx-auto max-w-[1400px] px-2 py-1.5 sm:px-4 sm:py-2.5 md:px-6">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-3">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 sm:gap-3">
           <div className="flex min-w-0 items-center gap-2 justify-self-start">
             <HamburgerButton
               open={drawerOpen}
@@ -521,22 +462,14 @@ export function SiteHeaderClient({
           </Link>
 
           <nav className="flex min-w-0 items-center justify-end justify-self-end gap-x-1 gap-y-1 text-sm sm:gap-x-2 md:gap-x-2 lg:gap-x-3">
-            <button
-              type="button"
-              data-mobile-search-toggle="true"
-              onClick={() => setMobileSearchOpen((o) => !o)}
-              className="inline-flex items-center justify-center rounded-md p-2 text-zinc-900 hover:bg-black/10 sm:hidden"
-              aria-label={mobileSearchOpen ? "Aramayı kapat" : "Ara"}
-              aria-expanded={mobileSearchOpen}
-            >
-              {mobileSearchOpen ? <CloseIcon /> : <SearchIcon />}
-            </button>
             <Link
-              href="/harita"
-              className="inline-flex items-center justify-center rounded-md p-2 text-zinc-900 hover:bg-black/10 md:hidden"
-              aria-label="Harita"
+              href="/ara"
+              data-mobile-search-toggle="true"
+              className="inline-flex items-center justify-center rounded-md p-2 text-zinc-900 hover:bg-black/10 sm:hidden"
+              aria-label="Ara"
+              onClick={() => setDrawerOpen(false)}
             >
-              <MapIcon />
+              <SearchIcon />
             </Link>
             {hasEnv ? (
               <>
@@ -736,17 +669,6 @@ export function SiteHeaderClient({
             ) : null}
           </nav>
           </div>
-          {mobileSearchOpen ? (
-            <div className="mt-1.5 sm:hidden">
-              <Suspense fallback={<NavSearchFallback id="site-nav-search-mobile" />}>
-                <NavSearchForm
-                  id="site-nav-search-mobile"
-                  autoFocus
-                  onSubmitted={() => setMobileSearchOpen(false)}
-                />
-              </Suspense>
-            </div>
-          ) : null}
         </div>
         </div>
       </header>

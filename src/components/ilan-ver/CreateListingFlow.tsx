@@ -52,6 +52,7 @@ import {
   isEidsMinistryGateError,
   WEB_EIDS_UI_ENABLED,
 } from "@/lib/eids-ui";
+import { EidsGsmConfirm } from "@/components/eids/EidsGsmConfirm";
 import { compressListingImageFiles } from "@/lib/compress-listing-image";
 import {
   MAX_LISTING_PHOTOS,
@@ -68,6 +69,7 @@ import { publicListingImageUrl } from "@/lib/storage";
 import {
   ACTIVATION_STATUS_ACTIVE,
   ACTIVATION_STATUS_PASSIVE_PAYMENT,
+  ACTIVATION_STATUS_PASSIVE_READY,
   PAID_LISTING_ACTIVATION_FEE_TRY,
   recordActivationUse,
   type ListingQuotaSnapshot,
@@ -121,7 +123,7 @@ type FlowPage =
 
 /**
  * Sıra: kategori → yıl → marka → model → motor → paket → vites → kasa
- * → araç detayları → e-Devlet → foto/içerik → expertiz şeması → paketler
+ * → araç detayları → foto/içerik → expertiz şeması → e-Devlet → paketler
  */
 const WEB_EIDS_STEP_ENABLED = WEB_EIDS_UI_ENABLED;
 
@@ -135,9 +137,9 @@ const VEHICLE_PAGES_ALL: FlowPage[] = [
   "transmission",
   "bodyStyle",
   "details",
-  "eids",
   "content",
   "expertiz",
+  "eids",
   "boosts",
 ];
 
@@ -381,6 +383,7 @@ export function CreateListingFlow({
   const [eidsTransferState, setEidsTransferState] = useState<string | null>(
     null
   );
+  const [eidsGsmOpen, setEidsGsmOpen] = useState(false);
 
   const [files, setFiles] = useState<File[]>([]);
   /** Storage path listesi — taslak JSON’a yazılır */
@@ -844,20 +847,7 @@ export function CreateListingFlow({
         fieldId: "ilan-ver-expertiz-confirm",
       };
     }
-    if (WEB_EIDS_STEP_ENABLED && page === "eids" && isVehicle) {
-      if (!eidsAccountOk) {
-        return {
-          message: "Önce e-Devlet ile hesabı doğrulayın.",
-          fieldId: "ilan-ver-eids",
-        };
-      }
-      if (!eidsVehicleOk) {
-        return {
-          message: "Plaka yetkisini tamamlayın (sorgula).",
-          fieldId: "ilan-ver-eids",
-        };
-      }
-    }
+    // e-Devlet atlanabilir — ilan pasifte kalır, doğrulama İlanlarım’dan biter.
     if (page === "content") {
       const photoCount =
         files.length + (isEditMode ? existingGalleryUrls.length : 0);
@@ -909,13 +899,13 @@ export function CreateListingFlow({
   }
 
   function scrollToField(fieldId: string) {
-    window.requestAnimationFrame(() => {
+    const run = () => {
       const el = document.getElementById(fieldId);
       const target = el ?? document.getElementById("ilan-ver-err");
       if (!target) return;
-      // center kullanma — alt alanlarda site footer’ı ekrana çekiyor
+      const headerOffset = fieldId === "ilan-ver-expertiz-confirm" ? 140 : 96;
       const top =
-        target.getBoundingClientRect().top + window.scrollY - 96;
+        target.getBoundingClientRect().top + window.scrollY - headerOffset;
       window.scrollTo({
         top: Math.max(0, top),
         behavior: "smooth",
@@ -931,6 +921,9 @@ export function CreateListingFlow({
           /* ignore */
         }
       }
+    };
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(run);
     });
   }
 
@@ -1479,28 +1472,30 @@ export function CreateListingFlow({
     }
   };
 
-  const startEids = async () => {
+  const startEids = async (gsmOverride?: string) => {
+    const ten = toTrMobile10(gsmOverride ?? "");
+    if (!ten) {
+      setEidsGsmOpen(true);
+      return;
+    }
     setEidsBusy(true);
     setEidsMsg(null);
     try {
-      const ten = toTrMobile10(phone);
-      if (ten) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user?.id) {
-          const { error: phoneErr } = await supabase
-            .from("profiles")
-            .update({ phone: ten })
-            .eq("id", user.id);
-          if (phoneErr) {
-            setEidsMsg(
-              "Numara kaydedilemedi. Başka bir hesapta kayıtlı olabilir."
-            );
-            return;
-          }
-          if (!phone) setPhone(ten);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.id) {
+        const { error: phoneErr } = await supabase
+          .from("profiles")
+          .update({ phone: ten })
+          .eq("id", user.id);
+        if (phoneErr) {
+          setEidsMsg(
+            "Numara kaydedilemedi. Başka bir hesapta kayıtlı olabilir."
+          );
+          return;
         }
+        setPhone(ten);
       }
       await persistDraft();
       const {
@@ -2101,14 +2096,7 @@ export function CreateListingFlow({
           setErr("Araç durumu seçin.");
           return;
         }
-        if (
-          !isEditMode &&
-          WEB_EIDS_STEP_ENABLED &&
-          (!eidsAccountOk || !eidsVehicleOk)
-        ) {
-          setErr("e-Devlet hesap ve plaka doğrulamasını tamamlayın.");
-          return;
-        }
+        // e-Devlet yoksa pasif yayın; doğrulama ilan sayfasından.
       }
       if (!district.trim()) {
         setErr("İlçe / semt yazın.");
@@ -2183,7 +2171,12 @@ export function CreateListingFlow({
         !quotaNow ||
         quotaNow.unlimited ||
         quotaNow.remaining > 0;
-      const publishAsPassive = !isEditMode && !freeRightsLeft;
+      const eidsPending =
+        !isEditMode &&
+        isVehicle &&
+        WEB_EIDS_STEP_ENABLED &&
+        !eidsVehicleOk;
+      const publishAsPassive = !isEditMode && (!freeRightsLeft || eidsPending);
 
       const resolvedModel = childId || parentId || modelId;
 
@@ -2220,9 +2213,11 @@ export function CreateListingFlow({
       };
       if (!isEditMode) {
         base.user_id = user.id;
-        base.activation_status = publishAsPassive
-          ? ACTIVATION_STATUS_PASSIVE_PAYMENT
-          : ACTIVATION_STATUS_ACTIVE;
+        base.activation_status = !publishAsPassive
+          ? ACTIVATION_STATUS_ACTIVE
+          : !freeRightsLeft
+            ? ACTIVATION_STATUS_PASSIVE_PAYMENT
+            : ACTIVATION_STATUS_PASSIVE_READY;
         base.activation_fee_amount = PAID_LISTING_ACTIVATION_FEE_TRY;
         if (!publishAsPassive) {
           base.activated_at = new Date().toISOString();
@@ -2263,6 +2258,16 @@ export function CreateListingFlow({
         }
         if (resolvedModel) base.vehicle_brand_model_id = resolvedModel;
         if (packageId) base.vehicle_engine_package_id = packageId;
+        const plaka = plate.trim().replace(/\s+/g, "").toUpperCase();
+        if (plaka) base.vehicle_plate = plaka;
+        if (!isEditMode) {
+          if (eidsVehicleOk) {
+            base.eids_status = "verified";
+            base.eids_verified_at = new Date().toISOString();
+          } else if (WEB_EIDS_STEP_ENABLED) {
+            base.eids_status = "pending";
+          }
+        }
       }
 
       const duplicateId = await findLiveDuplicateListingId(supabase, {
@@ -3449,20 +3454,23 @@ export function CreateListingFlow({
 
       {page === "eids" ? (
         <div id="ilan-ver-eids" className="space-y-4">
+          {!eidsVehicleOk ? (
+            <p className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800">
+              İleri dersen ilan hesabında pasifte durur. e-Devlet’i İlanlarım’dan
+              sonra da bitirebilirsin.
+            </p>
+          ) : null}
           {!eidsAccountOk ? (
             <div className="mx-auto w-full max-w-sm space-y-3">
-              {toTrMobile10(phone) ? (
-                <p className="text-xs text-zinc-600">
-                  Telefon şart değil. Profilde varsa bakanlık sorgusunda
-                  kullanılır.
-                </p>
-              ) : null}
+              <p className="text-xs text-zinc-600">
+                Önce e-Devlet’teki cep numaranı kesinleştir, sonra doğrula.
+              </p>
               <div className="flex justify-center">
                 <button
                   type="button"
                   disabled={eidsBusy}
                   onClick={() => void startEids()}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#111111] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -3652,6 +3660,16 @@ export function CreateListingFlow({
               )}
             </div>
           ) : null}
+          <EidsGsmConfirm
+            open={eidsGsmOpen}
+            initial={phone}
+            busy={eidsBusy}
+            onCancel={() => setEidsGsmOpen(false)}
+            onConfirm={(gsm) => {
+              setEidsGsmOpen(false);
+              void startEids(gsm);
+            }}
+          />
         </div>
       ) : null}
 
@@ -4108,15 +4126,7 @@ export function CreateListingFlow({
             </button>
             <button
               type="button"
-              disabled={
-                busy ||
-                navBusy ||
-                !selectionHasValue ||
-                (WEB_EIDS_STEP_ENABLED &&
-                  page === "eids" &&
-                  !eidsVehicleOk &&
-                  isVehicle)
-              }
+              disabled={busy || navBusy || !selectionHasValue}
               onClick={() => void goNextWithBusy()}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#ffcc00] px-4 py-2.5 text-sm font-bold text-zinc-900 disabled:opacity-50"
             >

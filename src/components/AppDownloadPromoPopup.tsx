@@ -73,6 +73,13 @@ export function AppDownloadPromoPopup() {
       setOpen(false);
       return;
     }
+    if (
+      /Googlebot|AdsBot|Mediapartners-Google|Google-AdSense/i.test(
+        navigator.userAgent
+      )
+    ) {
+      return;
+    }
     if (wasRecentlyDismissed()) return;
     setStore(detectMobileStore(navigator.userAgent));
     const t = window.setTimeout(() => setOpen(true), SHOW_DELAY_MS);

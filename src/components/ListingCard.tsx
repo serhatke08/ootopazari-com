@@ -14,7 +14,10 @@ import { buildListingSeoPath } from "@/lib/listing-seo";
 import { listingSeoLabelFromFields } from "@/lib/listing-seo-label";
 import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { ListingBoostChrome } from "@/components/ListingBoostChrome";
+import { ListingGaleriBadge } from "@/components/ListingGaleriBadge";
 import { ListingAcilBadge } from "@/components/ListingAcilBadge";
+import { listingIsGaleriDealer } from "@/lib/dealer-listing-tables";
+import { DealerVerifiedTick } from "@/components/bayi/DealerVerifiedTick";
 import { ListingCoverImage } from "@/components/ListingCoverImage";
 import { ListingPriceDisplay } from "@/components/ListingPriceDisplay";
 import { StatsBadges } from "@/components/StatsBadges";
@@ -27,6 +30,8 @@ import { initialFromName } from "@/lib/user-display-name";
 import type { PriceRatingSummary } from "@/lib/listing-price-ratings";
 import { EMPTY_PRICE_RATING_SUMMARY } from "@/lib/listing-price-ratings";
 import { listingDisplayTitle } from "@/lib/listing-display-title";
+import { listingNeedsOwnerEids } from "@/lib/listing-eids";
+import { ListingEidsPendingBadge } from "@/components/ListingEidsPendingBadge";
 
 type Props = {
   listing: ListingRow;
@@ -206,6 +211,8 @@ export function ListingCard({
   const isHomeGrid = hideCategoryAndYear && cityOnStatsRow;
   const showBoostLabel = isHomeGrid && boostActive && !showAcilBadge;
   const showBoostGoldBorder = Boolean(boostActive);
+  const showGaleriBadge = listingIsGaleriDealer(listing);
+  const showEidsBadge = listingNeedsOwnerEids(listing);
   const maskedMileage = formatMaskedMileage(listing.vehicle_mileage);
   const displayTitle = listingDisplayTitle({
     title: typeof listing.title === "string" ? listing.title : null,
@@ -218,7 +225,9 @@ export function ListingCard({
     <div
       className={
         isHomeGrid
-          ? "relative aspect-[3/4] w-full overflow-hidden bg-zinc-100"
+          ? showGaleriBadge
+            ? "relative aspect-[4/5] w-full overflow-hidden bg-zinc-100"
+            : "relative aspect-[3/4] w-full overflow-hidden bg-zinc-100"
           : "relative aspect-[3/2] w-full overflow-hidden bg-black sm:aspect-[16/10]"
       }
     >
@@ -256,8 +265,14 @@ export function ListingCard({
 
   const imageArea = (
     <div className="relative">
+      {showGaleriBadge ? <ListingGaleriBadge /> : null}
       {showBoostLabel ? <ListingBoostChrome /> : null}
       {showAcilBadge && !inactive ? <ListingAcilBadge /> : null}
+      {showEidsBadge ? (
+        <div className="pointer-events-none absolute left-[5px] top-[5px] z-20">
+          <ListingEidsPendingBadge size={20} />
+        </div>
+      ) : null}
       {href ? (
         <Link href={href} className="block">
           {imageFrame}
@@ -288,16 +303,20 @@ export function ListingCard({
           ? "border-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.35)]"
           : showBoostGoldBorder
             ? "border-2 border-[#111111] shadow-[0_2px_8px_rgba(0,0,0,0.28)]"
-            : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
+            : showGaleriBadge
+              ? "border-2 border-[#5D17EB] hover:border-[#4a12c4]"
+              : "border-zinc-200 hover:border-zinc-300 hover:shadow-md"
       } ${inactive && !activationPassive && !expired ? "opacity-[0.72] grayscale-[0.35]" : ""}`}
     >
       {passivePayment || (activationPassive && !expired) ? (
-        <div className="border-b border-red-600 bg-red-600 px-2 py-2 sm:px-4">
+        <div className="border-b border-zinc-900 bg-zinc-900 px-2 py-2 sm:px-4">
           <p className="text-center text-[11px] font-black uppercase tracking-wide text-white sm:text-xs">
-            İlan aktif değil!!!
+            {showEidsBadge ? "e-Devlet bekleniyor" : "İlan aktif değil"}
           </p>
-          <p className="mt-0.5 text-center text-[10px] font-semibold text-red-50 sm:text-[11px]">
-            Vitrinde görünmüyor. Aktifleştirmek için {feeLabel} ₺ öde.
+          <p className="mt-0.5 text-center text-[10px] font-semibold text-zinc-200 sm:text-[11px]">
+            {showEidsBadge
+              ? "Pasifte. Plakayı e-Devlet ile doğrulayınca yayına alınabilir."
+              : `Vitrinde görünmüyor. Aktifleştirmek için ${feeLabel} ₺ öde.`}
           </p>
         </div>
       ) : expired ? (
@@ -340,13 +359,23 @@ export function ListingCard({
             : "flex flex-1 flex-col gap-1 p-2 pt-2.5 sm:gap-1.5 sm:p-3 sm:pt-3"
         }
       >
-        {ownerName && !isHomeGrid ? (
+        {ownerName && (!isHomeGrid || showGaleriBadge) ? (
           ownerHref ? (
             <Link
               href={ownerHref}
-              className="mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500 hover:text-zinc-800"
+              className={
+                isHomeGrid
+                  ? "mb-0.5 inline-flex min-w-0 items-center gap-0.5 text-zinc-800 hover:text-zinc-950"
+                  : "mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500 hover:text-zinc-800"
+              }
             >
-              <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200">
+              <span
+                className={
+                  isHomeGrid
+                    ? "relative h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-zinc-200"
+                    : "relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200"
+                }
+              >
                 {ownerAvatarSrc ? (
                   <Image
                     src={ownerAvatarSrc}
@@ -356,16 +385,43 @@ export function ListingCard({
                     sizes="16px"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-zinc-600">
+                  <span className="flex h-full w-full items-center justify-center text-[8px] font-semibold text-zinc-600">
                     {initialFromName(ownerName)}
                   </span>
                 )}
               </span>
-              <span className="truncate pl-0.5 text-[10px] font-medium leading-none">{ownerName}</span>
+              <span
+                className={
+                  isHomeGrid
+                    ? "min-w-0 truncate text-[8px] font-bold leading-none"
+                    : "truncate pl-0.5 text-[10px] font-medium leading-none"
+                }
+              >
+                {ownerName}
+                {showGaleriBadge ? (
+                  <DealerVerifiedTick
+                    dealerType="galeri"
+                    size={isHomeGrid ? 11 : 14}
+                    className="ml-px inline-block align-text-bottom"
+                  />
+                ) : null}
+              </span>
             </Link>
           ) : (
-            <div className="mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500">
-              <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200">
+            <div
+              className={
+                isHomeGrid
+                  ? "mb-0.5 inline-flex min-w-0 items-center gap-0.5 text-zinc-800"
+                  : "mb-0.5 inline-flex min-w-0 items-center gap-2 text-zinc-500"
+              }
+            >
+              <span
+                className={
+                  isHomeGrid
+                    ? "relative h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-zinc-200"
+                    : "relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-zinc-200"
+                }
+              >
                 {ownerAvatarSrc ? (
                   <Image
                     src={ownerAvatarSrc}
@@ -375,12 +431,27 @@ export function ListingCard({
                     sizes="16px"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-zinc-600">
+                  <span className="flex h-full w-full items-center justify-center text-[8px] font-semibold text-zinc-600">
                     {initialFromName(ownerName)}
                   </span>
                 )}
               </span>
-              <span className="truncate pl-0.5 text-[10px] font-medium leading-none">{ownerName}</span>
+              <span
+                className={
+                  isHomeGrid
+                    ? "min-w-0 truncate text-[8px] font-bold leading-none"
+                    : "truncate pl-0.5 text-[10px] font-medium leading-none"
+                }
+              >
+                {ownerName}
+                {showGaleriBadge ? (
+                  <DealerVerifiedTick
+                    dealerType="galeri"
+                    size={isHomeGrid ? 11 : 14}
+                    className="ml-px inline-block align-text-bottom"
+                  />
+                ) : null}
+              </span>
             </div>
           )
         ) : null}
@@ -412,7 +483,9 @@ export function ListingCard({
           </p>
         )}
         {isHomeGrid ? (
-          <div className="mt-[10px] flex min-w-0 items-center gap-x-0.5 overflow-hidden">
+          <div
+            className={`${showGaleriBadge ? "mt-0.5" : "mt-[10px]"} flex min-w-0 items-center gap-x-0.5 overflow-hidden`}
+          >
             {listingId ? (
               <ListingPriceDisplay
                 listingId={listingId}

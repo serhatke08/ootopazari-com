@@ -14,6 +14,7 @@ import {
   buildBrandMap,
   fetchCategories,
   fetchCities,
+  fetchGaleriMarketListings,
   fetchListingsPage,
   fetchVehicleBrands,
   resolveListingCityDisplay,
@@ -29,6 +30,7 @@ import type {
   HomeListingCardItem,
   HomeListingsFeedFilters,
 } from "@/lib/home-listings-feed-types";
+import { listingIsGaleriDealer } from "@/lib/dealer-listing-tables";
 import { enrichListingRowsCoverImages } from "@/lib/listing-images";
 
 export type { HomeListingCardItem, HomeListingsFeedFilters } from "@/lib/home-listings-feed-types";
@@ -72,6 +74,41 @@ async function fetchOwnerMiniMap(
     map.set(id, { name, avatarSrc, href: `/kullanici/${id}` });
   }
   return map;
+}
+
+async function overlayGaleriDealerOwners(
+  supabase: SupabaseClient,
+  rows: ListingRow[],
+  owners: Map<string, OwnerMini>
+): Promise<void> {
+  const galeriUserIds = [
+    ...new Set(
+      rows
+        .filter((row) => listingIsGaleriDealer(row as Record<string, unknown>))
+        .map((row) => (row.user_id ? String(row.user_id) : ""))
+        .filter(Boolean)
+    ),
+  ];
+  if (galeriUserIds.length === 0) return;
+  const { data } = await supabase
+    .from("galeri_dealers")
+    .select("id, user_id, dealer_name")
+    .in("user_id", galeriUserIds)
+    .eq("is_active", true);
+  for (const row of data ?? []) {
+    const uid = String((row as { user_id?: string }).user_id ?? "");
+    const dealerId = String((row as { id?: string }).id ?? "").trim();
+    const dealerName = String(
+      (row as { dealer_name?: string }).dealer_name ?? ""
+    ).trim();
+    if (!uid || !dealerName) continue;
+    const prev = owners.get(uid);
+    owners.set(uid, {
+      name: dealerName,
+      avatarSrc: prev?.avatarSrc ?? null,
+      href: dealerId ? `/bayi/galeri/${dealerId}` : prev?.href ?? `/kullanici/${uid}`,
+    });
+  }
 }
 
 function buildCardItems(
@@ -181,12 +218,17 @@ export async function fetchHomeListingsFeed(
   const ids = rows.map((r) => r.id).filter(Boolean) as string[];
 
   if (lite) {
-    const [sessionFav, priceRatings] = await Promise.all([
+    const [sessionFav, priceRatings, owners] = await Promise.all([
       getSessionAndFavoriteSet(supabase, ids),
       fetchPriceRatingSummariesMap(supabase, ids),
+      fetchOwnerMiniMap(
+        supabase,
+        env,
+        rows.map((r) => r.user_id ?? null)
+      ),
     ]);
+    await overlayGaleriDealerOwners(supabase, rows, owners);
     const emptyStats = new Map<string, ListingPublicStats>();
-    const emptyOwners = new Map<string, OwnerMini>();
     return {
       items: buildCardItems(
         rows,
@@ -195,7 +237,7 @@ export async function fetchHomeListingsFeed(
         cityMap,
         emptyStats,
         sessionFav.favoriteIds,
-        emptyOwners,
+        owners,
         priceRatings
       ),
       total,
@@ -212,6 +254,7 @@ export async function fetchHomeListingsFeed(
       rows.map((r) => r.user_id ?? null)
     ),
   ]);
+  await overlayGaleriDealerOwners(supabase, rows, owners);
 
   const priceRatings = await fetchPriceRatingSummariesMap(
     supabase,
@@ -226,6 +269,89 @@ export async function fetchHomeListingsFeed(
       brandMap,
       cityMap,
       statsMap,
+      sessionFav.favoriteIds,
+      owners,
+      priceRatings
+    ),
+    total,
+    loggedIn: !!sessionFav.user,
+  };
+}
+
+/** Galeri Araçlar vitrini — anasayfa kartıyla aynı, yalnızca galeri ilanları. */
+export async function fetchGaleriMarketFeed(
+  supabase: SupabaseClient,
+  env: SupabasePublicEnv,
+  filters: HomeListingsFeedFilters = {},
+  dealerUserIds: string[] = []
+): Promise<{
+  items: HomeListingCardItem[];
+  total: number;
+  loggedIn: boolean;
+}> {
+  const [categories, cities, brands, { rows, total }] = await Promise.all([
+    fetchCategories(supabase),
+    fetchCities(supabase),
+    fetchVehicleBrands(supabase),
+    fetchGaleriMarketListings(supabase, {
+      page: 1,
+      pageSize: 48,
+      dealerUserIds,
+      categoryId: filters.categoryId,
+      cityId: filters.cityId,
+      cityIds: filters.cityIds,
+      sort: filters.sort,
+      vehicleBrandId: filters.vehicleBrandId,
+      vehicleBrandIds: filters.vehicleBrandIds,
+      vehicleModel: filters.vehicleModel,
+      vehicleModels: filters.vehicleModels,
+      fuelType: filters.fuelType,
+      transmissionType: filters.transmissionType,
+      hasPhoto: filters.hasPhoto,
+      vehiclesOnly: filters.vehiclesOnly,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      minYear: filters.minYear,
+      maxYear: filters.maxYear,
+      minKm: filters.minKm,
+      maxKm: filters.maxKm,
+      q: filters.q,
+      bodyType: filters.bodyType,
+      vehicleEnginePackageId: filters.vehicleEnginePackageId,
+      vehicleEnginePackageIds: filters.vehicleEnginePackageIds,
+      vehicleEngineOther: filters.vehicleEngineOther,
+      vehicleEngineOtherExcludedPackageIds:
+        filters.vehicleEngineOtherExcludedPackageIds,
+      vehicleEngineOtherExcludedModelTerms:
+        filters.vehicleEngineOtherExcludedModelTerms,
+    }),
+  ]);
+
+  await enrichListingRowsCoverImages(
+    supabase,
+    env,
+    rows as Record<string, unknown>[]
+  );
+
+  const ids = rows.map((r) => r.id).filter(Boolean) as string[];
+  const [sessionFav, priceRatings, owners] = await Promise.all([
+    getSessionAndFavoriteSet(supabase, ids),
+    fetchPriceRatingSummariesMap(supabase, ids),
+    fetchOwnerMiniMap(
+      supabase,
+      env,
+      rows.map((r) => r.user_id ?? null)
+    ),
+  ]);
+  await overlayGaleriDealerOwners(supabase, rows, owners);
+
+  return {
+    items: buildCardItems(
+      rows,
+      buildCategoryMap(categories),
+      buildBrandMap(brands),
+      buildCityMap(cities),
+      new Map<string, ListingPublicStats>(),
       sessionFav.favoriteIds,
       owners,
       priceRatings

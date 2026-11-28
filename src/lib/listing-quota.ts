@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAdminProfileByUserId } from "@/lib/admin-profile";
 import { normalizeDealerState } from "@/lib/bayi-application-status";
+import { isAdminSupportShellListing } from "@/lib/listing-eids";
 import type { ApplicationStatus, PaymentStatus } from "@/lib/bayi-types";
 
 export const YEARLY_FREE_LISTING_QUOTA = 1;
@@ -12,6 +13,7 @@ export const LISTING_ACTIVE_DAYS = 30;
 export const PAID_LISTING_ACTIVATION_FEE_TRY = 200;
 export const ACTIVATION_STATUS_ACTIVE = "active";
 export const ACTIVATION_STATUS_PASSIVE_PAYMENT = "passive_payment_required";
+export const ACTIVATION_STATUS_PASSIVE_READY = "passive_ready";
 export const ACTIVATION_STATUS_PASSIVE_EXPIRED = "passive_expired";
 /** Pasif ilan hesapta bu kadar gün kalır; sonra listings_archived'a taşınır. */
 export const LISTING_EXPIRED_GRACE_DAYS = 15;
@@ -326,7 +328,9 @@ export async function fetchListingQuota(
     }
   }
 
-  const used = await countFreeActivationUses(supabase, userId);
+  const usedUses = await countFreeActivationUses(supabase, userId);
+  const usedListings = await countYearlyUserListings(supabase, userId);
+  const used = Math.max(usedUses, usedListings);
   return {
     year,
     limit,
@@ -334,6 +338,38 @@ export async function fetchListingQuota(
     remaining: Math.max(0, limit - used),
     unlimited: false,
   };
+}
+
+/** e-Devlet atlanan pasif ilan da slot tutar; yoksa 2. ilan ücretsiz kalır. */
+async function countYearlyUserListings(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const cutoff = listingFreeUseCutoffIso();
+  let total = 0;
+  const tables = [
+    LISTING_TABLE_CARS,
+    "galeri_listings",
+    "kiralik_listings",
+    "expertiz_listings",
+    "parcaci_listings",
+  ];
+  for (const table of tables) {
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select("title, description, created_at")
+        .eq("user_id", userId)
+        .gte("created_at", cutoff);
+      if (error) continue;
+      total += (data ?? []).filter(
+        (row) => !isAdminSupportShellListing(row as Record<string, unknown>)
+      ).length;
+    } catch {
+      /* tablo yoksa atla */
+    }
+  }
+  return total;
 }
 
 export async function recordActivationUse(

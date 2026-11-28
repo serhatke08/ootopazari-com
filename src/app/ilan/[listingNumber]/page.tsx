@@ -72,6 +72,7 @@ import { ListingShareReportActions } from "@/components/ListingShareReportAction
 import { ADSENSE_LISTING_DETAIL_SLOT } from "@/lib/adsense";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { ListingPublicChatPanelLoader } from "@/components/listing/ListingPublicChatPanelLoader";
+import { ListingOwnerEidsCard } from "@/components/listing/ListingOwnerEidsCard";
 import { fetchListingPublicComments } from "@/lib/listing-public-comments";
 import { displayNameFromAuthUser } from "@/lib/user-display-name";
 type Props = { params: Promise<{ listingNumber: string }> };
@@ -810,6 +811,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
       ? specRow("CC", engineCapacityDisplay)
       : specRow("Motor", motorDisplay),
     specRow("Donanım / Paket", paketDisplay),
+    specRow("Motor gücü (HP)", enginePowerDisplay),
     specRow(
       "Kilometre",
       fmtKm(listing.vehicle_mileage ?? pick(row, ["km"]))
@@ -817,7 +819,6 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
     specRow("Yakıt", listing.fuel_type as string),
     specRow(isMotorcycle ? "Şanzıman" : "Vites", listing.transmission_type as string),
     !isMotorcycle ? specRow("Motor hacmi", engineCapacityDisplay) : null,
-    specRow("Motor gücü (HP)", enginePowerDisplay),
     specRow(isMotorcycle ? "Renk / Kaplama" : "Renk", listing.color as string),
     specRow("Kasa tipi", kasaDisplay),
     specRow("Çekiş", listing.drive_type as string),
@@ -920,15 +921,10 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
         <Field label="Kasa tipi" value={kasaDisplay} />
         <Field label="Motor" value={motorDisplay} />
         <Field label="Donanım / Paket" value={paketDisplay} />
+        <Field label="Motor gücü" value={enginePowerDisplay} />
         <Field
           label="Motor hacmi"
           value={pick(row, ["engine_capacity", "motor_hacmi"]) as string}
-        />
-        <Field
-          label="Motor gücü"
-          value={
-            pick(row, ["engine_power", "motor_gucu", "motor_power"]) as string
-          }
         />
         <Field label="Çekiş" value={listing.drive_type as string} />
         {!kasaDisplay &&
@@ -1073,6 +1069,30 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
           </p>
         </div>
       ) : null}
+      {isOwner &&
+      id &&
+      String(row.eids_status ?? "").toLowerCase() !== "verified" &&
+      !row.eids_verified_at &&
+      (String(row.eids_status ?? "").toLowerCase() === "pending" ||
+        !!pick(row, [
+          "vehicle_plate",
+          "plate_number",
+          "plaka",
+          "license_plate",
+        ])) ? (
+        <ListingOwnerEidsCard
+          listingId={id}
+          listingNumber={listing.listing_number as string | number | null}
+          plate={
+            pick(row, [
+              "vehicle_plate",
+              "plate_number",
+              "plaka",
+              "license_plate",
+            ]) as string | null
+          }
+        />
+      ) : null}
       {isSuspendedOwnerView ? (
         <div
           className="mx-4 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-950 md:mx-0"
@@ -1132,7 +1152,26 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
               alt="İlan görseli"
               compact
               overlay={
-                <div className="flex w-full items-start justify-end gap-1.5">
+                <div className="flex w-full items-start justify-between gap-1.5">
+                    {isOwner &&
+                    id &&
+                    String(row.eids_status ?? "").toLowerCase() !== "verified" &&
+                    (String(row.eids_status ?? "").toLowerCase() === "pending" ||
+                      String(row.eids_status ?? "").toLowerCase() === "skipped") ? (
+                      <span className="inline-flex h-9 items-center rounded-full bg-white/90 px-1.5 shadow-sm">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/branding/edevlet_icon.png"
+                          alt=""
+                          width={22}
+                          height={22}
+                          className="h-5 w-5 object-contain"
+                        />
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    <div className="flex items-start justify-end gap-1.5">
                     {id && !isSuspendedDetailView ? (
                       <FavoriteHeart
                         listingId={id}
@@ -1181,6 +1220,7 @@ async function IlanDetayBody({ listingParam }: { listingParam: string }) {
                         variant="overlay"
                       />
                     ) : null}
+                    </div>
                 </div>
               }
             />

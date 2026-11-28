@@ -16,7 +16,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function IlanVerPage() {
+type PageProps = {
+  searchParams: Promise<{ dealer?: string | string[] }>;
+};
+
+export default async function IlanVerPage({ searchParams }: PageProps) {
   const env = tryGetSupabaseEnv();
   if (!env) {
     return (
@@ -72,6 +76,9 @@ export default async function IlanVerPage() {
   const listingCategories = categories.filter(
     (c) => String(c.code ?? "").toLowerCase() !== "all"
   );
+  const sp = await searchParams;
+  const dealerRaw = Array.isArray(sp.dealer) ? sp.dealer[0] : sp.dealer;
+  const dealerType = dealerRaw === "galeri" ? "galeri" : null;
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
@@ -79,6 +86,7 @@ export default async function IlanVerPage() {
         categories={listingCategories}
         userCountryId={userCountryId}
         listingQuota={quota}
+        dealerType={dealerType}
       />
     </div>
   );

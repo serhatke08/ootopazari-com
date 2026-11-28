@@ -49,7 +49,7 @@ export function BayiProductsBoard({ dealerType, listings, quota }: Props) {
           )}
         </div>
         <Link
-          href="/ilan-ver"
+          href={dealerType === "galeri" ? "/ilan-ver?dealer=galeri" : "/ilan-ver"}
           className="rounded-xl px-4 py-2.5 text-sm font-black text-white"
           style={{ backgroundColor: theme.primary }}
         >

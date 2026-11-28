@@ -6,6 +6,7 @@ import { tryGetSupabaseEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MissingEnv } from "@/components/MissingEnv";
 import { HomeQuickLinksStrip } from "@/components/HomeQuickLinksStrip";
+import { HomePublisherIntro } from "@/components/HomePublisherIntro";
 import {
   type CategoryRow,
   type CityRow,
@@ -109,6 +110,14 @@ export default async function AnaSayfa({
   if (directListingNo) {
     redirect(`/ilan/${directListingNo}`);
   }
+  if (q) {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) {
+      const val = Array.isArray(v) ? v[0] : v;
+      if (val != null && val !== "") p.set(k, val);
+    }
+    redirect(`/ara?${p.toString()}`);
+  }
 
   return (
     <>
@@ -120,6 +129,7 @@ export default async function AnaSayfa({
         }}
       />
       <HomeQuickLinksStrip />
+      <HomePublisherIntro />
       <Suspense fallback={<HomeListingsFallback />}>
         <HomeListingsLoader env={env} get={get} siteOrigin={siteOrigin} />
       </Suspense>

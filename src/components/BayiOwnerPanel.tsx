@@ -75,13 +75,16 @@ export function BayiOwnerPanel({
             <h1 className="mt-1 text-3xl font-black tracking-tight">
               {application.dealer_name}
             </h1>
-            <p className="mt-1 text-sm text-white/80">
-              {locked
-                ? "Önce 500 TL tek seferlik ücreti öde. Mağaza, stok ve analitik ödemeden sonra açılır."
-                : dealerType === "galeri"
-                  ? "Hesap açık. Yılda 5 ilan ücretsiz; sonrası ilan paketleri."
-                  : "Bayi paneli açık. Mağaza, stok ve mesajlar senin."}
-            </p>
+            {locked ? (
+              <p className="mt-1 text-sm text-white/80">
+                Önce 500 TL tek seferlik ücreti öde. Mağaza, stok ve analitik
+                ödemeden sonra açılır.
+              </p>
+            ) : dealerType === "galeri" ? (
+              <p className="mt-1 text-sm text-white/80">
+                Yılda 5 ilan ücretsiz; sonrası ilan paketleri.
+              </p>
+            ) : null}
           </div>
           {!locked ? (
             <Link

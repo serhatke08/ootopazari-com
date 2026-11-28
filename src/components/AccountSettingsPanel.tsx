@@ -35,7 +35,7 @@ export function AccountSettingsPanel({ email }: Props) {
     try {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/giris`,
+        redirectTo: `${window.location.origin}/sifre-sifirla`,
       });
       if (error) {
         setDeleteErr(error.message || "Sıfırlama e-postası gönderilemedi.");

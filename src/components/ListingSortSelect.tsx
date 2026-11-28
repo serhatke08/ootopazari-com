@@ -15,11 +15,8 @@ export function ListingSortSelect() {
   const [open, setOpen] = useState(false);
 
   const current = useMemo(
-    () =>
-      pathname === "/"
-        ? parseHomeListingsSort(searchParams.get("sort"))
-        : "newest",
-    [pathname, searchParams]
+    () => parseHomeListingsSort(searchParams.get("sort")),
+    [searchParams]
   );
   const currentLabel =
     HOME_LISTINGS_SORT_OPTIONS.find((o) => o.value === current)?.label ??
@@ -32,7 +29,7 @@ export function ListingSortSelect() {
     else p.delete("sort");
     p.delete("page");
     const qs = p.toString();
-    router.push(qs ? `/?${qs}` : "/");
+    router.push(qs ? `${pathname}?${qs}` : pathname);
     setOpen(false);
   }
 

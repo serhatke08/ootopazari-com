@@ -63,15 +63,15 @@ export function BayiCard({ dealer, dealerType, supabaseUrl }: Props) {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-          <div className="absolute inset-x-3 bottom-3 flex items-end gap-2">
-            <h3 className="min-w-0 flex-1 text-center text-[17px] font-bold tracking-wide text-white drop-shadow">
+          <div className="absolute inset-x-3 bottom-3">
+            <h3 className="text-center text-[17px] font-bold tracking-wide text-white drop-shadow">
               {turkishUpper(dealer.dealer_name)}
+              <DealerVerifiedTick
+                size={18}
+                dealerType={dealerType}
+                className="ml-0.5 inline-block align-middle"
+              />
             </h3>
-            <DealerVerifiedTick
-              size={18}
-              dealerType={dealerType}
-              className="mb-0.5 shrink-0"
-            />
           </div>
         </div>
 

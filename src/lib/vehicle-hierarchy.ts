@@ -105,6 +105,31 @@ function numberOrNull(value: unknown): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** Motor adındaki resmi güç: `2.2 TDCi 155`, `95 HP`, `100 kW`. */
+export function horsepowerFromCatalogName(raw?: string | null): number | null {
+  const name = raw?.trim() ?? "";
+  if (!name) return null;
+  const hpMatch = name.match(/(\d{2,4})\s*(hp|ps)\b/i);
+  if (hpMatch) {
+    const n = Number.parseInt(hpMatch[1], 10);
+    if (n >= 20 && n <= 2000) return n;
+  }
+  const kwMatch = name.match(/(\d{2,4}(?:[.,]\d+)?)\s*kW\b/i);
+  if (kwMatch) {
+    const n = Number.parseFloat(kwMatch[1].replace(",", "."));
+    if (Number.isFinite(n) && n >= 10 && n <= 1500) {
+      return Math.round(n * 1.35962);
+    }
+  }
+  if (/(cc|kw)\s*$/i.test(name)) return null;
+  if (!/[A-Za-zÇĞİÖŞÜçğıöşü]/.test(name)) return null;
+  const trail = name.match(/(\d{2,4})\s*$/);
+  if (!trail) return null;
+  const n = Number.parseInt(trail[1], 10);
+  if (!Number.isFinite(n) || n < 50 || n > 1200) return null;
+  return n;
+}
+
 function labelForRow(row: IdNameRow | null | undefined): string | null {
   if (!row) return null;
   return cleanLabel(row.name) ?? cleanLabel(row.code);
@@ -508,7 +533,10 @@ export async function fetchListingEnginePackageLabels(
         horsepower?: number | string | null;
       };
       motor = cleanLabel(e.name);
-      horsepower = horsepower ?? numberOrNull(e.horsepower);
+      horsepower =
+        horsepower ??
+        numberOrNull(e.horsepower) ??
+        horsepowerFromCatalogName(e.name);
     }
   }
 
@@ -741,7 +769,9 @@ export async function resolveListingVehicleCatalogParts(
     motor: labelForRow(engineMatch),
     paket: labelForRow(packageMatch),
     horsepower:
-      numberOrNull(packageMatch?.horsepower) ?? numberOrNull(engineMatch?.horsepower),
+      numberOrNull(packageMatch?.horsepower) ??
+      numberOrNull(engineMatch?.horsepower) ??
+      horsepowerFromCatalogName(engineMatch?.name),
     engineCapacityCc: numberOrNull(packageMatch?.engine_capacity_cc),
     variantRemainder,
   };

@@ -36,7 +36,7 @@ export function humanizeEidsFailMessage(
     /kullanici bilgilerini/i.test(durum || "")
   ) {
     return (
-      "e-Devlet bitti; bakanlık kullanıcı kodunu vermedi. Telefon yazmana gerek yok — tekrar dene."
+      "e-Devlet GSM ile kaydettiğin cep uyuşmadı. e-Devlet’teki numarayı girip tekrar dene."
     );
   }
   if (isEidsMinistryGateError(durum)) {

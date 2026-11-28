@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SupabasePublicEnv } from "@/lib/env";
 import { getSessionAndFavoriteSet } from "@/lib/favorites";
 import type { HomeListingCardItem } from "@/lib/home-listings-feed-types";
+import { listingIsGaleriDealer } from "@/lib/dealer-listing-tables";
 import { listingIsAcilActive } from "@/lib/listing-acil";
 import { listingIsSifirActive } from "@/lib/listing-sifir";
 import { enrichListingRowsCoverImages } from "@/lib/listing-images";
@@ -68,6 +69,43 @@ async function fetchOwnerMiniMap(
   return map;
 }
 
+async function overlayGaleriDealerOwners(
+  supabase: SupabaseClient,
+  rows: ListingRow[],
+  owners: Map<string, { name: string; avatarSrc: string | null; href: string }>
+): Promise<void> {
+  const galeriUserIds = [
+    ...new Set(
+      rows
+        .filter((row) => listingIsGaleriDealer(row as Record<string, unknown>))
+        .map((row) => (row.user_id ? String(row.user_id) : ""))
+        .filter(Boolean)
+    ),
+  ];
+  if (galeriUserIds.length === 0) return;
+  const { data } = await supabase
+    .from("galeri_dealers")
+    .select("id, user_id, dealer_name")
+    .in("user_id", galeriUserIds)
+    .eq("is_active", true);
+  for (const row of data ?? []) {
+    const uid = String((row as { user_id?: string }).user_id ?? "");
+    const dealerId = String((row as { id?: string }).id ?? "").trim();
+    const dealerName = String(
+      (row as { dealer_name?: string }).dealer_name ?? ""
+    ).trim();
+    if (!uid || !dealerName) continue;
+    const prev = owners.get(uid);
+    owners.set(uid, {
+      name: dealerName,
+      avatarSrc: prev?.avatarSrc ?? null,
+      href: dealerId
+        ? `/bayi/galeri/${dealerId}`
+        : prev?.href ?? `/kullanici/${uid}`,
+    });
+  }
+}
+
 function filterRows(kind: SpecialListingKind, rows: ListingRow[]): ListingRow[] {
   const now = new Date();
   if (kind === "acil") {
@@ -123,6 +161,7 @@ export async function fetchSpecialListingsFeed(
       rows.map((r) => r.user_id)
     ),
   ]);
+  await overlayGaleriDealerOwners(supabase, rows, owners);
 
   const ratingMap = await fetchPriceRatingSummariesMap(supabase, ids);
 
