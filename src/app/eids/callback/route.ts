@@ -78,6 +78,67 @@ function appErrorDeepLink(params: {
   });
 }
 
+function htmlStateRecoveryPage(opts: {
+  yetkiKodu: string;
+  durum: string;
+}): NextResponse {
+  const payload = JSON.stringify({
+    yetkiKodu: opts.yetkiKodu,
+    durum: opts.durum,
+  });
+  const html = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>Doğrulama tamamlanıyor</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:28rem;margin:3rem auto;padding:0 1rem;color:#18181b;line-height:1.45}
+    a.btn{display:inline-flex;margin-top:1.25rem;background:#ffcc00;color:#18181b;font-weight:700;text-decoration:none;padding:.75rem 1rem;border-radius:.6rem}
+  </style>
+  <script>
+(function(){
+  var p = ${payload};
+  var stored = "";
+  try { stored = localStorage.getItem("eids_pending_state") || ""; } catch (e) {}
+  if (!stored) {
+    var m = document.cookie.match(/(?:^|; )eids_pending_state_js=([^;]*)/);
+    if (m && m[1]) {
+      try { stored = decodeURIComponent(m[1]); } catch (e) { stored = m[1]; }
+    }
+  }
+  var q = new URLSearchParams(location.search);
+  if (p.yetkiKodu && !q.get("yetkiKodu")) q.set("yetkiKodu", p.yetkiKodu);
+  if (p.durum && !q.get("durum")) q.set("durum", p.durum);
+  q.set("recovered", "1");
+  if (stored) {
+    q.set("state", stored);
+    location.replace(location.pathname + "?" + q.toString());
+    return;
+  }
+  q.set("state", "none");
+  q.set("ok", "0");
+  if (!q.get("durum")) q.set("durum", "session_not_found");
+  location.replace("/app/eids?" + q.toString());
+})();
+  </script>
+</head>
+<body>
+  <h1>Doğrulama tamamlanıyor</h1>
+  <p>e-Devlet sonucu uygulamaya aktarılıyor. Bu sayfayı kapatma.</p>
+  <p><a class="btn" href="/app/eids?ok=0&amp;state=none&amp;durum=session_not_found">Uygulamaya dön</a></p>
+</body>
+</html>`;
+  return new NextResponse(html, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+}
+
 function htmlErrorPage(
   title: string,
   message: string,
@@ -324,18 +385,28 @@ export async function GET(req: Request) {
   ]);
   const durum = firstParam(sp, ["durum", "Durum", "status", "Status"]);
   let state = firstParam(sp, ["state", "State", "sid"]);
+  const alreadyRecovered = sp.get("recovered") === "1";
 
   // Bakanlık ?state= düşürürse cookie’den al (/eids/go yazar).
   if (!state) {
     const cookieHeader = req.headers.get("cookie") ?? "";
-    const m = /(?:^|;\s*)eids_pending_state=([^;]+)/.exec(cookieHeader);
-    if (m?.[1]) {
-      try {
-        state = decodeURIComponent(m[1].trim());
-      } catch {
-        state = m[1].trim();
+    const cookieNames = ["eids_pending_state", "eids_pending_state_js"];
+    for (const name of cookieNames) {
+      const m = new RegExp(`(?:^|;\\s*)${name}=([^;]+)`).exec(cookieHeader);
+      if (m?.[1]) {
+        try {
+          state = decodeURIComponent(m[1].trim());
+        } catch {
+          state = m[1].trim();
+        }
+        if (state) break;
       }
     }
+  }
+
+  // Cookie bounce-tracking ile silindiyse localStorage’dan state’i al.
+  if (!state && yetkiKodu && !alreadyRecovered) {
+    return htmlStateRecoveryPage({ yetkiKodu, durum });
   }
 
   if (!yetkiKodu) {

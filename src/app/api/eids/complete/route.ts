@@ -221,6 +221,11 @@ export async function POST(req: Request) {
 
   const ok = edevletOk && Boolean(kullaniciKodu);
   const err = ok ? null : kullaniciHata || "kullanici_failed";
+  const gsmMissing =
+    !ok &&
+    (kullaniciHata === "gsm_missing" ||
+      kullaniciHata === "phone_missing" ||
+      (kullaniciHata ?? "").toLowerCase().includes("telefon numarası uyuşmaz"));
   if (!ok && kullaniciHata) {
     await admin
       .from("eids_verification_sessions")
@@ -232,7 +237,9 @@ export async function POST(req: Request) {
     listingId: session.listing_id,
     kullaniciKodu,
     error: err,
-    needsGsm: false,
-    gsmHint: null,
+    needsGsm: gsmMissing,
+    gsmHint: gsmMissing
+      ? "e-Devlet’te kayıtlı cep numaranı yaz (5xxxxxxxxx)."
+      : null,
   });
 }
